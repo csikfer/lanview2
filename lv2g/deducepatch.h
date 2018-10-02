@@ -26,7 +26,7 @@ public:
     /// @param ppl Bal oldali patch port objektum
     /// @param ppr Jobb oldali patch port objektum
     cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr);
-    QTextEdit *newTextEdit(const QString& txt, int *pw = NULL, const QString& tt = QString());
+    QTextEdit *newTextEdit(const QString& txt, int *pw = nullptr, const QString& tt = QString());
     cDeducePatch * parent;
     QTableWidget * pTable;
     const int      row;

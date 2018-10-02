@@ -368,21 +368,18 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
 {
     (void)q;
     QString r;
-    cFeatures f = o.features();
-    if (f.contains("sub")) {
-        /* ?? */ ;
-    }
-    else if (f.contains("shape")) {
-        /* ?? */ ;
-    }
-    else if (f.contains("own")) {
-        /* ?? */ ;
-    }
-    else if (f.contains("exec")) {
-        /* ?? */ ;
-    }
-    else {
-        EXCEPTION(EDATA, 0, o.toString());
+    int t = (int)o.getId(_sMenuItemType);
+    switch (t) {
+    case MT_SHAPE:
+        break;
+    case MT_OWN:
+        break;
+    case MT_EXEC:
+        break;
+    case MT_MENU:
+        break;
+    default:
+        EXCEPTION(EDATA, t, o.identifying(false));
     }
     return r;
 }

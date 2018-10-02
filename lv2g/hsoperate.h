@@ -155,12 +155,12 @@ private slots:
 
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {
-        if (pi != NULL) {
+        if (pi != nullptr) {
             pUi->tableWidget->setItem(row, col, pi);
         }
     }
     void setCell(int row, int col, QWidget * pw) {
-        if (pw != NULL) {
+        if (pw != nullptr) {
             pUi->tableWidget->setCellWidget(row, col, pw);
         }
     }

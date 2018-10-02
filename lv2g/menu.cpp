@@ -16,46 +16,45 @@
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
-cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea * par, eEx __ex)
+cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea * par)
     : QObject(par), type(MAT_ERROR)
 {
     pMdiArea     = par;
-    pIntSubObj   = NULL;
+    pIntSubObj   = nullptr;
     intType      = INT_UNKNOWN;
-    pDialog      = NULL;
+    pDialog      = nullptr;
     pAction      = pa;
     pMenuItem    = new cMenuItem(*pmi);
 
     setObjectName(pmi->getName());
     actionsMap.insert(pa->objectName(), pa);
-    QString feature;
-    if      (!(feature = pmi->feature("shape")).isEmpty()) {
-        if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
-        setObjectName(feature);
+    QString param = pmi->getName(cMenuItem::ixMenuParam());
+    int itemType = int(pmi->getId(cMenuItem::ixMenuItemType()));
+    cTableShape tableShape;
+    enum ePrivilegeLevel rights = PL_SYSTEM;
+    QString msg;
+    switch (itemType) {
+    case MT_SHAPE:
+        if (pq == nullptr) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
+        setObjectName(param);
         setType(MAT_SHAPE);
-        cTableShape tableShape;;
-        tableShape.setByName(feature);
-        if (lanView::isAuthorized(tableShape.getId(_sViewRights))) {           // Jog?
+        if (!tableShape.fetchByName(param)) {
+            msg = trUtf8("A %1 nevű menúben a %2 nevű tábla megelenítő rekordot (table_shapes) nem sikerült beolvasni.")
+                    .arg(pmi->getName(), param);
+            msg += trUtf8("A leíró vaószínüleg nem létezik. A menüpont le lessz tiltva.");
+            QMessageBox::warning(par, _sError, msg);
+            pa->setDisabled(true);
+        }
+        else if (lanView::isAuthorized(tableShape.getId(_sViewRights))) {           // Jog?
             connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
         }
         else {
             pa->setDisabled(true);
         }
-    }
-    else if (!(feature = pmi->feature("exec")).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
-        setObjectName(feature); // Nincs tab, a név a parancs lessz
-        setType(MAT_EXEC);
-        if (lanView::isAuthorized(pmi->getId(_sMenuRights))) {           // Jog?
-            connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
-        }
-        else {
-            pa->setDisabled(true);
-        }
-    }
-    else if (!(feature = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
-        enum ePrivilegeLevel rights = PL_SYSTEM;
+        break;
+    case MT_OWN:
 #define _SETINTWIN(S, D, C) \
-        if (0 == feature.compare(S, Qt::CaseInsensitive)) { \
+        if (0 == param.compare(S, Qt::CaseInsensitive)) { \
             intType = D; \
             rights = C::rights; \
         }
@@ -75,8 +74,12 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
 #undef SETINTWIN
 #undef _SETINTWIN
         else {
-            if (__ex) EXCEPTION(ENONAME, -1, feature);
-            return;
+            msg = trUtf8("A %1 nevű menüben ismeretlen %2 nevű form.")
+                   .arg(pmi->getName(), param);
+            msg += trUtf8("A menüpont le lessz tiltva.");
+            QMessageBox::warning(par, _sError, msg);
+            pa->setDisabled(true);
+            break;
         }
         setType(MAT_OWN);
         if (lanView::isAuthorized(rights)) {
@@ -85,19 +88,36 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         else {
             pa->setDisabled(true);
         }
+        break;
+    case MAT_EXEC:
+        setObjectName(param); // Nincs tab, a név a parancs lessz
+        setType(MAT_EXEC);
+        if (lanView::isAuthorized(pmi->getId(_sMenuRights))) {           // Jog?
+            connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
+        }
+        else {
+            pa->setDisabled(true);
+        }
+        break;
+    default:
+        msg = trUtf8("A %1 nevű menü típusa ismeretlen.")
+               .arg(pmi->getName());
+        msg += trUtf8("A menüpont le lessz tiltva.");
+        QMessageBox::warning(par, _sError, msg);
+        pa->setDisabled(true);
+        break;
     }
-    else if (__ex) EXCEPTION(EDBDATA);
 }
 
 cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QMdiArea * par)
     : QObject(par), type(MAT_EXEC)
 {
     pMdiArea     = par;
-    pIntSubObj   = NULL;
+    pIntSubObj   = nullptr;
     intType      = INT_UNKNOWN;
-    pDialog      = NULL;
+    pDialog      = nullptr;
     pAction      = pa;
-    pMenuItem    = NULL;
+    pMenuItem    = nullptr;
 
     setObjectName(ps);
     connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
@@ -110,9 +130,9 @@ cMenuAction::cMenuAction(cIntSubObj *po, eIntSubWin t, QAction *pa, QMdiArea * p
     pMdiArea     = par;
     intType      = t;
     pIntSubObj   = po;
-    pDialog      = NULL;
+    pDialog      = nullptr;
     pAction      = pa;
-    pMenuItem    = NULL;
+    pMenuItem    = nullptr;
 
     connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
     actionsMap.insert(pa->objectName(), pa);
@@ -176,10 +196,10 @@ void cMenuAction::initInt()
 
 void cMenuAction::displayIt()
 {
-    if (pMdiArea == NULL) {
+    if (pMdiArea == nullptr) {
         EXCEPTION(EPROGFAIL, -1, trUtf8("pMdiArea is NULL"));
     }
-    if (pIntSubObj == NULL) {
+    if (pIntSubObj == nullptr) {
         cnt = 1;
         switch (type) {
         case MAT_SHAPE:     initRecordTable();                          break;
@@ -207,7 +227,7 @@ void cMenuAction::displayIt()
 
 void cMenuAction::removeIt()
 {
-    if (pIntSubObj == NULL) {
+    if (pIntSubObj == nullptr) {
         DWAR() << "pIntSubObj is NULL." << endl;
         return;
     }
@@ -225,7 +245,7 @@ void  cMenuAction::executeIt()
 {
     switch (type) {
     case MAT_DIALOG: {
-        if (pDialog == NULL) EXCEPTION(EPROGFAIL, -1, "pDialog is NULL.");
+        if (pDialog == nullptr) EXCEPTION(EPROGFAIL, -1, "pDialog is NULL.");
         QString name = pDialog->objectName();
         PDEB(VERBOSE) << "Start " << name << " dialog..." << endl;
         int r = pDialog->exec();
@@ -252,13 +272,13 @@ void  cMenuAction::executeIt()
 cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea, const cFeatures &_f)
     : cIntSubObj(pMdiArea)
 {
-    pTableShape = NULL;
-    pRecordsView = NULL;
+    pTableShape = nullptr;
+    pRecordsView = nullptr;
     pTableShape = new cTableShape();
     pTableShape->setParent(this);
     pTableShape->setByName(shape);
     pTableShape->features().unite(_f);
-    pRecordsView = cRecordsViewBase::newRecordView(pTableShape, NULL, this);
+    pRecordsView = cRecordsViewBase::newRecordView(pTableShape, nullptr, this);
     QHBoxLayout *pHBL = new QHBoxLayout;
     pWidget()->setLayout(pHBL);
     pHBL->addWidget(pRecordsView->pWidget());

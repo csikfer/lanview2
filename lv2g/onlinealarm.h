@@ -26,7 +26,7 @@ private:
         if (isTicket) {
             isTicket = false;
             delete pTargetRec;
-            pTargetRec = NULL;
+            pTargetRec = nullptr;
         }
     }
 

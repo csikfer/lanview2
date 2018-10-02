@@ -70,7 +70,7 @@ class LV2GSHARED_EXPORT cPatchDialog : public QDialog {
     friend class cPPortTableLine;
     Q_OBJECT
 public:
-    cPatchDialog(QWidget *parent = NULL, bool ro = false);
+    cPatchDialog(QWidget *parent = nullptr, bool ro = false);
     ~cPatchDialog();
     cPatch * getPatch();
     void setPatch(const cPatch *pSample);
@@ -112,14 +112,14 @@ private slots:
     void selectionChanged(const QItemSelection &, const QItemSelection &);
 };
 
-_GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
+_GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);
 _GEX cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro = false);
 
 namespace Ui { class editIp; }
 class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {
     Q_OBJECT
 public:
-    cIpEditWidget(const tIntVector &_types = tIntVector(), QWidget *_par = NULL);
+    cIpEditWidget(const tIntVector &_types = tIntVector(), QWidget *_par = nullptr);
     ~cIpEditWidget();
     void set(const cIpAddress *po);
     void set(const QHostAddress &a);
@@ -216,7 +216,7 @@ class LV2GSHARED_EXPORT cEnumValsEditWidget : public QWidget {
     friend class cEnumValRow;
     Q_OBJECT
 public:
-    cEnumValsEditWidget(QWidget *parent = NULL);
+    cEnumValsEditWidget(QWidget *parent = nullptr);
     ~cEnumValsEditWidget();
 protected:
     bool save();

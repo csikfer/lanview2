@@ -139,6 +139,29 @@ const QString& fieldFlag(int e, eEx __ex)
     return _sNul;
 }
 
+int menuItemType(const QString& n, eEx __ex)
+{
+    if (0 == n.compare(_sShape, Qt::CaseInsensitive)) return MT_SHAPE;
+    if (0 == n.compare(_sOwn,   Qt::CaseInsensitive)) return MT_OWN;
+    if (0 == n.compare(_sExec,  Qt::CaseInsensitive)) return MT_EXEC;
+    if (0 == n.compare(_sMenu,  Qt::CaseInsensitive)) return MT_MENU;
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
+    return MT_UNKNOWN;
+}
+
+const QString& menuItemType(int e, eEx __ex)
+{
+    switch (e) {
+    case MT_SHAPE:  return _sShape;
+    case MT_OWN:    return _sOwn;
+    case MT_EXEC:   return _sExec;
+    case MT_MENU:   return _sMenu;
+    default:        break;
+    }
+    if (__ex) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
 int dataCharacter(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sHead,   Qt::CaseInsensitive)) return DC_HEAD;
@@ -207,13 +230,13 @@ QMap<QString, QString>   cTableShape::fieldDialogTitleMap;
 
 cTableShape::cTableShape() : cRecord(), shapeFields(this)
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cTableShape::descr());
 }
 
 cTableShape::cTableShape(const cTableShape &__o) : cRecord(), shapeFields(this, __o.shapeFields)
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cTableShape::descr());
     _cp(__o);
 }
@@ -346,7 +369,7 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
     setText(LTX_TABLE_TITLE, n);
     setText(LTX_DIALOG_TITLE, n);
     setText(LTX_DIALOG_TAB_TITLE, n);
-    int type = ENUM2SET(TS_SIMPLE);
+    qlonglong type = ENUM2SET(TS_SIMPLE);
     const cRecStaticDescr& rDescr = *cRecStaticDescr::get(getName(_sTableName), getName(_sSchemaName));
     shapeFields.clear();
     int ixFieldFlags = cTableShapeField().toIndex(_sFieldFlags);
@@ -625,7 +648,7 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _no
 {
     if (0 <= shapeFields.indexOf(_name)) {
         if (__ex) EXCEPTION(EUNIQUE, -1, _name);
-        return NULL;
+        return nullptr;
     }
     cTableShapeField *p = new cTableShapeField();
     p->setName(_name);
@@ -700,13 +723,13 @@ int cTableShapeField::_ixFieldFlags = NULL_IX;
 
 cTableShapeField::cTableShapeField() : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cTableShapeField::descr());
 }
 
 cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cTableShapeField::descr());
     _cp(__o);
     copy(__o);
@@ -714,7 +737,7 @@ cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord()
 
 cTableShapeField::cTableShapeField(QSqlQuery& q) : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(q.record(), cTableShapeField::descr());
 }
 
@@ -815,7 +838,7 @@ int cEnumVal::_ixFontFamily=NULL_IX;
 int cEnumVal::_ixFontAttr = NULL_IX;
 QList<cEnumVal *> cEnumVal::enumVals;
 QMap<QString, QVector<cEnumVal *> > cEnumVal::mapValues;
-cEnumVal *cEnumVal::pNull = NULL;
+cEnumVal *cEnumVal::pNull = nullptr;
 QStringList     cEnumVal::forcedList;
 
 const cRecStaticDescr&  cEnumVal::descr() const
@@ -868,7 +891,7 @@ int cEnumVal::toInt(eEx __ex) const
     }
     QSqlQuery q = getQuery();
     const cColEnumType *t = cColEnumType::fetchOrGet(q, getName(_ixTypeName), __ex);
-    if (t == NULL) return ENUM_INVALID;
+    if (t == nullptr) return ENUM_INVALID;
     return (int)t->str2enum(getName(_ixValName));
 }
 
@@ -898,7 +921,7 @@ int cEnumVal::textName2ix(QSqlQuery& q, const QString& _n, eEx __ex) const
 
 void cEnumVal::fetchEnumVals()
 {
-    if (pNull == NULL) pNull = new cEnumVal();
+    if (pNull == nullptr) pNull = new cEnumVal();
     else {
         EXCEPTION(EPROGFAIL);   // We do not handle re-reading well.
     }
@@ -910,10 +933,10 @@ void cEnumVal::fetchEnumVals()
     int found = 0;                  // Megtalált rekordok számláló
     cEnumVal ev;                    // objektum a fetch-hez
     QString currentTypeName;        // Ha típust váltun, észre kell vennünk
-    const cColEnumType *pE = NULL;  // Az enumerációs típus leírója
+    const cColEnumType *pE = nullptr;  // Az enumerációs típus leírója
     bool          isBool = false;   // Nem csak valós enumok lesznek!!
     int e;                          // Enumerációs érték (int) (a -1 a típus 'indexe', a név ekkor üres)
-    QVector<cEnumVal *> *pActV = NULL;
+    QVector<cEnumVal *> *pActV = nullptr;
 
     QSqlQuery q  = getQuery();
     QSqlQuery q2 = getQuery();
@@ -926,7 +949,7 @@ void cEnumVal::fetchEnumVals()
                 QVector<cEnumVal *>& v = mapValues[currentTypeName];
                 for (int i = 0; i < v.size(); ++i) {
                     cEnumVal *& o = v[i];
-                    if (o == NULL) {
+                    if (o == nullptr) {
                         if (i == 0) o = new cEnumVal(currentTypeName, QString());
                         else {
                             if (isBool) {
@@ -947,23 +970,23 @@ void cEnumVal::fetchEnumVals()
             }
             // New type, preparation
             pE = cColEnumType::fetchOrGet(q2, typeName, EX_IGNORE);
-            isBool = (pE == NULL);
+            isBool = (pE == nullptr);
             if (isBool) {   // Is not ENUM!
                 if (1 != typeName.contains(QChar('.'))) {   // Name convention control, bool?
                     APPMEMO(q2, trUtf8("Invalid 'enum_vals' objet : ") + ev.toString(), RS_WARNING);
                     currentTypeName.clear();
                     continue;
                 }
-                mapValues[typeName].fill((cEnumVal*)NULL, 3);
+                mapValues[typeName].fill((cEnumVal*)nullptr, 3);
             }
             else {
-                mapValues[typeName].fill((cEnumVal*)NULL, pE->enumValues.size() +1);
+                mapValues[typeName].fill((cEnumVal*)nullptr, pE->enumValues.size() +1);
             }
             pActV = &mapValues[typeName];
             currentTypeName = typeName;
         }
         else {
-            if (!isBool && pE == NULL) EXCEPTION(EPROGFAIL);
+            if (!isBool && pE == nullptr) EXCEPTION(EPROGFAIL);
         }
         e = NULL_IX;    // No O.K.
         if (val.isEmpty())  e = -1; // Type index
@@ -1023,10 +1046,10 @@ void cEnumVal::fetchEnumVals()
 
 const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
 {
-    if (pNull == NULL) {
+    if (pNull == nullptr) {
         fetchEnumVals();
     }
-    cEnumVal *p = NULL;
+    cEnumVal *p = nullptr;
     QMap<QString, QVector<cEnumVal *> >::const_iterator i = mapValues.find(_tn);
     if (mapValues.end() != i) {
         const QVector<cEnumVal *>& v = i.value();
@@ -1035,7 +1058,7 @@ const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
             p = v[ix];
         }
     }
-    if (p == NULL) {
+    if (p == nullptr) {
         if (EX_WARNING <= __ex) EXCEPTION(EFOUND, e, _tn);
         p = pNull;
     }
@@ -1044,7 +1067,7 @@ const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
 
 int cEnumVal::enumForce(QSqlQuery& q, const QString& _tn)
 {
-    if (pNull == NULL) {
+    if (pNull == nullptr) {
         fetchEnumVals();
     }
     QMap<QString, QVector<cEnumVal *> >::const_iterator i = mapValues.find(_tn);
@@ -1070,43 +1093,28 @@ CRECDEFD(cMenuItem)
 
 cMenuItem::cMenuItem() : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cMenuItem::descr());
 }
 cMenuItem::cMenuItem(const cMenuItem& __o) : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _cp(__o);
 }
 
-
 int cMenuItem::_ixFeatures = NULL_IX;
+int cMenuItem::_ixMenuItemType = NULL_IX;
+int cMenuItem::_ixMenuParam = NULL_IX;
 
 const cRecStaticDescr&  cMenuItem::descr() const
 {
     if (initPDescr<cMenuItem>(_sMenuItems)) {
+        CHKENUM(_sMenuItemType, menuItemType);
         STFIELDIX(cMenuItem, Features);
+        STFIELDIX(cMenuItem, MenuItemType);
+        STFIELDIX(cMenuItem, MenuParam);
     }
     return *_pRecordDescr;
-}
-
-void cMenuItem::toEnd()
-{
-    toEnd(_ixFeatures);
-}
-
-bool cMenuItem::toEnd(int i)
-{
-    if (i == _ixFeatures) {
-        pDelete(_pFeatures);
-        return true;
-    }
-    return false;
-}
-
-void cMenuItem::clearToEnd()
-{
-    pDelete(_pFeatures);
 }
 
 bool cMenuItem::fetchFirstItem(QSqlQuery& q, const QString& _appName, qlonglong upId)

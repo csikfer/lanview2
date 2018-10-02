@@ -106,6 +106,18 @@ enum eFieldFlag {
 EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);
 EXT_ const QString& fieldFlag(int e, eEx __ex = EX_ERROR);
 
+enum eManuItemType {
+    MT_UNKNOWN = -1,
+    MT_SHAPE = 0,
+    MT_OWN,
+    MT_EXEC,
+    MT_MENU
+};
+
+EXT_ int menuItemType(const QString& n, eEx __ex = EX_ERROR);
+EXT_ const QString& menuItemType(int e, eEx __ex = EX_ERROR);
+
+
 class cTableShapeField;
 class cTableShape;
 typedef tRecordList<cTableShape>    tTableShapes;
@@ -387,11 +399,10 @@ public:
         LTX_TOOL_TIP,
         LTX_WHATS_THIS
     };
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
     bool fetchFirstItem(QSqlQuery &q, const QString &_appName, qlonglong upId = NULL_ID);
     int delByAppName(QSqlQuery &q, const QString &__n, bool __pat = false) const;
+    STATICIX(cMenuItem, MenuItemType)
+    STATICIX(cMenuItem, MenuParam)
 };
 
 #endif // GUIDATA_H

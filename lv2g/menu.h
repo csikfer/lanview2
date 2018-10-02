@@ -40,7 +40,7 @@ public:
     /// Konstruktor
     /// Menüpont, a *pmi objektumban leírtak alapján inicializálj az objektumot.
     /// Az objektumot a menu_items rekordja alapján hozzuk létre.
-    cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea * par, eEx __ex = EX_ERROR);
+    cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea * par);
     /// Konstruktor
     /// A menüpont egy parancsot hajt végre. Az objektumot nem a menu_items rekordja alapján hozzuk létre.
     /// @param ps A végrehajtandó parancs (az objektum neveként lessz eltárolva)

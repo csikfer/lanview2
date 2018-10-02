@@ -41,11 +41,11 @@ EXT_ bool isBreakImportParser(bool __ex = false);
 class LV2SHARED_EXPORT cImportParseThread : public QThread {
     friend QString yygetline();
 public:
-    cImportParseThread(const QString &_inicmd = QString(), QObject *par = NULL);
+    cImportParseThread(const QString &_inicmd = QString(), QObject *par = nullptr);
     ~cImportParseThread();
 
     int push(const QString& srv, cError *&pe);
-    int startParser(cError *&pe, QString *_pSrc = NULL);
+    int startParser(cError *&pe, QString *_pSrc = nullptr);
     int reStartParser(cError *&pe);
     void stopParser();
 protected:
@@ -61,7 +61,7 @@ private:
     QString        *pSrc;
     static cImportParseThread *pInstance;
 public:
-    static cImportParseThread& instance()       { if (pInstance == NULL) EXCEPTION(EPROGFAIL); return *pInstance; }
+    static cImportParseThread& instance()       { if (pInstance == nullptr) EXCEPTION(EPROGFAIL); return *pInstance; }
 };
 
 #endif // IMPORT_PARSER_H

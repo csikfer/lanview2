@@ -16,7 +16,7 @@ public:
     /// @param pts A tábla megjelenítését leíró rekord
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase * _upper, QWidget * par = NULL);
+    cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase * _upper, QWidget * par = nullptr);
 
     ~cRecordTree();
     virtual void init();

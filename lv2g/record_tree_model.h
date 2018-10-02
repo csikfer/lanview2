@@ -12,18 +12,18 @@ class cRecordTreeModel;
 
 class LV2GSHARED_EXPORT cTreeNode {
 public:
-    cTreeNode(cRecord *__po = NULL, cTreeNode *_parentNode = NULL);
+    cTreeNode(cRecord *__po = nullptr, cTreeNode *_parentNode = nullptr);
     cTreeNode(const cTreeNode&);
     ~cTreeNode();
     cTreeNode          *parent;
     cRecord            *pData;
     QList<cTreeNode *> *pChildrens;
 
-    QString name() { return (pData == NULL) ? "//" : pData->getName(); }
+    QString name() { return (pData == nullptr) ? "//" : pData->getName(); }
     void addChild(cTreeNode *pn);
     void addChild(cRecord *pRec);
     int row() const;
-    int rows() const { if (pChildrens == NULL) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
+    int rows() const { if (pChildrens == nullptr) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
 };
 
 class LV2GSHARED_EXPORT cRecordTreeModel : public QAbstractItemModel, public cRecordViewModelBase {

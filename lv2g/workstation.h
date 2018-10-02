@@ -59,7 +59,7 @@ private:
     class cBatchBlocker {
     public:
         typedef void (cWorkstation::*tPSet)(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-        cBatchBlocker(cWorkstation *_po, tPSet _pFSet, cBatchBlocker * _par = NULL);
+        cBatchBlocker(cWorkstation *_po, tPSet _pFSet, cBatchBlocker * _par = nullptr);
         ~cBatchBlocker();
         void        begin() { ++counter; }
         bool        end(bool f = true);

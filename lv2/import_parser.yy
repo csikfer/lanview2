@@ -2293,7 +2293,7 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(node().portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(node().portSetParam($2, sp2s($4), vlp2vl($6))); }
         /* host */
-        | DELETE_T PORT_T mac ';'               { cNPort *p; while (NULL != (p = node().ports.pull(_sHwAddress, QVariant::fromValue(*$3), EX_IGNORE))) { delete p; } delete $3; }
+        | DELETE_T PORT_T mac ';'               { cNPort *p; while (nullptr != (p = node().ports.pull(_sHwAddress, QVariant::fromValue(*$3), EX_IGNORE))) { delete p; } delete $3; }
         | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }

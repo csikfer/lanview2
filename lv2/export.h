@@ -8,7 +8,7 @@
 
 class LV2SHARED_EXPORT cExport : public QObject {
 public:
-    cExport(QObject *par = NULL);
+    cExport(QObject *par = nullptr);
 protected:
     QString sNoAnyObj;
     int     actIndent;

@@ -886,9 +886,15 @@ STRDEF(MenuItems, "menu_items")
  STRDEF(AppName, "app_name")
  STRDEF(UpperMenuItemId, "upper_menu_item_id")
  STRDEF(ItemSequenceNumber, "item_sequence_number")
- dnl "features" text_id
+ dnl text_id
  STRDEF(MenuRights, "menu_rights")
-
+ STRDEF(MenuItemType, "menu_item_type")
+  STRDEF(Shape, "shape")
+  STRDEF(Own, "own")
+  STRDEF(Exec, "exec")
+  STRDEF(Menu, "menu")
+ STRDEF(MenuParam, "menu_param")
+ STRDEF(MenuItemNote, "menu_item_note")
 
 STRDEF(RunStats,"runstats")
 STRDEF(RunStatsHosts,"runstats.hosts")
