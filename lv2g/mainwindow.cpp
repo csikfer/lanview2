@@ -108,7 +108,7 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
     QString s;
     if (!(s = _mi.getText(cMenuItem::LTX_TOOL_TIP)  ).isEmpty()) pa->setToolTip(s);
     if (!(s = _mi.getText(cMenuItem::LTX_WHATS_THIS)).isEmpty()) pa->setWhatsThis(s);
-    if (_mi.isFeature("sub")) {    // Almenük vannak
+    if (_mi.getId(cMenuItem::ixMenuItemType()) == MT_MENU) {    // Almenük vannak
         cMenuItem sm;
         QMenu *pm = new QMenu(this);
         pm->setObjectName(sm.getName());

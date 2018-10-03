@@ -100,8 +100,8 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         }
         break;
     default:
-        msg = trUtf8("A %1 nevű menü típusa ismeretlen.")
-               .arg(pmi->getName());
+        msg = trUtf8("A %1 nevű menü típusa '%2' ismeretlen.")
+               .arg(pmi->getName(), pmi->getName(cMenuItem::ixMenuItemType()));
         msg += trUtf8("A menüpont le lessz tiltva.");
         QMessageBox::warning(par, _sError, msg);
         pa->setDisabled(true);
