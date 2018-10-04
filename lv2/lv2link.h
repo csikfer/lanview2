@@ -21,6 +21,8 @@ EXT_ const QString& phsLinkType(int e, enum eEx __ex = EX_ERROR);
 class LV2SHARED_EXPORT cPhsLink : public cRecord {
     CRECORD(cPhsLink);
 public:
+    /// Nem támogatott, kizárást dob, ha __ex értéke nem EX_IGNORE, egyébként nem csinál semmit és false-val tér vissza.
+    virtual bool insert(QSqlQuery &__q, eEx __ex);
     /// @return Vigyázat a visszaadott érték értelmezése más, mint a többi replace metódusnál:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor R_INSERT, ha törölni kellett rekordokat, akkor
     /// R_UPDATE, ha viszont nem sikerült felvenni ez új rekordot, akkor R_ERROR.

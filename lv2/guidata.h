@@ -403,6 +403,10 @@ public:
     int delByAppName(QSqlQuery &q, const QString &__n, bool __pat = false) const;
     STATICIX(cMenuItem, MenuItemType)
     STATICIX(cMenuItem, MenuParam)
+public:
+    int getType() { return int(getId(_ixMenuItemType)); }
+    QString getParam() { return getName(_ixMenuParam); }
+    void setTitle(const QStringList& _tt);
 };
 
 #endif // GUIDATA_H

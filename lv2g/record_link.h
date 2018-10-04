@@ -43,7 +43,7 @@ public:
     /// @param __parent Az szülő objektum pointere
     cLinkDialog(bool __similar, cRecordLink * __parent = nullptr);
     ~cLinkDialog();
-    bool get(cPhsLink& link);
+    void get(cPhsLink& link);
     bool next();
     bool prev();
 protected:
@@ -51,10 +51,10 @@ protected:
 
     QLabel*         pLabelCollisions;
     QCheckBox *     pCheckBoxCollisions;
-    QToolButton *   pToolButtonRfresh;
+    QToolButton *   pToolButtonRefresh;
     QTextEdit *     pTextEditCollisions;
     QTextEdit *     pTextEditNote;
-    QPushButton *   pPushButtonNote;
+    QToolButton *   pToolButtonNoteNull;
 
     cRecordLink *   parent;
     QSqlQuery *     pq;
@@ -64,16 +64,17 @@ protected:
     phsLinkWidget * pLink1;
     phsLinkWidget * pLink2;
     cDialogButtons *pButtons;
-    bool            insertOnly; /// Nincs ütközés
+    bool            collision; /// Nincs ütközés
     bool            imperfect;  /// Hiányos
     bool            exists;     /// Létezik
+    bool            noteChanged;/// Megváltoztattuk a megjegyzés mezőt
     qlonglong       linkId;     /// Ha létezik, akkor az utolsó
 public slots:
     /// Változás esetén az állapot beállítása, és a riport megjelenítése.
     void changed();
 private slots:
     void collisionsTogled(bool f);
-    void saveNote();
+    void noteNull(bool st);
     void modifyNote();
     void buttonPressed(int kid);
 };

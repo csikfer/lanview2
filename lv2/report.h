@@ -38,6 +38,17 @@ static inline QString tag(const QString& t, const QString& p) {
 /// @return A konverált szöveg.
 EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true);
 
+/// HTML konverzió, indentáltparagrafus
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Széles karakterű bekezdés, a konvertált szöveggel
+static inline QString htmlIndent(int _pix, const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div style=\"text-indent: " + QString::number(_pix) + "px\">" + toHtml(text, chgBreaks, esc) + "</div>";
+}
+
+
 /// HTML konverzió
 /// @param text A konvertálandó szöveg
 /// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
@@ -103,8 +114,8 @@ static inline QString toHtmlStrikethrough(const QString& text, bool chgBreaks = 
     return "<s>" + toHtml(text, chgBreaks, esc) + "</s>";
 }
 
-EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = "td");
-EXT_ QString htmlTable(QStringList head, QList<QStringList> matrix);
+EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = QString(), bool esc = true);
+EXT_ QString htmlTable(QStringList head, QList<QStringList> matrix, bool esc = true);
 
 /// Egy rekord set HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
 /// @param q Az adatbázis műveletekhez használható query objektum.
@@ -233,6 +244,10 @@ EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
 
 EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
+
+EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, int _type = LT_BACK, int _sh = ES_, qlonglong *_pEndPid = nullptr);
+EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2);
+EXT_ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, const QString& msgPref = QString());
 
 static inline void expWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(htmlWarning(text, chgBreaks, esc));

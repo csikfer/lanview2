@@ -38,6 +38,12 @@ const cRecStaticDescr&  cPhsLink::descr() const
 }
 CRECDEFD(cPhsLink)
 
+bool cPhsLink::insert(QSqlQuery &, eEx __ex)
+{
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
+    return false;
+}
+
 int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
 {
     cError *pe = NULL;
@@ -53,7 +59,7 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
         r += unxlinks(__q, getId(_sPortId1), (ePhsLinkType)getId(_sPhsLinkType1), (ePortShare)getId(__sPortShared));
         // Ütköző linkek törlése a jobb oldali porthoz (2)
         r += unxlinks(__q, getId(_sPortId2), (ePhsLinkType)getId(_sPhsLinkType2), (ePortShare)getId(__sPortShared));
-        if (!insert(__q, __ex)) {
+        if (!cRecord::insert(__q, __ex)) {
             sqlRollback(__q, tn);
             reason = R_ERROR;
         }

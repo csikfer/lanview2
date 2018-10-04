@@ -859,84 +859,78 @@ static cMenuItem& actMenuItem()
 }
 
 /// Menü objektum létrehozása. Almenüi lesznek
-static void newMenuMenu(const QString& _n)
+static void newMenuMenu(const QString& _n, const QString *_pd)
 {
     if (pMenuApp == nullptr) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
+    if (_pd != nullptr) {
+        p->setNote(*_pd);
+        delete _pd;
+    }
     p->setName(_sAppName, *pMenuApp);
     if (!menuItems.isEmpty()) {
         p->setId(_sUpperMenuItemId, actMenuItem().getId());
     }
+    p->setId(cMenuItem::ixMenuItemType(), MT_MENU);
     // Improve, replace!
     p->setText(cMenuItem::LTX_MENU_TITLE, _n);
     p->setName(cMenuItem::LTX_TAB_TITLE, _n);
     p->setName(_sFeatures, ":sub:");
-    p->insert(qq());
-    p->saveText(qq());
     menuItems << p;
 }
 
 static void delMenuItem()
 {
     cMenuItem *p = menuItems.pop_back();
+    switch (p->getId(cMenuItem::ixMenuItemType())) {
+    case MT_MENU:
+        if (!p->isNull(cMenuItem::ixMenuParam())) {
+            EXCEPTION(EPROGFAIL);
+        }
+        break;
+    case MT_SHAPE:
+        if (NULL_ID == cTableShape().getIdByName(qq(), p->getParam(), EX_IGNORE)) {
+            yyerror(QObject::trUtf8("SHAPE '%1' not found.").arg(p->getParam()));
+        }
+    default:
+        break;
+    }
+    p->insert(qq());
+    p->saveText(qq());
     delete p;
 }
-/// Egy menu_items rekord létrehozása
+
+/// Egy menu_items objektum létrehozása
 /// @param _n Rekord név
-/// @param _sn paraméter
-/// @param _t Megjelenített név
-/// @param typ Minta string a features mezőhöz (paraméter _n
-static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
+/// @param _d Megjegyzés
+/// @param _t típus
+static void newMenuItem(const QString& _n, const QString *_pd, int _t)
 {
     if (pMenuApp == nullptr) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
+    if (_pd != nullptr) {
+        p->setNote(*_pd);
+        delete _pd;
+    }
     p->set(_sAppName, *pMenuApp);
     p->setId(_sUpperMenuItemId, actMenuItem().getId());
+    switch (_t) {
+    case MT_SHAPE:
+    case MT_OWN:
+    case MT_EXEC:
+        p->setId(cMenuItem::ixMenuItemType(), _t);
+        break;
+    case MT_MENU:
+    default:
+        EXCEPTION(EPROGFAIL, _t); break;
+    }
     // Improve, replace!
+    p->setName(cMenuItem::ixMenuParam(), _n);
     p->setText(cMenuItem::LTX_MENU_TITLE, _n);
     p->setName(cMenuItem::LTX_TAB_TITLE, _n);
-    p->setName(_sFeatures, QString(typ).arg(_sn));
-    p->insert(qq());
-    p->saveText(qq());
     menuItems << p;
-}
-
-static void setMenuTitle(const QStringList& _tt)
-{
-    if (_tt.size() > 0 && _tt.at(0).size() > 0) {
-        QString n = actMenuItem().getName();
-        actMenuItem().fetchText(qq());
-        if (_tt.at(0) != _sAt) n = _tt.at(0);
-        actMenuItem().setText(cMenuItem::LTX_MENU_TITLE, n);
-
-        if (_tt.size() > 1 && _tt.at(1).size() > 0) {
-            if (_tt.at(1) != _sAt) n = _tt.at(1);
-            actMenuItem().setText(cMenuItem::LTX_TAB_TITLE,  n);
-        }
-        actMenuItem().saveText(qq());
-    }
-}
-
-static void setMenuToolTip(const QString& _tt)
-{
-    actMenuItem().fetchText(qq());
-    actMenuItem().setText(cMenuItem::LTX_TOOL_TIP, _tt);
-    actMenuItem().saveText(qq());
-}
-
-static void setMenuWhatsThis(const QString& _wt)
-{
-    actMenuItem().fetchText(qq());
-    actMenuItem().setText(cMenuItem::LTX_WHATS_THIS, _wt);
-    actMenuItem().saveText(qq());
-}
-
-static void setMenuRights(const QString& _wt)
-{
-    actMenuItem().setName(_sMenuRights, _wt);
-    actMenuItem().update(qq(), false, actMenuItem().mask(_sMenuRights));
 }
 
 static void insertCode(const QString& __txt)
@@ -2705,28 +2699,24 @@ appmenu : GUI_T str                     { pMenuApp = $2;}
 menus   : menu
         | menu menus
         ;
-menu    : str MENU_T                    { newMenuMenu(sp2s($1)); }
-            '{' miops mitems '}'        { delMenuItem(); }
-        ;
-mitems  : mitem mitems
-        |
-        ;
-mitem   : str SHAPE_T str               { newMenuItem(sp2s($1), sp2s($3), ":shape=%1:"); }
+menu    : MENU_T str str_z              { newMenuMenu(sp2s($2), $3); }
+            '{' miops menus '}'         { delMenuItem(); }
+        | SHAPE_T str str_z             { newMenuItem(sp2s($2), $3, MT_SHAPE); }
             '{' miops '}'               { delMenuItem(); }
-        | str EXEC_T str                { newMenuItem(sp2s($1), sp2s($3), ":exec=%1:"); }
+        | EXEC_T str str_z              { newMenuItem(sp2s($2), $3, MT_EXEC); }
             '{' miops '}'               { delMenuItem(); }
-        | str OWN_T str                 { newMenuItem(sp2s($1), sp2s($3), ":own=%1:"); }
+        | OWN_T str str_z               { newMenuItem(sp2s($2), $3, MT_OWN); }
             '{' miops '}'               { delMenuItem(); }
-        | str MENU_T                    { newMenuMenu(sp2s($1)); }
-            '{' miops mitems '}'        { delMenuItem(); }
         ;
 miops   : miop miops
         |
         ;
-miop    : TITLE_T strs_zz ';'           { setMenuTitle(slp2sl($2)); }
-        | TOOL_T TIP_T str ';'          { setMenuToolTip(sp2s($3)); }
-        | WHATS_T THIS_T str ';'        { setMenuWhatsThis(sp2s($3)); }
-        | RIGHTS_T rights ';'           { setMenuRights(sp2s($2)); }
+miop    : PARAM_T str ';'               { actMenuItem().setName(cMenuItem::ixMenuParam(), sp2s($2)); }
+        | FEATURES_T str ';'            { actMenuItem().setName(cMenuItem::ixFeatures(), sp2s($2)); }
+        | TITLE_T strs_zz ';'           { actMenuItem().setTitle(slp2sl($2)); }
+        | TOOL_T TIP_T str ';'          { actMenuItem().setText(cMenuItem::LTX_TOOL_TIP, sp2s($3)); }
+        | WHATS_T THIS_T str ';'        { actMenuItem().setText(cMenuItem::LTX_WHATS_THIS, sp2s($3)); }
+        | RIGHTS_T rights ';'           { actMenuItem().setName(_sMenuRights, sp2s($2)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
 // SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;

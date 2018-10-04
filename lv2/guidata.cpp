@@ -1151,3 +1151,16 @@ int cMenuItem::delByAppName(QSqlQuery &q, const QString &__n, bool __pat) const
     return  n;
 }
 
+void cMenuItem::setTitle(const QStringList& _tt)
+{
+    QString n = getName();
+    if (_tt.size() > 0 && _tt.at(0).size() > 0) {
+        if (_tt.at(0) != _sAt) n = _tt.at(0);
+        setText(LTX_MENU_TITLE, n);
+        if (_tt.size() > 1 && _tt.at(1).size() > 0) {
+            if (_tt.at(1) != _sAt) n = _tt.at(1);
+            setText(LTX_TAB_TITLE, n);
+        }
+    }
+}
+
