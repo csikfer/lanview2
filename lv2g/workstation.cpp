@@ -686,7 +686,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
     link.clear();
     link.setId(_sPortId2,      lpid);   // vissza tesszük, ha végpont, akkor kell
     if (type != LT_TERM) {  // További linkek (lánc)
-        static const QString sql = "SELECT * FROM next_phs_link(NULL,?,?,?)";
+        static const QString sql = "SELECT * FROM next_patch(?,?,?)";
         link.setId(_sPhsLinkType2, type);
         list.clear();
         QString ssh = portShare(sh);
@@ -695,7 +695,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
             if (pq->value(0).isNull()) break; // vége (beolvassa a NULL rekordot is, mert függvényt hívunk)
             link.set(*pq);
             list << link;
-            type = (ePhsLinkType)link.getId(_sPhsLinkType2);
+            type = ePhsLinkType(link.getId(_sPhsLinkType2));
             ssh = link.getName(_sPortShared);
             if (list.size() > 10) break;
             if (type == LT_TERM) break;

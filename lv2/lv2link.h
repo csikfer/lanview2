@@ -22,7 +22,7 @@ class LV2SHARED_EXPORT cPhsLink : public cRecord {
     CRECORD(cPhsLink);
 public:
     /// Nem támogatott, kizárást dob, ha __ex értéke nem EX_IGNORE, egyébként nem csinál semmit és false-val tér vissza.
-    virtual bool insert(QSqlQuery &__q, eEx __ex);
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
     /// @return Vigyázat a visszaadott érték értelmezése más, mint a többi replace metódusnál:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor R_INSERT, ha törölni kellett rekordokat, akkor
     /// R_UPDATE, ha viszont nem sikerült felvenni ez új rekordot, akkor R_ERROR.
@@ -128,9 +128,9 @@ class LV2SHARED_EXPORT cLogLink : public cRecord {
     CRECORD(cLogLink);
 public:
     /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
-    virtual bool insert(QSqlQuery &, bool);
+    virtual bool insert(QSqlQuery &, eEx __ex = EX_ERROR);
     /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
-    virtual int replace(QSqlQuery &, bool);
+    virtual int replace(QSqlQuery &, eEx __ex = EX_ERROR);
     /// A tábla írása automatikus, az update metódus tiltott, kizárást dob.
     virtual bool update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve

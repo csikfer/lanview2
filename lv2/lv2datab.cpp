@@ -3693,11 +3693,11 @@ QBitArray cRecord::getSetMap() const
     return m;
 }
 
-int cRecord::completion(QSqlQuery& __q)
+int cRecord::completion(QSqlQuery& __q, const tIntVector& _ord)
 {
     QBitArray m = getSetMap();
     if (m.count(true) == 0) return -1;
-    if (!fetch(__q, false, m)) return 0;
+    if (!fetch(__q, false, m, _ord)) return 0;
     return __q.size();
 }
 

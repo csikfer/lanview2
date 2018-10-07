@@ -70,7 +70,7 @@ void cRecordLink::init()
     if (ar > 0) {
         pTimer = new QTimer(this);
         connect(pTimer, SIGNAL(timeout()), this, SLOT(autoRefresh()));
-        pTimer->setInterval(ar);
+        pTimer->setInterval(int(ar));
     }
 /*  pTableView->setDragDropMode(QAbstractItemView::DragOnly);
     pTableView->setDragEnabled(true); */
@@ -177,6 +177,7 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     parentNodeId  = NULL_ID;
     parentPortId  = NULL_ID;
     noteChanged   = false;
+    blockChange   = false;
     pq = newQuery();
     if (parent != nullptr) {
         if (!__similar) {
@@ -289,7 +290,7 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     connect(pCheckBoxCollisions,SIGNAL(toggled(bool)),      this, SLOT(collisionsTogled(bool)));
     connect(pTextEditNote,      SIGNAL(textChanged()),      this, SLOT(modifyNote()));
     connect(pToolButtonNoteNull,SIGNAL(toggled(bool)),      this, SLOT(noteNull(bool)));
-    connect(pToolButtonRefresh,  SIGNAL(pressed()),         this, SLOT(changed()));
+    connect(pToolButtonRefresh, SIGNAL(pressed()),          this, SLOT(changed()));
 
     changed();
 }
@@ -307,6 +308,7 @@ void cLinkDialog::init()
 
 void cLinkDialog::get(cPhsLink& link)
 {
+    blockChange = true;
     link.clear();
     qlonglong pid1 = pLink1->getPortId();
     qlonglong pid2 = pLink2->getPortId();
@@ -329,6 +331,8 @@ void cLinkDialog::get(cPhsLink& link)
             link.setNote(note);
         }
     }
+    blockChange = false;
+    changed();
 }
 
 bool cLinkDialog::next()
@@ -349,7 +353,7 @@ static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortSha
     if (_lt  != LT_FRONT) return false;
     cPPort pp;
     pp.setById(_q, _pid);
-    ePortShare sc = (ePortShare)pp.getId(_sSharedCable);
+    ePortShare sc = ePortShare(pp.getId(_sSharedCable));
     switch (sc) {
     case ES_:
         break;
@@ -368,32 +372,34 @@ static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortSha
 
 static QString colLink(QSqlQuery& q, qlonglong pid, ePhsLinkType lt, ePortShare ps, bool& _col, const QString& t)
 {
-    QString r;
+    QString msg;
     cPhsLink link;
     tRecordList<cPhsLink>   list;
     if (pid != NULL_ID) {
         link.collisions(q, list, pid, lt, ps);
         if (!list.isEmpty()) {
             _col = true;
-            r += htmlWarning(t);
+            msg += htmlWarning(t);
             while (!list.isEmpty()) {
                 cPhsLink *ppl = list.pop_back();
                 qlonglong pid2 = ppl->getId(_sPortId2);
                 htmlIndent(16, "==>" + cNPort::getFullNameById(q, pid2));
-                int lt = int(ppl->getId(_sPhsLinkType2));
+                ePhsLinkType lt = ePhsLinkType(ppl->getId(_sPhsLinkType2));
+                ePortShare   sh= ePortShare(ppl->getId(_sPortShared));
                 if (lt != LT_TERM) {
-                    QString m = linkChainReport(q, pid2, lt, int(ppl->getId(_sPortShared)));
-                    if (!m.isEmpty()) r = htmlIndent(32, m, false, false);
+                    QString m = linkChainReport(q, pid2, lt, sh);
+                    if (!m.isEmpty()) msg += htmlIndent(32, m, false, false);
                 }
                 delete ppl;
             };
         }
     }
-    return r;
+    return msg;
 }
 
 void cLinkDialog::changed()
 {
+    if (blockChange) return;
     collision = false;
     imperfect  = true;
     exists     = false;
@@ -478,12 +484,20 @@ void cLinkDialog::changed()
         }
     }
 
-    qlonglong endPid1, endPid2;
+    qlonglong endPid1 = NULL_ID, endPid2 = NULL_ID;
     QString m;
-    m = linkChainReport(*pq, pid1, lt1, ps1, &endPid1);
-    if (!m.isEmpty()) msg += htmlInfo("Link lánc az 1. port irányában : ") + htmlIndent(16, m, false, false);
-    m = linkChainReport(*pq, pid2, lt2, ps2, &endPid2);
-    if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false);
+    if (pid1 != NULL_ID) {
+        m = linkChainReport(*pq, pid1, lt1, ps1, &endPid1);
+        PDEB(INFO) << "Link chain 1 : " << cNPort::getFullNameById(*pq, pid1) << " ===> "
+                   << (endPid1 == NULL_ID ? _sNULL : cNPort::getFullNameById(*pq, endPid1)) << endl;
+        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 1. port irányában : ") + htmlIndent(16, m, false, false);
+    }
+    if (pid2 != NULL_ID) {
+        m = linkChainReport(*pq, pid2, lt2, ps2, &endPid2);
+        PDEB(INFO) << "Link chain 2 : " << cNPort::getFullNameById(*pq, pid2) << " ===> "
+                   << (endPid2 == NULL_ID ? _sNULL : cNPort::getFullNameById(*pq, endPid2)) << endl;
+        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false);
+    }
     if (endPid1 == NULL_ID || endPid2 == NULL_ID) {
         msg += htmlInfo(trUtf8("A linkek lánca nem zárt."));
     }

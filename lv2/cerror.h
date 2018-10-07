@@ -35,7 +35,7 @@ Hibakezelést segítő objektumok, függvények és makrók.
 
 class LV2SHARED_EXPORT cBackTrace : public QStringList {
 public:
-    cBackTrace(int _size = DEFAULT_BACKTRACE_SIZE);
+    cBackTrace(size_t _size = DEFAULT_BACKTRACE_SIZE);
 };
 
 
@@ -219,10 +219,10 @@ Az adattagok inicializálása után hívja a circulation() metódust
     Az adattagok inicializálása után hívja a circulation() metódust
     */
     cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
-           int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
+           qlonglong _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
     ///
     cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode,
-           int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
+           qlonglong _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
     /*!
     Destruktor
     */

@@ -304,7 +304,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
         QListIterator<cNPort *> li(node.ports);
         while (li.hasNext()) {
             cNPort * p = li.next();
-            cInterface *pif = NULL;
+            cInterface *pif = nullptr;
             text += sHtmlRowBeg;
             text += sHtmlTd.arg(p->getName(_sPortIndex));
             text += sHtmlTd.arg(p->getName());
@@ -709,42 +709,44 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
     return r;
 }
 
-QString linkChainReport(QSqlQuery& q, qlonglong _pid, int _type, int _sh, qlonglong *_pEndPid)
+QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare& _sh, qlonglong *_pEndPid)
 {
+    QString msg;
+    if (_type == LT_TERM || _pid == NULL_ID) {
+        if (_pEndPid != nullptr) *_pEndPid = _pid;
+        return msg;
+    }
     cPhsLink link;
     tRecordList<cPhsLink> list;
+    qlonglong pid = _pid;
     int type = _type;
-    link.setId(_sPortId2, _pid);
-    link.setId(_sPhsLinkType2, _type);
-    QString msg;
-    if (_pid != NULL_ID && type != LT_TERM) {  // További linkek (lánc)
-        static const QString sql = "SELECT * FROM next_phs_link(NULL,?,?,?)";
-        link.setId(_sPhsLinkType2, type);
-        QString ssh = portShare(_sh);
-        while (execSql(q, sql, link.get(_sPortId2), link.get(_sPhsLinkType2), ssh)) {
-            if (q.value(0).isNull()) { // vége (beolvassa a NULL rekordot is, mert függvényt hívunk)
-                link.clear();
-                break;
-            }
-            link.set(q);
-            list << link;
-            type = int(link.getId(_sPhsLinkType2));
-            ssh = link.getName(_sPortShared);
-            if (list.size() > 10) break;
-            if (type == LT_TERM) break;
+    QString ssh = portShare(_sh);
+    static const QString sql = "SELECT * FROM next_patch(?,?,?)";
+    while (execSql(q, sql, pid, phsLinkType(type), ssh)) {
+        if (q.value(0).isNull()) { // vége (beolvassa a NULL rekordot is, mert függvényt hívunk)
+            link.clear();
+            break;
         }
-        if (list.size() > 0) {
-            if (link.getId(_sPhsLinkType2) == LT_TERM) {
-                msg = htmlInfo(QObject::trUtf8("A linkel lánca a végpontig:"));
-            }
-            else {
-                msg = htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a végpontig :"));
-            }
-            msg += linksHtmlTable(q, list);
-            if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
-        }
+        link.set(q);
+        list << link;
+        pid  = link.getId(_sPortId2);
+        type = int(link.getId(_sPhsLinkType2));
+        ssh  = link.getName(_sPortShared);
+        if (list.size() > 10) break;
+        if (type == LT_TERM) break;
     }
-    if (_pEndPid != NULL) *_pEndPid = link.getId(_sPortId2);
+    if (list.size() > 0) {
+        if (link.getId(_sPhsLinkType2) == LT_TERM) {
+            msg = htmlInfo(QObject::trUtf8("A linkel lánca a végpontig:"));
+        }
+        else {
+            msg = htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a végpontig :"));
+        }
+        msg += linksHtmlTable(q, list);
+        if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
+    }
+    if (pid != NULL_ID) _sh = ePortShare(portShare(ssh));
+    if (_pEndPid != nullptr) *_pEndPid = pid;
     return msg;
 }
 
@@ -752,24 +754,15 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2)
 {
     QString msg;
     if (_pid1 == NULL_ID || _pid2 == NULL_ID) return msg;   // Is't valid port ID.
-    /*
-    cNPort *p1, *p2;
-    p1 = cNPort::getPortObjById(q, _pid1);
-    p2 = cNPort::getPortObjById(q, _pid2);
-    if (p1->descr() == cPPort::_descr_cPPort() || p2->descr() == cPPort::_descr_cPPort()) { // No end - end
-        delete p1;
-        delete p2;
-        return msg;
-    }
-*/
+    PDEB(INFO) << "linkEndEndLogReport(," << cNPort::getFullNameById(q, _pid1) << _sCommaSp << cNPort::getFullNameById(q, _pid2) << ")" << endl;
     // Check logical link
     qlonglong epid;
     cLogLink  llnk;
     llnk.setId(_sPortId2, _pid2);
     if (llnk.completion(q)) {
         epid = llnk.getId(_sPortId1);
-        PDEB(VERBOSE) << "LogLink : " << cNPort::getFullNameById(q, epid) << " <==> " << cNPort::getFullNameById(q, _pid2) << endl;
         if (epid != _pid1) {
+            PDEB(INFO) << "Log. coll. : " << cNPort::getFullNameById(q, epid) << endl;
             msg += htmlError(QObject::trUtf8("Az ellen oldali végpont (törlendő) logikai linkje : %1").arg(cNPort::getFullNameById(q, epid)));
         }
     }
@@ -792,6 +785,7 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2)
         if (ldnl.completion(q)) {
             epid = ldnl.getId(_sPortId2);
             if (epid != _pid2) {
+                PDEB(INFO) << "LLDP coll. : " << cNPort::getFullNameById(q, epid) << endl;
                 msg += htmlError(QObject::trUtf8("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
             }
         }

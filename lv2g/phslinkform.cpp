@@ -10,7 +10,7 @@ phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
     pUi = new Ui::phsLinkForm;
     pUi->setupUi(this);
     pq     = newQuery();
-    pOther = NULL;
+    pOther = nullptr;
     first  = false;
 
     pButtonsLinkType = new QButtonGroup(this);
@@ -51,7 +51,7 @@ void phsLinkWidget::setFirst(bool f)
 void phsLinkWidget::init()
 {
     cPhsLink l;
-    if (parent->pActRecord != NULL) {
+    if (parent->pActRecord != nullptr) {
         // set by act record, copy eq. field (phs_links_shape -> phs_links)
         l.set(*parent->pActRecord);
         // phs_links.port_shared <- phs_links_shape.port_shared1 or phs_links_shape.port_shared2
@@ -128,7 +128,7 @@ bool phsLinkWidget::prev()
 void phsLinkWidget::toglePlaceEqu(bool f)
 {
     if (first) EXCEPTION(EPROGFAIL);
-    pOther->pSelectPort->setSlave(f ? pSelectPort : NULL);
+    pOther->pSelectPort->setSlave(f ? pSelectPort : nullptr);
     changed();
 }
 
@@ -180,8 +180,39 @@ void phsLinkWidget::on_toolButtonStep_clicked()
             l.setId(_sPortId2,      pid);
             l.setId(_sPhsLinkType2, plt);
         }
-        ll.set(l);
-        if (ll.completion(*pq)) l.set(ll);
+        ll.set(l);  // We do not want to delete the completion()
+        switch (ll.completion(*pq, ll.iTab(_sPortShared))) {
+        case 0:     // Not found
+            break;
+        case 1:     // Found. There are no branches.
+            l.set(ll);
+            break;
+        default: {  // Branches. You have to choose.
+            QDialog d;
+            QVBoxLayout *pvl = new QVBoxLayout;
+            QTextEdit   *pte = new QTextEdit;
+            QButtonGroup*pbg = new QButtonGroup;
+            QHBoxLayout *phl = new QHBoxLayout;
+            phl->addStretch();
+            tRecordList<cPhsLink> list;
+            int i = 0;
+            do {
+                QString ssh = ll.getName(_sPortShared);
+                QPushButton *ppb = new QPushButton(ssh);
+                pbg->addButton(ppb, i);
+                phl->addWidget(ppb);
+                list << ll;
+            } while (ll.next(*pq));
+            phl->addStretch();
+            pte->setText(linksHtmlTable(*pq, list));
+            pvl->addWidget(pte);
+            pvl->addLayout(phl);
+            d.setLayout(pvl);
+            d.setWindowTitle(trUtf8("Elaágazás, ki kell választani az irányt, megosztás alapján!"));
+            QObject::connect(pbg, SIGNAL(buttonClicked(int)), &d, SLOT(done(int)));
+            l.set(*list.at(d.exec()));
+          } break;
+        }
         phsLinkWidget *pFirst = first ? this   : pOther;
         phsLinkWidget *pLast  = first ? pOther : this;
         pFirst->pSelectPort->setLink(l);
@@ -195,7 +226,7 @@ void phsLinkWidget::on_toolButtonAdd_clicked()
     cPatch sample;
     sample.setId(_sPlaceId, pSelectPort->currentPlaceId());
     cPatch *p = patchInsertDialog(*pq, this, &sample);
-    if (p != NULL) {
+    if (p != nullptr) {
         pSelectPort->setCurrentNode(p->getId());
         delete p;
     }

@@ -1678,7 +1678,7 @@ public:
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
     /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Ez alapján lessz
     ///             összeállítva a WHERE string a whereString() metódussal, kivéve, ha __w nem üres string.
-    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
+    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, negatív érték csökkenő sorrendet jelent, a 0. elem nem rendezhető csökkenő sorrendbe)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Offset. Ha értéke 0, akkor nincs.
     /// @param __s A SELECT kulcs szó utáni lista. Ha nincs megadva (vagy NULL), akkor az alapértelmezés a "*"
@@ -1695,7 +1695,7 @@ public:
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
     /// @param __fm A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
-    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
+    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, negatív érték csökkenő sorrendet jelent, a 0. elem nem rendezhető csökkenő sorrendbe).
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
     /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt beolvasta. false, ha nincs egyetlen rekord sem.
@@ -1706,7 +1706,7 @@ public:
     /// Kilépés után a lekérdezés eredménye a __q által hivatkozott QSqlRecord objektumban marad. Kurzor az első rekordon.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
     /// @param __fm A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
-    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
+    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, negatív érték csökkenő sorrendet jelent, a 0. elem nem rendezhető csökkenő sorrendbe)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
     /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt beolvasta. false, ha nincs egyetlen rekord sem
@@ -1820,8 +1820,9 @@ public:
     /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// Az első rekord, ha volt legalább egy, akkor beolvasásra kerül az objektumba. A többi a next() metódussal
     /// érhető el.
+    /// @param _ord Ha megadjuk a paramétert, akkor az a rendezési sorrendet definiálja (lásd fetch() metódust.)
     /// @return A feltételeknek megfelelő rekordok száma.
-    int completion(QSqlQuery& __q);
+    int completion(QSqlQuery& __q, const tIntVector &_ord = tIntVector());
     /// Hasonló a másik completion() metódushoz, de a metódus egy saját QsqlQuery objektumot kér, és azt
     /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// visszatérés előtt felszabadítja, így további rekordok beolvasására nincs lehetőeég.

@@ -18,8 +18,8 @@ public:
     void setFirst(bool f);
     void init();
     qlonglong    getPortId() const   { return pSelectPort->currentPortId(); }
-    ePhsLinkType getLinkType() const { return (ePhsLinkType)pSelectPort->currentType(); }
-    ePortShare   getPortShare() const{ return (ePortShare)pSelectPort->currentShare(); }
+    ePhsLinkType getLinkType() const { return ePhsLinkType(pSelectPort->currentType()); }
+    ePortShare   getPortShare() const{ return ePortShare(pSelectPort->currentShare()); }
     qlonglong    getPlaceId() const  { return pSelectPort->currentPlaceId(); }
     qlonglong    getNodeId() const   { return pSelectPort->currentNodeId(); }
     bool next();

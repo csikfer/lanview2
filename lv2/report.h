@@ -245,7 +245,7 @@ EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swa
 
 EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
 
-EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, int _type = LT_BACK, int _sh = ES_, qlonglong *_pEndPid = nullptr);
+EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare& _sh, qlonglong *_pEndPid = nullptr);
 EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2);
 EXT_ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, const QString& msgPref = QString());
 

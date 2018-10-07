@@ -46,7 +46,7 @@ bool cPhsLink::insert(QSqlQuery &, eEx __ex)
 
 int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     bool tr = false;
     int r = 0;
     eReasons reason = REASON_INVALID;
@@ -70,7 +70,7 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
         tr = false;
     }
     CATCHS(pe)
-    if (pe == NULL) return reason;
+    if (pe == nullptr) return reason;
     if (tr) sqlRollback(__q, tn);
     if (__ex) pe->exception();
     sendError(pe);
@@ -389,8 +389,8 @@ QString cPhsLink::show(bool t) const
 
 bool cPhsLink::nextLink(QSqlQuery& q, qlonglong pid, enum ePhsLinkType type, enum ePortShare sh)
 {
-    static const QString sql = "SELECT * FROM next_phs_link(?, ?, ?, ?)";
-    execSql(q, sql, getId(), pid, phsLinkType(type), portShare(sh));
+    static const QString sql = "SELECT * FROM next_patch(?, ?, ?)";
+    execSql(q, sql, pid, phsLinkType(type), portShare(sh));
     set(q);
     return isNull(idIndex());
 }
@@ -453,15 +453,15 @@ const cRecStaticDescr&  cLogLink::descr() const
     return *_pRecordDescr;
 }
 
-bool cLogLink::insert(QSqlQuery &, bool)
+bool cLogLink::insert(QSqlQuery &, eEx __ex)
 {
-    EXCEPTION(ENOTSUPP);
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
     return false;
 }
 
-int cLogLink::replace(QSqlQuery &, bool)
+int cLogLink::replace(QSqlQuery &, eEx __ex)
 {
-    EXCEPTION(ENOTSUPP);
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
     return false;
 }
 
@@ -560,8 +560,8 @@ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLin
 {
     cLldpLink *pLldp = _pLldp;
     cLogLink  *pLogl = _pLogl;
-    if (pLldp == NULL) pLldp = new cLldpLink;
-    if (pLogl == NULL) pLogl = new cLogLink;
+    if (pLldp == nullptr) pLldp = new cLldpLink;
+    if (pLogl == nullptr) pLogl = new cLogLink;
     qlonglong lpid1, lpid2;
     eLinkResult r;
 
@@ -602,8 +602,8 @@ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLin
         r = LINK_CONFLICT;
     }
 
-    if (_pLldp == NULL) delete pLldp;
-    if (_pLogl == NULL) delete pLogl;
+    if (_pLldp == nullptr) delete pLldp;
+    if (_pLogl == nullptr) delete pLogl;
 
     return r;
 }

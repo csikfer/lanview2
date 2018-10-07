@@ -29,14 +29,14 @@
 #include <DbgHelp.h>
 #endif
 
-cBackTrace::cBackTrace(int _size) : QStringList()
+cBackTrace::cBackTrace(size_t _size) : QStringList()
 {
     void ** buffer;
 #if defined(Q_CC_GNU)
     int     size;
     char ** symbols;
-    buffer = (void **)malloc(sizeof(void *) * _size);
-    size   = backtrace(buffer, _size);
+    buffer = static_cast<void **>(malloc(sizeof(void *) * _size));
+    size   = backtrace(buffer, int(_size));
     symbols= backtrace_symbols(buffer, size);
     for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
         *this << QString(symbols[i]);
@@ -85,7 +85,7 @@ cError::cError()
 }
 
 cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
-           int _mErrorSubCode, const QString& _mErrorSubMsg)
+           qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
     , mDataMsg(), mDataName()
@@ -109,7 +109,7 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
 }
 
 cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode,
-           int _mErrorSubCode, const QString& _mErrorSubMsg)
+           qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(_mFuncName), mSrcName(_mSrcName), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
     , mDataMsg(), mDataName()

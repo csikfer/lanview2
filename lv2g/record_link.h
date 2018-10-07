@@ -69,6 +69,7 @@ protected:
     bool            exists;     /// Létezik
     bool            noteChanged;/// Megváltoztattuk a megjegyzés mezőt
     qlonglong       linkId;     /// Ha létezik, akkor az utolsó
+    bool            blockChange;/// Blokkolja a change() futását
 public slots:
     /// Változás esetén az állapot beállítása, és a riport megjelenítése.
     void changed();
