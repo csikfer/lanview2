@@ -163,6 +163,7 @@ void phsLinkWidget::on_toolButtonInfo_clicked()
 
 void phsLinkWidget::on_toolButtonStep_clicked()
 {
+    parent->blockChange = true;
     qlonglong pid = pSelectPort->currentPortId();
     if (pSelectPort->isPatch() && pid != NULL_ID) {
         int plt;
@@ -210,7 +211,9 @@ void phsLinkWidget::on_toolButtonStep_clicked()
             d.setLayout(pvl);
             d.setWindowTitle(trUtf8("Elaágazás, ki kell választani az irányt, megosztás alapján!"));
             QObject::connect(pbg, SIGNAL(buttonClicked(int)), &d, SLOT(done(int)));
-            l.set(*list.at(d.exec()));
+            i = d.exec();   // Selected record
+            cPhsLink *pl = list.at(i);
+            l.set(*pl);
           } break;
         }
         phsLinkWidget *pFirst = first ? this   : pOther;
@@ -219,6 +222,8 @@ void phsLinkWidget::on_toolButtonStep_clicked()
         l.swap();
         pLast->pSelectPort->setLink(l);
     }
+    parent->blockChange = false;
+    emit changed();
 }
 
 void phsLinkWidget::on_toolButtonAdd_clicked()

@@ -525,13 +525,14 @@ void cDeducePatch::byMAC(QSqlQuery& q)
     pUi->tableWidget->setColumnHidden(CX_TIMES, false);
     cMac mac;
     cMacTab mt;
-    cPhsLink pl1, pl2;
+    cPhsLink pl1;   // Front link(s)
+    cPhsLink pl2;   // The link found in the switch.
     QListIterator<cNPort *> i(patch.ports);
     while (i.hasNext()) {
         cPPort *pp = i.next()->reconvert<cPPort>();
-        pl1.clear();
-        while (pl1._isNull() || pl1.getId(_sPortShared) == ES_A) {
-            pl1.nextLink(q, pp->getId(), LT_BACK, ES_);     // Előlap felé (hátlaptól)
+        QStringList sshl(_sNul);    // [ ES_ ]
+        while (!sshl.isEmpty()) {
+            pl1.nextLink(q, pp->getId(), LT_BACK, ePortShare(portShare(sshl.takeFirst())));  // Előlap felé (hátlaptól)
             qlonglong pid = pl1.getId(_sPortId2);           // A linkelt port ID
             if (pid == NULL_ID) continue;                   // Nincs link
             cNPort *pnp = cNPort::getPortObjById(q, pid);   // A linkelt port objektum
@@ -549,6 +550,11 @@ void cDeducePatch::byMAC(QSqlQuery& q)
                 rows << new cDPRow(q, this, rows.size(), mt, *pnp, *pp, pl1, pl2);
             }
             delete pnp;
+            QString sh = pl1.getNote();
+            if (!sh.isEmpty()) {
+                sshl << sh.split(',');
+                sshl.removeDuplicates();
+            }
         }
     }
     pUi->tableWidget->resizeColumnsToContents();
@@ -658,7 +664,7 @@ void cDeducePatch::on_pushButtonSave_clicked()
 {
     QString msg = trUtf8(
                 "Valóban menti a kijelölt linkeket?\n"
-                "Az ütköző linkek autómatikusan törlődnek."
+                "Az ütköző linkek automatikusan törlődnek."
                 "A művelet visszavonására nincs legetőség.");
     if (QMessageBox::Ok != QMessageBox::warning(this, dcViewShort(DC_WARNING), msg, QMessageBox::Ok, QMessageBox::Cancel)) {
         return;

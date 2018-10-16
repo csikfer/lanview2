@@ -27,6 +27,8 @@ public:
     enum eLinkType {
         LT_PHISICAL, LT_LOGICAL, LT_LLDP
     }   linkType;
+protected:
+    QRect           dialogRect;
 private slots:
     void modifyByIndex(const QModelIndex & index);
 };
@@ -48,11 +50,12 @@ public:
     bool prev();
 protected:
     void init();
+    void remove();
 
     QLabel*         pLabelCollisions;
     QCheckBox *     pCheckBoxCollisions;
     QToolButton *   pToolButtonRefresh;
-    QTextEdit *     pTextEditCollisions;
+    QTextEdit *     pTextEditReport;
     QTextEdit *     pTextEditNote;
     QToolButton *   pToolButtonNoteNull;
 

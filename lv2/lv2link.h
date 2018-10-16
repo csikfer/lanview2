@@ -74,10 +74,14 @@ public:
     /// Az objektumot stringgé konvertálja, ami pl. egy riportban szerepelhet.
     /// Ha t igaz (alapértelmezetten hamis), akkor kiír egy objetum megnevezést is.
     virtual QString show(bool t = false) const;
-    /// A patch porthoz tartozó, vagy köveetkező link
+    /// Next patch port link. The result is in the object.
+    /// In the result record, the shared_port and the 'phs_link_note' fields have been modified.
+    /// shared_port is the resulting share.
+    /// psh_link_note is a share type of other port if branches.
     /// @param pid Patch port ID
-    /// @param type Link típusa (csak LT_BACK vagy LT_FRONT lehet, különben kizárást dob)
-    /// @param Megosztás típusa
+    /// @param type Link type (only LT_BACK or LT_FRONT)
+    /// @param Share type
+    /// @return true if found.
     bool nextLink(QSqlQuery &q, qlonglong pid, enum ePhsLinkType type, enum ePortShare sh);
     ///
     bool compare(const cPhsLink& _o, bool _swap = false) const;

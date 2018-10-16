@@ -4,6 +4,7 @@
 
 cRecordLink::cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
     : cRecordTable(pts, _isDialog, _upper, par)
+    , dialogRect(0,0,0,0)
 {
     QString sViewName = pts->getName(_sTableName);
     if      (sViewName.startsWith("phs"))  linkType = LT_PHISICAL;
@@ -129,16 +130,19 @@ void cRecordLink::buttonPressed(int id)
 
 void cRecordLink::edit(bool _similar, eEx __ex)
 {
-    (void)_similar;     // Itt nincs
     if (isReadOnly) {
         if (_similar) cRecordTable::modify(__ex);
         return;
     }
     cLinkDialog dialog(_similar, this);
-    int r;
+    int r = DBT_SAVE;
     cPhsLink link;
-    while (true) {
+    while (r == DBT_SAVE) {
+        if (dialogRect.height()) {
+            dialog.setGeometry(dialogRect);
+        }
         dialog.exec();
+        dialogRect = dialog.geometry();
         r = dialog.result();
         switch (r) {
         case DBT_CLOSE:
@@ -148,7 +152,6 @@ void cRecordLink::edit(bool _similar, eEx __ex)
         case DBT_OK:
             dialog.get(link);
             if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
-            refresh(false);
             if (r == DBT_SAVE) {
                 dialog.changed();
                 link.clear();
@@ -158,7 +161,7 @@ void cRecordLink::edit(bool _similar, eEx __ex)
         default:
             EXCEPTION(EPROGFAIL, r);
         }
-        break;
+        refresh(false);
     }
 }
 
@@ -239,7 +242,8 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     // +------------+------------+
       pHBoxL = new QHBoxLayout;
        pVBoxL2 = new QVBoxLayout;
-        pVBoxL2->addWidget(new QLabel(trUtf8("Megjegyzés a linkhez :")));
+        QLabel *pLab = new QLabel(trUtf8("Megjegyzés a linkhez :"));
+        pVBoxL2->addWidget(pLab);
          pHBoxL2 = new QHBoxLayout;
           pHBoxL2->addStretch();
           pToolButtonNoteNull = new QToolButton();
@@ -250,6 +254,11 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
         pVBoxL2->addStretch();
       pHBoxL->addLayout(pVBoxL2, 0);
       pTextEditNote = new QTextEdit;
+      int s; // = pLab->height(); Ez még véletlenül sem a cimke magassága :(
+      if (parent == nullptr) s = 48;
+      else s = parent->pButtons->buttons().first()->height();
+      pTextEditNote->setFixedHeight(3 * s);
+      // pTextEditNote->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
       pHBoxL->addWidget(pTextEditNote, 1);
      pVBoxL->addLayout(pHBoxL);
      pVBoxL->addWidget(line());
@@ -259,8 +268,8 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
        pToolButtonRefresh    = new QToolButton();
        pToolButtonRefresh->setIcon(QIcon(":/icons/refresh.ico"));
        pCheckBoxCollisions->setChecked(false);
-       pTextEditCollisions   = new QTextEdit;
-       pTextEditCollisions->setReadOnly(true);
+       pTextEditReport   = new QTextEdit;
+       pTextEditReport->setReadOnly(true);
       pVBoxL2 = new QVBoxLayout;
       pVBoxL2->addWidget(pLabelCollisions);
       pVBoxL2->addWidget(pCheckBoxCollisions);
@@ -269,13 +278,13 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
      // report
      pHBoxL = new QHBoxLayout;
      pHBoxL->addLayout(pVBoxL2);
-     pHBoxL->addWidget(pTextEditCollisions);
-     pVBoxL->addLayout(pHBoxL);
+     pHBoxL->addWidget(pTextEditReport);
+     pVBoxL->addLayout(pHBoxL, 1);
 
      pVBoxL->addWidget(line());
     // buttons
       tIntVector buttons;
-      buttons << DBT_SPACER << DBT_OK << DBT_SAVE << DBT_PREV << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
+      buttons << DBT_SPACER << DBT_DELETE<< DBT_SPACER << DBT_OK << DBT_SAVE << DBT_PREV << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
       pButtons = new cDialogButtons(buttons);
       pButtons->button(DBT_PREV)->setToolTip(trUtf8("A port indexek léptetése lefelé."));
       pButtons->button(DBT_NEXT)->setToolTip(trUtf8("A port indexek léptetése felfelé."));
@@ -308,7 +317,6 @@ void cLinkDialog::init()
 
 void cLinkDialog::get(cPhsLink& link)
 {
-    blockChange = true;
     link.clear();
     qlonglong pid1 = pLink1->getPortId();
     qlonglong pid2 = pLink2->getPortId();
@@ -332,7 +340,6 @@ void cLinkDialog::get(cPhsLink& link)
         }
     }
     blockChange = false;
-    changed();
 }
 
 bool cLinkDialog::next()
@@ -345,6 +352,17 @@ bool cLinkDialog::prev()
 {
     bool r = pLink1->prev();
     return pLink2->prev() && r;
+}
+
+void cLinkDialog::remove()
+{
+    if (exists) {
+        cPhsLink link;
+        get(link);
+        int rows = link.completion(*pq);
+        if (rows == 1) link.remove(*pq);
+        changed();
+    }
 }
 
 static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortShare _sh, QString& _msg)
@@ -387,7 +405,8 @@ static QString colLink(QSqlQuery& q, qlonglong pid, ePhsLinkType lt, ePortShare 
                 ePhsLinkType lt = ePhsLinkType(ppl->getId(_sPhsLinkType2));
                 ePortShare   sh= ePortShare(ppl->getId(_sPortShared));
                 if (lt != LT_TERM) {
-                    QString m = linkChainReport(q, pid2, lt, sh);
+                    QMap<ePortShare, qlonglong> dummy;
+                    QString m = linkChainReport(q, pid2, lt, sh, dummy);
                     if (!m.isEmpty()) msg += htmlIndent(32, m, false, false);
                 }
                 delete ppl;
@@ -415,7 +434,7 @@ void cLinkDialog::changed()
     if (pid1 == NULL_ID && pid2 == NULL_ID) {
         pButtons->disableExcept();
         msg = trUtf8("Nincs megadva egy port sem.");
-        pTextEditCollisions->setText(htmlWarning(msg));
+        pTextEditReport->setText(htmlWarning(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
         return;
@@ -423,7 +442,7 @@ void cLinkDialog::changed()
     if (pid1 == pid2) {
         pButtons->disableExcept();
         msg = trUtf8("A két oldal azonos.");
-        pTextEditCollisions->setText(htmlError(msg));
+        pTextEditReport->setText(htmlError(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
         return;
@@ -444,7 +463,7 @@ void cLinkDialog::changed()
         if (rows == 1) {
             exists = true;
             linkId = link.getId();
-            pButtons->enable(ENUM2SET2(DBT_NEXT, DBT_PREV));
+            pButtons->enable(ENUM2SET3(DBT_DELETE, DBT_NEXT, DBT_PREV));
             pCheckBoxCollisions->setChecked(false);
             pCheckBoxCollisions->setCheckable(false);
             QString note = link.getNote();
@@ -464,8 +483,9 @@ void cLinkDialog::changed()
         }
         else if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
     }
+    msg += sHtmlLine;
     if (!exists) {
-        tRecordList<cPhsLink>   list;
+//      tRecordList<cPhsLink>   list;
         imperfect = checkShare(*pq, pid1, lt1, ps1, msg) || imperfect;
         imperfect = checkShare(*pq, pid2, lt2, ps2, msg) || imperfect;
         msg += colLink(*pq, pid1, lt1, ps1, collision, trUtf8("Ütköző linkek a 1. porton :"));
@@ -482,32 +502,33 @@ void cLinkDialog::changed()
             pCheckBoxCollisions->setChecked(false);
             pCheckBoxCollisions->setCheckable(false);
         }
+        msg += sHtmlLine;
     }
-
-    qlonglong endPid1 = NULL_ID, endPid2 = NULL_ID;
+    QMap<ePortShare, qlonglong> endMap1;
+    QMap<ePortShare, qlonglong> endMap2;
     QString m;
     if (pid1 != NULL_ID) {
-        m = linkChainReport(*pq, pid1, lt1, ps1, &endPid1);
-        PDEB(INFO) << "Link chain 1 : " << cNPort::getFullNameById(*pq, pid1) << " ===> "
-                   << (endPid1 == NULL_ID ? _sNULL : cNPort::getFullNameById(*pq, endPid1)) << endl;
-        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 1. port irányában : ") + htmlIndent(16, m, false, false);
+        m = linkChainReport(*pq, pid1, lt1, ps, endMap1);
+        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 1. port irányában : ") + htmlIndent(16, m, false, false) + sHtmlLine;
     }
     if (pid2 != NULL_ID) {
-        m = linkChainReport(*pq, pid2, lt2, ps2, &endPid2);
-        PDEB(INFO) << "Link chain 2 : " << cNPort::getFullNameById(*pq, pid2) << " ===> "
-                   << (endPid2 == NULL_ID ? _sNULL : cNPort::getFullNameById(*pq, endPid2)) << endl;
-        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false);
+        m = linkChainReport(*pq, pid2, lt2, ps, endMap2);
+        if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false) + sHtmlLine;
     }
-    if (endPid1 == NULL_ID || endPid2 == NULL_ID) {
-        msg += htmlInfo(trUtf8("A linkek lánca nem zárt."));
-    }
-    else {
-        msg += linkEndEndLogReport(*pq, endPid1, endPid2);
-        msg += linkEndEndMACReport(*pq, endPid1, endPid2, "1 ==> 2 : ");
-        msg += linkEndEndMACReport(*pq, endPid2, endPid1, "2 ==> 1 : ");
+    cNPort p;
+    foreach (ps, endMap1.keys()) {
+        if (!endMap2.contains(ps)) continue;
+        qlonglong endPid1 = endMap1[ps];
+        qlonglong endPid2 = endMap2[ps];
+        QString msgPref = QString("%1 <==> %2 : ").arg(p.getFullNameById(*pq, endPid1), p.getFullNameById(*pq, endPid2));
+        msg += linkEndEndLogReport(*pq, endPid1, endPid2, exists, msgPref);
+        m  = linkEndEndMACReport(*pq, endPid1, endPid2, msgPref);
+        m += linkEndEndMACReport(*pq, endPid2, endPid1, msgPref);
+        if (m.isEmpty()) msg += htmlInfo(msgPref + QObject::trUtf8("A végponti link nincs megerősítve a MAC címtáblák alapján."));
+        else             msg += m;
     }
 
-    pTextEditCollisions->setText(msg);
+    pTextEditReport->setText(msg);
 }
 
 void cLinkDialog::collisionsTogled(bool f)
@@ -539,6 +560,7 @@ void cLinkDialog::buttonPressed(int kid)
     case DBT_CANCEL:
     case DBT_SAVE:
     case DBT_OK:
+
         done(kid);
         break;
     case DBT_NEXT:
@@ -546,6 +568,9 @@ void cLinkDialog::buttonPressed(int kid)
         break;
     case DBT_PREV:
         prev();
+        break;
+    case DBT_DELETE:
+        remove();
         break;
     default:
         EXCEPTION(EPROGFAIL, kid);

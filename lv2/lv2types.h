@@ -882,6 +882,16 @@ EXT_ QString QPointFTosString(const QPointF& p);
 EXT_ QString tPolygonFToString(const tPolygonF& pol);
 EXT_ QString QVariantToString(const QVariant& _v, bool *pOk = nullptr);
 
+template <class N> QString numListToString(const QList<N>& lst)
+{
+    QString r = "[";
+    foreach (N n, lst) {
+        r += QString::number(n) + ", ";
+    }
+    if (r.size() > 3) r.chop(2);
+    return r + "]";
+}
+
 TSTREAMF(tIntVector,  tIntVectorToString)
 TSTREAMF(QBitArray,   QBitArrayToString)
 TSTREAMF(QSqlRecord,  QSqlRecordToString)

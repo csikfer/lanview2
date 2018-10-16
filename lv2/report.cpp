@@ -94,7 +94,9 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
     }
     r.prepend(QObject::trUtf8("Hely : "));
     if (zones) {
-        const static QString sql = "SELECT place_group_name FROM place_groups WHERE place_group_id > 1 AND is_place_in_zone(?, place_group_id)";
+        const static QString sql =
+                "SELECT place_group_name FROM place_groups"
+                " WHERE place_group_id > 1 AND place_group_type = 'zone'::placegrouptype AND is_place_in_zone(?, place_group_id)";
         if (execSql(q, sql, _pid)) {
             r += QObject::trUtf8(" Zónák : ");
             do {
@@ -107,7 +109,9 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
         }
     }
     if (cat) {
-        const static QString sql = "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_group_type = 'category' AND place_id = ?";
+        const static QString sql =
+                "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id)"
+                " WHERE place_group_type = 'category'::placegrouptype AND place_id = ?";
         if (execSql(q, sql, _pid)) {
             r += QObject::trUtf8(" Kategória : ");
             do {
@@ -290,7 +294,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("S.p.")   : QObject::trUtf8("IP cím(ek)"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("DNS név"));
         if (isPatch) {
-            text += sHtmlTh.arg(QObject::trUtf8("Előlapi link"));
+            text += sHtmlTh.arg(QObject::trUtf8("Előlapi link(ek)"));
             text += sHtmlTh.arg(QObject::trUtf8("Hátlapi link"));
         }
         else {
@@ -306,10 +310,10 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
             cNPort * p = li.next();
             cInterface *pif = nullptr;
             text += sHtmlRowBeg;
-            text += sHtmlTd.arg(p->getName(_sPortIndex));
-            text += sHtmlTd.arg(p->getName());
-            text += sHtmlTd.arg(p->getName(_sPortTag));
-            if (!isPatch) text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
+            text += sHtmlTd.arg(p->getName(_sPortIndex));   // #
+            text += sHtmlTd.arg(p->getName());              // Port (name)
+            text += sHtmlTd.arg(p->getName(_sPortTag));     // Cimke (tag)
+            if (!isPatch) text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));   // Típus (type)
             // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
             if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
                 QString ips, dns;
@@ -329,9 +333,9 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
             }
             else if (isPatch) {                                 // PPort
                 cPPort *pp = p->reconvert<cPPort>();
-                text += sHtmlTd.arg(pp->getName(_sSharedCable));
+                text += sHtmlTd.arg(pp->getName(_sSharedCable));    // Shared
                 qlonglong spid = pp->getId(_sSharedPortId);
-                if (spid == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                if (spid == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);// S.p.
                 else {
                     int ix = node.ports.indexOf(spid);
                     if (ix < 0) text += sHtmlTd.arg(htmlError("!?"));
@@ -350,14 +354,18 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                 // Előlapi link(ek)
                 pl.setId(_sPortId1, pid);
                 pl.setId(_sPhsLinkType1, LT_FRONT);
-                int n = pl.completion(q);
+                int n = pl.completion(q, pl.iTab(_sPortShared));
                 QStringList sl;
                 if (n > 0) {
-                    do {
-                        QString sh = pl.getName(_sPortShared);
-                        QString sp = cNPort::getFullNameById(q, pl.getId(_sPortId2));
+                    tRecordList<cPhsLink>   list;
+                    list.set(q);
+                    while (1) {
+                        cPhsLink *ppl = list.pop_front(EX_IGNORE);
+                        if (ppl == nullptr) break;
+                        QString sh = ppl->getName(_sPortShared);
+                        QString sp = cNPort::getFullNameById(q, ppl->getId(_sPortId2));
                         sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
-                    } while (pl.next(q));
+                    }
                 }
                 text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
                 // Hátlapi link
@@ -564,11 +572,12 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
     return text;
 }
 
-QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap)
+QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, const QStringList _verticalHeader)
 {
     QString table;
     table += "\n<table border=\"1\"> ";
     QStringList head;
+    if (!_verticalHeader.isEmpty()) head << "N";
     head << QObject::trUtf8("Port")
          << QObject::trUtf8("Típus")
 
@@ -648,6 +657,7 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap)
         }
 
         QStringList col;
+        if (!_verticalHeader.isEmpty()) col << _verticalHeader[i];
         col << toHtml(p1->getFullName(q))
             << type1
             << toHtml(p2->getFullName(q))
@@ -709,74 +719,196 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
     return r;
 }
 
-QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare& _sh, qlonglong *_pEndPid)
+QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare _sh, QMap<ePortShare, qlonglong>& endMap)
 {
     QString msg;
+    endMap.clear();
     if (_type == LT_TERM || _pid == NULL_ID) {
-        if (_pEndPid != nullptr) *_pEndPid = _pid;
+        endMap[_sh] = _pid;
         return msg;
     }
     cPhsLink link;
     tRecordList<cPhsLink> list;
+    QList<ePortShare>   shares;
+    QList<int>          indexes;
+    QMap<int, QString>  branchMap;
     qlonglong pid = _pid;
-    int type = _type;
+    ePhsLinkType type;
+    ePortShare  sh;
+    int         index;
+    bool        isBranch = false;
+
     QString ssh = portShare(_sh);
-    static const QString sql = "SELECT * FROM next_patch(?,?,?)";
-    while (execSql(q, sql, pid, phsLinkType(type), ssh)) {
-        if (q.value(0).isNull()) { // vége (beolvassa a NULL rekordot is, mert függvényt hívunk)
-            link.clear();
+    link.setId(_sPortId2, _pid);
+    link.setId(_sPhsLinkType2, _type);
+    list    << link;   // Starting point is not part of the list to be written.
+    indexes << 0;
+    shares  << _sh;
+    branchMap[0] = ssh; // [list/index] <= share
+
+    while (!branchMap.isEmpty()) {
+        QMap<int, QString>  bm = branchMap;
+        branchMap.clear();
+        QList<int> bi = bm.keys();
+        std::sort(bi.begin(), bi.end());
+        PDEB(INFO) << "**** branchMap : " << numListToString(bi) << endl;
+        foreach (index, bi) {
+            ssh = bm[index];
+            PDEB(INFO) << QString("*** %1").arg(ssh) << endl;
+            QStringList sshl = ssh.split(QChar(','));
+            foreach (ssh, sshl) {
+                PDEB(INFO) << QString("** #%1 / '%2'").arg(index).arg(ssh) << endl;
+                link.copy(*list.at(index));
+                sh = ePortShare(portShare(ssh));
+                type = ePhsLinkType(link.getId(_sPhsLinkType2));
+                while (true) {
+                    PDEB(INFO) << QString("* (%1) %2/%3 -> %4/%5  #%6 -> #%7")
+                                      .arg(portShare(sh))
+                                      .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
+                                      .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
+                                      .arg(link.getName(_sPortId1), link.getName(_sPortId2))
+                                   << endl;
+                    pid  = link.getId(_sPortId2);
+                    if (!link.nextLink(q, pid, type, sh)) break;
+                    ++index;
+                    PDEB(INFO) << QString(" NEXT#%9 (%1) %2/%3 -> %4/%5  #%6 -> #%7  '%8'")
+                                      .arg(link.getName(_sPortShared))
+                                      .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
+                                      .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
+                                      .arg(link.getName(_sPortId1), link.getName(_sPortId2))
+                                      .arg(link.getNote()).arg(index)
+                                   << endl;
+                    QString bs = link.getNote();                // branch
+                    sh = ePortShare(link.getId(_sPortShared));  // result share
+                    cPhsLink *po = new cPhsLink;
+                    po->setById(q, link.getId()); // Get original record
+                    list    << po;
+                    shares  << sh;
+                    indexes << index;
+                    type = ePhsLinkType(link.getId(_sPhsLinkType2));
+                    if (!bs.isEmpty()) {
+                        PDEB(INFO) << "Branch ..." << endl;
+                        branchMap[list.size() -2] = bs; // Branching to the previous item
+                        isBranch = true;
+                    }
+                    if (type == LT_TERM) {
+                        PDEB(INFO) << "Term ..." << endl;
+                        endMap[sh] = link.getId(_sPortId2);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (list.size() > 1) {
+        delete list.pop_front();    // Drop first row
+        indexes.pop_front();
+        shares.pop_front();
+        int terminalCount = endMap.size();
+        switch(terminalCount) {
+        case 0:
+            if (isBranch) msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, mind csonka, nem ér el a végpontig :"));
+            else          msg = htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a végpontig :"));
+            break;
+        case 1:
+            if (isBranch) msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, egy végpont van:"));
+            else          msg = htmlInfo(QObject::trUtf8("A linkek lánca a végpontig:"));
+            break;
+        default:
+            if (!isBranch) EXCEPTION(EPROGFAIL); // :-O
+            msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, több végpont van:"));
             break;
         }
-        link.set(q);
-        list << link;
-        pid  = link.getId(_sPortId2);
-        type = int(link.getId(_sPhsLinkType2));
-        ssh  = link.getName(_sPortShared);
-        if (list.size() > 10) break;
-        if (type == LT_TERM) break;
-    }
-    if (list.size() > 0) {
-        if (link.getId(_sPhsLinkType2) == LT_TERM) {
-            msg = htmlInfo(QObject::trUtf8("A linkel lánca a végpontig:"));
+        QStringList verticalHeader;
+        if (indexes.size() != shares.size() || indexes.size() != list.size()) EXCEPTION(EPROGFAIL);
+        for (int i = 0; i < indexes.size(); ++i) {
+            sh = shares[i];
+            QString vh = "#" + QString::number(indexes[i]);
+            if (sh != ES_) vh += "/" + portShare(sh);
+            verticalHeader << vh;
         }
-        else {
-            msg = htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a végpontig :"));
-        }
-        msg += linksHtmlTable(q, list);
-        if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
+        msg += linksHtmlTable(q, list, false, verticalHeader);
     }
     if (pid != NULL_ID) _sh = ePortShare(portShare(ssh));
-    if (_pEndPid != nullptr) *_pEndPid = pid;
     return msg;
 }
 
-QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2)
+static inline QString logLink2str(QSqlQuery& q, cLogLink& llnk) {
+    return QObject::trUtf8("#%1 : %2  <==> %3\n").arg(llnk.getId()).arg(cNPort::getFullNameById(q, llnk.getId(_sPortId1)), cNPort::getFullNameById(q, llnk.getId(_sPortId2)));
+}
+
+QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool saved, const QString& msgPref)
 {
     QString msg;
-    if (_pid1 == NULL_ID || _pid2 == NULL_ID) return msg;   // Is't valid port ID.
+    if (_pid1 == NULL_ID || _pid2 == NULL_ID) {
+        if (saved) EXCEPTION(EPROGFAIL);
+        return msg;   // Is't valid port ID.
+    }
     PDEB(INFO) << "linkEndEndLogReport(," << cNPort::getFullNameById(q, _pid1) << _sCommaSp << cNPort::getFullNameById(q, _pid2) << ")" << endl;
     // Check logical link
     qlonglong epid;
+    QPair<qlonglong, qlonglong> pids;
+    pids.first  = _pid1;
+    pids.second = _pid2;
     cLogLink  llnk;
-    llnk.setId(_sPortId2, _pid2);
-    if (llnk.completion(q)) {
-        epid = llnk.getId(_sPortId1);
-        if (epid != _pid1) {
-            PDEB(INFO) << "Log. coll. : " << cNPort::getFullNameById(q, epid) << endl;
-            msg += htmlError(QObject::trUtf8("Az ellen oldali végpont (törlendő) logikai linkje : %1").arg(cNPort::getFullNameById(q, epid)));
+    int n = 2;
+    QSqlQuery q2 = getQuery();
+    bool critical = false;
+    while (n) {  // 2*
+        llnk.setId(_sPortId2, pids.first);
+        switch (llnk.completion(q)) {
+        case 0:
+            if (saved && n == 2) {    //
+                msg = QObject::trUtf8("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
+                critical = true;
+            }
+            break;
+        case 1:
+            epid = llnk.getId(_sPortId1);
+            if (epid != pids.second) {
+                if (saved) {
+                    msg = QObject::trUtf8("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2, és ütközés :\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
+                    critical = true;
+                }
+                else {
+                    PDEB(INFO) << "Log. coll. : " << cNPort::getFullNameById(q, epid) << endl;
+                    msg += htmlError(msgPref + QObject::trUtf8("A (törlendő) logikai linkek : ").arg(cNPort::getFullNameById(q, epid)));
+                }
+                msg += logLink2str(q2, llnk);
+            }
+            break;
+        default:
+            msg = QObject::trUtf8("Inkonzisztens logikai link tábla, egy porthoz több link is tartozik!\n");
+            do {
+                msg += logLink2str(q2, llnk);
+            } while (llnk.next(q));
+            critical = true;
+            break;
+        }
+        if (--n) {
+            pids.first  = _pid2;
+            pids.second = _pid1;
         }
     }
+    if (critical) {
+        APPMEMO(q, msg, RS_CRITICAL);
+        msg = htmlError(msg, true);
+    }
+    else {
+        msg = toHtml(msg, true);
+    }
+
     cLldpLink ldnl;
     ldnl.setId(_sPortId2, _pid2);
     bool eq = false;
     if (ldnl.completion(q)) {
         epid = ldnl.getId(_sPortId1);
         if (epid != _pid1) {
-            msg += htmlError(QObject::trUtf8("Az ellen oldali végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
+            msg += htmlError(msgPref + QObject::trUtf8("A végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
         }
         else {
             eq = true;
-            msg += htmlGrInf(QObject::trUtf8("Megeggyező LLDP link."));
+            msg += htmlGrInf(msgPref + QObject::trUtf8("Megeggyező LLDP link."));
         }
     }
     if (!eq) {
@@ -786,7 +918,7 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2)
             epid = ldnl.getId(_sPortId2);
             if (epid != _pid2) {
                 PDEB(INFO) << "LLDP coll. : " << cNPort::getFullNameById(q, epid) << endl;
-                msg += htmlError(QObject::trUtf8("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
+                msg += htmlError(msgPref + QObject::trUtf8("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
             }
         }
     }
@@ -810,9 +942,9 @@ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, cons
                 msg = htmlError(msgPref + QObject::trUtf8("A Link ütközik a MAC címtáblákkal, talált port %1 .").arg(cNPort::getFullNameById(q, mtp)));
             }
         }
-        else {
-            msg = htmlInfo(msgPref + QObject::trUtf8("A Link nincs megerősítve a MAC címtáblák alapján."));
-        }
+//      else {
+//          msg = htmlInfo(msgPref + QObject::trUtf8("A Link nincs megerősítve a MAC címtáblák alapján."));
+//      }
     }
     return msg;
 }

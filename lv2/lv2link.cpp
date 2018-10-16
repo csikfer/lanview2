@@ -392,7 +392,7 @@ bool cPhsLink::nextLink(QSqlQuery& q, qlonglong pid, enum ePhsLinkType type, enu
     static const QString sql = "SELECT * FROM next_patch(?, ?, ?)";
     execSql(q, sql, pid, phsLinkType(type), portShare(sh));
     set(q);
-    return isNull(idIndex());
+    return getId() != NULL_ID;
 }
 
 bool cPhsLink::compare(const cPhsLink& _o, bool _swap) const

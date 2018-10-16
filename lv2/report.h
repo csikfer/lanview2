@@ -241,12 +241,12 @@ EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& sMac);
 /// @param aAddr A keresett IP
 EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
 
-EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
+EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false, const QStringList _verticalHeader = QStringList());
 
 EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
 
-EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare& _sh, qlonglong *_pEndPid = nullptr);
-EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2);
+EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare _sh, QMap<ePortShare, qlonglong>& endMap);
+EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool saved = false, const QString& msgPref = QString());
 EXT_ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, const QString& msgPref = QString());
 
 static inline void expWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
