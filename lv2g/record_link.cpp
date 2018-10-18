@@ -472,13 +472,13 @@ void cLinkDialog::changed()
             }
             if (noteChanged) {
                 pButtons->enable(ENUM2SET2(DBT_SAVE, DBT_OK));
-                msg = htmlInfo(trUtf8("Mentett, létező link, de a megjegyzés mező változozott és nem lett betöltve."));
+                msg = htmlInfo(trUtf8("Mentett, létező link (ID:%1), de a megjegyzés mező változozott.").arg(link.getId()));
             }
             else {
                 pButtons->disable(ENUM2SET2(DBT_SAVE, DBT_OK));
                 pTextEditNote->setText(note);
                 pToolButtonNoteNull->setChecked(note.isNull());
-                msg = htmlGrInf(trUtf8("Mentett, létező link."));
+                msg = htmlGrInf(trUtf8("Mentett, létező link (ID:%1).").arg(link.getId()));
             }
         }
         else if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
@@ -516,16 +516,18 @@ void cLinkDialog::changed()
         if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false) + sHtmlLine;
     }
     cNPort p;
-    foreach (ps, endMap1.keys()) {
-        if (!endMap2.contains(ps)) continue;
-        qlonglong endPid1 = endMap1[ps];
-        qlonglong endPid2 = endMap2[ps];
-        QString msgPref = QString("%1 <==> %2 : ").arg(p.getFullNameById(*pq, endPid1), p.getFullNameById(*pq, endPid2));
-        msg += linkEndEndLogReport(*pq, endPid1, endPid2, exists, msgPref);
-        m  = linkEndEndMACReport(*pq, endPid1, endPid2, msgPref);
-        m += linkEndEndMACReport(*pq, endPid2, endPid1, msgPref);
-        if (m.isEmpty()) msg += htmlInfo(msgPref + QObject::trUtf8("A végponti link nincs megerősítve a MAC címtáblák alapján."));
-        else             msg += m;
+    foreach (ps1, endMap1.keys()) {
+        foreach (ps2, endMap2.keys()) {
+            if (shareResultant(ps1, ps2) == ES_NC) continue;
+            qlonglong endPid1 = endMap1[ps1];
+            qlonglong endPid2 = endMap2[ps2];
+            QString msgPref = QString("%1 <==> %2 : ").arg(p.getFullNameById(*pq, endPid1), p.getFullNameById(*pq, endPid2));
+            msg += linkEndEndLogReport(*pq, endPid1, endPid2, exists, msgPref);
+            m  = linkEndEndMACReport(*pq, endPid1, endPid2, msgPref);
+            m += linkEndEndMACReport(*pq, endPid2, endPid1, msgPref);
+            if (m.isEmpty()) msg += htmlInfo(msgPref + QObject::trUtf8("A végponti link nincs megerősítve a MAC címtáblák alapján."));
+            else             msg += m;
+        }
     }
 
     pTextEditReport->setText(msg);

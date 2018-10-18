@@ -578,7 +578,8 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, co
     table += "\n<table border=\"1\"> ";
     QStringList head;
     if (!_verticalHeader.isEmpty()) head << "N";
-    head << QObject::trUtf8("Port")
+    head << QObject::trUtf8("ID")
+         << QObject::trUtf8("Port")
          << QObject::trUtf8("Típus")
 
          << QObject::trUtf8("Cél port")
@@ -658,7 +659,8 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, co
 
         QStringList col;
         if (!_verticalHeader.isEmpty()) col << _verticalHeader[i];
-        col << toHtml(p1->getFullName(q))
+        col << link.view(q, link.idIndex())
+            << toHtml(p1->getFullName(q))
             << type1
             << toHtml(p2->getFullName(q))
             << type2
