@@ -1001,12 +1001,13 @@ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c)
 
 int setLanguage(QSqlQuery& q, int id)
 {
-    return execSqlIntFunction(q, NULL, "set_language", id);
+    return execSqlIntFunction(q, NULL, "set_language_id", id);
 }
 
 int getLanguageId(QSqlQuery& q)
 {
-    return execSqlIntFunction(q, NULL, "get_language_id");
+    int id = execSqlIntFunction(q, NULL, "get_language_id");
+    return id;
 }
 
 QString getLanguage(QSqlQuery& q, int lid)

@@ -171,15 +171,14 @@ void settingIntParameter(QSqlQuery& q, const QString& pname)
     }
 }
 
-void dbOpenPost(QSqlQuery& q, int n)
+void dbOpenPost(QSqlQuery& q, const QString& _tn)
 {
     QString nn = lanView::appName;
-    if (n > 0) {
-        setLanguage(q, lanView::getInstance()->languageId);
-        if (lanView::getInstance()->pUser != nullptr) {
-            if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
-        }
-        nn += _sUnderline + QString::number(n);
+    if (!_tn.isEmpty()) {
+        nn += _sUnderline + _tn;
+    }
+    if (lanView::getInstance()->pUser != nullptr) {
+        if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
     }
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
     settingIntParameter(q, "lock_timeout");
@@ -286,6 +285,7 @@ lanView::lanView()
                 if (pLanguage->fetchById(*pQuery, languageId)) {
                     *pLocale = pLanguage->locale();
                     QLocale::setDefault(*pLocale);
+                    setLanguage(*pQuery, lanView::getInstance()->languageId);
                 }
                 else {
                     pLanguage->setByLocale(*pQuery, *pLocale);

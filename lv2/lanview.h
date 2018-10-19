@@ -182,7 +182,7 @@ enum eSqlNeed {
 
 EXT_ bool checkDbVersion(QSqlQuery& q, QString& msg);
 EXT_ void settingIntParameter(QSqlQuery& q, const QString& pname);
-EXT_ void dbOpenPost(QSqlQuery& q, int n = 0);
+EXT_ void dbOpenPost(QSqlQuery& q, const QString& _tn = QString());
 
 class cLanguage;
 class cUser;

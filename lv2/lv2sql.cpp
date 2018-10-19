@@ -17,19 +17,20 @@ QSqlDatabase *  getSqlDb(void)
     if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, "cLanView::instance->pDb is set, but database is not opened.");
     if (!isMainThread()) {  // Minden thread-nak saját objektum kell!
         // PDEB(INFO) << "Lock by threadMutex, in getSqlDb() ..." << endl;
+        bool newDb;
         lanView::getInstance()->threadMutex.lock();
         QSqlDatabase *pDb;
         QString tn = currentThreadName();
+        if (tn.isEmpty()) EXCEPTION(EPROGFAIL, 0, QObject::trUtf8("Thread name is empty."));
         QMap<QString, QSqlDatabase *>&  map = lanView::getInstance()->dbThreadMap;
         QMap<QString, QSqlDatabase *>::iterator i = map.find(tn);
-        int n = 0;
-        if (i == map.end()) {
+        newDb = i == map.end();
+        if (newDb) {
             pDb = new QSqlDatabase(QSqlDatabase::cloneDatabase(*pSqlDb, tn));
             if (!pDb->open()) SQLOERR(*pDb);
             map.insert(tn, pDb);
             QMap<QString, QStringList>& tm = lanView::getInstance()->trasactionsThreadMap;
             tm.insert(tn, QStringList());
-            n = map.size();
         }
         else {
             pDb = i.value();
@@ -38,9 +39,9 @@ QSqlDatabase *  getSqlDb(void)
         pSqlDb = pDb;
         if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is NULL.").arg(tn));
         if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is set, but database is not opened.").arg(tn));
-        if (n != 0) {
+        if (newDb) {
             QSqlQuery q(*pSqlDb);
-            dbOpenPost(q, n);
+            dbOpenPost(q, tn);
         }
     }
     return pSqlDb;

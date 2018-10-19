@@ -87,3 +87,82 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 2018.10.19 Bugfix
+
+CREATE OR REPLACE FUNCTION shared_cable(pid bigint, pref text DEFAULT '') RETURNS text AS $$
+DECLARE
+    port   pports;
+BEGIN
+    SELECT * INTO port FROM pports WHERE port_id = pid;
+    RETURN CASE 
+        WHEN port.shared_port_id IS NULL AND port.shared_cable = ''::portshare THEN ''
+        WHEN port.shared_port_id IS NULL THEN pref || port.shared_cable::text
+        ELSE pref || port.shared_cable::text || '(' || port_id2name(port.shared_port_id) || ')'
+    END;
+END;
+$$ LANGUAGE plpgsql;
+
+
+DROP VIEW IF EXISTS phs_links_shape;
+CREATE VIEW phs_links_shape AS
+    SELECT phs_link_id, 
+           port_id1,
+            n1.node_id AS node_id1,
+            n1.node_name AS node_name1,
+            CASE
+                WHEN phs_link_type1 = 'Front'::phslinktype THEN
+                    p1.port_name  || shared_cable(port_id1, ' / ')
+                ELSE
+                    p1.port_name
+            END AS port_name1,
+            p1.port_index AS port_index1,
+            p1.port_tag AS port_tag1,
+            n1.node_name || ':' || p1.port_name AS port_full_name1,
+            phs_link_type1,
+            CASE
+                WHEN phs_link_type1 = 'Front'::phslinktype THEN
+                    port_shared::text
+                WHEN phs_link_type1 =  'Back'::phslinktype THEN
+                    shared_cable(port_id1)
+                ELSE
+                    ''
+            END AS port_shared1,
+           port_id2,
+            n2.node_id AS node_id2,
+            n2.node_name AS node_name2,
+            CASE
+                WHEN phs_link_type2 = 'Front'::phslinktype THEN
+                    p2.port_name  || shared_cable(port_id2, ' / ')
+                ELSE
+                    p2.port_name
+            END AS port_name2,
+            p2.port_index AS port_index2,
+            p2.port_tag AS port_tag2,
+            n2.node_name || ':' || p2.port_name AS port_full_name2,
+            phs_link_type2,
+            CASE WHEN phs_link_type2 = 'Front'::phslinktype THEN
+                    port_shared::text
+                WHEN phs_link_type2 =  'Back'::phslinktype THEN
+                    shared_cable(port_id2)
+                ELSE
+                    ''
+            END AS port_shared2,
+           phs_link_note,
+           link_type,
+           create_time,
+           create_user_id,
+           modify_time,
+           modify_user_id,
+           forward
+    FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
+                   JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
+
+// Az azonos nevű függvények megkülönböztetése nem nagyon működik
+DROP FUNCTION IF EXISTS set_language(integer);
+CREATE OR REPLACE FUNCTION set_language_id(id integer) RETURNS integer AS $$
+BEGIN
+    PERFORM set_config('lanview2.language_id', id::text, false);
+    RETURN id;
+END;
+$$ LANGUAGE plpgsql;
