@@ -363,7 +363,7 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
         QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
         return 0;
     }
-    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq))) {
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq, TS_NULL, true))) {
         return 0;
     }
     int row = mi.row(); // A modosított rekord eredeti sorszáma a parentjében
