@@ -724,6 +724,7 @@ enum eContainerValid {
     CV_PORT_PARAMS      = 0x0400,
     CV_PORTS_ADDRESSES  = 0x0800,
     CV_PORT_VLANS       = 0x1000,
+    CV_PATCH_BACK_SHARE = 0x2000,
     CV_ALL_PATCH        = CV_NODE_PARAMS | CV_PORTS | CV_PORT_PARAMS,
     CV_ALL_NODE         = CV_ALL_PATCH,
     CV_ALL_HOST         = CV_ALL_NODE | CV_PORTS_ADDRESSES | CV_PORT_VLANS
@@ -1240,6 +1241,14 @@ public:
     QSet<cShareBack>& shares() {
         if (pShares == nullptr) EXCEPTION(ENOTSUPP);
         return *pShares;
+    }
+
+    bool addShare(cShareBack& s) {
+        foreach (cShareBack ss, shares()) {
+            if (ss == s) return false;
+        }
+        *pShares << s;
+        return true;
     }
 
     /// A ports portokon törli az összes megosztást (hátlapi megosztások)

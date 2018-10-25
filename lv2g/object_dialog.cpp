@@ -111,30 +111,50 @@ cPatch * cPatchDialog::getPatch()
         pp->setId(_sSharedCable, sh);
         p->ports << pp;
     }
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n && p != NULL; i++) {
         int sh = (int)p->ports[i]->getId(_sSharedCable);
-        if (sh == ES_A || sh == ES_AA) {
-            int a = i, b = -1, ab = -1, bb  = -1;
-            bool cd = false;
-            for (int j = 0; j < n; j++) {
+        if (!(sh == ES_A || sh == ES_AA)) continue;
+        int a = i, b = -1, ab = -1, bb  = -1;
+        bool cd = false;
+        bool ok = true;
+        for (int j = 0; ok && j < n && p != NULL; j++) {
+            if (rowsData.at(j)->sharedPortRow == i) {
                 sh = (int)p->ports[j]->getId(_sSharedCable);
                 switch (sh) {
-                case ES_AB: ab = j; break;
+                case ES_AB:
+                    ok = ab == -1;
+                    ab = j;
+                    break;
                 case ES_B:
-                case ES_BA: b  = j; break;
-                case ES_BB: bb = j; break;
-                case ES_C:  ab = j; cd = true;  break;
-                case ES_D:  b  = j; cd = true;  break;
+                case ES_BA:
+                    ok = b  == -1;
+                    b  = j;
+                    break;
+                case ES_BB:
+                    ok = bb == -1;
+                    bb = j;
+                    break;
+                case ES_C:
+                    ok = ab == -1;
+                    ab = j;
+                    cd = true;
+                    break;
+                case ES_D:
+                    ok = b  == -1;
+                    b  = j;
+                    cd = true;
+                    break;
                 default:
                     break;
                 }
             }
-            bool r = p->setShare(a, ab, b, bb, cd);
-            if (!r) {
-                QString msg = trUtf8("A megadott kábelmegosztás nem állítható be (%1,%2,%3,%4,%5)").
-                        arg(a).arg(b).arg(ab).arg(bb).arg(cd ? _sTrue : _sFalse);
-                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
-            }
+        }
+        ok = ok && p->setShare(a, ab, b, bb, cd);
+        if (!ok) {
+            QString msg = trUtf8("A megadott kábelmegosztás nem állítható be (bázis port #%1)").arg(i);
+            QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
+            pDelete(p);
+            break;
         }
     }
     return p;
@@ -160,7 +180,7 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             setPortShare(i, s);
         }
         // Másodlagos megosztáshoz tartozó elsődleges portok
-        // Elvileg adatbázisból származó objektum, így ki vannak tültve az ID-k
+        // Elvileg adatbázisból származó objektum, így ki vannak töltve az ID-k
         // Ha mégse, akkor ezek a hivatkozások elvesznek,
         // ha a hivatkozás hibás, szintén.
         for (i = 0; i < n; i++) {
@@ -181,7 +201,7 @@ void cPatchDialog::setPatch(const cPatch *pSample)
                 QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
                 continue;
             }
-            rowsData[i]->comboBoxPortIx->setCurrentIndex(ix);
+            rowsData[i]->comboBoxPortIx->setCurrentIndex(ix +1);
         }
     }
 }
@@ -579,7 +599,8 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
         if (r != QDialog::Accepted) return NULL;
         p = dialog.getPatch();
         if (p == NULL) continue;
-        if (!cErrorMessageBox::condMsgBox(p->setId(id).tryUpdateById(q))) {
+        p->setContainerValid(CV_PORTS | CV_PATCH_BACK_SHARE);
+        if (!cErrorMessageBox::condMsgBox(p->setId(id).tryRewriteById(q))) {
             pDelete(p);
             continue;
         }

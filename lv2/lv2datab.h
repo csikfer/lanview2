@@ -1600,7 +1600,10 @@ public:
         }
         return r;
     }
+    /// Egy objektum újraírása (frissítése) az ID alapján.
     virtual bool rewriteById(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    /// Lényegében azonos a rewriteById() metódussal, de hiba esetén a hiba objektummal tér vissza (elkapja a hibát).
+    cError *tryRewriteById(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
     /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     /// @param __ch Gyerek objektum konténer
     /// @param __m  eContainerValid maszk, vagy 0, ha nincs feltétele a végrehajtásnak.

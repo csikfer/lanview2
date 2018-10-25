@@ -1892,8 +1892,20 @@ bool cPatch::rewrite(QSqlQuery &__q, eEx __ex)
 
 bool cPatch::rewriteById(QSqlQuery &__q, eEx __ex)
 {
-    (void)__q;
-    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
+    bool r = cRecord::rewriteById(__q, __ex);
+    if (isContainerValid(CV_PORTS)) {
+        ports.setsOwnerId();
+        r = ports.replace(__q, __ex);
+        if (!r) return false;
+        if (isContainerValid(CV_PATCH_BACK_SHARE)) {
+            r = updateShares(__q, true, __ex);
+        }
+    }
+    if (isContainerValid(CV_NODE_PARAMS)) {
+        params.setsOwnerId();
+        r = params.replace(__q, __ex);
+        if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+    }
     return false;
 }
 
@@ -1988,9 +2000,7 @@ bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
     // A konstruktor is ellenőriz, egy port csak egyszer mind nem lehet negatív, ha mégis dob egy kizárást.
     cShareBack  s(__a, __b, __ab, __bb, __cd);
     // Egy port csak egy megosztásban szerepelhet
-    if (shares().contains(s)) return false;
-    shares() << s;
-    return true;
+    return addShare(s);
 }
 
 

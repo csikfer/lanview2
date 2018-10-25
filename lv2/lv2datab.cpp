@@ -3558,6 +3558,23 @@ bool cRecord::rewriteById(QSqlQuery& __q, enum eEx __ex)
     return 1 == update(__q, true, set, where, EX_NOOP);
 }
 
+cError *cRecord::tryRewriteById(QSqlQuery& __q, eTristate __tr, bool text)
+{
+    cError *pe = nullptr;
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
+    try {
+        rewriteById(__q, EX_ERROR);
+        if (text) saveText(__q);
+    }
+    CATCHS(pe);
+    if (tr == TS_TRUE) {
+        if (pe == nullptr) sqlCommit(__q, tableName());
+        else            sqlRollback(__q, tableName());
+    }
+    return pe;
+}
+
 
 int cRecord::replace(QSqlQuery& __q, eEx __ex)
 {
