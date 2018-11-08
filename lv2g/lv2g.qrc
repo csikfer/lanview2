@@ -50,5 +50,15 @@
         <file>LanView2.png</file>
         <file>icons/view-calendar.ico</file>
         <file>icons/edit-history.ico</file>
+        <file>icons/emblem-important-red.ico</file>
+        <file>icons/emblem-important-yellow.ico</file>
+        <file>icons/go-jump-3.ico</file>
+        <file>icons/db.ico</file>
+        <file>icons/db_add.ico</file>
+        <file>icons/emblem-conflicting.ico</file>
+        <file>icons/help-hint.ico</file>
+        <file>icons/tag_st.png</file>
+        <file>icons/servers.png</file>
+        <file>icons/map.png</file>
     </qresource>
 </RCC>

@@ -2,6 +2,7 @@
 #define REPORT_H
 #include "lanview.h"
 #include "lv2data.h"
+#include "srvdata.h"
 #include "guidata.h"
 #include "lv2link.h"
 #include "lv2user.h"
@@ -14,9 +15,11 @@ EXT_ const QString sHtmlRowEnd;
 EXT_ const QString sHtmlTh;
 EXT_ const QString sHtmlTd;
 EXT_ const QString sHtmlBold;
+EXT_ const QString sHtmlItalic;
 EXT_ const QString sHtmlBr;
 EXT_ const QString sHtmlBRed;
 EXT_ const QString sHtmlBGreen;
+EXT_ const QString sHtmlNbsp;
 
 
 static inline QString tag(const QString& t) {
@@ -240,6 +243,25 @@ EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& sMac);
 /// @param q Query objektum az adatbázis eléréshez
 /// @param aAddr A keresett IP
 EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
+
+static inline QString logLink2str(QSqlQuery& q, cLogLink& lnk) {
+    return QObject::trUtf8("#%1 : %2  <==> %3\n")
+            .arg(lnk.getId())
+            .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)));
+}
+
+static inline QString lldpLink2str(QSqlQuery& q, cLldpLink& lnk) {
+    return QObject::trUtf8("#%1 : %2  <==> %3  (%4 > %5\n")
+            .arg(lnk.getId())
+            .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)))
+            .arg(lnk.getName(_sFirstTime), lnk.getName(_sLastTime));
+}
+
+static inline QString mactab2str(QSqlQuery& q, cMacTab& mt) {
+    return QObject::trUtf8("%1  ==> %2  (%3 > %4\n")
+            .arg(cNPort::getFullNameById(q, mt.getId(_sPortId)), mt.getName(_sHwAddress))
+            .arg(mt.getName(_sFirstTime), mt.getName(_sLastTime));
+}
 
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false, const QStringList _verticalHeader = QStringList());
 

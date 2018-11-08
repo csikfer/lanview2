@@ -166,3 +166,115 @@ BEGIN
     RETURN id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 2018.10.25. +Info
+
+CREATE OR REPLACE FUNCTION shared_cable_back(pid bigint) RETURNS text AS $$
+DECLARE
+    port   pports;
+    ta     text[];
+BEGIN
+    SELECT * INTO port FROM pports WHERE port_id = pid;
+    CASE 
+        WHEN port.shared_port_id IS NULL AND port.shared_cable = ''::portshare THEN
+            RETURN '';
+        WHEN port.shared_port_id IS NULL THEN
+            SELECT array_agg(shared_cable || ':' || port_name) INTO ta FROM pports WHERE shared_port_id = port.port_id;
+            IF array_length(ta, 1) > 0 THEN
+                RETURN port.shared_cable::text || ' / ' || array_to_string(ta, '; ');
+            ELSE
+                RETURN port.shared_cable::text;
+            END IF;
+        ELSE
+            RETURN port.shared_cable::text || '!!(' || port_id2name(port.shared_port_id) || ')';
+    END CASE;
+END;
+$$ LANGUAGE plpgsql;
+
+
+DROP VIEW IF EXISTS phs_links_shape;
+CREATE VIEW phs_links_shape AS
+    SELECT phs_link_id, 
+           port_id1,
+            n1.node_id AS node_id1,
+            n1.node_name AS node_name1,
+            CASE
+                WHEN phs_link_type1 = 'Front'::phslinktype THEN
+                    p1.port_name  || shared_cable(port_id1, ' / ')
+                ELSE
+                    p1.port_name
+            END AS port_name1,
+            p1.port_index AS port_index1,
+            p1.port_tag AS port_tag1,
+            n1.node_name || ':' || p1.port_name AS port_full_name1,
+            phs_link_type1,
+            CASE
+                WHEN phs_link_type1 = 'Front'::phslinktype THEN
+                    port_shared::text
+                WHEN phs_link_type1 =  'Back'::phslinktype THEN
+                    shared_cable_back(port_id1)
+                ELSE
+                    ''
+            END AS port_shared1,
+           port_id2,
+            n2.node_id AS node_id2,
+            n2.node_name AS node_name2,
+            CASE
+                WHEN phs_link_type2 = 'Front'::phslinktype THEN
+                    p2.port_name  || shared_cable(port_id2, ' / ')
+                ELSE
+                    p2.port_name
+            END AS port_name2,
+            p2.port_index AS port_index2,
+            p2.port_tag AS port_tag2,
+            n2.node_name || ':' || p2.port_name AS port_full_name2,
+            phs_link_type2,
+            CASE WHEN phs_link_type2 = 'Front'::phslinktype THEN
+                    port_shared::text
+                WHEN phs_link_type2 =  'Back'::phslinktype THEN
+                    shared_cable_back(port_id2)
+                ELSE
+                    ''
+            END AS port_shared2,
+           phs_link_note,
+           link_type,
+           create_time,
+           create_user_id,
+           modify_time,
+           modify_user_id,
+           forward
+    FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
+                   JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
+
+-- 2018.10.31.  Bugfix: missing indexes
+
+ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_unique1 UNIQUE (port_id1, phs_link_type1, port_shared);
+ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_unique2 UNIQUE (port_id2, phs_link_type2, port_shared);
+CREATE INDEX IF NOT EXISTS phs_links_table_port_id1_index ON phs_links_table(port_id1);
+CREATE INDEX IF NOT EXISTS phs_links_table_port_id2_index ON phs_links_table(port_id2);
+
+CREATE OR REPLACE FUNCTION min_shared(portshare, portshare) RETURNS portshare AS $$
+BEGIN
+    RETURN CASE
+        WHEN $1 IS NULL OR $2 IS NULL THEN
+            'NC'
+        WHEN $1 = 'NC'  OR $2 = 'NC'  THEN
+            'NC'
+        WHEN $1 = '' OR $1 = $2 THEN
+            $2
+        WHEN $2 = '' THEN
+            $1
+        WHEN $1 < $2
+         AND (   ( $1 = 'A' AND ( $2 = 'AA' OR $2 = 'AB' ) )
+	      OR ( $1 = 'B' AND ( $2 = 'BA' OR $2 = 'BB' ) )) THEN
+            $2
+        WHEN $1 > $2
+         AND (   ( $2 = 'A' AND ( $1 = 'AA' OR $1 = 'AB' ) )
+	      OR ( $2 = 'B' AND ( $1 = 'BA' OR $1 = 'BB' ) )) THEN
+            $1
+        ELSE
+            'NC'
+     END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+

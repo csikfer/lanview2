@@ -1,469 +1,584 @@
 #include "deducepatch.h"
 #include "report.h"
 #include "lv2widgets.h"
+#include "popupreport.h"
 
+int cDPRow::ixSharedPortId = NULL_IX;
+const QString cDPRow::sIOk      = "://icons/ok.ico";
+const QString cDPRow::sIWarning = "://icons/emblem-important-yellow.ico";
+const QString cDPRow::sIError   = "://icons/emblem-important-red.ico";
+const QString cDPRow::sIReapeat = "://icons/go-jump-3.ico";
+const QString cDPRow::sIHelp    = "://icons/help-hint.ico";
+const QString cDPRow::sIConflict= "://icons/emblem-conflicting.ico";
+const QString cDPRow::sITagSt   = "://icons/tag_st.png";
+const QString cDPRow::sIDbAdd   = "://icons/db_add.ico";
+const QString cDPRow::sILldp    = "://icons/servers.png";   // :-/
+const QString cDPRow::sIMap     = "://icons/map.png";
 
-/// Egy MAC keresése a port-címtáblában. és a link rekord beolvasása
-/// @param mac A keresett MAC cím.
-/// @param mt A talált port címtábla rekord objektum, output, ha nincs találat, akkor üres.
-/// @param pl A fizikai link rekord, ami a talált port-címtábla rekordban hivatkozott porthoz (ID) tartozik
-/// @return true, ha van találat a port címtábla rekordban, és a hivatkozott porthoz van fizikai link (patch) is, és az front oldali.
-static bool findMac(QSqlQuery& q, const cMac& mac, cMacTab& mt, cPhsLink& pl)
- {
-    mt.clear();
-    pl.clear();
-    if (mac.isEmpty()) return false;        // Nincs magadva MAC (NULL)
-    mt.setMac(_sHwAddress, mac);
-    if (!mt.completion(q)) return false;    // Nincs találat a címtáblában
-    qlonglong pid = mt.getId(_sPortId);
-    pl.setId(_sPortId1, pid);
-    if (1 != pl.completion(q)) return false;// Fizikai link, ha van
-    return pl.getId(_sPhsLinkType2) == LT_FRONT;    // A switch portnak a patch front oldali csatlakozása?
+cDPRow::cDPRow(cDeducePatch *par, int _row, int _save_col, cPPort &_ppl, cPhsLink &_pll, cPPort &_ppr, cPhsLink &_plr)
+    : phsLink(), model(*par->pModel), ppl(_ppl), ppr(_ppr), pll(_pll), plr(_plr)
+{
+    staticInit();
+    parent = par;
+    reapeat = exists = colision = false;
+    warning = 0;    // 0: OK, 1: warning, 2: error
+    stateMAC = stateTag = stateLLDP = TS_NULL;
+    pid = spidl = spidr = NULL_ID;
+    shl = shr = shel = sher = ES_;
+    npidl = pll.getId(_sPortId1);
+    npidr = plr.getId(_sPortId1);
+    pidl  = ppl.getId();
+    pidr  = ppr.getId();
+    spidl = ppl.getId(ixSharedPortId);
+    spidr = ppr.getId(ixSharedPortId);
+    pItemSave = new QStandardItem;
+    model.setItem(_row, _save_col, pItemSave);
 }
 
-static eTristate checkMac(QSqlQuery& q, cNPort& p1, cNPort& p2, bool first = true)
+cDPRow::~cDPRow()
 {
-    cMac mac = p1.getMac(_sHwAddress, EX_IGNORE);   // MAC, ha van
-    if (mac.isValid()) {
-        cMacTab mt;                                 // Melyik címtáblában
-        if (mt.setMac(_sHwAddress, mac).completion(q) == 1) {
-            if (mt.getId(_sPortId) == p2.getId()) return TS_TRUE;
-            return  TS_FALSE;
+
+}
+
+QList<QString>      cDPRow::titles;
+QList<QString>      cDPRow::icons;
+QList<QString>      cDPRow::tooltips;
+
+void cDPRow::colHead(int x, const QString& title, const QString& icon, const QString& tooltip)
+{
+    if (titles.size() != x || icons.size() != x || tooltips.size() != x) EXCEPTION(EPROGFAIL, x);
+    titles   << title;
+    icons    << icon;
+    tooltips << tooltip;
+}
+
+void cDPRow::staticInit()
+{
+    if (ixSharedPortId != NULL_IX) return;
+
+    ixSharedPortId = cPPort().toIndex(_sSharedPortId);
+    //                          title                           icon        tool tip
+    colHead(CID_INDEX,          "#",                            _sNul,      QObject::trUtf8("A helyi patch port indexek."));
+    colHead(CID_STATE_WARNING,  QObject::trUtf8("Megjegyzés"),  sIHelp,     QObject::trUtf8("Megjegyzés, hiba üzenetek."));
+    colHead(CID_STATE_CONFLICT, QObject::trUtf8("Konfliktus"),  sIConflict, QObject::trUtf8("Ütközések, mentés esetén törlendő linkek."));
+    colHead(CID_STATE_TAG,      QObject::trUtf8("Cimke"),       sITagSt,    QObject::trUtf8("A patch port címkék összevetése."));
+    colHead(CID_STATE_MAC,      QObject::trUtf8("Cím"),         sIMap,      QObject::trUtf8("Osszevetés az switch címtáblákkal."));
+    colHead(CID_STATE_LLDP,     QObject::trUtf8("LLDP"),        sILldp,     QObject::trUtf8("Osszevetés az LLDP lekérdezésekkel."));
+    colHead(CID_SAVE,           QObject::trUtf8("Mentve"),      sIDbAdd,    QObject::trUtf8("Mentés."));
+    colHead(CID_IF_LEFT,        QObject::trUtf8("Interfész"),   _sNul,      QObject::trUtf8("Helyi vagy bal oldali interfész."));
+    colHead(CID_SHARE_LEFT,     QObject::trUtf8("Sh."),         _sNul,      QObject::trUtf8("Helyi vagy bal oldali megosztás, eredő megosztás."));
+    colHead(CID_PPORT_LEFT,     QObject::trUtf8("Patch"),       _sNul,      QObject::trUtf8("Helyi vagy bal oldali patch port."));
+    colHead(CID_TAG_LEFT,       QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Helyi vagy bal oldali patch port címke."));
+    colHead(CID_TAG,            QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Patch port címke."));
+    colHead(CID_TAG_RIGHT,      QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Távoli vagy jobb oldali patch port címke."));
+    colHead(CID_PPORT_RIGHT,    QObject::trUtf8("Patch"),       _sNul,      QObject::trUtf8("Távoli vagy jobb oldali patch port."));
+    colHead(CID_SHARE_RIGHT,    QObject::trUtf8("Sh."),         _sNul,      QObject::trUtf8("Távoli vagy jobb oldali megosztás, eredő megosztás."));
+    colHead(CID_IF_RIGHT,       QObject::trUtf8("Inteface"),    _sNul,      QObject::trUtf8("Távoli vagy jobb oldali interfész."));
+}
+
+void cDPRow::showText(int column, const QString& text, const QString& tool_tip)
+{
+    pi = new QStandardItem(text);
+    if (!tool_tip.isEmpty()) pi->setToolTip(tool_tip);
+    model.setItem(row(), column, pi);
+}
+
+void cDPRow::showCell(int column, const QString& text, const QString& icon, const QString& tool_tip)
+{
+    pi = new QStandardItem(text);
+    if (!icon.isEmpty()) pi->setIcon(QIcon(icon));
+    if (!tool_tip.isEmpty()) pi->setToolTip(tool_tip);
+    model.setItem(row(), column, pi);
+}
+
+
+void cDPRow::save(QSqlQuery& q)
+{
+    if (isChecked()) {
+        phsLink.replace(q);
+        model.setItem(pItemSave->row(), cxSave(), new QStandardItem(QIcon(sIOk), _sNul));
+    }
+}
+
+void cDPRow::setSaveCell()
+{
+    if     (reapeat) pItemSave->setIcon(QIcon(sIReapeat));
+    else if (exists) pItemSave->setIcon(QIcon(sIOk));
+    else {
+        pItemSave->setCheckable(true);
+        pItemSave->setCheckState(warning || colision ? Qt::Unchecked : Qt::Checked);
+    }
+}
+
+/// Set calculated link, and checks
+void cDPRow::calcLinkCheck(QSqlQuery& q)
+{
+    bool isPrimary;
+    shl = ePortShare(ppl.getId(_sSharedCable));
+    pid = spidl;
+    isPrimary = shl == ES_ || shl == ES_A || shl == ES_AA;
+    if (spidl == NULL_ID) {
+        pid = pidl;
+        if (!isPrimary) {
+            warnMsg += htmlError(QObject::trUtf8("A lokális/bal oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
+            warning = 2;
         }
     }
-    return first ? checkMac(q, p2, p1, false) : TS_NULL;    // És fordítva ?
+    else {
+        if (isPrimary) {
+            warnMsg += htmlError(QObject::trUtf8("A lokális/bal oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
+            warning = 2;
+        }
+    }
+    phsLink.setId(_sPortId1, pid);
+    phsLink.setId(_sPhsLinkType1, LT_BACK);
+    shr = ePortShare(ppr.getId(_sSharedCable));
+    pid = spidr;
+    isPrimary = shr == ES_ || shr == ES_A || shr == ES_AA;
+    if (spidr == NULL_ID) {
+        pid = pidr;
+        if (!isPrimary) {
+            warnMsg += htmlError(QObject::trUtf8("A távoli/jobb oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
+            warning = 2;
+        }
+    }
+    else {
+        if (isPrimary) {
+            warnMsg += htmlError(QObject::trUtf8("A távoli/jobb oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
+            warning = 2;
+        }
+    }
+    phsLink.setId(_sPortId2, pid);
+    phsLink.setId(_sPhsLinkType2, LT_BACK);
+    phsLink.setId(_sPortShared, ES_);   // Back-Back: not possible share!
+    reapeat = parent->findLink(phsLink);
+    colision = linkColisionTest(q, exists, phsLink, colMsg);
 }
 
-static eTristate checkMac(QSqlQuery &q, qlonglong pid1, qlonglong pid2)
+void cDPRow::checkAndShowTag(int _cx_st, int _cx_left, int _cx_right)
 {
-    cNPort *p1 = cNPort::getPortObjById(q, pid1);
-    cNPort *p2 = cNPort::getPortObjById(q, pid2);
-    eTristate r = checkMac(q, *p1, *p2, true);
-    delete p1;
-    delete p2;
+    s = ppl.getName(_sPortTag);
+    showText(_cx_left, s);
+    s2 = ppr.getName(_sPortTag);
+    showText(_cx_right, s2);
+    if (s.isEmpty() || s2.isEmpty()) return;
+    if (s.compare(s2, Qt::CaseInsensitive)) {
+        s = sIWarning;
+        stateTag = TS_FALSE;
+    }
+    else {
+        s = sIOk;
+        stateTag = TS_TRUE;
+    }
+    showCell(_cx_st, _sNul, s);
+}
+
+void cDPRow::showWarning(int _cx)
+{
+    s = warningIconName(warning);
+    showCell(_cx, _sNul, s, warnMsg);
+}
+
+void cDPRow::showPatchPort(QSqlQuery& q, int _cx, cPPort& _pp, const QString& _name)
+{
+    s = _name;
+    if (s.isEmpty()) s = _pp.getName();
+    ePortShare sh = ePortShare(_pp.getId(_sSharedCable));
+    pi = new QStandardItem;
+    if (sh != ES_) {
+        if      (sh == ES_A)  s += " (A)";
+        else if (sh == ES_AA) s += " (AA)";
+        else {
+            if (_pp.getId(ixSharedPortId) == NULL_ID) {
+                s += " ( ? <- " + portShare(shl) + ")";
+                pi->setForeground(QBrush(dcFgColor(DC_ERROR)));
+                pi->setFont(dcFont(DC_ERROR));
+            }
+            else {
+                s += " (" + _pp.view(q, ixSharedPortId) + " <- " + portShare(sh) + ")";
+            }
+        }
+    }
+    pi->setText(s);
+    model.setItem(row(), _cx, pi);
+}
+
+void cDPRow::showShare(int _cx, ePortShare sh, ePortShare msh)
+{
+    if (msh != ES_INVALID && (sh != ES_ || msh != ES_)) {
+        s =  portShare(sh).rightJustified(2) + "/" + portShare(msh).rightJustified(2);
+        showText(_cx, s);
+    }
+}
+
+void cDPRow::showNodePort(QSqlQuery q, int _cx, qlonglong _pid)
+{
+    if (_pid != NULL_ID) {
+        s = cNPort::getFullNameById(q, _pid);
+        showText(_cx, s);
+    }
+}
+
+void cDPRow::showConflict(int _cx)
+{
+    s = warningIconName(colision ? 1 : 0);
+    showCell(_cx, _sNul, s, colMsg);
+}
+
+void cDPRow::checkAndShowSharing(int _cx_left, int _cx_right)
+{
+    shel = pll.isNull() ? ES_INVALID : shareResultant(shl, ePortShare(pll.getId(_sPortShared)));
+    sher = plr.isNull() ? ES_INVALID : shareResultant(shr, ePortShare(plr.getId(_sPortShared)));
+    if (shel != ES_INVALID && sher != ES_INVALID) {
+        if (shel != sher) {
+            warnMsg += htmlWarning(QObject::trUtf8("Nem egyező végponti megosztások"));
+            if (warning == 0) warning = 1; // suspicious
+        }
+    }
+    showShare(_cx_left,  shl, shel);
+    showShare(_cx_right, shr, sher);
+}
+
+void cDPRow::checkAndShowLLDP(QSqlQuery& q, int _cx)
+{
+    if (npidl == NULL_ID || npidr == NULL_ID) return;
+    s2.clear(); // MSG
+    cLldpLink lldp;
+    if (lldp.isLinked(q, npidl, npidr)) {
+        s = sIOk;
+        stateLLDP = TS_TRUE;
+    }
+    else {
+        if (lldp.clear().setId(_sPortId1, npidl).completion(q)) {
+            s2  = htmlError(lldpLink2str(q, lldp));
+        }
+        if (lldp.clear().setId(_sPortId1, npidr).completion(q)) {
+            s2 += htmlError(lldpLink2str(q, lldp));
+        }
+        if (s2.isEmpty()) {
+            s = sIWarning;
+            s2 = QObject::trUtf8("Nincs találat az LLDP linkek között.");
+        }
+        else {
+            s = sIError;
+            stateLLDP = TS_FALSE;
+        }
+    }
+    pi = new QStandardItem(QIcon(s), _sNul);
+    if (!s2.isEmpty()) pi->setToolTip(s2);
+    model.setItem(row(), _cx, pi);
+}
+
+eTristate cDPRow::checkMac(QSqlQuery& q, cNPort& pnp1, cNPort& pnp2)
+{
+    cMac mac = pnp1.getMac(_sHwAddress, EX_IGNORE); // MAC, if there is
+    if (mac.isValid()) {
+        cMacTab mt;                                 // Find
+        if (mt.setMac(_sHwAddress, mac).completion(q) == 1) {
+            qlonglong swpid = mt.getId(_sPortId);
+            if (swpid == pnp2.getId()) {
+                s2 += QObject::trUtf8("Megerősített link, a %1 címtáblája alapján (%2 - %3)\n")
+                        .arg(pnp2.getFullName(q), mt.getName(_sFirstTime), mt.getName(_sLastTime));
+                return TS_TRUE;
+            }
+            else {
+                s2 += QObject::trUtf8("A címtábla lekérdezésnek ellentmondó link, a %1 -> %2 címtáblája alapján (%3 - %4)\n")
+                        .arg(cNPort::getFullNameById(q, swpid), pnp2.getFullName(q),
+                             mt.getName(_sFirstTime), mt.getName(_sLastTime));
+                return  TS_FALSE;
+            }
+        }
+    }
+    return TS_NULL;    // És fordítva ?
+}
+
+eTristate cDPRow::checkMac(QSqlQuery &q)
+{
+    cNPort *pnpl = cNPort::getPortObjById(q, npidl);
+    cNPort *pnpr = cNPort::getPortObjById(q, npidr);
+    eTristate r = checkMac(q, *pnpl, *pnpr);
+    if (r == TS_NULL) {
+        r = checkMac(q, *pnpr, *pnpl);
+    }
+    delete pnpl;
+    delete pnpr;
+    return r;
+}
+
+void cDPRow::checkAndShowMAC(QSqlQuery& q, int _cx)
+{
+    if (npidl == NULL_ID || npidr == NULL_ID) return;
+    s2.clear(); // MSG
+    stateMAC = checkMac(q);
+    switch (stateMAC) {
+    case TS_NULL:   return;
+    case TS_FALSE:
+        s = sIConflict;
+        if (warning == 0) warning = 1;
+        break;
+    case TS_TRUE:
+        s = sIOk;
+        break;
+    }
+    s2.chop(1);
+    showCell(_cx, _sNul, s, toHtml(s2, true));
+}
+
+void cDPRow::setHeader(const QVector<int> &cid2col)
+{
+    for (int i = 0; i < CID_NUMBER; ++i) {
+        int col = cid2col[i];
+        if (col >= 0) setHeaderItem(i, col);
+    }
+}
+
+QStringList cDPRow::exportHeader(const QVector<int> &cid2col)
+{
+    QStringList r;
+    for (int cid = 0; cid < CID_NUMBER; ++cid) {
+        int col = cid2col[cid];
+        if (col >= 0) r << titles.at(cid);
+    }
+    return r;
+}
+
+QList<tStringPair> cDPRow::exporter(const QVector<int> &cid2col)
+{
+    QList<tStringPair> r;
+    for (int cid = 0; cid < CID_NUMBER; ++cid) {    // All column id
+        int col = cid2col[cid];                      // To column index
+        if (col >= 0) {                             // Index valid (show)?
+            QStandardItem *pi = model.item(row(), col); // Get sell item
+            if (pi == NULL) {
+                r << tStringPair();
+            }
+            else {
+                QString text;
+                // QString tooltip = pi->toolTip();
+                switch (cid) {
+                case CID_SAVE:
+                    text = langBool(exists);
+                    break;
+                case CID_STATE_WARNING:
+                    switch (warning) {
+                    case 0: text = _sOk;                                break;
+                    case 1: text = QObject::trUtf8("Figyelmeztetés");   break;
+                    default:text = QObject::trUtf8("Hiba");             break;
+                    }
+                    break;
+                case CID_STATE_CONFLICT:
+                    text = langBool(colision);
+                    break;
+                case CID_STATE_LLDP:
+                    text = langTristate(stateLLDP);
+                    break;
+                case CID_STATE_MAC:
+                    text = langTristate(stateMAC);
+                    break;
+                case CID_STATE_TAG:
+                    text = langTristate(stateTag);
+                    break;
+                default:
+                    text = pi->text();
+                    break;
+                }
+                r << tStringPair(text, pi->toolTip());
+            }
+        }
+    }
     return r;
 }
 
 /* *** */
 
-enum eFieldIx {
-    CX_NPORT_LEFT, CX_SHARE_LEFT, CX_PPORT_LEFT, CX_TAG_LEFT,
-    CX_STATE, CX_SAVE,
-    CX_TAG_RIGHT, CX_PPORT_RIGHT, CX_SHARE_RIGHT, CX_NPORT_RIGHT,
-    CX_TIMES
-};
-
-cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr)
-    :QObject(par), parent(par), pTable(par->pUi->tableWidget), row(_row)
+cDPRowMAC::cDPRowMAC(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cPPort& _ppl, cPhsLink& _pll, cPPort &_ppr, cPhsLink& _plr)
+    : cDPRow(par, _row, CX_SAVE, _ppl, _pll, _ppr, _plr)
 {
-    pCheckBox = NULL;
-    cPPort ppr;     // Jobb oldali patch-port
-    ppr.setById(q, plr.getId(_sPortId2));
-    ePortShare sh = (ePortShare)ppl.getId(_sSharedCable);   // Ez nem a rekord beli share, hanem az eredő (ld.: nextLink() !)
-    (void)sh;       //
-    ppl.setById(q); // újraolvassuk
-
-    pTable->setRowCount(row +1);
-
-    phsLink.setId(_sPortId1, ppl.getId());
-    phsLink.setId(_sPhsLinkType1, LT_BACK);
-    phsLink.setId(_sPortId2, ppr.getId());
-    phsLink.setId(_sPhsLinkType2, LT_BACK);
-    phsLink.setId(_sPortShared, ES_);   // back-back nincs (nem lehet) megosztás a rekordban
-    bool reapeat = parent->findLink(phsLink);
-    bool exists;
-    QString colMsg;
-    bool colision;
-    colision = linkColisionTest(q, exists, phsLink, colMsg);
-    // Hátlapi megosztésok ellenörzése:
-    ePortShare ppshl = (ePortShare)ppl.getId(_sSharedCable);
-    ePortShare ppshr = (ePortShare)ppr.getId(_sSharedCable);
-    bool bBckShMism = ppshl != ppshr; // Ha nem OK (nem biztos, hogy hiba, operátor ellenőrizze!)
-
-    qlonglong spidl = ppl.getId(_sSharedPortId);
-    qlonglong spidr = ppr.getId(_sSharedPortId);
-    bool bBckShared = spidl != NULL_ID || spidr != NULL_ID; // Mégosztott, másodlagos port
-    // stat...
-    QString state = QString("<b><u>MAC</u></b> ");
-    QString sToolTip = htmlInfo(trUtf8("A port címtáblák alapján talált hátlapi csatlakozás."));
-    // A két patch porton azonos a cimke ?
-    QString pptagl = ppl.getName(_sPortTag);
-    QString pptagr = ppr.getName(_sPortTag);
-    bool bTag  = pptagl.compare(pptagr, Qt::CaseInsensitive);
-    if (bTag) {
-        state    += "<b>TAG</b> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A patch port cimkék azonosak : '%1'.").arg(pptagl.toHtmlEscaped()));
-    }
-    else {
-        state    += "<s>TAG</s> ";
-        sToolTip += htmlInfo(QObject::trUtf8("Nincsenek patch port cimkék, vagy nem nem azonosak : '%1' &ne; '%2'.")
-                             .arg(pptagl.toHtmlEscaped(), pptagr.toHtmlEscaped()));
-    }
-    // Van LLDP link a két végpont között?
-    bool bLLDP = cLldpLink().isLinked(q, il.getId(), plr.getId(_sPortId1));
-    if (bLLDP) {
-        state    += "<b>LLDP</b> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez van konzisztens LLDP link."));
-    }
-    else {
-        state    += "<s>LLDP</s> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez nincs konzisztens LLDP link."));
-    }
-    if (bBckShMism) {
-        sToolTip += htmlWarning(trUtf8("Ellenőrizze a megosztásokat!"));
-        state += "<font color=\"red\"><b>!</b></font>";
-    }
-    if (bBckShared) {
-        sToolTip += htmlError(trUtf8("A hátlapi megosztáshoz tartozó kapcsolat, nem tartozhat hozzá link rekord."));
-    }
-    if (colision) {
-        sToolTip += colMsg;
-    }
-
-    QString s;
-    //...
-    QTextEdit *pTextEdit = new QTextEdit(state);
-    pTextEdit->setReadOnly(true);
-    pTextEdit->setToolTip(sToolTip);
-    pTable->setCellWidget(row, CX_STATE, pTextEdit);
-
-    QTableWidgetItem *pi;
-
-    pi = new QTableWidgetItem(il.getFullName(q));
-    pTable->setItem(row, CX_NPORT_LEFT, pi);
-
-    pi = new QTableWidgetItem(pll.getName(_sPortShared));
-    pTable->setItem(row, CX_SHARE_LEFT, pi);
-
-    s = ppl.getName();
-    if (ppshl != ES_) {
-        if (ppshl == ES_A) s += " (A)";
-        else               s += " (" + ppl.view(q, __sSharedPortId) + " <- " + portShare(ppshl) + ")";
-    }
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_PPORT_LEFT, pi);
-
-    pi = new QTableWidgetItem(pptagl);
-    pTable->setItem(row, CX_TAG_LEFT, pi);
-
-    if (exists || reapeat) {
-        pi = new QTableWidgetItem(reapeat ? "=" : _sOk);
-        pTable->setItem(row, CX_SAVE, pi);
-    }
-    else {
-        if (bBckShared) {
-            pi = new QTableWidgetItem("-");
-            pTable->setItem(row, CX_SAVE, pi);
-        }
-        else {
-            pCheckBox = new QCheckBox();
-            bool checked = !(colision || bBckShMism);
-            pCheckBox->setChecked(checked);
-            pTable->setCellWidget(row, CX_SAVE, pCheckBox);
-            connect(pCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxchange(bool)));
-        }
-    }
-
-    pi = new QTableWidgetItem(pptagr);
-    pTable->setItem(row, CX_TAG_LEFT, pi);
-
-    s = ppr.getFullName(q);
-    if (ppshr != ES_) {
-        if (ppshr == ES_A) s += " (A)";
-        else               s += " (" + ppr.view(q, __sSharedPortId) + " <- " + portShare(ppshr) + ")";
-    }
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_PPORT_RIGHT, pi);
-
-    pi = new QTableWidgetItem(plr.getName(_sPortShared));
-    pTable->setItem(row, CX_SHARE_RIGHT, pi);
-
-    pi = new QTableWidgetItem(cNPort().getFullNameById(q, plr.getId(_sPortId1)));
-    pTable->setItem(row, CX_NPORT_RIGHT, pi);
-
-    s = mt.getName(_sFirstTime) + " < " + mt.getName(_sLastTime);
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_TIMES, pi);
-
+    (void)mt;
+    if (_row == 0) setHeader();
+    showIndex(toHtml(mactab2str(q, mt)));
+    checkAndShowTag(CX_STATE_TAG, CX_TAG_LEFT, CX_TAG_RIGHT);
+    calcLinkCheck(q);
+    checkAndShowSharing(CX_SHARE_LEFT, CX_SHARE_RIGHT);
+    showWarning(CX_STATE_WARNING);
+    showConflict(CX_STATE_CONFLICT);
+    showNodePort(q, CX_IF_LEFT, npidl);
+    showPatchPort(q, CX_PPORT_LEFT, ppl);
+    showPatchPort(q, CX_PPORT_RIGHT, ppr, ppr.getFullName(q));
+    showNodePort(q, CX_IF_RIGHT, npidr);
+    checkAndShowLLDP(q, CX_STATE_LLDP);
+    setSaveCell();
 }
 
-static void portNameAndShare(QSqlQuery& q, QString& names, QString& shares, const cPhsLink *pp)
+cDPRowMAC::~cDPRowMAC()
 {
-    qlonglong pid = pp->getId(_sPortId2);
-    names  = cNPort::getFullNameById(q, pid);
-    shares = pp->getName(_sPortShared);
+    ;
 }
 
-static void portNameAndShare(QSqlQuery& q, QString& names, QString& shares, const cPhsLink *pp, eTristate f)
+QVector<int> cDPRowMAC::cid2col;
+
+void cDPRowMAC::setHeader()
 {
-    QString n, s;
-    portNameAndShare(q, n, s, pp);
-    switch (f) {
-    case TS_NULL:   names += htmlInfo(n);   break;
-    case TS_TRUE:   names += htmlGrInf(n);  break;
-    case TS_FALSE:  names += htmlError(n);  break;
+    if (cid2col.isEmpty()) {
+        addCid2Col<cid2col>(CID_INDEX            ,  CX_INDEX);
+        addCid2Col<cid2col>(CID_STATE_WARNING    ,  CX_STATE_WARNING);
+        addCid2Col<cid2col>(CID_STATE_CONFLICT   ,  CX_STATE_CONFLICT);
+        addCid2Col<cid2col>(CID_STATE_TAG        ,  CX_STATE_TAG);
+        addCid2Col<cid2col>(CID_STATE_LLDP       ,  CX_STATE_LLDP);
+        addCid2Col<cid2col>(CID_SAVE             ,  CX_SAVE);
+        addCid2Col<cid2col>(CID_IF_LEFT          ,  CX_IF_LEFT);
+        addCid2Col<cid2col>(CID_SHARE_LEFT       ,  CX_SHARE_LEFT);
+        addCid2Col<cid2col>(CID_PPORT_LEFT       ,  CX_PPORT_LEFT);
+        addCid2Col<cid2col>(CID_TAG_LEFT         ,  CX_TAG_LEFT);
+        addCid2Col<cid2col>(CID_TAG_RIGHT        ,  CX_TAG_RIGHT);
+        addCid2Col<cid2col>(CID_PPORT_RIGHT      ,  CX_PPORT_RIGHT);
+        addCid2Col<cid2col>(CID_SHARE_RIGHT      ,  CX_SHARE_RIGHT);
+        addCid2Col<cid2col>(CID_IF_RIGHT         ,  CX_IF_RIGHT);
+        if (cid2col.size() != CID_NUMBER) EXCEPTION(EPROGFAIL);     // Last column not hide!
     }
-    shares += htmlInfo(s);
+    cDPRow::setHeader(cid2col);
 }
 
-static void portNameAndShare(QSqlQuery& q, QString& names, QString& shares, const tRecordList<cPhsLink>& links)
+QStringList cDPRowMAC::exportHeader()
 {
-    QListIterator<cPhsLink *> i(links);
-    while (i.hasNext()) {
-        const cPhsLink *ppl = i.next();
-        QString n, s;
-        portNameAndShare(q, n, s, ppl);
-        names  += htmlInfo(n);
-        shares += htmlInfo(s);
-    }
+    return cDPRow::exportHeader(cid2col);
 }
 
-QTextEdit *cDPRow::newTextEdit(const QString& txt, int *pw, const QString& tt)
+QList<tStringPair> cDPRowMAC::exporter()
 {
-    QTextEdit *p = new QTextEdit(txt);
-    if (!tt.isEmpty()) {
-        p->setToolTip(tt);
-    }
-    p->setReadOnly(true);
-    p->setLineWrapMode(QTextEdit::NoWrap);
-    QSizeF sf = p->document()->size();
-    QSize  s;
-    s.setHeight((int)(sf.height() + 1));
-    s.setWidth((int)sf.width() + 2);
-    p->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    p->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    p->setFrameStyle(QFrame::NoFrame);
-    p->setMaximumSize(s);
-    p->resize(s);
-    if (pw != NULL) {
-        *pw = std::max(*pw, s.width());
-    }
-    if (pTable->rowHeight(row) < s.height()) {
-        pTable->setRowHeight(row, s.height());
-    }
-    return p;
-}
-
-cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr)
-    : QObject(par), parent(par), pTable(par->pUi->tableWidget), row(_row)
-{
-    pCheckBox = NULL;
-    pTable->setRowCount(row +1);
-
-    // A "felfedezett" link objektum
-    phsLink.setId(_sPortId1, ppl.getId());
-    phsLink.setId(_sPhsLinkType1, LT_BACK);
-    phsLink.setId(_sPortId2, ppr.getId());
-    phsLink.setId(_sPhsLinkType2, LT_BACK);
-    phsLink.setId(_sPortShared, ES_);   // back-back nincs (nem lehet) megosztás a rekordban
-    bool exists;    // igaz, ha már létezik
-    QString colMsg; // Ha van ütközés, akkor az üzenet
-    bool colision;  // igaz, ha van ütközés
-    colision = linkColisionTest(q, exists, phsLink, colMsg);
-    // Hátlapi megosztésok ellenörzése:
-    ePortShare ppshl = (ePortShare)ppl.getId(_sSharedCable);
-    ePortShare ppshr = (ePortShare)ppr.getId(_sSharedCable);
-    bool bBckShMism = ppshl != ppshr; // Ha nem OK (nem biztos, hogy hiba, operátor ellenőrizze!)
-
-    qlonglong spidl = ppl.getId(_sSharedPortId);
-    qlonglong spidr = ppr.getId(_sSharedPortId);
-    bool bBckShared = spidl != NULL_ID || spidr != NULL_ID; // Mégosztott, másodlagos port
-    // stat...
-    QString state = QString("<b><u>TAG</u></b> ");
-    QString sToolTip = htmlInfo(trUtf8("A port cimkék alapján talált hátlapi csatlakozás."));
-    // végponok
-    cPhsLink _pl;   // Mnka objektum
-    tRecordList<cPhsLink> pll, plr;     // Bal és jobb oldali linkek
-    // A MAC alapján?
-    int fl, fr;                         // Bal és jobb oldali linkek száma
-    _pl.setId(_sPortId1, ppl.getId()).completion(q);        // minta
-    fl = pll.set(q);                                        // Bal oldali linkek
-    int ix = pll.indexOf(_sPortId2, ppr.get(ppr.idIndex()));// Saját portra mutató link törlendő!
-    if (ix >= 0) {
-        delete pll.pullAt(ix);
-        --fl;
-    }
-    _pl.clear().setId(_sPortId1, ppr.getId()).completion(q);// minta
-    fr = plr.set(q);                                        // Jobb oldali linkek
-    ix = plr.indexOf(_sPortId2, ppl.get(ppl.idIndex()));    // Saját portra mutató link törlendő!
-    if (ix >= 0) {
-        delete plr.pullAt(ix);
-        --fr;
-    }
-    QString slp, srp; // Jobb és bal oldali következő link teljes port név/nevek
-    QString sls, srs; // Jobb és bal oldali következő link megosztás(ok)
-    eTristate bMac = TS_FALSE;
-    if (fl == 0 || fr == 0) {
-        sToolTip += htmlInfo(QObject::trUtf8("További linkek hiányában a MAC táblában nincs találat."));
-        portNameAndShare(q, slp, sls, pll);
-        portNameAndShare(q, srp, srs, plr);
-    }
-    else if (fl > 2 || fr > 2) {
-        sToolTip += htmlInfo(QObject::trUtf8("A további linkek száma túl magas (%1 <- ... -> %2), nics címtábla ellenörzés.").arg(fl).arg(fr), false, true);
-        portNameAndShare(q, slp, sls, pll);
-        portNameAndShare(q, srp, srs, plr);
-    }
-    else {
-        QString s, n;
-        eTristate r11, r12 = TS_NULL, r21 = TS_NULL, r22 = TS_NULL;
-        r11 = checkMac(q, pll.first()->getId(_sPortId2), plr.first()->getId(_sPortId2));
-        if (fl == 2) {
-            r21 = checkMac(q, pll[1]->getId(_sPortId2), plr[0]->getId(_sPortId2));
-        }
-        if (fr == 2) {
-            r12 = checkMac(q, pll[0]->getId(_sPortId2), plr[1]->getId(_sPortId2));
-        }
-        if (fl == 2 && fr == 2) {
-            r22 = checkMac(q, pll[1]->getId(_sPortId2), plr[1]->getId(_sPortId2));
-        }
-        int ok = 0, nok = 0;    // counter OK, not OK
-        if (r12 == TS_TRUE || r21 == TS_TRUE) {
-            r11 = r22 = TS_NULL;
-            if (r12 == TS_TRUE) ++ok;
-            if (r21 == TS_TRUE) ++ok;
-        }
-        if (r11 == TS_TRUE || r22 == TS_TRUE) {
-            r12 = r21 = TS_NULL;
-            if (r11 == TS_TRUE) ++ok;
-            if (r22 == TS_TRUE) ++ok;
-        }
-        if (r11 == TS_FALSE) ++nok;
-        if (r12 == TS_FALSE) ++nok;
-        if (r21 == TS_FALSE) ++nok;
-        if (r22 == TS_FALSE) ++nok;
-        if      (ok >  0 && nok == 0) {
-            portNameAndShare(q, slp, sls, pll.first(), anyTrue(r11, r12));
-            portNameAndShare(q, srp, srs, plr.first(), anyTrue(r21, r22));
-            if (fl > 1) portNameAndShare(q, slp, sls, pll[1], anyTrue(r11, r21));
-            if (fr > 1) portNameAndShare(q, srp, srs, plr[1], anyTrue(r12, r22));
-            sToolTip += htmlInfo(QObject::trUtf8("Pozitív találat a MAC táblában (is)."));
-            bMac = TS_TRUE;
-        }
-        else if (ok >  0 && nok >  0) {
-            portNameAndShare(q, slp, sls, pll.first(), tsAnd(r11, r12));
-            portNameAndShare(q, srp, srs, plr.first(), tsAnd(r21, r22));
-            if (fl > 1) portNameAndShare(q, slp, sls, pll[1], tsAnd(r11, r21));
-            if (fr > 1) portNameAndShare(q, srp, srs, plr[1], tsAnd(r12, r22));
-            sToolTip += htmlInfo(QObject::trUtf8("Találat a MAC táblában, pozitív és negatív is."));
-        }
-        else if (ok == 0 && nok >  0) {
-            portNameAndShare(q, slp, sls, pll.first(), anyFalse(r11, r12));
-            portNameAndShare(q, srp, srs, plr.first(), anyFalse(r21, r22));
-            if (fl > 1) portNameAndShare(q, slp, sls, pll[1], anyTrue(r11, r21));
-            if (fr > 1) portNameAndShare(q, srp, srs, plr[1], anyTrue(r12, r22));
-            sToolTip += htmlInfo(QObject::trUtf8("Találat a MAC táblában, de más linkre."));
-            bMac = TS_FALSE;
-        }
-        else /*  ok == 0 && nok == 0 */ {
-            portNameAndShare(q, slp, sls, pll.first(), TS_NULL);
-            portNameAndShare(q, srp, srs, plr.first(), TS_NULL);
-            if (fl > 1) portNameAndShare(q, slp, sls, pll[1], TS_NULL);
-            if (fr > 1) portNameAndShare(q, srp, srs, plr[1], TS_NULL);
-            sToolTip += htmlGrInf(QObject::trUtf8("A MAC táblában nincs találat."));
-        }
-    }
-    // Van LLDP link a két végpont között?
-/*    bool bLLDP = false;
-    if (fl && fr) {
-        cLldpLink().isLinked(q, ifl.getId(), ifr.getId(_sPortId1));
-    }
-    if (bLLDP) {
-        state    += "<b>LLDP</b> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez van konzisztens LLDP link."));
-    }
-    else {
-        state    += "<s>LLDP</s> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez nincs konzisztens LLDP link."));
-    }
-    if (bBckShMism) {
-        sToolTip += htmlWarning(trUtf8("Ellenőrizze a megosztásokat!"));
-        state += "<font color=\"red\"><b>!</b></font>";
-    }
-    if (bBckShared) {
-        sToolTip += htmlError(trUtf8("A hátlapi megosztáshoz tartozó kapcsolat, nem tartozhat hozzá link rekord."));
-    }
-    if (colision) {
-        sToolTip += colMsg;
-    }
-*/
-    QTableWidgetItem *pi;
-    QTextEdit *pTextEdit;
-    QString s;
-    //...
-    pTextEdit = newTextEdit(state, NULL, sToolTip);
-    pTable->setCellWidget(row, CX_STATE, pTextEdit);
-
-    pTextEdit = newTextEdit(slp, &parent->nleft);
-    pTable->setCellWidget(row, CX_NPORT_LEFT, pTextEdit);
-
-    pTextEdit = newTextEdit(sls);
-    pTable->setCellWidget(row, CX_SHARE_LEFT, pTextEdit);
-
-    s = ppl.getName();
-    if (ppshl != ES_) {
-        if (ppshl == ES_A) s += " (A)";
-        else               s += " (" + ppl.view(q, __sSharedPortId) + " <- " + portShare(ppshl) + ")";
-    }
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_PPORT_LEFT, pi);
-
-    s = ppl.getName(_sPortTag);
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_TAG_LEFT, pi);
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_TAG_RIGHT, pi);
-
-    if (exists) {
-        pi = new QTableWidgetItem(_sOk);
-        pTable->setItem(row, CX_SAVE, pi);
-    }
-    else {
-        if (bBckShared) {
-            pi = new QTableWidgetItem("-");
-            pTable->setItem(row, CX_SAVE, pi);
-        }
-        else {
-            pCheckBox = new QCheckBox();
-            bool checked = !(colision || bBckShMism || unique) || bMac != TS_TRUE;
-            pCheckBox->setChecked(checked);
-            pTable->setCellWidget(row, CX_SAVE, pCheckBox);
-            connect(pCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxchange(bool)));
-        }
-    }
-
-    s = ppr.getFullName(q);
-    if (ppshr != ES_) {
-        if (ppshr == ES_A) s += " (A)";
-        else               s += " (" + ppr.view(q, __sSharedPortId) + " <- " + portShare(ppshr) + ")";
-    }
-    pi = new QTableWidgetItem(s);
-    pTable->setItem(row, CX_PPORT_RIGHT, pi);
-
-    pTextEdit = newTextEdit(srs);
-    pTable->setCellWidget(row, CX_SHARE_RIGHT, pTextEdit);
-
-    pTextEdit = newTextEdit(srp, &parent->nright);
-    pTable->setCellWidget(row, CX_NPORT_RIGHT, pTextEdit);
-}
-
-
-void cDPRow::checkBoxchange(bool f)
-{
-    if (f) parent->pUi->pushButtonSave->setEnabled(true);
-    else   parent->setButtons();
+    return cDPRow::exporter(cid2col);
 }
 
 /* --- */
+
+cDPRowTag::cDPRowTag(QSqlQuery& q, cDeducePatch *par, int _row, cPPort& _ppl, cPhsLink& _pll, cPPort& _ppr, cPhsLink& _plr)
+    : cDPRow(par, _row, CX_SAVE, _ppl, _pll, _ppr, _plr)
+{
+    if (_row == 0) setHeader();
+    showIndex();
+    showText(CX_TAG, ppl.getName(_sPortTag));
+    calcLinkCheck(q);
+    checkAndShowSharing(CX_SHARE_LEFT, CX_SHARE_RIGHT);
+    showWarning(CX_STATE_WARNING);
+    showConflict(CX_STATE_CONFLICT);
+    showNodePort(q, CX_IF_LEFT, npidl);
+    showPatchPort(q, CX_PPORT_LEFT, ppl);
+    showPatchPort(q, CX_PPORT_RIGHT, ppr);
+    showNodePort(q, CX_IF_RIGHT, npidr);
+    checkAndShowLLDP(q, CX_STATE_LLDP);
+    checkAndShowMAC(q, CX_STATE_MAC);
+    setSaveCell();
+}
+
+cDPRowTag::~cDPRowTag()
+{
+    ;
+}
+
+QVector<int> cDPRowTag::cid2col;
+
+void cDPRowTag::setHeader()
+{
+    if (cid2col.isEmpty()) {
+        addCid2Col<cid2col>(CID_INDEX            ,  CX_INDEX);
+        addCid2Col<cid2col>(CID_STATE_WARNING    ,  CX_STATE_WARNING);
+        addCid2Col<cid2col>(CID_STATE_CONFLICT   ,  CX_STATE_CONFLICT);
+        addCid2Col<cid2col>(CID_STATE_MAC        ,  CX_STATE_MAC);
+        addCid2Col<cid2col>(CID_STATE_LLDP       ,  CX_STATE_LLDP);
+        addCid2Col<cid2col>(CID_SAVE             ,  CX_SAVE);
+        addCid2Col<cid2col>(CID_IF_LEFT          ,  CX_IF_LEFT);
+        addCid2Col<cid2col>(CID_SHARE_LEFT       ,  CX_SHARE_LEFT);
+        addCid2Col<cid2col>(CID_PPORT_LEFT       ,  CX_PPORT_LEFT);
+        addCid2Col<cid2col>(CID_TAG              ,  CX_TAG);
+        addCid2Col<cid2col>(CID_PPORT_RIGHT      ,  CX_PPORT_RIGHT);
+        addCid2Col<cid2col>(CID_SHARE_RIGHT      ,  CX_SHARE_RIGHT);
+        addCid2Col<cid2col>(CID_IF_RIGHT         ,  CX_IF_RIGHT);
+        if (cid2col.size() != CID_NUMBER) EXCEPTION(EPROGFAIL);     // Last column not hide!
+    }
+    cDPRow::setHeader(cid2col);
+}
+
+QStringList cDPRowTag::exportHeader()
+{
+    return cDPRow::exportHeader(cid2col);
+}
+
+QList<tStringPair> cDPRowTag::exporter()
+{
+    return cDPRow::exporter(cid2col);
+}
+
+/* --- */
+
+cDPRowLLDP::cDPRowLLDP(QSqlQuery& q, cDeducePatch *par, int _row, cLldpLink &lldp, cPPort& _ppl, cPhsLink& _pll, cPPort &_ppr, cPhsLink& _plr)
+    : cDPRow(par, _row, CX_SAVE, _ppl, _pll, _ppr, _plr)
+{
+    if (_row == 0) setHeader();
+    showIndex(toHtml(lldpLink2str(q, lldp)));
+    checkAndShowTag(CX_STATE_TAG, CX_TAG_LEFT, CX_TAG_RIGHT);
+    calcLinkCheck(q);
+    checkAndShowSharing(CX_SHARE_LEFT, CX_SHARE_RIGHT);
+    showWarning(CX_STATE_WARNING);
+    showConflict(CX_STATE_CONFLICT);
+    showNodePort(q, CX_IF_LEFT, npidl);
+    showPatchPort(q, CX_PPORT_LEFT, ppl);
+    showPatchPort(q, CX_PPORT_RIGHT, ppr, parent->nidr == NULL_ID ? ppr.getFullName(q) : ppr.getName());
+    showNodePort(q, CX_IF_RIGHT, npidr);
+    checkAndShowMAC(q, CX_STATE_MAC);
+    setSaveCell();
+}
+
+cDPRowLLDP::~cDPRowLLDP()
+{
+    ;
+}
+
+QVector<int> cDPRowLLDP::cid2col;
+
+void cDPRowLLDP::setHeader()
+{
+    if (cid2col.isEmpty()) {
+        addCid2Col<cid2col>(CID_INDEX            ,  CX_INDEX);
+        addCid2Col<cid2col>(CID_STATE_WARNING    ,  CX_STATE_WARNING);
+        addCid2Col<cid2col>(CID_STATE_CONFLICT   ,  CX_STATE_CONFLICT);
+        addCid2Col<cid2col>(CID_STATE_TAG        ,  CX_STATE_TAG);
+        addCid2Col<cid2col>(CID_STATE_MAC        ,  CX_STATE_MAC);
+        addCid2Col<cid2col>(CID_SAVE             ,  CX_SAVE);
+        addCid2Col<cid2col>(CID_IF_LEFT          ,  CX_IF_LEFT);
+        addCid2Col<cid2col>(CID_SHARE_LEFT       ,  CX_SHARE_LEFT);
+        addCid2Col<cid2col>(CID_PPORT_LEFT       ,  CX_PPORT_LEFT);
+        addCid2Col<cid2col>(CID_TAG_LEFT         ,  CX_TAG_LEFT);
+        addCid2Col<cid2col>(CID_TAG_RIGHT        ,  CX_TAG_RIGHT);
+        addCid2Col<cid2col>(CID_PPORT_RIGHT      ,  CX_PPORT_RIGHT);
+        addCid2Col<cid2col>(CID_SHARE_RIGHT      ,  CX_SHARE_RIGHT);
+        addCid2Col<cid2col>(CID_IF_RIGHT         ,  CX_IF_RIGHT);
+        if (cid2col.size() != CID_NUMBER) EXCEPTION(EPROGFAIL);     // Last column not hide!
+    }
+    cDPRow::setHeader(cid2col);
+}
+
+QStringList cDPRowLLDP::exportHeader()
+{
+    return cDPRow::exportHeader(cid2col);
+}
+
+QList<tStringPair> cDPRowLLDP::exporter()
+{
+    return cDPRow::exporter(cid2col);
+}
+
+/* *** */
 
 const enum ePrivilegeLevel cDeducePatch::rights = PL_OPERATOR;
 
 cDeducePatch::cDeducePatch(QMdiArea *par)
     :cIntSubObj(par)
 {
+    tableSet = false;
     pUi = new Ui::deducePatch();
     pUi->setupUi(this);
     static const QString sql = "'patch' = SOME (node_type)";
-    nid = nid2 = NULL_ID;
+    nidl = nidr = NULL_ID;
     pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch, pUi->lineEditPlacePattern, pUi->lineEditPatchPattern, QString(), sql);
     pSelNode->setPatchInsertButton(pUi->toolButtonPatchAdd);
     pSelNode->setPlaceInsertButton(pUi->toolButtonPlaceAdd);
@@ -484,6 +599,9 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
     connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
     methode = DPM_MAC;
     pUi->radioButtonMAC->setChecked(true);
+    pModel = new QStandardItemModel;
+    pUi->tableView->setModel(pModel);
+    connect(pModel, SIGNAL(itemChanged(QStandardItem*)), this, SLOT(on_tableItem_changed(QStandardItem*)));
 }
 
 cDeducePatch::~cDeducePatch()
@@ -494,12 +612,11 @@ cDeducePatch::~cDeducePatch()
 void cDeducePatch::setButtons()
 {
     bool f;
-    f = (nid != NULL_ID) && (methode != DPM_TAG || nid2 != NULL_ID);
+    f = (nidl != NULL_ID) && (methode != DPM_TAG || nidr != NULL_ID);
     pUi->pushButtonStart->setEnabled(f);
     f = false;
-    for (int i = 0; i < rows.size(); ++i) {
-        QCheckBox *pcb = rows.at(i)->pCheckBox;
-        f = pcb != NULL && pcb->isChecked();
+    foreach (cDPRow *p, rows) {
+        f = p->isChecked();
         if (f) break;
     }
     pUi->pushButtonSave->setEnabled(f);
@@ -507,93 +624,173 @@ void cDeducePatch::setButtons()
 
 void cDeducePatch::clearTable()
 {
+    rows.clear();
     foreach (cDPRow *p, rows) {
         delete p;
     }
-    rows.clear();
-    pUi->tableWidget->setRowCount(0);
+    pModel->clear();
 }
 
-void cDeducePatch::byLLDP(QSqlQuery& q)
+void cDeducePatch::byLLDP()
 {
-    pUi->tableWidget->setColumnHidden(CX_TIMES, false);
-    (void)q;
+    tableSet = true;
+    clearTable();
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
+    cPPort   ppl;   // Left patch port
+    cPPort   ppr;   // Right patch port
+    cPhsLink pll;   // Left Fron-Term link if exists
+    cPhsLink plr;   // Right Fron-Term link if exists
+    cLldpLink lldp;
+
+    static const QString _sql = // Mindkét oldal megadva
+            "WITH term_front_links AS ("
+               " SELECT p.*, l.*"
+               " FROM pports AS p"
+               " JOIN phs_links AS l ON l.port_id2 = p.port_id  AND phs_link_type1 = 'Term' AND  phs_link_type2 = 'Front' )"
+            " SELECT ll.*, lr.*, lldp.*"
+            " FROM (SELECT * FROM term_front_links WHERE node_id = ?) AS ll"
+            " JOIN lldp_links AS lldp ON ll.port_id1 = lldp.port_id1"
+            " JOIN (SELECT * FROM term_front_links WHERE %1) AS lr ON lr.port_id1 = lldp.port_id2"
+            " ORDER BY ll.port_index ASC, lr.port_index ASC";
+    QString sql = _sql.arg(nidr == NULL_ID ? _sTrue : "node_id = ?");
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(0, QVariant(nidl));
+    if (nidr != NULL_ID) q.bindValue(1, QVariant(nidr));
+    _EXECSQL(q);
+    if (q.first()) {
+        do {
+            int i = 0;
+            ppl.set(q, &i, ppl.cols());
+            pll.set(q, &i, pll.cols());
+            ppr.set(q, &i, ppr.cols());
+            plr.set(q, &i, plr.cols());
+            lldp.set(q, &i, lldp.cols());
+            rows << new cDPRowLLDP(q2, this, rows.size(), lldp, ppl, pll, ppr, plr);
+        } while (q.next());
+        pUi->tableView->setSortingEnabled(true);
+        pUi->tableView->sortByColumn(cDPRowMAC::CX_INDEX, Qt::AscendingOrder);
+    }
+    else {
+        pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
+        pModel->setItem(0, 0, new QStandardItem(trUtf8("Az LLDP alapján nincs találat.")));
+        pUi->tableView->setSortingEnabled(false);
+    }
+    pUi->tableView->resizeColumnsToContents();
+    tableSet = false;
+    setButtons();;
 }
 
-void cDeducePatch::byMAC(QSqlQuery& q)
+
+void cDeducePatch::byMAC()
 {
-    pUi->tableWidget->setColumnHidden(CX_TIMES, false);
-    cMac mac;
-    cMacTab mt;
-    cPhsLink pl1;   // Front link(s)
-    cPhsLink pl2;   // The link found in the switch.
-    QListIterator<cNPort *> i(patch.ports);
-    while (i.hasNext()) {
-        cPPort *pp = i.next()->reconvert<cPPort>();
-        QStringList sshl(_sNul);    // [ ES_ ]
-        while (!sshl.isEmpty()) {
-            pl1.nextLink(q, pp->getId(), LT_BACK, ePortShare(portShare(sshl.takeFirst())));  // Előlap felé (hátlaptól)
-            qlonglong pid = pl1.getId(_sPortId2);           // A linkelt port ID
-            if (pid == NULL_ID) continue;                   // Nincs link
-            cNPort *pnp = cNPort::getPortObjById(q, pid);   // A linkelt port objektum
-            if (pnp->tableoid() == cNPort::tableoid_pports()) {
-                delete pnp;
-                continue;   // Ez egy patch port, bonyi, talán mmajd késöbb
-            }
-            if (pnp->tableoid() == cNPort::tableoid_nports()) {
-                delete pnp;
-                continue;   // passzív portnak nincs MAC-je
-            }
-            // interface
-            mac = pnp->getMac(_sHwAddress);    // A MAC-je
-            if (findMac(q, mac, mt, pl2)) {    // Keressük a port-cím táblában, és az ellenoldali linket
-                rows << new cDPRow(q, this, rows.size(), mt, *pnp, *pp, pl1, pl2);
-            }
-            delete pnp;
-            QString sh = pl1.getNote();
-            if (!sh.isEmpty()) {
-                sshl << sh.split(',');
-                sshl.removeDuplicates();
-            }
-        }
+    tableSet = true;
+    clearTable();
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
+    cPPort   ppl;   // Local patch port
+    cPhsLink pll;   // Local Front link (left)
+    cPhsLink plr;   // Remote Front link (right)
+    cPPort   ppr;   // Remote patch port
+    cMacTab  mt;
+    static const QString sql =
+            "WITH x AS ("
+                "WITH ppl AS (SELECT * FROM pports WHERE node_id = ?)"  // Tested ports (local/left)
+                " SELECT "          // Find local nodes from remote switch address table
+                    "ppl.*,"                // local patch port
+                    "pll.*,"                // local patch port Front link
+                    "plr.*,"                // remote patch port Front Link
+                    "ppr.*,"                // remote patch port
+                    "mt.*,"                 // mactab record
+                    "min_shared(min_shared(ppl.shared_cable, pll.port_shared), min_shared(ppr.shared_cable, plr.port_shared)) AS msh"
+                " FROM ppl"
+                " JOIN phs_links  AS pll ON ppl.port_id = pll.port_id2"
+                " JOIN interfaces AS ifl ON pll.port_id1 = ifl.port_id"    // Local interface -> MAC
+                " JOIN mactab     AS mt  ON ifl.hwaddress = mt.hwaddress"  // MAC -> mactab
+                " JOIN phs_links  AS plr ON mt.port_id   = plr.port_id1"   // mactab -> remote link
+                " JOIN pports     AS ppr ON plr.port_id2 = ppr.port_id"
+                " WHERE pll.phs_link_type2 = 'Front'"
+               " UNION"
+                " SELECT "          // Find remote nodes from local switch address table
+                    "ppl.*,"                // local patch port
+                    "pll.*,"                // local patch port Front link
+                    "plr.*,"                // remote patch port Front Link
+                    "ppr.*,"                // remote patch port
+                    "mt.*,"                 // mactab record
+                    "min_shared(min_shared(ppl.shared_cable, pll.port_shared), min_shared(ppr.shared_cable, plr.port_shared)) AS msh"
+                " FROM ppl"
+                " JOIN phs_links  AS pll ON ppl.port_id = pll.port_id2"
+                " JOIN interfaces AS swp ON pll.port_id1 = swp.port_id"    // Local interface, switch port
+                " JOIN mactab     AS mt  ON swp.port_id  = mt.port_id"     // mactab records
+                " JOIN interfaces AS ifr ON mt.hwaddress = ifr.hwaddress"  // remote interface
+                " JOIN phs_links  AS plr ON ifr.port_id  = plr.port_id1"
+                " JOIN pports     AS ppr ON plr.port_id2 = ppr.port_id"
+                " WHERE pll.phs_link_type2 = 'Front'"
+            ") SELECT * FROM x WHERE msh <> 'NC'"
+            " ORDER BY msh ASC";
+    if (execSql(q, sql, nidl)) {
+        do {
+            int i = 0;
+            ppl.set(q, &i, ppl.cols());
+            pll.set(q, &i, pll.cols());
+            plr.set(q, &i, plr.cols());
+            ppr.set(q, &i, ppr.cols());
+            mt. set(q, &i, mt.cols());
+            rows << new cDPRowMAC(q2, this, rows.size(), mt, ppl, pll, ppr, plr);
+        } while (q.next());
+        pUi->tableView->setSortingEnabled(true);
+        pUi->tableView->sortByColumn(cDPRowMAC::CX_INDEX, Qt::AscendingOrder);
     }
-    pUi->tableWidget->resizeColumnsToContents();
+    else {
+        pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
+        pModel->setItem(0, 0, new QStandardItem(trUtf8("A címtáblák alapján nincs találat.")));
+        pUi->tableView->setSortingEnabled(false);
+    }
+    pUi->tableView->resizeColumnsToContents();
+    tableSet = false;
+    setButtons();
 }
 
-void cDeducePatch::byTag(QSqlQuery &q)
+void cDeducePatch::byTag()
 {
-    pUi->tableWidget->setColumnHidden(CX_TIMES, true);
-    cPatch pr;      // Jobb oldali patch panel
-    int ixTag = cPPort().toIndex(_sPortTag);
-    pr.setById(q, nid2);
-    pr.fetchPorts(q);
-    cPPort *ppl;    // Bal oldali patch port
-    cPPort *ppr;    // Jobb oldali patch port
-    QString tag;
-    bool unique;
-    int ix;
-    nleft = nright = 0;
-    QListIterator<cNPort *> i(patch.ports);
-    for (int i = 0; i < patch.ports.size(); ++i ) {
-        ppl = patch.ports.at(i)->reconvert<cPPort>();
-        tag = ppl->getName(ixTag);
-        if (tag.isEmpty()) continue;    // ha nincs cimke
-        unique = 0 > patch.ports.indexOf(ixTag, tag, i +1); // egyedi cimke a bal oldalon
-        ix = 0;
-        while (0 <= (ix = pr.ports.indexOf(ixTag, tag, ix))) {
-            unique = unique && (0 > pr.ports.indexOf(ixTag, tag, ix +1));  // Több találat ugyanarra a cimkére
-            ppr = pr.ports.at(ix)->reconvert<cPPort>();
-            rows << new cDPRow(q, this, rows.size(), unique, *ppl, *ppr);
-            ++ix;
-        }
+    tableSet = true;
+    clearTable();
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
+    cPPort   ppl;   // Left patch port
+    cPPort   ppr;   // Right patch port
+    cPhsLink pll;   // Left Fron-Term link if exists
+    cPhsLink plr;   // Right Fron-Term link if exists
+
+    static const QString sql =
+            "WITH term_front_links AS ("
+               " SELECT p.*, l.*"
+               " FROM pports AS p"
+               " LEFT OUTER JOIN phs_links AS l ON l.port_id2 = p.port_id  AND phs_link_type1 = 'Term' AND  phs_link_type2 = 'Front' )"
+            " SELECT ll.*, lr.*"
+            " FROM (SELECT * FROM term_front_links WHERE node_id =  82) AS ll"
+            " JOIN (SELECT * FROM term_front_links WHERE node_id = 103) AS lr USING(port_tag)"
+            " ORDER BY ll.port_index ASC, lr.port_index ASC";
+    if (execSql(q, sql, nidl, nidr)) {
+        do {
+            int i = 0;
+            ppl.set(q, &i, ppl.cols());
+            pll.set(q, &i, pll.cols());
+            ppr.set(q, &i, ppr.cols());
+            plr.set(q, &i, plr.cols());
+            rows << new cDPRowTag(q2, this, rows.size(), ppl, pll, ppr, plr);
+        } while (q.next());
+        pUi->tableView->setSortingEnabled(true);
+        pUi->tableView->sortByColumn(cDPRowMAC::CX_INDEX, Qt::AscendingOrder);
     }
-    pUi->tableWidget->resizeColumnsToContents();
-    if (pUi->tableWidget->columnWidth(CX_NPORT_LEFT) < nleft) {
-        pUi->tableWidget->setColumnWidth(CX_NPORT_LEFT, nleft);
+    else {
+        pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
+        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pUi->tableView->setSortingEnabled(false);
     }
-    if (pUi->tableWidget->columnWidth(CX_NPORT_RIGHT) < nright) {
-        pUi->tableWidget->setColumnWidth(CX_NPORT_RIGHT, nright);
-    }
+    pUi->tableView->resizeColumnsToContents();
+    tableSet = false;
+    setButtons();
 }
 
 bool cDeducePatch::findLink(cPhsLink& pl)
@@ -606,14 +803,14 @@ bool cDeducePatch::findLink(cPhsLink& pl)
 
 void cDeducePatch::changeNode(qlonglong id)
 {
-    nid = id;
+    nidl = id;
     clearTable();
     setButtons();
 }
 
 void cDeducePatch::changeNode2(qlonglong id)
 {
-    nid2 = id;
+    nidr = id;
     clearTable();
     setButtons();
 }
@@ -623,7 +820,7 @@ void cDeducePatch::on_radioButtonLLDP_pressed()
     methode = DPM_LLDP;
     clearTable();
     setButtons();
-    pSelNode2->setDisabled();
+    pSelNode2->setEnabled();
 }
 void cDeducePatch::on_radioButtonMAC_pressed()
 {
@@ -642,19 +839,14 @@ void cDeducePatch::on_radioButtonTag_pressed()
 
 void cDeducePatch::on_pushButtonStart_clicked()
 {
-    QSqlQuery q = getQuery();
-    bool f = (nid != NULL_ID) && (methode != DPM_TAG || nid2 != NULL_ID);
+    bool f = (nidl != NULL_ID) && (methode != DPM_TAG || nidr != NULL_ID);
     if (!f) {
         EXCEPTION(EPROGFAIL);
     }
-    clearTable();
-    patch.setById(q, nid);
-    patch.fetchPorts(q);
-    patch.sortPortsByIndex();
     switch (methode) {
-    case DPM_LLDP:  byLLDP(q);  break;
-    case DPM_MAC:   byMAC(q);   break;
-    case DPM_TAG:   byTag(q);   break;
+    case DPM_LLDP:  byLLDP();  break;
+    case DPM_MAC:   byMAC();   break;
+    case DPM_TAG:   byTag();   break;
     default:        EXCEPTION(EPROGFAIL);
     }
     setButtons();
@@ -675,9 +867,7 @@ void cDeducePatch::on_pushButtonSave_clicked()
     try {
         sqlBegin(q, tr);
         foreach (cDPRow *pRow, rows) {
-            QCheckBox *pCB = pRow->pCheckBox;
-            if (pCB == NULL || pCB->isChecked() == false) continue;
-            pRow->phsLink.replace(q);
+            pRow->save(q);
         }
         sqlCommit(q, tr);
     }
@@ -688,4 +878,63 @@ void cDeducePatch::on_pushButtonSave_clicked()
         delete pe;
     }
     on_pushButtonStart_clicked();   // Refresh
+}
+
+void cDeducePatch::on_tableItem_changed(QStandardItem * pi)
+{
+    (void)pi;
+    if (!tableSet) setButtons();
+}
+
+
+void cDeducePatch::on_toolButtonCopyZone_clicked()
+{
+    qlonglong zid = pSelNode->currentZoneId();
+    pSelNode2->setCurrentZone(zid);
+}
+
+void cDeducePatch::on_toolButtonCopyPlace_clicked()
+{
+    qlonglong pid = pSelNode->currentPlaceId();
+    pSelNode2->setCurrentPlace(pid);
+}
+
+void cDeducePatch::on_pushButtonReport_clicked()
+{
+    if (rows.size() == 0) return;
+    QStringList header = rows.first()->exportHeader();
+    QMap<int, cDPRow *> rowsMap;
+    cDPRow * pRow;
+    foreach (pRow, rows) {
+        rowsMap[pRow->row()] = pRow;
+    }
+    QList<int>  rowIndexs = rowsMap.keys();
+    std::sort(rowIndexs.begin(), rowIndexs.end());
+    QList<QStringList> table;
+    foreach (int i, rowIndexs) {
+        QList<tStringPair> slp = rowsMap[i]->exporter();
+        // Nem tudjuk (még?) megjeleníteni a tool tip stringeket, eltávolítjuk
+        QStringList tableRow;
+        foreach (tStringPair p, slp) {
+            tableRow << p.first;
+        }
+        table << tableRow;
+    }
+    QString html = htmlTable(header, table, true);
+    QString title;
+    switch (methode) {
+    case DPM_LLDP:
+        title = trUtf8("Fali kábel felfedezés LDAP alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        break;
+    case DPM_MAC:
+        title = trUtf8("Fali kábel felfedezés címtáblák alapján alapján: %1").arg(pSelNode->currentNodeName());
+        break;
+    case DPM_TAG:
+        title = trUtf8("Fali kábel felfedezés cimkék alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    popupReportWindow(this, html, title);
 }

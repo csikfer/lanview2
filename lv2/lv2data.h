@@ -887,6 +887,7 @@ EXT_ bool portLessThanByName(const cNPort * pp1, const cNPort * pp2);
 class cPatch;
 
 enum ePortShare {
+    ES_INVALID = ENUM_INVALID,
     ES_     = 0,
     ES_A,   ES_AA, ES_AB,
     ES_B,   ES_BA, ES_BB,

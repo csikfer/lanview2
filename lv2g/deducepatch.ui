@@ -172,7 +172,7 @@
         <item>
          <widget class="QRadioButton" name="radioButtonLLDP">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>LLDP alapján</string>
@@ -218,6 +218,13 @@
          </property>
          <property name="text">
           <string>Kijelöltek mentése</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonReport">
+         <property name="text">
+          <string>Riport</string>
          </property>
         </widget>
        </item>
@@ -300,6 +307,20 @@
           <widget class="QComboBox" name="comboBoxPlace2">
            <property name="enabled">
             <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonCopyPlace">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A hely azonos a jobb oldallal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
            </property>
           </widget>
          </item>
@@ -388,6 +409,20 @@
           </widget>
          </item>
          <item>
+          <widget class="QToolButton" name="toolButtonCopyZone">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A zóna azonos a jobb oldallal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QToolButton" name="toolButtonRefresh2">
            <property name="enabled">
             <bool>false</bool>
@@ -408,112 +443,19 @@
     </layout>
    </item>
    <item>
-    <widget class="QTableWidget" name="tableWidget">
-     <attribute name="horizontalHeaderCascadingSectionResizes">
+    <widget class="QTableView" name="tableView">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <attribute name="horizontalHeaderHighlightSections">
       <bool>false</bool>
      </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>150</number>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>30</number>
      </attribute>
-     <column>
-      <property name="text">
-       <string>Végponti port</string>
-      </property>
-      <property name="toolTip">
-       <string>A végponti eszköz neve és portja.</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Megosztás</string>
-      </property>
-      <property name="toolTip">
-       <string>Külső, eéőlapi megosztás típusa.</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Patch port</string>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A bal oldali csatlakozó vagy patch panel portja.&lt;/p&gt;&lt;p&gt;Zárójelben a hátlapi megosztás típusa, és nem A típus esetén az A típusú port neve, amivel osztozik a kábelen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Tag</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Állapot</string>
-      </property>
-      <property name="toolTip">
-       <string>Mi alapján történt a találat.</string>
-      </property>
-      <property name="whatsThis">
-       <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot;&gt;
-&lt;html&gt;
-&lt;head&gt;
-	&lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=utf-8&quot;/&gt;
-	&lt;title&gt;&lt;/title&gt;
-	&lt;meta name=&quot;generator&quot; content=&quot;LibreOffice 5.1.6.2 (Linux)&quot;/&gt;
-	&lt;meta name=&quot;created&quot; content=&quot;2017-08-10T09:30:16.977313858&quot;/&gt;
-	&lt;meta name=&quot;changed&quot; content=&quot;2017-08-10T09:45:01.099351749&quot;/&gt;
-	&lt;style type=&quot;text/css&quot;&gt;
-		@page { margin: 2cm }
-		p { margin-bottom: 0.25cm; line-height: 120% }
-		a:link { so-language: zxx }
-	&lt;/style&gt;
-&lt;/head&gt;
-&lt;body lang=&quot;hu-HU&quot; dir=&quot;ltr&quot;&gt;
-&lt;p style=&quot;margin-bottom: 0cm; line-height: 100%&quot;&gt;&lt;span style=&quot;background: #00cc00&quot;&gt;Zöld	&lt;/span&gt;:
-Címtáblák és LLDP alapján&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 0cm; line-height: 100%&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;&lt;span style=&quot;background: #6666ff&quot;&gt;Kék	&lt;/span&gt;&lt;/font&gt;:
-Csak a címtáblák alapján&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 0cm; line-height: 100%&quot;&gt;&lt;span style=&quot;background: #66ffff&quot;&gt;Cián	&lt;/span&gt;:
-Csak az LLDP alapján&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 0cm; line-height: 100%&quot;&gt;&lt;span style=&quot;background: #ff66cc&quot;&gt;Bípor	&lt;/span&gt;:
-Címtáblák alapján, ütközés az LLDP-vel.&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 0cm; line-height: 100%&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;&lt;span style=&quot;background: #ff3333&quot;&gt;Piros	&lt;/span&gt;&lt;/font&gt;:
-LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
-&lt;/body&gt;
-&lt;/html&gt;</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Mentés</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Tag</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Patch port</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Megosztás</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Végponti port</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Első &lt; utolsó</string>
-      </property>
-      <property name="toolTip">
-       <string>Az észlelésének időintervalluma.</string>
-      </property>
-     </column>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
     </widget>
    </item>
   </layout>

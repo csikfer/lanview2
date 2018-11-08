@@ -38,33 +38,6 @@ public:
     cBackTrace(size_t _size = DEFAULT_BACKTRACE_SIZE);
 };
 
-
-/*!
-@def LSTXGET(__lst, __ix, __v)
-Egy elem lekérése egy lista/vektor -ból
-@param __lst    A lista ill. vektor konténer objektum
-@param __ix     Elem indexe (előjeles típus) a konténer objektumban
-@param __v      Változó, ahova az indexelt elemet kértük
-@throw cError*  Ha az index-en nincs valós elem. hibakód: ENOINDEX.
- */
-#define LSTXGET(__lst, __ix, __v) { \
-    if (__ix < 0 || __ix >= __lst.size()) EXCEPTION(ENOINDEX, (int)__ix); \
-    __v = __lst[__ix]; \
-}
-
-/*!
-@def LSTUXGET(__lst, __ix, __v)
-Egy elem lekérése egy lista/vektor -ból
-@param[in] __lst A lista ill. vektor konténer objektum
-@param[in] __ix  Elem indexe (nem előjeles típus) a konténer objektumban
-@param[out] __v  Változó, ahova az indexelt elemet kértük
-@throw cError*  Ha az index-en nincs valós elem. hibakód: ENOINDEX.
- */
-#define LSTUXGET(__lst, __ix, __v) { \
-    if (__ix >= __lst.size()) EXCEPTION(ENOINDEX, (int)__ix); \
-    __v = __lst[__ix]; \
-}
-
 #define NEWCERROR(ec, ...) new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__)
 
 /*!
@@ -427,5 +400,17 @@ Exception SQL result error, a hibaüzenetbe beleteszi az SQL paramcsot is (leké
     catch (std::exception& __e) { pe = NEWCERROR(ESTD, -1, __e.what()); } \
     catch (...)                 { pe = NEWCERROR(EUNKNOWN); }
 
+
+template <typename E, template<typename> class C> E& containerAt(C<E>& container, int index)
+{
+    if (index < 0 || index >= container.size()) EXCEPTION(ENOINDEX, index);
+    return container[index];
+}
+
+template <typename E, template<typename> class C> const E& containerAt(const C<E>& container, int index)
+{
+    if (index < 0 || index >= container.size()) EXCEPTION(ENOINDEX, index);
+    return container[index];
+}
 
 #endif // CERROR_H_INCLUDED

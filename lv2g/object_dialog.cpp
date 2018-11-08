@@ -96,6 +96,7 @@ cPatchDialog::~cPatchDialog()
 cPatch * cPatchDialog::getPatch()
 {
     cPatch *p = new cPatch();
+    p->setId(_sNodeType, ENUM2SET(NT_PATCH));
     p->setName(pUi->lineEditName->text());
     p->setNote(pUi->lineEditNote->text());
     p->setId(_sPlaceId, pSelectPlace->currentPlaceId());

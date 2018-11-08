@@ -61,6 +61,7 @@ template <class T>
         class tRecordList : public QList<T *>
 {
 public:
+    typedef QListIterator<T *> listIterator;
     /// Konstruktor. Üres rekord listát hoz létre
     tRecordList() : QList<T *>() { ; }
     /// Konstruktor. Egy elemű rekord listát hoz létre (T a rekord objektum típus)

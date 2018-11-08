@@ -3159,6 +3159,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
     _stat = ES_EXIST;
     const cColStaticDescrList&  fl = __d.columnDescrs();
     int cnt = 0;
+    bool any = false;
     for (ix = 0; ix < m; ix++) {            // Végigrohanunk a cél rekord mezőin
         const cColStaticDescr& fd = fl[ix]; // A mező leíró
         i = ixv[ix];                        // forrás idex, a keresz táblából
@@ -3172,6 +3173,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
         }
         if (!f.isNull()) {
             _set(ix, f);
+            any = true;
         }
         else {
             if (!fd.isNullable) {
@@ -3180,13 +3182,18 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
             }
         }
         condDelTextList(ix, f); // Ha megváltozott a text ID, akkor törli a nyelvi szövegeket, ha voltak.
-   }
-    if (cnt == m) {
-        if (_stat & ES_INCOMPLETE) _stat  = ES_DEFECTIVE;
-        else                       _stat |= ES_COMPLETE;
     }
-    if (isIdent()) _stat |= ES_IDENTIF;
-    else           _stat |= ES_UNIDENT;
+    if (any) {
+        if (cnt == m) {
+            if (_stat & ES_INCOMPLETE) _stat  = ES_DEFECTIVE;
+            else                       _stat |= ES_COMPLETE;
+        }
+        if (isIdent()) _stat |= ES_IDENTIF;
+        else           _stat |= ES_UNIDENT;
+    }
+    else {  // All field is NULL
+        clear();
+    }
     return *this;
 }
 

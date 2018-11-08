@@ -45,6 +45,14 @@ EXT_ eTristate str2tristate(const QString& _b, enum eEx __ex);
 /// A bool-ból stringet csinál, a nyelvi beállításoknak megfelelően.
 EXT_ QString langBool(bool b);
 
+static inline QString langTristate(eTristate t)
+{
+    QString r;
+    if (t != TS_NULL) r = langBool(toBool(t));
+    return r;
+}
+
+
 /// A megadott nevű séma OID-jével tér vissza.
 /// Ha nincs ilyen séma, vagy más hiba történt dob egy kizárást
 /// @param q Az adatbázis művelethez használható objektum.

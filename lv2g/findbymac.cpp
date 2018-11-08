@@ -2,10 +2,10 @@
 #include "srvdata.h"
 #include "lv2link.h"
 #include "cerrormessagebox.h"
-#include "report.h"
 #include "scan.h"
 
 #include "ui_findbymac.h"
+
 
 cFBMExpThread::cFBMExpThread(cMac& _mac, QHostAddress& _ip, cSnmpDevice& _st, cFindByMac * _par)
     : QThread(_par), pEQ(NULL), mac(_mac), ip(_ip), st(_st)
@@ -27,7 +27,89 @@ void cFBMExpThread::readyLine()
     expLine(pEQ->pop());
 }
 
+static const QString _sNMap = "nmap";
+
+cPopUpNMap::cPopUpNMap(QWidget *par, const QString& sIp)
+    : cPopupReportWindow(par, trUtf8("Start nmap..."), trUtf8("%1 nmap report").arg(sIp))
+    , process(new QProcess(this))
+{
+    pButtonSave->setDisabled(true);
+    QStringList args("-A");
+    args << sIp;
+    connect(process, SIGNAL(started()),     this, SLOT(processStarted()));
+    connect(process, SIGNAL(finished(int)), this, SLOT(processFinished(int)));
+    connect(process, SIGNAL(readyRead()),   this, SLOT(processReadyRead()));
+    connect(process, SIGNAL(error(QProcess::ProcessError)), this, SLOT(processError(QProcess::ProcessError)));
+    first = true;
+    process->start(_sNMap, args);
+}
+
+void cPopUpNMap::processStarted()
+{
+    pTextEdit->setText(trUtf8("nmap started ..."));
+}
+
+void cPopUpNMap::processFinished(int ec)
+{
+    if (ec == 0) {
+        pTextEdit->append(htmlGrInf(_sOk));
+    }
+    else {
+        pTextEdit->append(htmlError(trUtf8("Exit code : %1").arg(ec)));
+    }
+    pButtonSave->setEnabled(true);
+}
+
+void cPopUpNMap::processReadyRead()
+{
+    QString out;
+    out = process->readAllStandardOutput();
+    if (!out.isEmpty()) {
+        static QChar cSp(' ');
+        static QChar cNl('\n');
+        QStringList lines = out.split(cNl);
+        foreach (QString line, lines) {
+            if (line.isEmpty()) {
+                if (!first) {
+                    text += sHtmlBr;
+                }
+            }
+            else {
+                int n = line.indexOf(cSp);
+                if (n >= 0 && n < 8) {
+                    QString s;
+                    if (n > 0) {
+                        s = line.mid(0, n);
+                        line.remove(0, n);
+                    }
+                    do {
+                        s += sHtmlNbsp;
+                        line = line.remove(0,1);
+                    } while (line.startsWith(cSp));
+                    line = s + toHtml(line);
+                }
+                text += line + sHtmlBr;
+            }
+            first = false;
+        }
+    }
+    out = process->readAllStandardError();
+    if (!out.isEmpty()) text += htmlError(out, true);
+    pTextEdit->setHtml(text);
+    resizeByText();
+    first = false;
+    // PDEB(VERBOSE) << "Text : \n" << text << endl;
+}
+
+void cPopUpNMap::processError(QProcess::ProcessError e)
+{
+    QString text;
+    text = ProcessError2Message(e);
+    pTextEdit->append(htmlError(text, true));
+}
+
 const enum ePrivilegeLevel cFindByMac::rights = PL_VIEWER;
+eTristate cFindByMac::nmapExists = TS_NULL;
 
 cFindByMac::cFindByMac(QMdiArea *parent) :
     cIntSubObj(parent),
@@ -47,6 +129,15 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     pUi->pushButtonExplore->hide();
     fSw = false;
 #endif  // SNMP_IS_EXISTS
+    if (nmapExists == TS_NULL) {
+        QProcess    nmapTest;
+        nmapTest.start(_sNMap, QStringList("-V"));
+        if (!nmapTest.waitForFinished(5000)) nmapTest.kill();
+        nmapExists = nmapTest.exitCode() == 0 ? TS_TRUE : TS_FALSE;
+    }
+    if (nmapExists == TS_FALSE) {
+        pUi->pushButtonNMap->hide();
+    }
     connect(pUi->comboBoxMAC,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeMAC(QString)));
     connect(pUi->comboBoxIP ,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeIP(QString)));
     connect(pUi->pushButtonClear,   SIGNAL(clicked()),                      this, SLOT(hit_clear()));
@@ -101,6 +192,7 @@ void cFindByMac::setButtons()
 {
     pUi->pushButtonFindMac->setEnabled(fMAC);
     pUi->pushButtonFindIp->setEnabled(fIP);
+    pUi->pushButtonNMap->setEnabled(fIP);
     pUi->pushButtonExplore->setEnabled(fMAC && fIP && fSw);
     pUi->toolButtonMAC2IP->setEnabled(fMAC);
     pUi->toolButtonIP2MAC->setEnabled(fIP);
@@ -189,4 +281,10 @@ void cFindByMac::on_pushButtonFindIp_clicked()
     QString sIp = pUi->comboBoxIP->currentText();
     QString text = htmlReportByIp(*pq, sIp);
     pUi->textEdit->setHtml(text);
+}
+
+void cFindByMac::on_pushButtonNMap_clicked()
+{
+    QString sIp = pUi->comboBoxIP->currentText();
+    new cPopUpNMap(this, sIp);
 }

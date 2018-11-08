@@ -1423,7 +1423,7 @@ bool portLessThanByName(const cNPort * pp1, const cNPort * pp2)
      if (0 == _n.compare(_sD,   Qt::CaseInsensitive)) return ES_D;
      if (0 == _n.compare(_sNC,  Qt::CaseInsensitive)) return ES_NC;
      if (__ex) EXCEPTION(EDATA, -1, _n);
-     return ENUM_INVALID;
+     return ES_INVALID;
  }
 
 const QString& portShare(int _i, eEx __ex)

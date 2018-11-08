@@ -21,16 +21,21 @@ cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, cons
     pHLayout->addWidget(pButtonClose);
     pHLayout->addStretch();
     show();      // Enélkül dokumentum méret, és ezzel s
-    QSize  s = QApplication::screens().first()->size();
-    s *= 7; s /= 10;    // 70%
+    screenSize = QApplication::screens().first()->size();
+    screenSize *= 7; screenSize /= 10;    // 70%
     // p->resize(s);   // Minimalizáljuk a sorok tördelését
     pTextEdit->setLineWrapMode(QTextEdit::NoWrap);
+    resizeByText();
+}
+
+void cPopupReportWindow::resizeByText()
+{
     QSizeF sf = pTextEdit->document()->size();
     int h, w, sp, bs;
     sp = pHLayout->spacing();
     bs = pButtonClose->size().height();
-    h = std::min(s.height(), (int)sf.height());
-    w = std::min(s.width(),  (int)sf.width());
+    h = std::min(screenSize.height(), (int)sf.height());
+    w = std::min(screenSize.width(),  (int)sf.width());
     // pTextEdit->resize(w, h); // nem műkodik
     h +=  bs * 2 + sp * 3 + 8;
     w +=  sp * 4 + 16;
@@ -43,20 +48,20 @@ void cPopupReportWindow::save()
     textEditToFile(fn, pTextEdit, this);
 }
 
-QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
+cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
 {
     return new cPopupReportWindow(_par, _text, _title);
 }
 
-QWidget * popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)
+cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)
 {
     cPatch *po = cPatch::getNodeObjById(q, nid);
-    QWidget *r = popupReportNode(par, q, po);
+    cPopupReportWindow *r = popupReportNode(par, q, po);
     delete po;
     return r;
 }
 
-QWidget * popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
+cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
 {
     tStringPair msg1;
     QString msg2;
@@ -71,7 +76,7 @@ QWidget * popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
     return popupReportWindow(par, msg1.second + msg2, msg1.first);
 }
 
-QWidget * popupReportByIp(QWidget *par, QSqlQuery& q, const QString& sIp)
+cPopupReportWindow* popupReportByIp(QWidget *par, QSqlQuery& q, const QString& sIp)
 {
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 IP cím alapján").arg(sIp);
@@ -80,7 +85,7 @@ QWidget * popupReportByIp(QWidget *par, QSqlQuery& q, const QString& sIp)
     return popupReportWindow(par, msg, title);
 }
 
-QWidget * popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& sMAC)
+cPopupReportWindow* popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& sMAC)
 {
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 MAC alapján").arg(sMAC);

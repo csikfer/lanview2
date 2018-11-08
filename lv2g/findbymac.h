@@ -2,8 +2,9 @@
 #define FINDBYMAC_H
 
 #include <QWidget>
-
 #include "lv2g.h"
+#include "popupreport.h"
+
 namespace Ui {
     class FindByMac;
 }
@@ -25,6 +26,21 @@ signals:
     void expLine(QString s);
 };
 
+class cPopUpNMap : protected cPopupReportWindow {
+    Q_OBJECT
+public:
+    cPopUpNMap(QWidget *par, const QString& sIp);
+protected:
+    QProcess   *process;
+    QString     text;
+    bool        first;
+private slots:
+    void processStarted();
+    void processFinished(int ec);
+    void processReadyRead();
+    void processError(QProcess::ProcessError e);
+};
+
 class LV2GSHARED_EXPORT cFindByMac : public cIntSubObj
 {
     Q_OBJECT
@@ -40,6 +56,7 @@ private:
     cFBMExpThread *pThread;
     QSqlQuery *pq;
     bool    fMAC, fIP, fSw;
+    static eTristate nmapExists;
 private slots:
     void changeMAC(const QString& s);
     void changeIP(const QString& s);
@@ -51,6 +68,7 @@ private slots:
     void expLine(QString s);
     void finished();
     void on_pushButtonFindIp_clicked();
+    void on_pushButtonNMap_clicked();
 };
 
 

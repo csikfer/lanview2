@@ -32,8 +32,6 @@ akkor az ilyenkor használatos try { … } blokkban használhatjuk a CATCHS() ma
 Program hiba esetén a következő makrók használhatóak:
 - EXCEPTION()	Általános hiba eseténi kizárást generáló makró
 - NEWCERROR()	Egy hiba objektum példány létrehozása, feltöltése.
-- LSTXGET()	Egy listából egy érték lekérése, hiba estén kizárás dobása.
-- LSTUXGET()	Egy listából egy érték lekérése, hiba estén kizárás dobása, az index előjel nélküli.
 - SQLERR()      SQL hiba
 - SQLOERR()     SQL megnyitási hiba
 - SQLPREPERR()	SQL prepare hiba
