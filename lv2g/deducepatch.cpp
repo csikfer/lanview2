@@ -31,8 +31,15 @@ cDPRow::cDPRow(cDeducePatch *par, int _row, int _save_col, cPPort &_ppl, cPhsLin
     pidr  = ppr.getId();
     spidl = ppl.getId(ixSharedPortId);
     spidr = ppr.getId(ixSharedPortId);
-    pItemSave = new QStandardItem;
-    model.setItem(_row, _save_col, pItemSave);
+    if (_save_col != CID_HAVE_NO) {
+        pItemSave  = new QStandardItem;
+        model.setItem(_row, _save_col, pItemSave);
+    }
+    else {
+        pItemSave = NULL;
+    }
+    pItemIndex = new QStandardItem;
+    model.setItem(_row, 0, pItemIndex);
 }
 
 cDPRow::~cDPRow()
@@ -91,6 +98,12 @@ void cDPRow::showCell(int column, const QString& text, const QString& icon, cons
     model.setItem(row(), column, pi);
 }
 
+void cDPRow::showIndex(const QString& _tt)
+{
+    pItemIndex->setText(ppl.getName(_sPortIndex).rightJustified(3));
+    if (!_tt.isEmpty()) pItemIndex->setToolTip(_tt);
+}
+
 
 void cDPRow::save(QSqlQuery& q)
 {
@@ -99,6 +112,19 @@ void cDPRow::save(QSqlQuery& q)
         model.setItem(pItemSave->row(), cxSave(), new QStandardItem(QIcon(sIOk), _sNul));
     }
 }
+
+bool cDPRow::isChecked()
+{
+    return pItemSave != NULL && pItemSave->isCheckable() && pItemSave->checkState() == Qt::Checked;
+}
+
+
+int cDPRow::row() const
+{
+    if (pItemIndex == NULL) EXCEPTION(EPROGFAIL);
+    return pItemIndex->row();
+}
+
 
 void cDPRow::setSaveCell()
 {
@@ -567,6 +593,126 @@ QList<tStringPair> cDPRowLLDP::exporter()
     return cDPRow::exporter(cid2col);
 }
 
+/* --- */
+
+cDPRowPar::cDPRowPar(QSqlQuery& q, cDeducePatch *par, int _row, cPPort& _ppl, cPhsLink& _pll, cPPort& _ppr, cPhsLink& _plr)
+    : cDPRow(par, _row, CX_SAVE, _ppl, _pll, _ppr, _plr)
+{
+    if (_row == 0) setHeader();
+    showIndex();
+    checkAndShowTag(CX_STATE_TAG, CX_TAG_LEFT, CX_TAG_RIGHT);
+    calcLinkCheck(q);
+    checkAndShowSharing(CX_SHARE_LEFT, CX_SHARE_RIGHT);
+    showWarning(CX_STATE_WARNING);
+    showConflict(CX_STATE_CONFLICT);
+    showNodePort(q, CX_IF_LEFT, npidl);
+    showPatchPort(q, CX_PPORT_LEFT, ppl);
+    showPatchPort(q, CX_PPORT_RIGHT, ppr);
+    showNodePort(q, CX_IF_RIGHT, npidr);
+    checkAndShowLLDP(q, CX_STATE_LLDP);
+    checkAndShowMAC(q, CX_STATE_MAC);
+    setSaveCell();
+}
+
+cDPRowPar::~cDPRowPar()
+{
+    ;
+}
+
+QVector<int> cDPRowPar::cid2col;
+
+void cDPRowPar::setHeader()
+{
+    if (cid2col.isEmpty()) {
+        addCid2Col<cid2col>(CID_INDEX            ,  CX_INDEX);
+        addCid2Col<cid2col>(CID_STATE_WARNING    ,  CX_STATE_WARNING);
+        addCid2Col<cid2col>(CID_STATE_CONFLICT   ,  CX_STATE_CONFLICT);
+        addCid2Col<cid2col>(CID_STATE_TAG        ,  CX_STATE_TAG);
+        addCid2Col<cid2col>(CID_STATE_MAC        ,  CX_STATE_MAC);
+        addCid2Col<cid2col>(CID_STATE_LLDP       ,  CX_STATE_LLDP);
+        addCid2Col<cid2col>(CID_SAVE             ,  CX_SAVE);
+        addCid2Col<cid2col>(CID_IF_LEFT          ,  CX_IF_LEFT);
+        addCid2Col<cid2col>(CID_SHARE_LEFT       ,  CX_SHARE_LEFT);
+        addCid2Col<cid2col>(CID_PPORT_LEFT       ,  CX_PPORT_LEFT);
+        addCid2Col<cid2col>(CID_TAG_LEFT         ,  CX_TAG_LEFT);
+        addCid2Col<cid2col>(CID_TAG_RIGHT        ,  CX_TAG_RIGHT);
+        addCid2Col<cid2col>(CID_PPORT_RIGHT      ,  CX_PPORT_RIGHT);
+        addCid2Col<cid2col>(CID_SHARE_RIGHT      ,  CX_SHARE_RIGHT);
+        addCid2Col<cid2col>(CID_IF_RIGHT         ,  CX_IF_RIGHT);
+        if (cid2col.size() != CID_NUMBER) EXCEPTION(EPROGFAIL);     // Last column not hide!
+    }
+    cDPRow::setHeader(cid2col);
+}
+
+QStringList cDPRowPar::exportHeader()
+{
+    return cDPRow::exportHeader(cid2col);
+}
+
+QList<tStringPair> cDPRowPar::exporter()
+{
+    return cDPRow::exporter(cid2col);
+}
+
+/* --- */
+
+cDPRowRep::cDPRowRep(QSqlQuery& q, cDeducePatch *par, int _row, cPPort& _ppl, cPhsLink& _pll, cPPort& _ppr, cPhsLink& _plr)
+    : cDPRow(par, _row, CID_HAVE_NO, _ppl, _pll, _ppr, _plr)
+{
+    if (_row == 0) setHeader();
+    showIndex();
+    checkAndShowTag(CX_STATE_TAG, CX_TAG_LEFT, CX_TAG_RIGHT);
+    calcLinkCheck(q);
+    checkAndShowSharing(CX_SHARE_LEFT, CX_SHARE_RIGHT);
+    showWarning(CX_STATE_WARNING);
+    showConflict(CX_STATE_CONFLICT);
+    showNodePort(q, CX_IF_LEFT, npidl);
+    showPatchPort(q, CX_PPORT_LEFT, ppl);
+    showPatchPort(q, CX_PPORT_RIGHT, ppr, parent->nidr == NULL_ID ? ppr.getFullName(q) : ppr.getName());
+    showNodePort(q, CX_IF_RIGHT, npidr);
+    checkAndShowLLDP(q, CX_STATE_LLDP);
+    checkAndShowMAC(q, CX_STATE_MAC);
+}
+
+cDPRowRep::~cDPRowRep()
+{
+    ;
+}
+
+QVector<int> cDPRowRep::cid2col;
+
+void cDPRowRep::setHeader()
+{
+    if (cid2col.isEmpty()) {
+        addCid2Col<cid2col>(CID_INDEX            ,  CX_INDEX);
+        addCid2Col<cid2col>(CID_STATE_WARNING    ,  CX_STATE_WARNING);
+        addCid2Col<cid2col>(CID_STATE_CONFLICT   ,  CX_STATE_CONFLICT);
+        addCid2Col<cid2col>(CID_STATE_TAG        ,  CX_STATE_TAG);
+        addCid2Col<cid2col>(CID_STATE_MAC        ,  CX_STATE_MAC);
+        addCid2Col<cid2col>(CID_STATE_LLDP       ,  CX_STATE_LLDP);
+        addCid2Col<cid2col>(CID_IF_LEFT          ,  CX_IF_LEFT);
+        addCid2Col<cid2col>(CID_SHARE_LEFT       ,  CX_SHARE_LEFT);
+        addCid2Col<cid2col>(CID_PPORT_LEFT       ,  CX_PPORT_LEFT);
+        addCid2Col<cid2col>(CID_TAG_LEFT         ,  CX_TAG_LEFT);
+        addCid2Col<cid2col>(CID_TAG_RIGHT        ,  CX_TAG_RIGHT);
+        addCid2Col<cid2col>(CID_PPORT_RIGHT      ,  CX_PPORT_RIGHT);
+        addCid2Col<cid2col>(CID_SHARE_RIGHT      ,  CX_SHARE_RIGHT);
+        addCid2Col<cid2col>(CID_IF_RIGHT         ,  CX_IF_RIGHT);
+        if (cid2col.size() != CID_NUMBER) EXCEPTION(EPROGFAIL);     // Last column not hide!
+    }
+    cDPRow::setHeader(cid2col);
+}
+
+QStringList cDPRowRep::exportHeader()
+{
+    return cDPRow::exportHeader(cid2col);
+}
+
+QList<tStringPair> cDPRowRep::exporter()
+{
+    return cDPRow::exporter(cid2col);
+}
+
 /* *** */
 
 const enum ePrivilegeLevel cDeducePatch::rights = PL_OPERATOR;
@@ -596,12 +742,12 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
     pSelNode2->setNodeInfoButton(pUi->toolButtonPatchInfo2);
     pSelNode2->refresh(false);
     pSelNode2->setParent(this);
-    connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
-    methode = DPM_MAC;
-    pUi->radioButtonMAC->setChecked(true);
     pModel = new QStandardItemModel;
     pUi->tableView->setModel(pModel);
     connect(pModel, SIGNAL(itemChanged(QStandardItem*)), this, SLOT(on_tableItem_changed(QStandardItem*)));
+    connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
+    changeMethode(DPM_MAC);
+    pUi->radioButtonMAC->setChecked(true);
 }
 
 cDeducePatch::~cDeducePatch()
@@ -611,13 +757,24 @@ cDeducePatch::~cDeducePatch()
 
 void cDeducePatch::setButtons()
 {
-    bool f;
-    f = (nidl != NULL_ID) && (methode != DPM_TAG || nidr != NULL_ID);
+    bool f = nidl != NULL_ID;
+    if (f) {
+        switch (methode) {
+        case DPM_TAG:
+        case DPM_PAR:
+            f = nidr != NULL_ID;
+            break;
+        default:
+            break;
+        }
+    }
     pUi->pushButtonStart->setEnabled(f);
     f = false;
-    foreach (cDPRow *p, rows) {
-        f = p->isChecked();
-        if (f) break;
+    if (methode != DPM_REP) {
+        foreach (cDPRow *p, rows) {
+            f = p->isChecked();
+            if (f) break;
+        }
     }
     pUi->pushButtonSave->setEnabled(f);
 }
@@ -768,8 +925,8 @@ void cDeducePatch::byTag()
                " FROM pports AS p"
                " LEFT OUTER JOIN phs_links AS l ON l.port_id2 = p.port_id  AND phs_link_type1 = 'Term' AND  phs_link_type2 = 'Front' )"
             " SELECT ll.*, lr.*"
-            " FROM (SELECT * FROM term_front_links WHERE node_id =  82) AS ll"
-            " JOIN (SELECT * FROM term_front_links WHERE node_id = 103) AS lr USING(port_tag)"
+            " FROM (SELECT * FROM term_front_links WHERE node_id = ?) AS ll"
+            " JOIN (SELECT * FROM term_front_links WHERE node_id = ?) AS lr USING(port_tag)"
             " ORDER BY ll.port_index ASC, lr.port_index ASC";
     if (execSql(q, sql, nidl, nidr)) {
         do {
@@ -793,12 +950,118 @@ void cDeducePatch::byTag()
     setButtons();
 }
 
+void cDeducePatch::paralel()
+{
+    int offl = pUi->spinBoxOffset->value();
+    int offr = pUi->spinBoxOffset2->value();
+    tableSet = true;
+    clearTable();
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
+    cPPort   ppl;   // Left patch port
+    cPPort   ppr;   // Right patch port
+    cPhsLink pll;   // Left Fron-Term link if exists
+    cPhsLink plr;   // Right Fron-Term link if exists
+
+    static const QString sql =
+            "WITH term_front_links AS ("
+               " SELECT p.*, l.*"
+               " FROM pports AS p"
+               " LEFT OUTER JOIN phs_links AS l ON l.port_id2 = p.port_id  AND phs_link_type1 = 'Term' AND  phs_link_type2 = 'Front' )"
+            " SELECT ll.*, lr.*"
+            " FROM (SELECT * FROM term_front_links WHERE node_id = ?) AS ll"
+            " JOIN (SELECT * FROM term_front_links WHERE node_id = ?) AS lr ON ll.port_index + ? = lr.port_index + ?"
+            " ORDER BY ll.port_index ASC, lr.port_index ASC";
+    if (execSql(q, sql, nidl, nidr, offl, offr)) {
+        do {
+            int i = 0;
+            ppl.set(q, &i, ppl.cols());
+            pll.set(q, &i, pll.cols());
+            ppr.set(q, &i, ppr.cols());
+            plr.set(q, &i, plr.cols());
+            rows << new cDPRowPar(q2, this, rows.size(), ppl, pll, ppr, plr);
+        } while (q.next());
+        pUi->tableView->setSortingEnabled(true);
+        pUi->tableView->sortByColumn(cDPRowMAC::CX_INDEX, Qt::AscendingOrder);
+    }
+    else {
+        pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
+        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pUi->tableView->setSortingEnabled(false);
+    }
+    pUi->tableView->resizeColumnsToContents();
+    tableSet = false;
+    setButtons();
+}
+
+void cDeducePatch::report()
+{
+    tableSet = true;
+    clearTable();
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
+    cPPort   ppl;   // Left patch port
+    cPPort   ppr;   // Right patch port
+    cPhsLink pll;   // Left Fron-Term link if exists
+    cPhsLink plr;   // Right Fron-Term link if exists
+
+    static const QString _sql =
+            "WITH term_front_links AS ("
+               " SELECT p.*, l.*"
+               " FROM pports AS p"
+               " LEFT OUTER JOIN phs_links AS l ON l.port_id2 = p.port_id  AND phs_link_type1 = 'Term' AND  phs_link_type2 = 'Front' )"
+            " SELECT ll.*, lr.*"
+            " FROM term_front_links AS ll"
+            " JOIN phs_links        AS pl ON pl.port_id1 = ll.port_id"
+            " JOIN term_front_links AS lr ON pl.port_id2 = lr.port_id"
+            " WHERE ll.node_id = ? AND %1 pl.phs_link_type1 = 'Back' AND pl.phs_link_type2 = 'Back' "
+            " ORDER BY ll.port_index ASC";
+    QString sql = _sql.arg(nidr == NULL_ID ? _sNul : "AND lr.node_id = ?");
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(0, QVariant(nidl));
+    if (nidr != NULL_ID) q.bindValue(1, QVariant(nidr));
+    _EXECSQL(q);
+    if (q.first()) {
+        do {
+            int i = 0;
+            ppl.set(q, &i, ppl.cols());
+            pll.set(q, &i, pll.cols());
+            ppr.set(q, &i, ppr.cols());
+            plr.set(q, &i, plr.cols());
+            rows << new cDPRowRep(q2, this, rows.size(), ppl, pll, ppr, plr);
+        } while (q.next());
+        pUi->tableView->setSortingEnabled(true);
+        pUi->tableView->sortByColumn(cDPRowMAC::CX_INDEX, Qt::AscendingOrder);
+    }
+    else {
+        pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
+        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pUi->tableView->setSortingEnabled(false);
+    }
+    pUi->tableView->resizeColumnsToContents();
+    tableSet = false;
+    setButtons();
+}
+
+
 bool cDeducePatch::findLink(cPhsLink& pl)
 {
     foreach (cDPRow *p, rows) {
         if (pl.compare(p->phsLink)) return true;
     }
     return false;
+}
+void cDeducePatch::changeMethode(eDeducePatchMeth _met)
+{
+    methode = _met;
+    bool show_ix = methode == DPM_PAR;
+    pUi->labelMinIndex->setVisible(show_ix);
+    pUi->labelMinIndex2->setVisible(show_ix);
+    pUi->spinBoxOffset->setVisible(show_ix);
+    pUi->spinBoxOffset2->setVisible(show_ix);
+    pSelNode2->setEnabled(methode != DPM_MAC);
+    clearTable();
+    setButtons();
 }
 
 void cDeducePatch::changeNode(qlonglong id)
@@ -817,24 +1080,27 @@ void cDeducePatch::changeNode2(qlonglong id)
 
 void cDeducePatch::on_radioButtonLLDP_pressed()
 {
-    methode = DPM_LLDP;
-    clearTable();
-    setButtons();
-    pSelNode2->setEnabled();
+    changeMethode(DPM_LLDP);
 }
+
 void cDeducePatch::on_radioButtonMAC_pressed()
 {
-    methode = DPM_MAC;
-    clearTable();
-    setButtons();
-    pSelNode2->setDisabled();
+    changeMethode(DPM_MAC);
 }
+
 void cDeducePatch::on_radioButtonTag_pressed()
 {
-    methode = DPM_TAG;
-    clearTable();
-    setButtons();
-    pSelNode2->setEnabled();
+    changeMethode(DPM_TAG);
+}
+
+void cDeducePatch::on_radioButtonParalel_pressed()
+{
+    changeMethode(DPM_PAR);
+}
+
+void cDeducePatch::on_radioButtonReport_pressed()
+{
+    changeMethode(DPM_REP);
 }
 
 void cDeducePatch::on_pushButtonStart_clicked()
@@ -844,9 +1110,11 @@ void cDeducePatch::on_pushButtonStart_clicked()
         EXCEPTION(EPROGFAIL);
     }
     switch (methode) {
-    case DPM_LLDP:  byLLDP();  break;
-    case DPM_MAC:   byMAC();   break;
-    case DPM_TAG:   byTag();   break;
+    case DPM_LLDP:  byLLDP();   break;
+    case DPM_MAC:   byMAC();    break;
+    case DPM_TAG:   byTag();    break;
+    case DPM_PAR:   paralel();  break;
+    case DPM_REP:   report();   break;
     default:        EXCEPTION(EPROGFAIL);
     }
     setButtons();
@@ -931,6 +1199,12 @@ void cDeducePatch::on_pushButtonReport_clicked()
         break;
     case DPM_TAG:
         title = trUtf8("Fali kábel felfedezés cimkék alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        break;
+    case DPM_PAR:
+        title = trUtf8("Patch panel hátlap 1-1 beközés: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        break;
+    case DPM_REP:
+        title = trUtf8("Patch panel bekötés riport: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
         break;
     default:
         EXCEPTION(EPROGFAIL);
