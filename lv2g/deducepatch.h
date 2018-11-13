@@ -68,7 +68,7 @@ protected:
     void checkAndShowTag(int _cx_st, int _cx_left, int _cx_right);
     void showWarning(int _cx);
     void showPatchPort(QSqlQuery& q, int _cx, cPPort& _pp, const QString& _name = QString());
-    void showShare(int _ix, ePortShare sh, ePortShare msh);
+    void showShare(int _ix, ePortShare sh, ePortShare msh, bool _warn = false);
     void showNodePort(QSqlQuery, int _cx, qlonglong _pid);
     void showConflict(int _cx);
     void checkAndShowSharing(int _cx_left, int _cx_right);

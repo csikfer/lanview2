@@ -36,7 +36,7 @@ cDPRow::cDPRow(cDeducePatch *par, int _row, int _save_col, cPPort &_ppl, cPhsLin
         model.setItem(_row, _save_col, pItemSave);
     }
     else {
-        pItemSave = NULL;
+        pItemSave = nullptr;
     }
     pItemIndex = new QStandardItem;
     model.setItem(_row, 0, pItemIndex);
@@ -109,13 +109,14 @@ void cDPRow::save(QSqlQuery& q)
 {
     if (isChecked()) {
         phsLink.replace(q);
-        model.setItem(pItemSave->row(), cxSave(), new QStandardItem(QIcon(sIOk), _sNul));
+        pItemSave = new QStandardItem(QIcon(sIOk), _sNul);
+        model.setItem(pItemSave->row(), cxSave(), pItemSave);
     }
 }
 
 bool cDPRow::isChecked()
 {
-    return pItemSave != NULL && pItemSave->isCheckable() && pItemSave->checkState() == Qt::Checked;
+    return pItemSave != nullptr && pItemSave->isCheckable() && pItemSave->checkState() == Qt::Checked;
 }
 
 
@@ -128,6 +129,7 @@ int cDPRow::row() const
 
 void cDPRow::setSaveCell()
 {
+    if (pItemSave == nullptr) EXCEPTION(EPROGFAIL);
     if     (reapeat) pItemSave->setIcon(QIcon(sIReapeat));
     else if (exists) pItemSave->setIcon(QIcon(sIOk));
     else {
@@ -229,11 +231,15 @@ void cDPRow::showPatchPort(QSqlQuery& q, int _cx, cPPort& _pp, const QString& _n
     model.setItem(row(), _cx, pi);
 }
 
-void cDPRow::showShare(int _cx, ePortShare sh, ePortShare msh)
+void cDPRow::showShare(int _cx, ePortShare sh, ePortShare msh, bool _warn)
 {
     if (msh != ES_INVALID && (sh != ES_ || msh != ES_)) {
         s =  portShare(sh).rightJustified(2) + "/" + portShare(msh).rightJustified(2);
         showText(_cx, s);
+        if (_warn) {
+            pi->setForeground(QBrush(dcFgColor(DC_ERROR)));
+            pi->setFont(dcFont(DC_ERROR));
+        }
     }
 }
 
@@ -247,7 +253,7 @@ void cDPRow::showNodePort(QSqlQuery q, int _cx, qlonglong _pid)
 
 void cDPRow::showConflict(int _cx)
 {
-    s = warningIconName(colision ? 1 : 0);
+    s = warningIconName(colision ? 2 : 0);
     showCell(_cx, _sNul, s, colMsg);
 }
 
@@ -255,14 +261,16 @@ void cDPRow::checkAndShowSharing(int _cx_left, int _cx_right)
 {
     shel = pll.isNull() ? ES_INVALID : shareResultant(shl, ePortShare(pll.getId(_sPortShared)));
     sher = plr.isNull() ? ES_INVALID : shareResultant(shr, ePortShare(plr.getId(_sPortShared)));
+    bool _warn = false;
     if (shel != ES_INVALID && sher != ES_INVALID) {
-        if (shel != sher) {
+        _warn = shel != sher;
+        if (_warn) {
             warnMsg += htmlWarning(QObject::trUtf8("Nem egyező végponti megosztások"));
             if (warning == 0) warning = 1; // suspicious
         }
     }
-    showShare(_cx_left,  shl, shel);
-    showShare(_cx_right, shr, sher);
+    showShare(_cx_left,  shl, shel, _warn);
+    showShare(_cx_right, shr, sher, _warn);
 }
 
 void cDPRow::checkAndShowLLDP(QSqlQuery& q, int _cx)
@@ -315,7 +323,7 @@ eTristate cDPRow::checkMac(QSqlQuery& q, cNPort& pnp1, cNPort& pnp2)
             }
         }
     }
-    return TS_NULL;    // És fordítva ?
+    return TS_NULL;
 }
 
 eTristate cDPRow::checkMac(QSqlQuery &q)
@@ -339,7 +347,7 @@ void cDPRow::checkAndShowMAC(QSqlQuery& q, int _cx)
     switch (stateMAC) {
     case TS_NULL:   return;
     case TS_FALSE:
-        s = sIConflict;
+        s = sIError;
         if (warning == 0) warning = 1;
         break;
     case TS_TRUE:
