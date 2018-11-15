@@ -158,7 +158,7 @@ private:
     static QSet<cColEnumType>  colEnumTypes;
 public:
     static const cColEnumType *find(const QString& name);
-    static const cColEnumType& get(const QString& name);
+    static const cColEnumType& get(const QString& name, eEx __ex = EX_ERROR);
 };
 
 TSTREAMO(cColEnumType)

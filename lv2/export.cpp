@@ -4,6 +4,7 @@ static const QString _sDq = "\"";
 static const QString _sSp = " ";
 static const QString _sSc = ";";
 static const QString _sCo = ",";
+static const QString _sEB = "}";
 static const QString _sDELETE_      = "DELETE ";
 static const QString _sTITLE        = "TITLE";
 static const QString _sWHATS_THIS   = "WHATS THIS";
@@ -118,7 +119,7 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     case cColStaticDescr::FT_SET: {
         QStringList l = v.toStringList();
         foreach (QString s, l) {
-            r += escaped(s) + ", ";
+            r += escaped(s) + _sCommaSp;
         }
         r.chop(2);
     }
@@ -128,7 +129,7 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
             QVariantList l = v.toList();
             foreach (QVariant vid, l) {
                 qlonglong id = vid.toLongLong();
-                r += escaped(fr.descr().fKeyId2name(q, id)) + ", ";
+                r += escaped(fr.descr().fKeyId2name(q, id)) + _sCommaSp;
             }
             r.chop(2);
         }
@@ -160,24 +161,26 @@ QString cExport::lineText(const QString& kw, const cRecord& o, int _tix)
     return r;
 }
 
-QString cExport::lineTitles(const QString& kw, const cRecord& o, int _fr, int _to, bool force)
+QString cExport::lineTitles(const QString& kw, const cRecord& o, int _fr, int _to)
 {
     QString r;
+    static const QString _sCommaNULL = ",NULL";
     int i;
-    for (i = _fr; !force || i <= _to; ++i) force = o.getName() != o.getText(i);
-    if (force) {
-        QString last = o.getText(_fr);
-        r += kw + _sSp + quotedString(last);
-        for (i = _fr +1; i <= _to; ++i) {
-            QString t = o.getText(i);
-            if (t == last) r += ",@";
-            else {
-                last = t;
-                r += _sCo + quotedString(last);
-            }
+    QString last = o.getText(_fr);
+    r += kw + _sSp + quotedString(last);
+    for (i = _fr +1; i <= _to; ++i) {
+        QString t = o.getText(i);
+        if (t == last) {
+            if (t.isNull()) r += _sCommaNULL;
+            else            r += ",@";
         }
-        r = line(r + _sSc);
+        else {
+            last = t;
+            r += _sCo + quotedString(last);
+        }
     }
+    while (r.endsWith(_sCommaNULL)) r = r.left(r.size() - _sCommaNULL.size()); // All NULLs are dropped from the end.
+    r = line(r + _sSc);
     return r;
 }
 
@@ -212,6 +215,11 @@ QString cExport::flag(const QString& kw, const cRecordFieldRef& fr, bool inverse
     return r;
 }
 
+QString cExport::lineEndBlock()
+{
+    actIndent--; return line(_sEB);
+}
+
 QString cExport::lineEndBlock(const QString& s, const QString& b)
 {
     QString r = s;
@@ -224,6 +232,8 @@ QString cExport::lineEndBlock(const QString& s, const QString& b)
         return r + b + lineEndBlock();
     }
 }
+
+/* ======================================================================================== */
 
 QString cExport::paramType(eEx __ex)
 {
@@ -254,6 +264,8 @@ QString cExport::_export(QSqlQuery& q, cSysParam& o)
     return line(r);
 }
 
+/* ---------------------------------------------------------------------------------------- */
+
 QString cExport::ifType(eEx __ex)
 {
     cIfType o;
@@ -283,68 +295,121 @@ QString cExport::_export(QSqlQuery &q, cIfType& o)
     return r;
 }
 
+/* ---------------------------------------------------------------------------------------- */
+
 QString cExport::tableShapes(eEx __ex)
 {
     exportedNames.clear();
+    divert.clear();
     cTableShape o;
-    return sympleExport(o, o.toIndex(_sTableShapeName), __ex);
+    QString r;
+    r = sympleExport(o, o.toIndex(_sTableShapeName), __ex);
+    r += divert;
+    divert.clear();
+    return r;
 }
 
 QString cExport::_export(QSqlQuery &q, cTableShape& o)
 {
     QString r, s, n;
+    o.fetchText(q);
     r  = "TABLE";
     s = o.getName(_sTableName);
     n = o.getName();
     if (s != n) r += " " + escaped(s);
     r += " SHAPE " + escaped(n) + str_z(o[_sTableShapeNote]);
     r  = lineBeginBlock(r);
-    r += paramLine(q, "TABLE TYPE",         o[_sTableShapeType]);
-    r += paramLine(q, "TABLE FEATURES",     o[_sFeatures]);
-    r += paramLine(q, "AUTO REFRESH",       o[_sAutoRefresh]);
+    r += lineTitles(_sTITLE, o, cTableShape::LTX_TABLE_TITLE, cTableShape::LTX_NOT_MEMBER_TITLE);
+    r += paramLine(q, "TYPE",               o[_sTableShapeType]);
+    r += features(o);
+    r += paramLine(q, "AUTO REFRESH",       o[_sAutoRefresh],       QVariant(0LL));
     r += paramLine(q, "REFINE",             o[_sRefine]);
-    r += paramLine(q, "TABLE INHERIT TYPE", o[_sTableInheritType]);
+    r += paramLine(q, "INHERIT TYPE",       o[_sTableInheritType]);
     r += paramLine(q, "INHERIT TABLE NAMES",o[_sInheritTableNames]);
     r += paramLine(q, "STYLE SHEET ",       o[_sStyleSheet]);
-    r += paramLine(q, "TABLE VIEW RIGHTS",  o[_sViewRights]);
-    r += paramLine(q, "TABLE EDIT RIGHTS",  o[_sEditRights]);
-    r += paramLine(q, "TABLE DELETE RIGHTS",o[_sRemoveRights]);
-    r += paramLine(q, "TABLE INSERT RIGHTS",o[_sInsertRights]);
+    r += paramLine(q, "VIEW RIGHTS",        o[_sViewRights]);
+    r += paramLine(q, "EDIT RIGHTS",        o[_sEditRights]);
+    r += paramLine(q, "DELETE RIGHTS",      o[_sRemoveRights]);
+    r += paramLine(q, "INSERT RIGHTS",      o[_sInsertRights]);
     // Right shapes
-    if (!o[_sRightShapeIds]) {
+    if (!o.isNull(_sRightShapeIds)) {
         QVariantList ids = o.get(_sRightShapeIds).toList();
         if (!ids.isEmpty()) {
             QStringList names;  // jobb oldali már definiált tábla nevek
+            QStringList undef;  // jobb oldali még nem definiált tábla nevek
             foreach (QVariant vid, ids) {
                 QString rn = cTableShape().getNameById(q, vid.toLongLong());
                 if (exportedNames.contains(rn)) {   // defined?
                     names << rn;
                 }
                 else {
-                    divert += QString("SET table_shape[\"%1\"].right_shape_ids += ID TABLE SHAPE (\"%2\")").arg(n).arg(rn);
+                    undef << rn;
+                    divert += QString("SET table_shape[\"%1\"].right_shape_ids += ID TABLE SHAPE (\"%2\")").arg(n).arg(rn) + _sNl;
                 }
             }
             if (!names.isEmpty()) {
                 r += line(QString("RIGHT SHAPE %1;").arg(quotedStringList(names)));
             }
+            if (!undef.isEmpty()) {
+                r += line(QString("// RIGHT SHAPE %1;").arg(quotedStringList(undef)));
+            }
         }
     }
     if (o.shapeFields.isEmpty()) o.fetchFields(q);
+    QMap<int, QStringList>      ordFields;  ///< Sequence Number - field name
+    QMap<QString, QStringList>  ordTypes;   ///< Types           - field list
     for (int i = 0; i < o.shapeFields.size(); ++i) {
         cTableShapeField& f = *o.shapeFields.at(i);
+        f.fetchText(q);
         r += lineBeginBlock(head("ADD FIELD ", f));
-        r += features(f);
-        r += paramLine(q, "EXPRESSION",   f[_sExpression]);
-        r += paramLine(q, "FLAG",         f[_sFieldFlags]);
-        r += paramLine(q, "DEFAULT VALUE",f[_sDefaultValue]);
-        r += paramLine(q, "VIEW RIGHTS",  f[_sViewRights]);
-        r += paramLine(q, "EDIT RIGHTS",  f[_sEditRights]);
-        r += lineEndBlock();
+        QString b;
+        b  = lineTitles(_sTITLE, f, cTableShapeField::LTX_TABLE_TITLE, cTableShapeField::LTX_DIALOG_TITLE);
+        b += lineText(_sTOOL_TIP,   f, cTableShapeField::LTX_TOOL_TIP);
+        b += lineText(_sWHATS_THIS, f, cTableShapeField::LTX_WHATS_THIS);
+        b += features(f);
+        b += paramLine(q, "EXPRESSION",   f[_sExpression]);
+        b += paramLine(q, "FLAG",         f[_sFieldFlags], QVariant(QStringList()));
+        b += paramLine(q, "DEFAULT VALUE",f[_sDefaultValue]);
+        b += paramLine(q, "VIEW RIGHTS",  f[_sViewRights]);
+        b += paramLine(q, "EDIT RIGHTS",  f[_sEditRights]);
+        r  = lineEndBlock(r, b);
+        qlonglong   ords = f.getId(_sOrdTypes);
+        if (ords != 0 && ords != ENUM2SET(OT_NO)) {
+            eOrderType dtype = eOrderType(f.getId(_sOrdInitType));
+            QString types = orderType(dtype);
+            ords &= ~ENUM2SET(dtype);
+            qlonglong ord;
+            int e;
+            for (e = 0, ord = 1; ords >= ord; ++e, ord <<= 1) {
+                if (ords & ord) {
+                    types += _sCommaSp + orderType(e);
+                }
+            }
+            QString fn = quotedString(f.getName());
+            ordTypes[types] << fn;
+            ordFields[f.getId(_sOrdInitSequenceNumber)] << fn;
+        }
+    }
+    if (!ordTypes.isEmpty()) {
+        foreach (QString types, ordTypes.keys()) {
+            r += line("FIELD " + types + " ORD " + ordTypes[types].join(_sCommaSp) + _sSc);
+        }
+        QList<int> sn = ordFields.keys();
+        std::sort(sn.begin(), sn.end());
+        QString s;
+        foreach (int n, sn) {
+            if (!s.isEmpty()) s += _sCommaSp;
+            s += ordFields[n].join(_sCommaSp);
+        }
+        r += line("FIELD ORD SEQUENCE " + s + _sSc);
+
     }
     exportedNames << n;
     r += lineEndBlock();
     return r;
 }
+
+/* ---------------------------------------------------------------------------------------- */
 
 QString cExport::menuItems(eEx __ex)
 {
@@ -354,6 +419,7 @@ QString cExport::menuItems(eEx __ex)
     if (execSql(q, sql)) {
         do {
             QString sAppName = q.value(0).toString();
+            r += line(QString("DELETE GUI %1 MENU;").arg(quotedString(sAppName)));
             r += lineBeginBlock("GUI " + quotedString(sAppName));
             r += menuItems(sAppName, NULL_ID, __ex);
             r += lineEndBlock();
@@ -386,13 +452,14 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
 {
     (void)q;
     QString r;
+    o.fetchText(q);
     int t = (int)o.getId(_sMenuItemType);
     switch (t) {
     case MT_SHAPE:
         r = head("SHAPE", o);
         break;
     case MT_OWN:
-        r = head("OVN", o);
+        r = head("OWN", o);
         break;
     case MT_EXEC:
         r = head("EXEC", o);
@@ -419,6 +486,49 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
     r += lineEndBlock();
     return r;
 }
+
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::enumVals(eEx __ex)
+{
+    cEnumVal o;
+    return sympleExport(o, o.ixTypeName(), __ex, o.mask(o.ixValName()));
+}
+
+QString cExport::_export(QSqlQuery &q, cEnumVal &o)
+{
+    QString r;
+    bool isType = o.isNull(o.ixValName());
+    if (isType) {
+        r = "ENUM" + str(o[o.ixTypeName()]) + str_z(o[_sEnumValNote]);
+    }
+    else {
+        r = str(o[o.ixValName()]) + str_z(o[_sEnumValNote]);
+    }
+    o.fetchText(q);
+    r = lineBeginBlock(r);
+        QString b;
+        b  = lineTitles("VIEW", o, cEnumVal::LTX_VIEW_LONG, cEnumVal::LTX_VIEW_SHORT);
+        b += paramLine(q, "ICON",             o[_sIcon]);
+        b += paramLine(q, "BACKGROUND COLOR", o[_sBgColor]);
+        b += paramLine(q, "FOREGROUND COLOR", o[_sFgColor]);
+        b += paramLine(q, "FONT FAMILY",      o[_sFontFamily]);
+        b += paramLine(q, "FONT ATTR",        o[_sFontAttr],    QVariant(QStringList()));
+        b += lineText(_sTOOL_TIP, o, cEnumVal::LTX_TOOL_TIP);
+        if (isType) {
+            static tIntVector ord;
+            static QBitArray  fm;
+            if (ord.isEmpty()) {
+                ord << o.ixValName();
+                fm = o.mask(o.ixTypeName());
+            }
+            static const QString where = "enum_val_name IS NOT NULL AND enum_type_name = ?";
+            b += exportWhere(o, ord, where, EX_ERROR, fm);
+        }
+    return lineEndBlock(r, b);
+}
+
+/* ---------------------------------------------------------------------------------------- */
 
 QString cExport::services(eEx __ex)
 {
@@ -456,6 +566,8 @@ QString cExport::_export(QSqlQuery &q, cService& o)
     r  = lineEndBlock(r, b);
     return r;
 }
+
+/* ---------------------------------------------------------------------------------------- */
 
 QString cExport::queryParser(eEx __ex)
 {

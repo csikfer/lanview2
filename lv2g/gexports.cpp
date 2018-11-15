@@ -13,7 +13,7 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
     isStop  = false;
     QSqlQuery q = getQuery();
     QStringList ol;
-    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers << _sIfTypes << _sTableShapes << _sMenuItems;
+    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers << _sIfTypes << _sTableShapes << _sMenuItems << _sEnumVals;
     pUi->setupUi(this);
     pUi->comboBoxTable->addItems(ol);
     bool empty = ol.isEmpty();
@@ -51,6 +51,7 @@ void cExportsWidget::start()
     else if (0 == tn.compare(_sIfTypes))        r = e.ifType(EX_IGNORE);
     else if (0 == tn.compare(_sTableShapes))    r = e.tableShapes(EX_IGNORE);
     else if (0 == tn.compare(_sMenuItems))      r = e.menuItems(EX_IGNORE);
+    else if (0 == tn.compare(_sEnumVals))       r = e.enumVals(EX_IGNORE);
     if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(tn);
     r.prepend(pUi->plainTextEdit->toPlainText());
     pUi->plainTextEdit->setPlainText(r);
@@ -71,3 +72,9 @@ void cExportsWidget::changedName(const QString& tn)
     pUi->pushButtonExport->setDisabled(false);
 }
 
+
+void cExportsWidget::on_pushButtonClear_clicked()
+{
+    pUi->plainTextEdit->clear();
+    pUi->pushButtonExport->setEnabled(true);
+}

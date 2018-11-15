@@ -27,6 +27,8 @@ protected slots:
     void start();
     void save();
     void changedName(const QString &tn);
+private slots:
+    void on_pushButtonClear_clicked();
 };
 
 #endif // EXPORTS_H

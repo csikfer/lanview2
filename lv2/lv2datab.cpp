@@ -300,10 +300,12 @@ const cColEnumType *cColEnumType::find(const QString& name)
      return &(*i);
 }
 
-const cColEnumType& cColEnumType::get(const QString& name)
+const cColEnumType& cColEnumType::get(const QString& name, eEx __ex)
 {
     const cColEnumType *p = find(name);
-    if (p == nullptr) EXCEPTION(EDATA, -1, name);
+    if (__ex != EX_IGNORE && p == nullptr) {
+        EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid enum type name : %1").arg(name));
+    }
     return *p;
 }
 
@@ -4312,8 +4314,8 @@ cRecord&    cRecord::setText(int _tix, const QString& _t)
     int s = pet->enumValues.size();
     if (pTextList == nullptr) {
         pTextList = new QStringList;
-        while (pTextList->size() < s) *pTextList << _sNul;
     }
+    while (pTextList->size() < s) *pTextList << _sNul;
     if (!isContIx(*pTextList, _tix)) EXCEPTION(ENOINDEX, _tix, identifying());
     (*pTextList)[_tix] = _t;
     return *this;

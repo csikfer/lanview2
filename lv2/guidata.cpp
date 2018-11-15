@@ -308,7 +308,14 @@ bool cTableShape::insert(QSqlQuery &__q, eEx __ex)
 }
 bool cTableShape::rewrite(QSqlQuery &__q, eEx __ex)
 {
-    bool r = tRewrite(__q, shapeFields, 0, __ex);
+
+    bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
+    if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+    cTableShapeField tsf;
+    tsf.setId(_sTableShapeId, getId());     // A mezőket teljesen újra írjuk
+    tsf.remove(__q, false, tsf.mask(_sTableShapeId));
+    shapeFields.setsOwnerId();
+    r = shapeFields.insert(__q, __ex) == shapeFields.size();
     if (r) saveText(__q);
     return r;
 }
@@ -856,6 +863,15 @@ const cRecStaticDescr&  cEnumVal::descr() const
     return *_pRecordDescr;
 }
 
+cEnumVal::cEnumVal(const QString _tn)
+    : cRecord()
+{
+    _set(cEnumVal::descr());
+    _fields[_ixTypeName] = _tn;
+    pTextList = new QStringList();
+    *pTextList << _tn << _tn;   // LTX_VIEW_LONG, LTX_VIEW_SHORT
+}
+
 cEnumVal::cEnumVal(const QString _tn, const QString _en)
     : cRecord()
 {
@@ -863,8 +879,42 @@ cEnumVal::cEnumVal(const QString _tn, const QString _en)
     _fields[_ixTypeName] = _tn;
     _fields[_ixValName]  = _en;
     pTextList = new QStringList();
-    *pTextList << (_en.isEmpty() ? _tn : _en);  // LTX_VIEW_LONG
-    *pTextList << pTextList->first();           // LTX_VIEW_SHORT
+    *pTextList << _en << _en;   // LTX_VIEW_LONG, LTX_VIEW_SHORT
+}
+
+int cEnumVal::replace(QSqlQuery &__q, eEx __ex)
+{
+    static QBitArray where;
+    if (where.isEmpty()) where = mask(_ixTypeName, _ixValName);
+    int count = rows(false, where);
+    int r = R_ERROR;
+    bool isExist;
+    switch (count) {
+    case 0: isExist = false;  break;
+    case 1: isExist = true;   break;
+    default:
+        EXCEPTION(EDATA, count, QObject::trUtf8("Database data error multiple enum record: %1::%2")
+                  .arg(quotedString(getName(_ixValName)), getName(_ixTypeName)) );
+    }
+    if (isExist) {
+        count = update(__q, false, ~where, where, __ex);
+        switch (count) {
+        case 0:
+            if (__ex != EX_IGNORE) EXCEPTION(EQUERY, 0, identifying());
+            r = R_ERROR;
+            break;
+        case 1:
+            r = R_UPDATE;
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+    }
+    else {
+        bool ok = insert(__q, __ex);
+        r = ok ? R_INSERT : R_ERROR;
+    }
+    return r;
 }
 
 int cEnumVal::delByTypeName(QSqlQuery& q, const QString& __n, bool __pat)
@@ -885,15 +935,38 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 
 int cEnumVal::toInt(eEx __ex) const
 {
-    if (isNull(_ixTypeName) || isNull(_ixValName)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, trUtf8("Is NULL"));
+    if (isNull(_ixTypeName)) {
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, trUtf8("Type name is NULL"));
         return ENUM_INVALID;
     }
     QSqlQuery q = getQuery();
     const cColEnumType *t = cColEnumType::fetchOrGet(q, getName(_ixTypeName), __ex);
     if (t == nullptr) return ENUM_INVALID;
+    if (isNull(_ixValName)) {
+        if (__ex > EX_ERROR) EXCEPTION(EDATA, 0, trUtf8("Object is type descriptor"));
+        return ENUM_INVALID;
+    }
     return (int)t->str2enum(getName(_ixValName));
 }
+
+void cEnumVal::setView(const QStringList& _tt)
+{
+    if (_tt.size() > 0) {
+        QString n = getName();
+        if (_tt.at(0).size() > 0) {
+            if (_tt.at(0) != _sAt) n = _tt.at(0);
+            setText(LTX_VIEW_LONG, n);
+        }
+
+        if (_tt.size() > 1) {
+            if (_tt.at(1).size() > 0) {
+                if (_tt.at(1) != _sAt) n = _tt.at(1);
+                setText(LTX_VIEW_SHORT, n);
+            }
+        }
+    }
+}
+
 
 int cEnumVal::textName2ix(QSqlQuery& q, const QString& _n, eEx __ex) const
 {
@@ -925,25 +998,26 @@ void cEnumVal::fetchEnumVals()
     else {
         EXCEPTION(EPROGFAIL);   // We do not handle re-reading well.
     }
-    QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
-    int n = enumVals.count();   // Megtalálandó rekordok száma
+    QBitArray   ba(1, false);   // Get all records
+    int n = enumVals.count();   // Act cached record number
     QList<cEnumVal *> oldList = enumVals;   // Eredeti lista
-    mapValues.clear();
+    mapValues.clear();          // Clear caches
     enumVals.clear();
-    int found = 0;                  // Megtalált rekordok számláló
-    cEnumVal ev;                    // objektum a fetch-hez
-    QString currentTypeName;        // Ha típust váltun, észre kell vennünk
-    const cColEnumType *pE = nullptr;  // Az enumerációs típus leírója
-    bool          isBool = false;   // Nem csak valós enumok lesznek!!
-    int e;                          // Enumerációs érték (int) (a -1 a típus 'indexe', a név ekkor üres)
+    int found = 0;                  // Found record number
+    cEnumVal ev;                    // Working object
+    QString currentTypeName;        // Current/last enum type name
+    const cColEnumType *pE = nullptr;  // Enum type descriptor
+    bool          isBool = false;   // Not enum, is boolean
+    int e;                          // Numeric enum value, if type ans not value, then index is -1, value is NULL
     QVector<cEnumVal *> *pActV = nullptr;
 
     QSqlQuery q  = getQuery();
     QSqlQuery q2 = getQuery();
     // All enum records, sorted by type name
     if (ev.fetch(q, false, ba, ev.iTab(_sEnumTypeName))) do {
-        QString typeName = ev.getName(ev.ixTypeName());
-        QString val      = ev.getName(ev.ixValName());
+        QString typeName = ev.getName(ev.ixTypeName());     // type name
+        QString val      = ev.getName(ev.ixValName());      // value name
+        bool    isType   = ev.isNull(ev.ixValName());       // Not value, is type
         if (currentTypeName != typeName) {  // This record belongs to another type
             if (!currentTypeName.isEmpty()) {   // Old type, closure
                 QVector<cEnumVal *>& v = mapValues[currentTypeName];
@@ -989,7 +1063,7 @@ void cEnumVal::fetchEnumVals()
             if (!isBool && pE == nullptr) EXCEPTION(EPROGFAIL);
         }
         e = NULL_IX;    // No O.K.
-        if (val.isEmpty())  e = -1; // Type index
+        if (isType)  e = -1; // Type index
         else {
             if (isBool) {
                if      (val == _sFalse) e =  0;
@@ -1075,7 +1149,7 @@ int cEnumVal::enumForce(QSqlQuery& q, const QString& _tn)
         if (!forcedList.contains(_tn)) forcedList << _tn;
         const cColEnumType *pet = cColEnumType::fetchOrGet(q, _tn);
         QVector<cEnumVal *>& v = mapValues[_tn];
-        cEnumVal *p = new cEnumVal(_tn, QString());
+        cEnumVal *p = new cEnumVal(_tn);
         enumVals << p;
         v        << p;
         foreach (QString e, pet->enumValues) {

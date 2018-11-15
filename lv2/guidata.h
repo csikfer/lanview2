@@ -131,12 +131,12 @@ class LV2SHARED_EXPORT cTableShape : public cRecord {
     FEATURES(cTableShape)
 public:
     enum eTextIndex {
-        LTX_TABLE_TITLE = 0,
-        LTX_DIALOG_TITLE,
-        LTX_DIALOG_TAB_TITLE,
-        LTX_MEMBER_TITLE,
-        LTX_NOT_MEMBER_TITLE,
-        LTX_TOOL_TIP
+        LTX_TABLE_TITLE = 0,    ///< Title of the table
+        LTX_DIALOG_TITLE,       ///< Title of the dialog
+        LTX_DIALOG_TAB_TITLE,   ///< Title of the dialog tab
+        LTX_MEMBER_TITLE,       ///< Title of the members table
+        LTX_NOT_MEMBER_TITLE,   ///< Title of the not members table
+        LTX_TOOL_TIP            ///< Unused (Maybe later)
     };
 
     virtual void toEnd();
@@ -259,8 +259,11 @@ public:
         LTX_TOOL_TIP,
         LTX_NUMBER
     };
-    /// Konstruktor, az alapértelmezett értékek beállításával
+    /// Konstruktor, az alapértelmezett értékek beállításával (type)
+    cEnumVal(const QString _tn);
+    /// Konstruktor, az alapértelmezett értékek beállításával (value)
     cEnumVal(const QString _tn, const QString _en);
+    virtual int replace(QSqlQuery &__q, eEx __ex = EX_ERROR);
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
     /// @param __n Az enum_type_name mező értéke, vagy minta a mezőre
@@ -274,6 +277,7 @@ public:
     /// @return true ha törölt rekordt
     bool delByNames(QSqlQuery& q, const QString& __t, const QString& __n);
     int toInt(eEx __ex = EX_ERROR) const;
+    void setView(const QStringList& _tt);
 protected:
     QStringList texts;
     /// Az összes enum_vals rekordot tartalmazó konténer

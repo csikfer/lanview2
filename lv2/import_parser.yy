@@ -232,6 +232,8 @@ static QSqlQuery  *     pq2 = nullptr;
 static bool             breakParse = false;
 static tRecordList<cMenuItem>   menuItems;
 static bool             bSkeep = false;
+static QString          actEnumType;
+static cEnumVal        *pActEnum = nullptr;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
@@ -426,6 +428,8 @@ void downImportParser()
     svars.clear();
     avars.clear();
     pDelete(pq2);
+    actEnumType.clear();
+    pDelete(pActEnum);
 
     c_yyFile::dropp();
     breakParse = false;
@@ -876,8 +880,24 @@ static void newMenuMenu(const QString& _n, const QString *_pd)
     // Improve, replace!
     p->setText(cMenuItem::LTX_MENU_TITLE, _n);
     p->setName(cMenuItem::LTX_TAB_TITLE, _n);
-    p->setName(_sFeatures, ":sub:");
     menuItems << p;
+}
+
+static void saveMenuItem()
+{
+    cMenuItem *p = menuItems.last();
+    switch (p->getId(cMenuItem::ixMenuItemType())) {
+    case MT_MENU:
+        if (!p->isNull(cMenuItem::ixMenuParam())) {
+            EXCEPTION(EPROGFAIL);
+        }
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    p->insert(qq());
+    p->saveText(qq());
 }
 
 static void delMenuItem()
@@ -885,10 +905,8 @@ static void delMenuItem()
     cMenuItem *p = menuItems.pop_back();
     switch (p->getId(cMenuItem::ixMenuItemType())) {
     case MT_MENU:
-        if (!p->isNull(cMenuItem::ixMenuParam())) {
-            EXCEPTION(EPROGFAIL);
-        }
-        break;
+        delete p;
+        return;
     case MT_SHAPE:
         if (NULL_ID == cTableShape().getIdByName(qq(), p->getParam(), EX_IGNORE)) {
             yyerror(QObject::trUtf8("SHAPE '%1' not found.").arg(p->getParam()));
@@ -1272,12 +1290,12 @@ static void copyTableShape(QString *pSrc)
     pTableShape->fieldsCopy(src, ~pTableShape->mask(_sTableShapeId, _sTableShapeName));
     tTableShapeFields::iterator i, n = src.shapeFields.end();
     int ixId  = cTableShapeField().idIndex();
-    int ixOvn = src.shapeFields.ixOwnerId;
+    int ixOwn = src.shapeFields.ixOwnerId;
     for (i = src.shapeFields.begin(); i != n; ++i) {
         cTableShapeField& srcField = **i;
         cTableShapeField *pField = srcField.dup()->reconvert<cTableShapeField>();
         pField->clear(ixId);
-        pField->clear(ixOvn);
+        pField->clear(ixOwn);
         pTableShape->shapeFields << pField;
     }
 }
@@ -1295,16 +1313,17 @@ static tPolygonF *rectangle(QPointF *p1, QPointF *p2)
 }
 
 enum eReplace {
-    REPLACE_DEF, REPLACE_ON, REPLACE_OFF
+    REPLACE_DEF, REPLACE_ON, REPLACE_OFF, REPLACE_NULL
 };
 
-void setReplace(int er)
+static void setReplace(int _rep)
 {
-    switch (er) {
+    switch (_rep) {
     case REPLACE_DEF:   isReplace = globalReplaceFlag;  break;
     case REPLACE_OFF:   isReplace = false;              break;
     case REPLACE_ON:    isReplace = true;               break;
-    default:    EXCEPTION(EPROGFAIL, er);
+    case REPLACE_NULL:                                  break;
+    default:    EXCEPTION(EPROGFAIL, _rep);
     }
 }
 
@@ -1329,6 +1348,9 @@ void setReplace(int er)
     T  o; o.setName(*n)[dn] = *d; \
     o.insert(qq()); delete n; delete d;
 
+#define SETNOTE(pO, pN)  if(!pN->isEmpty()) pO->setNote(*pN); \
+                         delete pN;
+
 /// @param p    Az objektum pointer változó
 /// @param t    At objektum típusa
 /// @param r    Ha hamis, akkor új objektumot hozunk létre, ha igaz, akkor ha létezik, modosítjuk.
@@ -1340,8 +1362,7 @@ void setReplace(int er)
     p = new t; \
     p->setName(*pnm); \
     if (pno != nullptr) { \
-        if(!pno->isEmpty()) p->setNote(*pno); \
-        delete pno; \
+        SETNOTE(p, pno) \
     } \
     delete pnm;
 
@@ -1491,6 +1512,43 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     }
 }
 
+static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = REPLACE_NULL)
+{
+    if (pActEnum != nullptr) EXCEPTION(EPROGFAIL);
+    setReplace(_rep);
+    actEnumType = _type;
+    const cColEnumType& cType = cColEnumType::get(actEnumType);
+    if (_pval == nullptr) {
+        pActEnum = new cEnumVal(actEnumType);
+    }
+    else {
+        if (!cType.check(*_pval)) {
+            yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+        }
+        pActEnum = new cEnumVal(actEnumType, *_pval);
+        delete _pval;
+    }
+}
+
+static void saveEnum()
+{
+    if (pActEnum == nullptr) EXCEPTION(EPROGFAIL);
+    if (isReplace) {
+        pActEnum->replace(qq());
+    }
+    else {
+        pActEnum->insert(qq());
+    }
+    pActEnum->saveText(qq());
+    pDelete(pActEnum);
+}
+
+static inline cEnumVal& actEnum()
+{
+    if (pActEnum == nullptr) EXCEPTION(EPROGFAIL);
+    return *pActEnum;
+}
+
 %}
 
 %union {
@@ -1543,7 +1601,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
-%token      END_T ELSE_T TOKEN_T
+%token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1874,7 +1932,7 @@ user_e  : ';'
 user_ps :
         | user_ps user_p
         ;
-user_p  : NOTE_T str ';'                        { pUser->setNote(sp2s($2)); }
+user_p  : NOTE_T str ';'                        { SETNOTE(pUser, $2); }
         | DOMAIN_T USER_T strs ';'              { pUser->setStringList(_sDomainUsers, slp2sl($3));}
         | ADD_T DOMAIN_T USER_T strs ';'        { pUser->addStringList(_sDomainUsers, slp2sl($4));}
         | HOST_T NOTIF_T PERIOD_T tmpid ';'     { pUser->setId(_sHostNotifPeriod, $4); }
@@ -1931,7 +1989,7 @@ ugrp_e  : ';'
 ugrp_ps :
         | ugrp_ps ugrp_p
         ;
-ugrp_p  : NOTE_T str ';'                        { pGroup->setNote(sp2s($2)); }
+ugrp_p  : NOTE_T str ';'                        { SETNOTE(pGroup, $2); }
         | RIGHTS_T rights ';'                   { pGroup->setName(_sGroupRights, *$2); delete $2; }
         | PLACE_T GROUP_T plg_id ';'            { pGroup->setId(_sPlaceGroupId, $3); }
         | FEATURES_T str ';'                    { pGroup->setName(_sFeatures); }
@@ -2474,9 +2532,12 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostService->set(_sPrimeServi
         | FEATURES_T str ';'                    { pHostService->set(_sFeatures, *$2); delete $2; }
         | SUPERIOR_T SERVICE_T hsid ';'         { pHostService->set(_sSuperiorHostServiceId,  $3); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostService->set(_sMaxCheckAttempts, $4); }
-        | NORMAL_T CHECK_T INTERVAL_T value ';' { pHostService->set(_sNormalCheckInterval, *$4); delete $4; }
-        | RETRY_T CHECK_T INTERVAL_T value ';'  { pHostService->set(_sRetryCheckInterval, *$4); delete $4; }
-        | FLAPPING_T INTERVAL_T value ';'       { pHostService->set(_sFlappingInterval, *$3); delete $3; }
+        | NORMAL_T CHECK_T INTERVAL_T str ';'   { pHostService->set(_sNormalCheckInterval, sp2s($4)); }
+        | NORMAL_T CHECK_T INTERVAL_T int ';'   { pHostService->set(_sNormalCheckInterval, $4 * 1000); }
+        | RETRY_T CHECK_T INTERVAL_T str ';'    { pHostService->set(_sRetryCheckInterval, sp2s($4)); }
+        | RETRY_T CHECK_T INTERVAL_T int ';'    { pHostService->set(_sRetryCheckInterval, $4 * 1000); }
+        | FLAPPING_T INTERVAL_T str ';'         { pHostService->set(_sFlappingInterval, sp2s($3)); }
+        | FLAPPING_T INTERVAL_T int ';'         { pHostService->set(_sFlappingInterval, $3 * 1000); }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { pHostService->set(_sFlappingMaxChange,  $4); }
         | TIME_T PERIODS_T tmpid ';'            { pHostService->set(_sTimePeriodId, $3); }
         | OFF_T LINE_T GROUPS_T grpids ';'      { pHostService->set(_sOffLineGroupIds, *$4); delete $4; }
@@ -2587,7 +2648,7 @@ scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); d
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
         ;
 gui     : tblmod
-        | ENUM_T str str TITLE_T str  ';'       { cEnumVal().setName(_sEnumValName, sp2s($3)).setName(_sEnumTypeName, sp2s($2)).setName(_sEnumValNote, sp2s($5)).insert(qq()); }
+        | enum
         | appmenu
         ;
 tblmod_h: TABLE_T str SHAPE_T replace str str_z '{'     { pTableShape = newTableShape($2,          $5, $6); setReplace($4); }
@@ -2608,11 +2669,11 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | TYPE_T OFF_T tstypes ';'          { pTableShape->setOff(_sTableShapeType, $3); }
         | STYLE_T SHEET_T str ';'           { pTableShape->setName(_sStyleSheet, sp2s($3)); }
         // title, dialog title, member title (group), not member title (group)
-        | TABLE_T TITLE_T strs_zz  ';'      { pTableShape->setTitle(slp2sl($3)); }
+        | TITLE_T strs_zz  ';'              { pTableShape->setTitle(slp2sl($2)); }
         | READ_T ONLY_T bool_on ';'         { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $3); }
         | FEATURES_T str ';'                { pTableShape->set(_sFeatures, sp2s($2)); }
         | AUTO_T REFRESH_T str ';'          { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
-        | AUTO_T REFRESH_T int ';'          { pTableShape->setId(  _sAutoRefresh,      $3 ); }
+        | AUTO_T REFRESH_T int ';'          { pTableShape->setId(  _sAutoRefresh, 1000*$3 ); }  // sec->mSec !!
         | RIGHT_T SHAPE_T strs ';'          { pTableShape->addRightShape(*$3); delete $3; }
         | REFINE_T str ';'                  { pTableShape->setName(_sRefine, sp2s($2)); }
         | INHERIT_T TYPE_T tsintyp ';'      { pTableShape->setName(_sTableInheritType, sp2s($3)); }
@@ -2693,14 +2754,36 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | TOOL_T TIP_T str ';'          { pTableShapeField->setText(cTableShapeField::LTX_TOOL_TIP, sp2s($3)); }
         | WHATS_T THIS_T str ';'        { pTableShapeField->setText(cTableShapeField::LTX_WHATS_THIS, sp2s($3)); }
         ;
-appmenu : GUI_T str                     { pMenuApp = $2;}
-            '{' menus '}'               { pDelete(pMenuApp); }
+enum    : ENUM_T replace  str str_z '{' { newEnum(sp2s($3), nullptr, $2); SETNOTE(pActEnum, $4); }
+            enumps                      { saveEnum(); }
+            enumvals
+          '}'
+        ;
+enumps  :
+        | enumps enump
+        ;
+enump   : BACKGROUND_T COLOR_T str ';'  { actEnum().setName(_sBgColor, sp2s($3)); }
+        | FOREGROUND_T COLOR_T str ';'  { actEnum().setName(_sFgColor, sp2s($3)); }
+        | FONT_T FAMILY_T str ';'       { actEnum().setName(_sFontFamily, sp2s($3)); }
+        | FONT_T ATTR_T strs ';'        { actEnum().addStringList(_sFontAttr, slp2sl($3)); }
+        | VIEW_T strs_zz ';'            { actEnum().setView(slp2sl($2)); }
+        | TOOL_T TIP_T str ';'          { actEnum().setText(cEnumVal::LTX_TOOL_TIP, sp2s($3)); }
+        ;
+enumvals: enumval
+        | enumval enumvals
+        ;
+enumval : str str_z '{'                 { newEnum(actEnumType, $1); SETNOTE(pActEnum, $2); }
+            enumps '}'                  { saveEnum(); }
+        ;
+appmenu : GUI_T str                     { pMenuApp = $2;     if (!menuItems.isEmpty()) EXCEPTION(EPROGFAIL, menuItems.size(), menuItems.toString()); }
+            '{' menus '}'               { pDelete(pMenuApp); if (!menuItems.isEmpty()) EXCEPTION(EPROGFAIL, menuItems.size(), menuItems.toString()); }
         ;
 menus   : menu
         | menu menus
         ;
 menu    : MENU_T str str_z              { newMenuMenu(sp2s($2), $3); }
-            '{' miops menus '}'         { delMenuItem(); }
+            '{' miops                   { saveMenuItem(); }
+                menus '}'               { delMenuItem(); }
         | SHAPE_T str str_z             { newMenuItem(sp2s($2), $3, MT_SHAPE); }
             '{' miops '}'               { delMenuItem(); }
         | EXEC_T str str_z              { newMenuItem(sp2s($2), $3, MT_EXEC); }
@@ -2782,9 +2865,6 @@ ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByN
         | MACRO_T str ';'               { $$ = !templates[_sMacros].get(qq(), sp2s($2), EX_IGNORE).isEmpty(); }
         | TEMPLATE_T PATCH_T str ';'    { $$ = !templates[_sPatchs].get(qq(), sp2s($3), EX_IGNORE).isEmpty(); }
         | TEMPLATE_T NODE_T str ';'     { $$ = !templates[_sNodes]. get(qq(), sp2s($3), EX_IGNORE).isEmpty(); }
-/*      | ENUM_T TITLE_T  strs ';'     { $$ = NULL_ID != cEnumVal().; }
-        | ENUM_T TITLE_T  str strs ';' { $$ = NULL_ID != cEnumVal().; }
-        | GUI_T strs MENU_T ';'        { $$ = NULL_ID != cMenuItem(); } */
         ;
 qparse  : QUERY_T PARSER_T srvid '{'    { ivars[_sServiceId] = $3; ivars[_sItemSequenceNumber] = 10; }
             qparis '}'
@@ -3009,7 +3089,7 @@ static const struct token {
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
-    TOK(TOKEN)
+    TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },
@@ -3020,6 +3100,8 @@ static const struct token {
     { "DEL",    DELETE_T },
     { "EXPR",   EXPRESSION_T },
     { "CAT",    CATEGORY_T },
+    { "FG",     FOREGROUND_T },
+    { "BG",     BACKGROUND_T },
     TOK(END) TOK(ELSE)
     { nullptr, 0 }
 };

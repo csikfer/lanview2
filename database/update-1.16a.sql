@@ -278,3 +278,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
+-- 2018.11.15.  Bugfix:
+DROP INDEX IF EXISTS public.table_shape_fields_table_shape_id_index;    -- duplicate
+
+ALTER TABLE enum_vals DROP CONSTRAINT IF EXISTS enum_vals_enum_type_name_enum_val_name_key; -- Not good, one field can be NULL
+ALTER TABLE enum_vals ALTER COLUMN enum_val_name DROP NOT NULL; --There is an empty value that can be mixed with the empty value for the type.
+UPDATE enum_vals SET enum_val_name = NULL WHERE enum_val_name = '';
+CREATE UNIQUE INDEX enum_vals_enum_type_name_enum_val_name_key ON
+	enum_vals (enum_type_name, enum_val_name) WHERE enum_val_name IS NOT NULL;
+CREATE UNIQUE INDEX enum_vals_enum_type_name_key ON
+	enum_vals (enum_type_name) WHERE enum_val_name IS NULL;
+

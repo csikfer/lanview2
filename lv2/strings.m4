@@ -876,10 +876,11 @@ STRDEF(EnumVals, "enum_vals")
  dnl text_id
  STRDEF(FontFamily, "font_family")
  STRDEF(FontAttr, "font_attr")
-  STRDEF(Bold, "bold");
+  STRDEF(Bold, "bold")
   STRDEF(Italic, "italic")
   STRDEF(Undeline, "underline")
   STRDEF(Strikeout, "strikeout")
+ STRDEF(Icon, "icon")
 STRDEF(MenuItems, "menu_items")
  STRDEF(MenuItemId, "menu_item_id")
  STRDEF(MenuItemName,"menu_item_name")

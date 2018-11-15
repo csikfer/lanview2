@@ -999,7 +999,7 @@ bool cEnumValsEditWidget::saveBoolean()
 {
     QString type = mCat(pUi->comboBoxBoolTable->currentText(), pUi->comboBoxBoolField->currentText());
 
-    boolType[_sEnumValName]  = _sNul;
+    boolType.clear(_sEnumValName);
     boolType[_sEnumValNote]  = pUi->lineEditBoolTypeNote->text();
     boolType[_sEnumTypeName] = type;
     boolType.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditBoolTypeShort->text());
@@ -1118,7 +1118,6 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
     pEnumTypeType = cColEnumType::fetchOrGet(*pq, enumTypeTypeName);
 
     type.clear();
-    type[_sEnumValName]  = _sNul;
     type[_sEnumTypeName] = enumTypeTypeName;
     int n = type.completion(*pq);
     QString t;
@@ -1126,7 +1125,6 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
     case 1:     // Beolvasva
         break;
     case 0:     // Not found (törölte a completion() metódus)
-        type[_sEnumValName]  = _sNul;
         type[_sEnumTypeName] = enumTypeTypeName;
         type.setText(cEnumVal::LTX_VIEW_SHORT, enumTypeTypeName);
         type.setText(cEnumVal::LTX_VIEW_LONG,  enumTypeTypeName);
@@ -1171,7 +1169,7 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
 
     boolType.clear();
     boolType.setName(_sEnumTypeName, typeName);
-    boolType.setName(_sEnumValName,  _sNul);
+    boolType.clear(_sEnumValName);
     QString t;
     int n = boolType.completion(*pq);
     switch (n) {
@@ -1179,7 +1177,6 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
         break;
     case 0:     // not found
         boolType.setName(_sEnumTypeName, typeName);
-        boolType.setName(_sEnumValName,  _sNul);
     }
     t = boolType.getText(cEnumVal::LTX_VIEW_SHORT);
     pUi->lineEditBoolTypeShort->setText(t);
