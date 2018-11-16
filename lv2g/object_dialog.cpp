@@ -1119,17 +1119,19 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
 
     type.clear();
     type[_sEnumTypeName] = enumTypeTypeName;
-    int n = type.completion(*pq);
+    type.fetch(*pq, false, type.mask(type.ixTypeName(), type.ixValName()));
+    int n = pq->size();
     QString t;
     switch (n) {
-    case 1:     // Beolvasva
+    case 1:     // Readed one record
         break;
-    case 0:     // Not found (törölte a completion() metódus)
+    case 0:     // Not found, init defaults
         type[_sEnumTypeName] = enumTypeTypeName;
         type.setText(cEnumVal::LTX_VIEW_SHORT, enumTypeTypeName);
         type.setText(cEnumVal::LTX_VIEW_LONG,  enumTypeTypeName);
         break;
-    default:    EXCEPTION(AMBIGUOUS, n, type.identifying());
+    default:    // Database data error
+        EXCEPTION(AMBIGUOUS, n, type.identifying());
     }
     t = type.getText(cEnumVal::LTX_VIEW_SHORT, enumTypeTypeName);
     pUi->lineEditTypeShort->setText(t);

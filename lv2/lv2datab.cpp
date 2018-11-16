@@ -300,10 +300,10 @@ const cColEnumType *cColEnumType::find(const QString& name)
      return &(*i);
 }
 
-const cColEnumType& cColEnumType::get(const QString& name, eEx __ex)
+const cColEnumType& cColEnumType::get(const QString& name)
 {
     const cColEnumType *p = find(name);
-    if (__ex != EX_IGNORE && p == nullptr) {
+    if (p == nullptr) {
         EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid enum type name : %1").arg(name));
     }
     return *p;
@@ -837,25 +837,6 @@ QVariant stringListToSql(const QStringList& sl)
     return QVariant(s);
 }
 
-QStringList sqlToStringList(const QString& _s)
-{
-    QStringList sl = _s.split(QChar(','), QString::KeepEmptyParts);
-    const   QChar   m('"');
-    for (int i = 0; i < sl.size(); ++i) {
-        QString s = sl[i];
-        if (s[0] == m) {
-            while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
-                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + s);
-                sl[i] += QChar(',') + (s = sl[i +1]);
-                sl.removeAt(i +1);
-            }
-            s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
-        }
-        if (s.isEmpty()) sl.removeAt(i--);  // Az üres stringek eltávolítása
-    }
-    return sl;
-}
-
 cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
 {
     if (v.isNull() || isNumNull(v)) return ifExcep(checkIfNull(), acceptable, v);
@@ -938,12 +919,7 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
 {
     if (_f.isNull()) return _f;
     // A tömböket stringen keresztül bontjuk ki
-    QString s = _f.toString();
-    // Ez a hiba üzenethez kelhet
-    QString em = QString("ARRAY %1 = %2").arg(colName()).arg(s);
-    // A tömb { ... } zárójelek közt kell legyen
-    if (s.at(0) != QChar('{') || !s.endsWith(QChar('}'))) EXCEPTION(EDBDATA, 1, em);
-    s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
+    QString s = arrayDropBracket(_f.toString());
     // Az elemek közötti szeparátor a vessző
     QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
     int t = eColType & ~FT_ARRAY;
@@ -952,7 +928,7 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
          if (s.size() > 0) foreach (const QString& si, sl) {
              bool ok;
              qlonglong i = si.toLongLong(&ok);
-             if (!ok) EXCEPTION(EDBDATA, 2, "Invalid number : " + em);
+             if (!ok) EXCEPTION(EDBDATA, 2, "Invalid number : " + s);
              vl << QVariant(i);
          }
          return QVariant(vl);
@@ -962,13 +938,13 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
         if (s.size() > 0) foreach (const QString& si, sl) {
             bool ok;
             double i = si.toDouble(&ok);
-            if (!ok) EXCEPTION(EDBDATA, 3, "Invalid number : " + em);
+            if (!ok) EXCEPTION(EDBDATA, 3, "Invalid number : " + s);
             vl << QVariant(i);
         }
         return QVariant(vl);
     }
     // A többiről feltételezzük, hogy string, De kell valamit kezdeni az idézőjelekkel
-    sl = sqlToStringList(s);
+    sl = _sqlToStringList(s);
     if (sl.isEmpty() && isNullable) return QVariant();
     return QVariant(sl);
 }
@@ -2156,12 +2132,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     _tableName      = __t;
     _viewName       = __t;
 
-    QString baseName = __t;
-    if (baseName.endsWith('s')) {
-        baseName.chop(1);
-        // s-el végződő bázis név esetén az 's' utótag helyett 'es' utótag is lehet.
-        if (baseName.endsWith("se")) baseName.chop(1);
-    }
+    QString baseName = tableNameToBaseName(__t);
 
     QSqlQuery   *pq  = newQuery();
     QSqlQuery   *pq2 = newQuery();
@@ -2283,16 +2254,14 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         // Name or note : fix column name
         // Or determined column index and sufix
         if (columnDescr.eColType == cColStaticDescr::FT_TEXT) {
-            #define NAME_INDEX  1
-            #define DESCR_INDEX 2
-            static QString nameSufix = "_name";
-            static QString noteSufix = "_note";
+            #define NAME_INDEX 1
+            #define NOTE_INDEX 2
             if (!baseName.isEmpty()) {
-                if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix)) _nameIndex = i -1;
-                if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + noteSufix)) _noteIndex = i -1;
+                if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + _sNameSufix)) _nameIndex = i -1;
+                if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + _sNoteSufix)) _noteIndex = i -1;
             }
-            if (_nameIndex  < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix)) _nameIndex = NAME_INDEX;
-            if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(noteSufix)) _noteIndex = DESCR_INDEX;
+            if (_nameIndex  < 0 && i == (NAME_INDEX +1) && columnDescr.colName().endsWith(_sNameSufix)) _nameIndex = NAME_INDEX;
+            if (_noteIndex  < 0 && i == (NOTE_INDEX +1) && columnDescr.colName().endsWith(_sNoteSufix)) _noteIndex = NOTE_INDEX;
         }
         // Detect foreign keys. They are not regular too.
         if (columnDescr.eColType == cColStaticDescr::FT_INTEGER

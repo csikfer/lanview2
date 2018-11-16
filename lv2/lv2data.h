@@ -450,9 +450,9 @@ public:
 
 
 enum ePlaceGroupType {
-    PG_GROUP,
-    PG_CATEGORY,
-    PG_ZONE
+    PG_GROUP,       ///< Grouping Places
+    PG_CATEGORY,    ///< Categorize Places
+    PG_ZONE         ///< It's a zone
 };
 
 EXT_ const QString& placeGroupType(int e, eEx __ex = EX_ERROR);

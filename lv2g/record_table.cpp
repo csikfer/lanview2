@@ -1618,7 +1618,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 {
     if (pts != nullptr) pTableShape = pts;
     setObjectName(pTableShape->getName());
-    if ((pTableShape->containerValid & ~CV_LL_TEXT) == 0) {
+    if ((pTableShape->containerValid & CV_LL_TEXT) == 0) {
         pTableShape->fetchText(*pq);
     }
 

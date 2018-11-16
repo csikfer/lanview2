@@ -82,7 +82,8 @@ Hiba kezelő objktum.
 Az objektum makróhívásokon keresztül hozható létre, és tárolja a hiba jellemzóit, majd a makró ezzel a hiba objektummal
 dob egy kizárást.
 A hibakezelő makrók listálya:
-  - #EXCEPTION(ec...)    álltalános hiba kezelő
+  - EXCEPTION(ec...)    Álltalános hiba kezelő makró. cError példányosítása, és a pointerral egy kizárás dobása.
+  - NEWCERROR()         Egy hiba objektum példány létrehozása, feltöltése. Nem dob kizárást.
   - SQLERR(o, e)        SQL hiba
   - SQLOERR(o)          SQL adatbázis megnyitási hiba.
   - SQLQUERYERR(o)      SQL query hiba (prepare utáni exec)
@@ -164,7 +165,7 @@ Az adattagok inicializálása után hívja a circulation() metódust
 /*!
 @brief Konstruktor.
 
-Konstruktor. Hibakezelésnél a hibakezelő makró által hívott konstruktir.
+Konstruktor. Hibakezelésnél a hibakezelő makró által hívott konstruktor.
 @param _mSrcName    Forrás program fájl neve.
 @param _mSrcLine    Forrás program fájlban a sor pozició.
 @param _mFuncName   A függvény teljes neve

@@ -412,6 +412,7 @@ public:
     void clear();
     virtual int rowCount(const QModelIndex & = QModelIndex()) const;
     virtual QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+    const cEnumVal * atEnumVal(int ix, eEx __ex = EX_ERROR) const;
     int atInt(int ix) const;
     QString at(int ix) const;
     int indexOf(int e) const;

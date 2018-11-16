@@ -44,7 +44,8 @@ SOURCES += \
     snmpdevquery.cpp \
     popupreport.cpp \
     gexports.cpp \
-    pickers.cpp
+    pickers.cpp \
+    translator.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -81,7 +82,8 @@ HEADERS +=\
     snmpdevquery.h \
     popupreport.h \
     gexports.h \
-    pickers.h
+    pickers.h \
+    translator.h
 
 FORMS += \
     column_filter.ui \
@@ -112,7 +114,8 @@ FORMS += \
     place_ed.ui \
     rplace_ed.ui \
     port_ed.ui \
-    datetimedialog.ui
+    datetimedialog.ui \
+    translator.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

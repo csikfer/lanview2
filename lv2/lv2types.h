@@ -999,7 +999,7 @@ inline static qlonglong filterEnumAndTypeSet(int ftEnum, qlonglong ptSet)
     return r;
 }
 /// Egy összevont értékből az eFilterType típusú enumerációs vagy set érték kivonása.
-/// Az, hogy enum vagy set értéket kapun-e attol függ, hogy a forrás adatba mit raktunk.
+/// Az, hogy enum vagy set értéket kapunk-e attol függ, hogy a forrás adatba mit raktunk.
 /// Ha filterSetAndTypeSet() -el állítottuk össze, akkor set, ha filterEnumAndTypeSet(),
 /// akkor enum értéket kapunk vissza.
 inline static qlonglong pullFilter(qlonglong setSet)

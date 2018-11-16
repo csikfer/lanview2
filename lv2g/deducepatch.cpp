@@ -395,9 +395,9 @@ QList<tStringPair> cDPRow::exporter(const QVector<int> &cid2col)
                     break;
                 case CID_STATE_WARNING:
                     switch (warning) {
-                    case 0: text = _sOk;                                break;
-                    case 1: text = QObject::trUtf8("Figyelmeztetés");   break;
-                    default:text = QObject::trUtf8("Hiba");             break;
+                    case 0: text = _sOk;                      break;
+                    case 1: text = dcViewShort(DC_WARNING);   break;
+                    default:text = dcViewShort(DC_ERROR);     break;
                     }
                     break;
                 case CID_STATE_CONFLICT:
@@ -726,7 +726,7 @@ QList<tStringPair> cDPRowRep::exporter()
 const enum ePrivilegeLevel cDeducePatch::rights = PL_OPERATOR;
 
 cDeducePatch::cDeducePatch(QMdiArea *par)
-    :cIntSubObj(par)
+    : cIntSubObj(par)
 {
     tableSet = false;
     pUi = new Ui::deducePatch();

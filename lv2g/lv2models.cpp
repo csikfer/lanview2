@@ -867,6 +867,19 @@ int cEnumListModel::atInt(int ix) const
     return r;
 }
 
+const cEnumVal * cEnumListModel::atEnumVal(int ix, eEx __ex) const
+{
+    const cEnumVal *r = NULL;
+    if (isContIx(enumVals, ix)) {
+        r = enumVals.at(ix);
+    }
+    else {
+        if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, ix, *pType);
+    }
+    return r;
+}
+
+
 QString cEnumListModel::at(int ix) const
 {
     QString r;

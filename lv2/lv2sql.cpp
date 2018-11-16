@@ -8,6 +8,26 @@ QString unTypeQuoted(const QString& _s)
     return unQuoted(s);
 }
 
+QStringList _sqlToStringList(const QString& _s)
+{
+    QStringList sl = _s.split(QChar(','), QString::KeepEmptyParts);
+    const   QChar   m('"');
+    for (int i = 0; i < sl.size(); ++i) {
+        QString s = sl[i];
+        if (s[0] == m) {
+            while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
+                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + s);
+                sl[i] += QChar(',') + (s = sl[i +1]);
+                sl.removeAt(i +1);
+            }
+            s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
+        }
+        if (s.isEmpty()) sl.removeAt(i--);  // Az üres stringek eltávolítása
+    }
+    return sl;
+}
+
+
 QSqlDatabase *  getSqlDb(void)
 {
     if (lanView::instance == NULL) EXCEPTION(EPROGFAIL, -1, "lanView::instance is NULL.");

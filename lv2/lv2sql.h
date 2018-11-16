@@ -6,6 +6,32 @@
 #include <QtSql>
 
 /*!
+ * \brief tableNameToBaseName
+ * \param __t Tábla név
+ * \return  Tábla bázis név, ebből képeződnek  sablona mező nevek
+ */
+static inline QString tableNameToBaseName(const QString& __t)
+{
+    QString baseName = __t;
+    if (baseName.endsWith('s')) {
+        baseName.chop(1);
+        // s-el végződő bázis név esetén az 's' utótag helyett 'es' utótag is lehet.
+        if (baseName.endsWith("se")) baseName.chop(1);
+    }
+    return baseName;
+}
+
+/*!
+ * \brief toTypeName
+ * \param _n Mező név
+ * \return Mező típus név (aláhúzások törölve)
+ */
+static inline QString toTypeName(const QString& _n)
+{
+    return QString(_n).remove(QChar('_'));
+}
+
+/*!
 Összefűzi a két stringet, a két érték közé beszúrva egy '.' karaktert.
 @par Például.:
 @code
@@ -55,6 +81,33 @@ static inline QString unQuoted(const QString& name)
 }
 
 EXT_ QString unTypeQuoted(const QString& _s);
+
+static inline QString arrayDropBracket(const QString& s)
+{
+    // A tömb { ... } zárójelek közt kell legyen
+    if (!s.startsWith(QChar('{')) || !s.endsWith(QChar('}'))) EXCEPTION(EDBDATA, 1, s);
+    return s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
+}
+
+/// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva, és a stringről eltávolítva a {...} zárójelpár.
+EXT_ QStringList _sqlToStringList(const QString& _s);
+
+/// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
+/// @param _s A kiolvasott stringgé konvertált érték
+static inline QStringList sqlToStringList(const QString& _s)
+{
+    QString s = arrayDropBracket(_s);
+    return _sqlToStringList(s);
+}
+
+/// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
+/// @param v A kiolvasott QVariant típusú érték
+static inline QStringList sqlToStringList(const QVariant& v)
+{
+    QString s = v.toString();
+    return sqlToStringList(s);
+}
 
 /*!
 Összefűzi a két stringet, a két érték közé beszúrva egy '.' karaktert.

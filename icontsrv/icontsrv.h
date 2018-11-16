@@ -26,7 +26,8 @@ extern const QString _sIndAlarmIf1ma;
 extern const QString _sIndAlarmIf1sl;
 extern const QString _sIndAlarmIf2;
 
-/// @class Egy védett eszköz pszeudo szolgáltatást reprezentáló objektum
+/// @class cAttached
+/// Egy védett eszköz pszeudo szolgáltatást reprezentáló objektum
 /// A szolgáltatás a védet nod passzív virtuális szolgáltatása
 /// nem pedig a virtuális szolgáltatáshoz rendelt attach típusú portot.
 class cAttached : public cInspector {
@@ -40,7 +41,7 @@ public:
 
 class cGateway;
 
-/// @class slaveIf
+/// @class cIndAlarmIf
 /// Az objektum egy IndAlarmIf1 slave egységet, és a hozzá kapcsolt sensors objektumokat reprezentálja
 /// Az IndAlarmIf2 -nél nincsen slave objektum. A master egységet reprezentáló objektum ebből származik.
 /// Az ős objektum a host-ot, és a virtuális szolgáltatást reprezentálja
@@ -127,7 +128,7 @@ private:
     int                     sockPort;   ///< TCP port, ha a típus EP_TCP_RS, egyébként nem használt
 };
 
-/// @class cIndaCont
+/// @class cIndaContact
 /// Saját root szolgáltatás lekérdező objektum
 class cIndaContact : public cInspector {
 public:

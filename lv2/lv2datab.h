@@ -158,7 +158,7 @@ private:
     static QSet<cColEnumType>  colEnumTypes;
 public:
     static const cColEnumType *find(const QString& name);
-    static const cColEnumType& get(const QString& name, eEx __ex = EX_ERROR);
+    static const cColEnumType& get(const QString& name);
 };
 
 TSTREAMO(cColEnumType)
@@ -399,19 +399,6 @@ CSD_INHERITOR(cColStaticDescrAddr)
 };
 
 EXT_ QVariant stringListToSql(const QStringList& sl);
-/// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
-/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva, és a stringről eltávolítva a {...} zárójelpár.
-EXT_ QStringList sqlToStringList(const QString& _s);
-/// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
-/// @param v A kiolvasott QVariant típusú érték
-static inline QStringList sqlToStringList(const QVariant& v)
-{
-    QString s = v.toString();
-    // A tömb { ... } zárójelek közt kell legyen
-    if (s.at(0) != QChar('{') || !s.endsWith(QChar('}'))) EXCEPTION(EDBDATA, 1, s);
-    s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
-    return sqlToStringList(s);
-}
 
 /// @class cColStaticDescrArray
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényeivel egészíti ki.

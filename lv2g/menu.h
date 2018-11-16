@@ -27,7 +27,8 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_WORKSTATION,    /// Új munkaállomás, vagy modosítás űrlap
     INT_DEDUCEPATCH,    /// Falikábel felfedezés
     INT_SNMPDQUERY,     /// SNMP device query; insert/refresh
-    INT_ENUMEDIT
+    INT_ENUMEDIT,
+    INT_TRANSLATOR
 };
 
 class cRecordsViewBase;

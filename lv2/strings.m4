@@ -22,6 +22,10 @@ STRDEF(SemicolonNl, ";\n")
 STRDEF(BraceBeginNl, "{\n")
 STRDEF(Unique, "unique")
 
+STRDEF(IdSufix, "_id")
+STRDEF(NameSufix, "_name")
+STRDEF(NoteSufix, "_note")
+
 
 dnl Megosztás típusok
 __SDEF(A)
