@@ -27,13 +27,13 @@ int main (int argc, char * argv[])
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
-    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+    exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
 lv2ArpD::lv2ArpD() : lanView()
 {
-    pSelfInspector = NULL;
-    if (lastError == NULL) {
+    pSelfInspector = nullptr;
+    if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
             subsDbNotif();
@@ -86,25 +86,25 @@ cInspector * cArpDaemon::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong 
 /******************************************************************************/
 /// Protokol (local) azonosító objektum pointere
 /// ARP lekérdezés módja lokális álomány felolvasása
-const cService   *cDeviceArp::pPSLocal     = NULL;
+const cService   *cDeviceArp::pPSLocal     = nullptr;
 /// Protokol (SNMP) azonosító objektum pointere
 /// ARP lekérdezés módja SNMP lekérdezés
-const cService   *cDeviceArp::pPSSnmp      = NULL;
+const cService   *cDeviceArp::pPSSnmp      = nullptr;
 /// Protokol (SSH) azonosító objektum pointere
 /// ARP lekérdezés módja SSH-n keresztül egy távoli állomány felolvasása
-const cService   *cDeviceArp::pPSSsh       = NULL;
+const cService   *cDeviceArp::pPSSsh       = nullptr;
 /// ARP lekérdezés módja a DHCP konfig állomány felolvasása
-const cService   *cDeviceArp::pPSDhcpConf  = NULL;
+const cService   *cDeviceArp::pPSDhcpConf  = nullptr;
 /// ARP lekérdezés módja a proc fájlrendszer arp állományának a felolvasása
-const cService   *cDeviceArp::pPSArpProc   = NULL;
+const cService   *cDeviceArp::pPSArpProc   = nullptr;
 
 
 cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
 {
-    pSnmp = NULL;
-    pFileName = NULL;
-    pRemoteUser = NULL;
+    pSnmp = nullptr;
+    pFileName = nullptr;
+    pRemoteUser = nullptr;
     if (*pPSSnmp == protoService()) {
         pSnmp = new cSnmp();
         snmpDev().open(__q, *pSnmp);
@@ -124,8 +124,8 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
 
 cDeviceArp::~cDeviceArp()
 {
-    if (pSnmp     != NULL) delete pSnmp;
-    if (pFileName != NULL) delete pFileName;
+    if (pSnmp     != nullptr) delete pSnmp;
+    if (pFileName != nullptr) delete pFileName;
 }
 
 

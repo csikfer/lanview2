@@ -15,11 +15,11 @@ extern int errno;
 #include <sys/types.h>
 #include <sys/socket.h>
 
-cXSignal *cXSignal::pInstance = NULL;
+cXSignal *cXSignal::pInstance = nullptr;
 
 cXSignal::cXSignal(QObject *parent) : QObject(parent)
 {
-    if (pInstance != NULL) EXCEPTION(EPROGFAIL);
+    if (pInstance != nullptr) EXCEPTION(EPROGFAIL);
     pInstance = this;
     sigFd[0] = sigFd[1] = -1;
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigFd))
@@ -29,12 +29,12 @@ cXSignal::cXSignal(QObject *parent) : QObject(parent)
 }
 cXSignal::~cXSignal()
 {
-    if (sn != NULL) {
+    if (sn != nullptr) {
         delete sn;
 //        ::close(sigFd[0]);
 //        ::close(sigFd[1]);
     }
-    pInstance = NULL;
+    pInstance = nullptr;
 }
 
 void cXSignal::xHandler(int __i)
@@ -59,7 +59,7 @@ void cXSignal::qhandle(int)
 
 void cXSignal::unixSignalHandler(int __i)
 {
-    if (pInstance == NULL) {
+    if (pInstance == nullptr) {
         fprintf(stderr, "unixSignalHandler(%d): instance or unixSignals pointer is NULL, signal ignored.\n", __i);
         return;
     }

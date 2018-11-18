@@ -20,7 +20,7 @@ cGrPixmapItem::cGrPixmapItem(QPixmap _pm)
 void  cGrPixmapItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     cImagePolygonWidget *p = pImagePolygonWidget(this);
-    if (p->pPolygonItem == NULL) {  // Ha még nincs polygonunk
+    if (p->pPolygonItem == nullptr) {  // Ha még nincs polygonunk
         // Csinálunk egyet: háromszög a klikk helyén
         QPointF pos = event->scenePos();
         QPolygonF pol;
@@ -63,7 +63,7 @@ void cGrPolygonItem::editBegin()
     int index = 0;
     int maxix = pol.size() -1;
     cGrNodeItem::eNodeType nt = cGrNodeItem::NT_FIRST;
-    cGrNodeItem *pItem = NULL;
+    cGrNodeItem *pItem = nullptr;
     foreach (pt, pol) {
         pItem = new cGrNodeItem(pt, this, nt, index);
         if (index == 0) pFirstItem = pItem;
@@ -89,9 +89,9 @@ void cGrPolygonItem::editEnd()
     foreach (QGraphicsItem * pt, childList) {
         delete pt;
     }
-    pLastItem = NULL;
-    pFirstItem = NULL;
-    pNewItem = NULL;
+    pLastItem = nullptr;
+    pFirstItem = nullptr;
+    pNewItem = nullptr;
     setFlag(QGraphicsItem::ItemIsMovable, true);
     editing = false;
 }
@@ -222,9 +222,9 @@ cImagePolygonWidget::cImagePolygonWidget(bool _e, QWidget * _par)
     : QGraphicsView(_par)
     , editable(_e)
 {
-    pImageItem   = NULL;
-    pTextItem    = NULL;
-    pPolygonItem = NULL;
+    pImageItem   = nullptr;
+    pTextItem    = nullptr;
+    pPolygonItem = nullptr;
     pen.setColor(Qt::blue);
     pen.setWidth(1);
     brush = QBrush(Qt::red);
@@ -246,7 +246,7 @@ bool cImagePolygonWidget::setImage(const cImage& __o, const QString& __t)
     setWindowTitle(title);
     imageHash = hash;
     pDelete(pTextItem);
-    if (pImageItem == NULL) {
+    if (pImageItem == nullptr) {
         pImageItem = new cGrPixmapItem(picture);
         scene()->addItem(pImageItem);
     }
@@ -260,7 +260,7 @@ cImagePolygonWidget &cImagePolygonWidget::setText(const QString& _txt)
 {
     pDelete(pImageItem);
     pDelete(pPolygonItem);
-    if (pTextItem == NULL) {
+    if (pTextItem == nullptr) {
         pTextItem = scene()->addText(_txt);
     }
     else {
@@ -271,7 +271,7 @@ cImagePolygonWidget &cImagePolygonWidget::setText(const QString& _txt)
 
 cImagePolygonWidget& cImagePolygonWidget::setPolygon(const QPolygonF& pol)
 {
-    if (pPolygonItem == NULL) {
+    if (pPolygonItem == nullptr) {
         pPolygonItem = new cGrPolygonItem(pol);
         pPolygonItem->setBrush(brush);
         pPolygonItem->setPen(pen);

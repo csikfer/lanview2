@@ -16,7 +16,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     ui(new Ui::LoginDialog),
     _zoneIdList()
 {
-    _pMyUser = NULL;
+    _pMyUser = nullptr;
     _needZone = __needZone;
     ui->setupUi(this);
 #if   defined(Q_CC_MSVC)
@@ -36,7 +36,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     struct passwd *pw = getpwuid(uid);
     if (pw) {
         _myUserName = pw->pw_name;
-        if (lanView::getInstance()->pSelfNode != NULL) {
+        if (lanView::getInstance()->pSelfNode != nullptr) {
             _myDomainName = lanView::getInstance()->pSelfNode->getName();
         }
     }
@@ -69,7 +69,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         ui->zoneCB->hide();
         ui->zoneLBL->hide();
     }
-    if (_pMyUser != NULL) {
+    if (_pMyUser != nullptr) {
         ui->myUserPB->setDisabled(false);
         _inUser = _pMyUser->getName();
         ui->userLE->setText(_inUser);
@@ -89,7 +89,7 @@ cLogOn::~cLogOn()
 
 eLogOnResult    cLogOn::checkState()
 {
-    if (NULL != lanView::setUser(ui->userLE->text(), ui->passwLE->text(), EX_IGNORE)) {
+    if (nullptr != lanView::setUser(ui->userLE->text(), ui->passwLE->text(), EX_IGNORE)) {
         _state = LR_OK;
     }
     else {
@@ -100,7 +100,7 @@ eLogOnResult    cLogOn::checkState()
 
 eLogOnResult cLogOn::logOn(qlonglong *pZoneId, QWidget *par)
 {
-    cLogOn  *pDialog = new cLogOn(pZoneId != NULL, par);
+    cLogOn  *pDialog = new cLogOn(pZoneId != nullptr, par);
     pDialog->exec();
     if (pZoneId) {
         *pZoneId = pDialog->getZoneId();
@@ -173,7 +173,7 @@ void cLogOn::change()
 void cLogOn::userNameEdit(const QString &_txt)
 {
     _inUser = _txt;
-    if (_pMyUser != NULL && 0 == _pMyUser->getName().compare(_txt, Qt::CaseInsensitive)) {
+    if (_pMyUser != nullptr && 0 == _pMyUser->getName().compare(_txt, Qt::CaseInsensitive)) {
         userNameEdited();
         ui->myUserPB->setDisabled(false);
     }
@@ -214,9 +214,9 @@ void cLogOn::userNameEdited()
 
 void cLogOn::myUser()
 {
-    if (_pMyUser == NULL) EXCEPTION(EPROGFAIL,0,"_pMyUser pointer is NULL.");
+    if (_pMyUser == nullptr) EXCEPTION(EPROGFAIL,0,"_pMyUser pointer is NULL.");
     lanView::setUser(_pMyUser);
-    _pMyUser = NULL;
+    _pMyUser = nullptr;
     _state = LR_OK;
     accept();
 }

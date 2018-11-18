@@ -7,7 +7,7 @@
 
 QString      importFileNm;
 unsigned int importLineNo = 0;
-QTextStream* pImportInputStream = NULL;
+QTextStream* pImportInputStream = nullptr;
 
 bool importSrcOpen(QFile& f)
 {
@@ -59,11 +59,11 @@ int importParseFile(const QString& fn)
 
 cError *importGetLastError() {
     cError *r = pImportLastError;
-    pImportLastError = NULL;
+    pImportLastError = nullptr;
     return r;
 }
 
-cImportParseThread *cImportParseThread::pInstance = NULL;
+cImportParseThread *cImportParseThread::pInstance = nullptr;
 
 cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     : QThread(par)
@@ -74,8 +74,8 @@ cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     , iniCmd(_inicmd)
 {
     DBGOBJ();
-    pSrc = NULL;
-    if (pInstance != NULL) EXCEPTION(EPROGFAIL);
+    pSrc = nullptr;
+    if (pInstance != nullptr) EXCEPTION(EPROGFAIL);
     pInstance = this;
     setObjectName(_sImportParser);
 }
@@ -86,7 +86,7 @@ cImportParseThread::~cImportParseThread()
 {
     DBGOBJ();
     stopParser();
-    pInstance = NULL;
+    pInstance = nullptr;
 }
 
 void cImportParseThread::reset()
@@ -111,14 +111,14 @@ void	cImportParseThread::run()
     DBGFN();
     // Alaphelyzetbe állítjuk a sorpuffert, és a szemforokat
     reset();
-    if (importParserStat != IPS_READY || pImportInputStream != NULL) {
-        if (pImportLastError == NULL) pImportLastError = NEWCERROR(ESTAT);
+    if (importParserStat != IPS_READY || pImportInputStream != nullptr) {
+        if (pImportLastError == nullptr) pImportLastError = NEWCERROR(ESTAT);
         DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
         return;
     }
     PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
     initImportParser();
-    if (pSrc == NULL) {     // Fordítás a queue-n keresztül
+    if (pSrc == nullptr) {     // Fordítás a queue-n keresztül
         importFileNm = "[queue]";
         importParse(IPS_THREAD);
         if (parseReady.available() == 0) parseReady.release();
@@ -151,28 +151,28 @@ int cImportParseThread::push(const QString& src, cError *& pe)
         queueAccess.release();              // puffer hazzáférés szabad
         if (parseReady.tryAcquire(1, IPT_SHORT_WAIT)) {    // Megváruk, hogy végezzen a parser
             pe = importGetLastError();
-            r = pe == NULL ? REASON_OK : R_ERROR;
+            r = pe == nullptr ? REASON_OK : R_ERROR;
         }
         else {
             pe = importGetLastError();                      // Időtullépés
-            if (NULL == pe) pe = NEWCERROR(ETO);
+            if (nullptr == pe) pe = NEWCERROR(ETO);
             r = R_TIMEOUT;
         }
     }
     else {
         pe = importGetLastError();
-        if (pe == NULL) pe = NEWCERROR(EUNKNOWN, -1, trUtf8("A parser szál nem fut."));
+        if (pe == nullptr) pe = NEWCERROR(EUNKNOWN, -1, trUtf8("A parser szál nem fut."));
         r = R_DISCARD;
     }
     if (REASON_OK != r) {
-        cError *rpe = NULL;
+        cError *rpe = nullptr;
         reStartParser(rpe);
-        if (rpe != NULL) {
+        if (rpe != nullptr) {
             DERR() << rpe->msg() << endl;
             delete rpe;
         }
     }
-    if (pe == NULL) {
+    if (pe == nullptr) {
         DBGFNL();
     }
     else {
@@ -199,7 +199,7 @@ int cImportParseThread::startParser(cError *&pe, QString *_pSrc)
     int r;
     start();
     if (iniCmd.isEmpty()) {
-        pe = NULL;
+        pe = nullptr;
         r = REASON_OK;
     }
     else {

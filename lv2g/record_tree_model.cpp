@@ -6,7 +6,7 @@ cTreeNode::cTreeNode(cRecord *__po, cTreeNode * _parentNode)
     : pData(__po)
 {
     parent   = _parentNode;
-    pChildrens = NULL;
+    pChildrens = nullptr;
 }
 
 cTreeNode::cTreeNode(const cTreeNode&)
@@ -50,8 +50,8 @@ cRecordTreeModel::cRecordTreeModel(cRecordTree&  _rt)
     : QAbstractItemModel(_rt.pWidget())
     , cRecordViewModelBase(_rt)
 {
-    pActRootNode = NULL;
-    pRootNode    = NULL;
+    pActRootNode = nullptr;
+    pRootNode    = nullptr;
     rootId       = NULL_ID;
     _viewRowNumbers = false;    // NINCS!!
     pq = newQuery();
@@ -67,7 +67,7 @@ QModelIndex cRecordTreeModel::findNode(qlonglong pid, const QModelIndex& mi)
 {
     cTreeNode *pn = nodeFromIndex(mi);
     _DBGFN() << QString("@(%1, %2)").arg(pid).arg(pn->name()) << endl;
-    if (pn->pData != NULL && pid == pn->pData->getId()) {
+    if (pn->pData != nullptr && pid == pn->pData->getId()) {
         _DBGFNL() << " found : " << pn->name() << endl;
         return mi;
     }
@@ -86,7 +86,7 @@ QModelIndex cRecordTreeModel::findNode(qlonglong pid, const QModelIndex& mi)
 
 QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (pActRootNode == NULL) {
+    if (pActRootNode == nullptr) {
         DWAR() << "pActRootNode is NULL." << endl;
         return QModelIndex();
     }
@@ -95,7 +95,7 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
         return QModelIndex();
     }
     cTreeNode *parentNode = nodeFromIndex(parent);
-    if (parentNode->pChildrens == NULL) EXCEPTION(EPROGFAIL);
+    if (parentNode->pChildrens == nullptr) EXCEPTION(EPROGFAIL);
 //    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
     if (parentNode->pChildrens->size() <= row) {
         DWAR() << "Invalid row = " << row << "child number : " << parentNode->pChildrens->size() << endl;
@@ -107,10 +107,10 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
 QModelIndex cRecordTreeModel::parent(const QModelIndex& child) const
 {
     cTreeNode *pNode = nodeFromIndex(child);
-    if (pNode == NULL) return QModelIndex();
+    if (pNode == nullptr) return QModelIndex();
     cTreeNode *parentNode = pNode->parent;
-    if (parentNode == NULL) return QModelIndex();
-    if (parentNode->parent == NULL) return QModelIndex();
+    if (parentNode == nullptr) return QModelIndex();
+    if (parentNode->parent == nullptr) return QModelIndex();
     int row = parentNode->row();
     return createIndex(row, 0, parentNode);
 }
@@ -118,13 +118,13 @@ QModelIndex cRecordTreeModel::parent(const QModelIndex& child) const
 int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
 {
     cTreeNode *parentNode = nodeFromIndex(parent);
-    if (parentNode == NULL) {
+    if (parentNode == nullptr) {
         PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : 0 (parant is NULL)" << endl;
         return 0;
     }
 //    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : " << parentNode->childrens.count()
 //                   << " (parant : "<< parentNode->name() << ")" << endl;
-    if (parentNode->pChildrens == NULL) {
+    if (parentNode->pChildrens == nullptr) {
         // Csak így mőködik, de akkor minek a canFetchMore() és fetchMore(); ?? (talán előre kéne tudni a sorok számát?)
         const_cast<cRecordTreeModel *>(this)->readChilds(parentNode);
     }
@@ -142,7 +142,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     QVariant r;
     if (!index.isValid())           return r;
     cTreeNode *node = nodeFromIndex(index);
-    if (node == NULL)               return r;
+    if (node == nullptr)               return r;
     int col = index.column();
     if (col >= _col2field.size())   return r;
     int fix = _col2field[col];  // Mező index a rekordbam
@@ -172,8 +172,8 @@ Qt::ItemFlags cRecordTreeModel::flags(const QModelIndex &index) const
 bool cRecordTreeModel::canFetchMore(const QModelIndex &parent) const
 {
     cTreeNode *pNode = nodeFromIndex(parent);
-    if (pNode == NULL) EXCEPTION(EPROGFAIL);
-    return pNode->pChildrens == NULL;
+    if (pNode == nullptr) EXCEPTION(EPROGFAIL);
+    return pNode->pChildrens == nullptr;
 }
 
 void cRecordTreeModel::fetchMore(const QModelIndex &parent)
@@ -196,10 +196,10 @@ cTreeNode * cRecordTreeModel::nodeFromIndex(const QModelIndex& index) const
 
 void cRecordTreeModel::refresh(bool first)
 {
-    first = first || (pRootNode == NULL) || (pRootNode == pActRootNode);
+    first = first || (pRootNode == nullptr) || (pRootNode == pActRootNode);
     qlonglong rid = rootId;
     if (!first) {           // Ha rész fa van
-        if (pActRootNode->pData == NULL) EXCEPTION(EPROGFAIL);
+        if (pActRootNode->pData == nullptr) EXCEPTION(EPROGFAIL);
         rid = pActRootNode->pData->getId();
         if (rid == NULL_ID) EXCEPTION(EPROGFAIL);
     }
@@ -221,7 +221,7 @@ void cRecordTreeModel::fetchTree()
 
 void cRecordTreeModel::readChilds(cTreeNode *pNode)
 {
-    if (pNode->pChildrens != NULL) {
+    if (pNode->pChildrens != nullptr) {
         DWAR() << "node : " << pNode->name() << " pChildrens pointer is not NULL." << endl;
         return;
     }
@@ -238,12 +238,12 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
 /// Az adatok változásáról nem küld szignáltt. Rekourzív.
 bool cRecordTreeModel::removeNode(cTreeNode *pn)
 {
-    if (pn->parent == NULL) {
+    if (pn->parent == nullptr) {
         EXCEPTION(EPROGFAIL);   // A gyökér törlése nem értelmezhető
     }
     // Töröljük az elemet a parentből
     pn->parent->pChildrens->removeAt(pn->row());
-    if (pn->pChildrens == NULL) {   // Még be sincsenek olvasva a gyerköcök
+    if (pn->pChildrens == nullptr) {   // Még be sincsenek olvasva a gyerköcök
         readChilds(pn);
     }
     // Töröljük a gyerköcöket..
@@ -263,13 +263,13 @@ void cRecordTreeModel::setRoot(const QModelIndex &mi)
 
 void cRecordTreeModel::prevRoot(bool _sing)
 {
-    if (pActRootNode->parent == NULL) return;  // nincs mit visszaállítani
+    if (pActRootNode->parent == nullptr) return;  // nincs mit visszaállítani
     beginResetModel();
     if (_sing) {
         // egyet vissza
         pActRootNode = pActRootNode->parent;
     }
-    else while (pActRootNode->parent != NULL) {
+    else while (pActRootNode->parent != nullptr) {
         // elballagunk az eredeti gyökérig
         pActRootNode = pActRootNode->parent;
     }
@@ -314,17 +314,17 @@ cRecord *cRecordTreeModel::record(const QModelIndex &index)
 {
     if (index.isValid()) {
         cTreeNode *node = nodeFromIndex(index);
-        if (node != NULL) {
+        if (node != nullptr) {
             return node->pData;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QModelIndex& new_parent)
 {
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
-    if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
+    if (pn->parent == nullptr || pn->pData == nullptr) EXCEPTION(EPROGFAIL);
     int ixPId = pRec->descr().ixToParent(EX_IGNORE);// Az ősre mutató ID mező indexe
     qlonglong old_pid = NULL_ID;
     qlonglong new_pid = NULL_ID;
@@ -430,7 +430,7 @@ void cRecordTreeModel::clear()
 {
     beginResetModel();
     pDelete(pRootNode);
-    pActRootNode = NULL;
+    pActRootNode = nullptr;
     endResetModel();
     pq->clear();
 }

@@ -36,13 +36,13 @@ int main(int argc, char *argv[])
     r = app.exec();
 
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
-    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+    exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
 lv2d::lv2d()
 {
-    pSelfInspector = NULL;
-    if (lastError == NULL) {
+    pSelfInspector = nullptr;
+    if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
             subsDbNotif();

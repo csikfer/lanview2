@@ -4,10 +4,10 @@
 #include "scan.h"
 
 cThreadAcceptor::cThreadAcceptor(cInspectorThread *pThread)
-    : QObject(NULL), inspector(pThread->inspector)
+    : QObject(nullptr), inspector(pThread->inspector)
 {
     moveToThread(pThread);
-    pTimer = NULL;
+    pTimer = nullptr;
 }
 
 cThreadAcceptor::~cThreadAcceptor()
@@ -17,7 +17,7 @@ cThreadAcceptor::~cThreadAcceptor()
 
 void cThreadAcceptor::timer(int ms, eTimerStat tst)
 {
-    if (pTimer != NULL) {
+    if (pTimer != nullptr) {
         if (tst == TS_FIRST) EXCEPTION(EPROGFAIL);
         if (!pTimer->isActive()) EXCEPTION(EPROGFAIL, 0, trUtf8("Inactive timer"));
         pTimer->stop();
@@ -29,7 +29,7 @@ void cThreadAcceptor::timer(int ms, eTimerStat tst)
     if (!checkThread(this)) {
         EXCEPTION(EDATA, 0, trUtf8("Inv. thread : %1 != %2").arg(thread()->objectName(), QThread::currentThread()->objectName()));
     }
-    if (pTimer == NULL) {
+    if (pTimer == nullptr) {
         pTimer = new QTimer(this);
         connect(pTimer, SIGNAL(timeout()), this, SLOT(timerEvent()));
     }
@@ -52,7 +52,7 @@ cInspectorThread::cInspectorThread(cInspector *pp)
     : QThread(pp), inspector(*pp), acceptor(this)
 {
     _DBGFN() << inspector.name() << endl;
-    pLastError = NULL;
+    pLastError = nullptr;
     setObjectName(inspector.name());
     DBGFNL();
 }
@@ -99,7 +99,7 @@ void cInspectorThread::doInit()
     inspector.pq = newQuery();
     inspector.threadPreInit();
     if (inspector.inspectorType & IT_SUPERIOR) {
-        if (inspector.pSubordinates != NULL) EXCEPTION(EPROGFAIL);
+        if (inspector.pSubordinates != nullptr) EXCEPTION(EPROGFAIL);
         inspector.pSubordinates = new QList<cInspector *>;
         inspector.setSubs(*inspector.pq);
     }
@@ -115,7 +115,7 @@ void cInspectorThread::doRun()
         inspector.timerStat = TS_FIRST;
     }
     else if (inspector.passive()) {
-        if (inspector.pSubordinates == NULL || inspector.pSubordinates->isEmpty()) EXCEPTION(EDATA);
+        if (inspector.pSubordinates == nullptr || inspector.pSubordinates->isEmpty()) EXCEPTION(EDATA);
         // start subs, and event loop
     }
     else {
@@ -206,8 +206,8 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
         }
         QString fileName = lanView::getInstance()->homeDir + "/log/";
         fileName += inspector.service()->getName();
-        if (inspector.pPrimeService != NULL) fileName += '.' + inspector.pPrimeService->getName();
-        if (inspector.pProtoService != NULL) fileName += '.' + inspector.pProtoService->getName();
+        if (inspector.pPrimeService != nullptr) fileName += '.' + inspector.pPrimeService->getName();
+        if (inspector.pProtoService != nullptr) fileName += '.' + inspector.pProtoService->getName();
         fileName += ".log";
         actLogFile.setFileName(fileName);
         if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
@@ -337,9 +337,9 @@ void cInspector::preInit(cInspector *__par)
     internalStat = IS_INIT;
     timerStat    = TS_STOP;
 
-    pNode    = NULL;
-    pPort    = NULL;
-    _pFeatures= NULL;
+    pNode    = nullptr;
+    pPort    = nullptr;
+    _pFeatures= nullptr;
     interval = -1;
     retryInt = -1;
     startTimeOut =  2000;   // Default  2s
@@ -347,19 +347,19 @@ void cInspector::preInit(cInspector *__par)
     timerId  = -1;
     lastRun.invalidate();
     lastElapsedTime = -1;
-    pInspectorThread  = NULL;
-    pProcess = NULL;
-    pQparser = NULL;
+    pInspectorThread  = nullptr;
+    pProcess = nullptr;
+    pQparser = nullptr;
     pq       = newQuery();
-    pSubordinates = NULL;
-    pProtoService = NULL;
-    pPrimeService = NULL;
-    pService = NULL;
-    pVars    = NULL;
+    pSubordinates = nullptr;
+    pProtoService = nullptr;
+    pPrimeService = nullptr;
+    pService = nullptr;
+    pVars    = nullptr;
     initStatic();
 
     pParent = __par;
-    if (pParent != NULL) {
+    if (pParent != nullptr) {
         setParent(pParent->useParent());
     }
 //  DBGFNL();
@@ -376,11 +376,11 @@ void cInspector::initStatic()
 
 
 cInspector::cInspector(cInspector * __par)
-    : QObject(NULL), hostService(), lastRun()
+    : QObject(nullptr), hostService(), lastRun()
 {
-    _DBGFN() << " parent : " << (__par == NULL ? "NULL" : __par->name()) << endl;
+    _DBGFN() << " parent : " << (__par == nullptr ? "NULL" : __par->name()) << endl;
     preInit(__par);
-    if (__par != NULL || lanView::getInstance()->pSelfHostService == NULL) {
+    if (__par != nullptr || lanView::getInstance()->pSelfHostService == nullptr) {
         inspectorType = IT_TIMING_PASSIVE;
     }
     else {
@@ -399,10 +399,10 @@ cInspector::cInspector(cInspector * __par)
 }
 
 cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP)
-    : QObject(NULL), hostService(), lastRun()
+    : QObject(nullptr), hostService(), lastRun()
 {
-    _DBGFN() << " (" << (__par == NULL ? "NULL" : __par->name()) << ", "
-             << pN->getName() << ", " << pS->getName() << ", " << (pP == NULL ? "NULL" : pP->getName())
+    _DBGFN() << " (" << (__par == nullptr ? "NULL" : __par->name()) << ", "
+             << pN->getName() << ", " << pS->getName() << ", " << (pP == nullptr ? "NULL" : pP->getName())
              << ")" << endl;
     preInit(__par);
     inspectorType = IT_TIMING_PASSIVE;
@@ -411,14 +411,14 @@ cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort
     pPort    = pP;
     hostService.setId(_sNodeId,    pNode->getId());
     hostService.setId(_sServiceId, pService->getId());
-    if (pPort != NULL) hostService.setId(_sPortId, pPort->getId());
+    if (pPort != nullptr) hostService.setId(_sPortId, pPort->getId());
 }
 
 cInspector::cInspector(QSqlQuery& q, const QString &sn)
-    : QObject(NULL), hostService(), lastRun()
+    : QObject(nullptr), hostService(), lastRun()
 {
     _DBGFN() << VDEB(sn) << endl;
-    preInit(NULL);
+    preInit(nullptr);
     self(q, sn);
     // Ha van specifikált port is
     if (! hostService.isNull(_sPortId)) pPort = cNPort::getPortObjById(q, hostService.getId(_sPortId));
@@ -429,9 +429,9 @@ cInspector::cInspector(QSqlQuery& q, const QString &sn)
 }
 
 cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
-    : QObject(NULL), hostService(), lastRun()
+    : QObject(nullptr), hostService(), lastRun()
 {
-    _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << (__par == NULL ? "NULL" : __par->name()) << endl;
+    _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << (__par == nullptr ? "NULL" : __par->name()) << endl;
     preInit(__par);
     // Megallokáljuk a megfelelő típusú node objektumot
     if      (__tableoid == nodeOId
@@ -481,7 +481,7 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 {
     static time_t t = 0;
     if (t == 0) {
-        t = time(NULL);
+        t = time(nullptr);
         srand((unsigned int)t);
     }
     double r = i;
@@ -495,7 +495,7 @@ void cInspector::down()
 {
     _DBGFN() << name() << endl;
     drop(EX_IGNORE);
-    if (pInspectorThread != NULL) {
+    if (pInspectorThread != nullptr) {
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
         if (!pInspectorThread->wait(stopTimeOut)) pInspectorThread->terminate();
         dropThreadDb(pInspectorThread->objectName(), EX_IGNORE);
@@ -506,7 +506,7 @@ void cInspector::down()
         PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         pDelete(pQparser);
     }
-    else pQparser = NULL;
+    else pQparser = nullptr;
     pDelete(pq);
     pDelete(pPort);
     pDelete(pNode);
@@ -517,14 +517,14 @@ void cInspector::down()
 
 void cInspector::dropSubs()
 {
-    if (pSubordinates != NULL) {
+    if (pSubordinates != nullptr) {
         QList<cInspector*>::Iterator i, n = pSubordinates->end();
         for (i = pSubordinates->begin(); i != n; ++i) {
             cInspector *p = *i;
-            if (p != NULL) delete p;
+            if (p != nullptr) delete p;
         }
         delete pSubordinates;
-        pSubordinates = NULL;
+        pSubordinates = nullptr;
     }
 }
 
@@ -536,7 +536,7 @@ cInspector *cInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong
 cInspectorThread *cInspector::newThread()
 {
     _DBGFN() << name() << endl;
-    cInspectorThread *p = NULL;
+    cInspectorThread *p = nullptr;
     p = new cInspectorThread(this);
     p->setObjectName(name());
     return p;
@@ -562,9 +562,9 @@ static inline QString ssi(const QString& s1, const QString& s2, qlonglong n)
 void cInspector::postInit(QSqlQuery& q, const QString& qs)
 {
     _DBGFN() << name() << endl;
-    if (pSubordinates    != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
-    if (pInspectorThread != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
-    if (pVars            != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
+    if (pSubordinates    != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
+    if (pInspectorThread != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
+    if (pVars            != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
     qlonglong tpid = (qlonglong)get(_sTimePeriodId);
     switch (tpid) {
     case NULL_ID:               // Not Specified
@@ -598,16 +598,16 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
 
             EXCEPTION(ETO, 0, trUtf8("%1 thread init.").arg(name()));
         }
-        if (pInspectorThread->pLastError != NULL) {
+        if (pInspectorThread->pLastError != nullptr) {
             cError *pe = pInspectorThread->pLastError;
-            pInspectorThread->pLastError = NULL;
+            pInspectorThread->pLastError = nullptr;
             pe->exception();
         }
     }
     // Van superior. (Thread-nél ezt a thread-ben kell)
     else if (inspectorType & IT_SUPERIOR) {
         // process-nél a mi dolgunk ?
-        bool f = pProcess == NULL;
+        bool f = pProcess == nullptr;
         f = f || !(inspectorType & (IT_METHOD_INSPECTOR));
         if (f) {
             pSubordinates = new QList<cInspector *>;
@@ -624,7 +624,7 @@ void cInspector::threadPreInit()
 void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 {
     _DBGFN() << name() << VDEB(qs) << endl;
-    if (pSubordinates == NULL) EXCEPTION(EPROGFAIL, -1, name());
+    if (pSubordinates == nullptr) EXCEPTION(EPROGFAIL, -1, name());
     bool ok = true;
     QSqlQuery q2 = getQuery();
     QString sql =
@@ -639,15 +639,15 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     if (q.first()) do {
         qlonglong       hsid = variantToId(q.value(0));  // host_service_id      A szervíz rekord amit be kell olvasni
         qlonglong       hoid = variantToId(q.value(1));  // node tableoid        A node típusa
-        cInspector *p  = NULL;
-        cError     *pe = NULL;
+        cInspector *p  = nullptr;
+        cError     *pe = nullptr;
         try {
             p = newSubordinate(q2, hsid, hoid, this);
-            if (p != NULL) {
+            if (p != nullptr) {
                 p->postInit(q2);  // ??
             }
         } CATCHS(pe);
-        if (pe != NULL) {
+        if (pe != nullptr) {
             ok = false;
             if (pe->mErrorCode != eError::EOK) {
                 cHostService hs;
@@ -657,7 +657,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             pDelete(p);
             delete pe;
         }
-        if (p != NULL) {
+        if (p != nullptr) {
             *pSubordinates << p;
         }
     } while (q.next());
@@ -678,7 +678,7 @@ tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
         return p;
     }
     delete p;
-    return NULL;
+    return nullptr;
 }
 
 
@@ -686,8 +686,8 @@ cRecordFieldConstRef cInspector::get(const QString& __n) const
 {
     cRecordFieldConstRef r = hostService[__n];
     if (r.isNull())                          r = (*service())    [__n];
-    if (r.isNull() && pPrimeService != NULL) r = (*pPrimeService)[__n];
-    if (r.isNull() && pProtoService != NULL) r = (*pProtoService)[__n];
+    if (r.isNull() && pPrimeService != nullptr) r = (*pPrimeService)[__n];
+    if (r.isNull() && pProtoService != nullptr) r = (*pProtoService)[__n];
     return r;
 }
 
@@ -695,11 +695,11 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 {
     int ixFeatures = cService::_descr_cService().toIndex(_sFeatures);
 
-    if (_pFeatures  == NULL) _pFeatures = new cFeatures();
+    if (_pFeatures  == nullptr) _pFeatures = new cFeatures();
     else                     _pFeatures->clear();
 
-    if (pProtoService != NULL) _pFeatures->split(pProtoService->getName(ixFeatures), __ex);
-    if (pPrimeService != NULL) _pFeatures->split(pPrimeService->getName(ixFeatures), __ex);
+    if (pProtoService != nullptr) _pFeatures->split(pProtoService->getName(ixFeatures), __ex);
+    if (pPrimeService != nullptr) _pFeatures->split(pPrimeService->getName(ixFeatures), __ex);
     _pFeatures->split(service()-> getName(ixFeatures), __ex);
     _pFeatures->split(hostService.getName(_sFeatures), __ex);
     PDEB(VVERBOSE) << name() << " features : " << _pFeatures->join() << endl;
@@ -850,7 +850,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
     inspectorType = 0;
     if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
     if (isFeature(_sSuperior))         inspectorType |= IT_SUPERIOR;
-    if (pParent == NULL)               inspectorType |= IT_MAIN;
+    if (pParent == nullptr)               inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
@@ -906,14 +906,14 @@ int cInspector::getInspectorType(QSqlQuery& q)
 void cInspector::self(QSqlQuery& q, const QString& __sn)
 {
     // Elöszőr mindent kiürítünk, mert jobb a békesség
-    pService = NULL;
+    pService = nullptr;
     pDelete(pNode);
     pDelete(pPort);
     pDelete(_pFeatures);
     hostService.clear();
     // Ha már beolvastuk..
-    if (lanView::getInstance()->pSelfHostService != NULL
-     && lanView::getInstance()->pSelfService     != NULL) {
+    if (lanView::getInstance()->pSelfHostService != nullptr
+     && lanView::getInstance()->pSelfService     != nullptr) {
         pService = &lanView::selfService();
         pNode    =  lanView::selfNode().dup()->reconvert<cNode>();
         hostService.clone(lanView::selfHostService());
@@ -935,8 +935,8 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     int ixCheckCmd = cService::_descr_cService().toIndex(_sCheckCmd);
 
     checkCmdArgs.clear();
-    if (pProtoService != NULL) checkCmd = pProtoService->getName(ixCheckCmd);
-    if (pPrimeService != NULL) {
+    if (pProtoService != nullptr) checkCmd = pProtoService->getName(ixCheckCmd);
+    if (pPrimeService != nullptr) {
         val = pPrimeService->getName(ixCheckCmd);
         if (!val.isEmpty()) {
             if (val == "!") checkCmd.clear();
@@ -1064,7 +1064,7 @@ void cInspector::timerEvent(QTimerEvent *)
             internalStat = IS_OMITTED;
             timerStat    = TS_OMMIT;
             if (isThread()) {
-                if (pInspectorThread == NULL)
+                if (pInspectorThread == nullptr)
                     EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
                 pInspectorThread->timer(t, timerStat);
             }
@@ -1083,12 +1083,12 @@ void cInspector::timerEvent(QTimerEvent *)
              << service()->getName()<< QChar('(') << service()->getId() << QChar(')') << _sCommaSp
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
     if (inspectorType & IT_TIMING_PASSIVE) {
-        if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);    //?!
+        if (pSubordinates == nullptr) EXCEPTION(EPROGFAIL);    //?!
         int n = 0;  // Hány alárendelt fut még?
         int maxState = RS_UNKNOWN;
         int minState = RS_ON;
         foreach (cInspector * pSub, *pSubordinates) {
-            if (pSub != NULL
+            if (pSub != nullptr
              && (pSub->internalStat == IS_RUN           // Éppen fut
               || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
               || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
@@ -1132,7 +1132,7 @@ bool cInspector::doRun(bool __timed)
     int  retStat = RS_UNREACHABLE;  // A lekérdezés alapértelmezett státusza
     bool statIsSet    = false;  // A statusz beállítva
     bool statSetRetry = false;  // Időzítés modosítása
-    cError * lastError = NULL;  // Hiba leíró
+    cError * lastError = nullptr;  // Hiba leíró
     if (lastRun.isValid()) {
         lastElapsedTime = lastRun.restart();
     }
@@ -1155,15 +1155,15 @@ bool cInspector::doRun(bool __timed)
         // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
         statMsg = msgCat(statMsg, trUtf8("Az időzítés csúszott: %1 > %2").arg(lastElapsedTime).arg(interval));
     }
-    if (lastError != NULL) {   // Ha hívtuk a run metódust, és dobott egy hátast
+    if (lastError != nullptr) {   // Ha hívtuk a run metódust, és dobott egy hátast
         if (inspectorType & IT_AUTO_TRANSACTION) sqlRollback(*pq, tn);  // Hiba volt, inkább visszacsináljuk az egészet.
-        if (pProcess != NULL && QProcess::NotRunning != pProcess->state()) {
+        if (pProcess != nullptr && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
         }
         // A hibárol LOG az adatbázisba, amugy töröljük a hibát
         lanView  *plv = lanView::getInstance();
         qlonglong id = sendError(lastError);
-        if (plv->lastError == lastError) plv->lastError = NULL;
+        if (plv->lastError == lastError) plv->lastError = nullptr;
         pDelete(lastError);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
         hostService.setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
@@ -1190,7 +1190,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     _DBGFN() << name() << endl;
     (void)q;
     (void)runMsg;
-    if (pProcess != NULL) {
+    if (pProcess != nullptr) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
@@ -1246,12 +1246,12 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
     (void)_ec;
     QString comment = feature(_sComment);
     // Ha a parsert nem mi indítottuk, keressük meg, valamelyik parent lessz az indító
-    if (pQparser == NULL) {
-        for (cInspector *pPar = pParent; pPar != NULL; pPar = pPar->pParent) {
+    if (pQparser == nullptr) {
+        for (cInspector *pPar = pParent; pPar != nullptr; pPar = pPar->pParent) {
             pQparser = pPar->pQparser;
-            if (pQparser != NULL) break;     // Megtaláltuk
+            if (pQparser != nullptr) break;     // Megtaláltuk
         }
-        if (pQparser == NULL) EXCEPTION(EFOUND,0,name());
+        if (pQparser == nullptr) EXCEPTION(EFOUND,0,name());
         pQparser = pQparser->newChild(this);
     }
     pQparser->setInspector(this);   // A kliens beállítása...
@@ -1262,7 +1262,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
         t = t.simplified();
         if (t.isEmpty()) continue;      // üres
         if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Van kommnt jel. és az első karakter az
-        cError *pe = NULL;
+        cError *pe = nullptr;
         int r = pQparser->parse(t, pe);
         // Ha semmire sem volt találat
         if (r == R_NOTFOUND) {
@@ -1271,7 +1271,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
         }
         // Találat, és hiba
         if (r != REASON_OK) {
-            if (pe == NULL) {
+            if (pe == nullptr) {
                 DERR() << _sUnKnown << VDEB(r) << endl;
                 EXCEPTION(EUNKNOWN, r, name());
             }
@@ -1303,7 +1303,7 @@ void cInspector::start()
     }
     if (timerId != -1)
         EXCEPTION(EDATA, timerId, QObject::trUtf8("%1 óra újra inicializálása.").arg(name()));
-    if (pQparser != NULL)
+    if (pQparser != nullptr)
         EXCEPTION(EPROGFAIL, -1, trUtf8("A %1-ben a parser objektum nem létezhet a start elött!").arg(name()));
     // pre start
     if (inspectorType & IT_METHOD_PARSER) {
@@ -1311,17 +1311,17 @@ void cInspector::start()
         pQparser = new cQueryParser();
         PDEB(VVERBOSE) << trUtf8("%1: Alloc QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         int r = pQparser->load(*pq, serviceId(), true);
-        if (R_NOTFOUND == r && NULL != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
-        if (R_NOTFOUND == r && NULL != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
+        if (R_NOTFOUND == r && nullptr != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
+        if (R_NOTFOUND == r && nullptr != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
         if (R_NOTFOUND == r) inspectorType |= IT_PURE_PARSER;
-        cError *pe = NULL;
+        cError *pe = nullptr;
         pQparser->setInspector(this);
         pQparser->prep(pe);
-        if (NULL != pe) pe->exception();
+        if (nullptr != pe) pe->exception();
     }
     // Thread
     if (isThread()) {   // Saját szál?
-        if (pInspectorThread == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name()));
+        if (pInspectorThread == nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name()));
         internalStat = IS_RUN;
         pInspectorThread->start();
         _DBGFNL() << " (thread) " << name() << " internalStat = " << internalStatName() << endl;
@@ -1403,11 +1403,11 @@ qlonglong cInspector::firstDelay()
 void cInspector::startSubs()
 {
     _DBGFN() << name() << endl;
-    if (pSubordinates != NULL) {
+    if (pSubordinates != nullptr) {
         QList<cInspector*>::Iterator i, n = pSubordinates->end();
         for (i = pSubordinates->begin(); i != n; ++i) {
             cInspector *p = *i;
-            if (p != NULL) {
+            if (p != nullptr) {
                 p->start();
             }
         }
@@ -1420,7 +1420,7 @@ void cInspector::drop(eEx __ex)
 
     internalStat = IS_DOWN;
     if (isThread()) {
-        if (pInspectorThread == NULL) {
+        if (pInspectorThread == nullptr) {
             QString m = QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name());
             if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, -1, m);
             DWAR() << m << endl;
@@ -1443,7 +1443,7 @@ void cInspector::drop(eEx __ex)
             if (!isThread()) {
                 if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
             }
-            else if (pInspectorThread != NULL) {
+            else if (pInspectorThread != nullptr) {
                 pInspectorThread->start();  // status down-ban, ráadjuk a vezérlést, hogy le tudjon állni
                 pInspectorThread->wait(stopTimeOut);
             }
@@ -1460,19 +1460,19 @@ void cInspector::drop(eEx __ex)
         timerStat = TS_STOP;
     }
     if (inspectorType & IT_METHOD_PARSER) {
-        if (pQparser == NULL) {
+        if (pQparser == nullptr) {
             if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
         }
         else {
-            cError *pe = NULL;
+            cError *pe = nullptr;
             pQparser->post(pe);
-            if (pe != NULL) DERR() << pe->msg() << endl;
+            if (pe != nullptr) DERR() << pe->msg() << endl;
             PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
             pDelete(pQparser);
-            if (pSubordinates != NULL) {
+            if (pSubordinates != nullptr) {
                 // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
                 foreach (cInspector *pi, *pSubordinates) {
-                    pi->pQparser = NULL;
+                    pi->pQparser = nullptr;
                 }
             }
         }
@@ -1488,7 +1488,7 @@ void cInspector::toRetryInterval()
     timerStat = TS_RETRY;
     if (timerId < 0) EXCEPTION(EPROGFAIL, -1, name());
     if (isThread()) {
-        if (pInspectorThread == NULL)
+        if (pInspectorThread == nullptr)
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
         pInspectorThread->timer(retryInt, timerStat);
     }
@@ -1506,7 +1506,7 @@ void cInspector::toNormalInterval()
     timerStat = TS_NORMAL;
     if (timerId < 0) EXCEPTION(EPROGFAIL, -1, name());
     if (isThread()) {
-        if (pInspectorThread == NULL)
+        if (pInspectorThread == nullptr)
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
         pInspectorThread->timer(interval, timerStat);
     }
@@ -1523,17 +1523,17 @@ QString cInspector::name() const
     r += typeid(*this).name();
     r += "):";
     static const QString    qq("??");
-    if (pNode != NULL && !node().isNull(node().nameIndex())) r += node().getName();
+    if (pNode != nullptr && !node().isNull(node().nameIndex())) r += node().getName();
     else                                                     r += qq;
     r +=  QChar(':');
-    if (pPort != NULL) r += nPort().getName() + QChar(':');
-    if (pService != NULL) r += service()->getName();
+    if (pPort != nullptr) r += nPort().getName() + QChar(':');
+    if (pService != nullptr) r += service()->getName();
     else                  r += qq;
-    if (pPrimeService != NULL || pProtoService != NULL) {
+    if (pPrimeService != nullptr || pProtoService != nullptr) {
         r += "(";
-        if (pPrimeService != NULL) r += pPrimeService->getName();
+        if (pPrimeService != nullptr) r += pPrimeService->getName();
         r += ":";
-        if (pProtoService != NULL) r += pProtoService->getName();
+        if (pProtoService != nullptr) r += pProtoService->getName();
         r += ")";
     }
     r += QString("[%1]").arg(hostServiceId());
@@ -1544,14 +1544,14 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
 {
     static const QString _sHostservice = "hostservice";
     static const QString _sHostService = "host_service";
-    if (pOk != NULL) *pOk = true;
+    if (pOk != nullptr) *pOk = true;
     QString v = feature(name, EX_IGNORE);
     if (v.isEmpty() == false) return v;
     QStringList sl = name.split(QChar('.'));
     if (sl.size() > 1) {
         if (0 == sl.first().compare("parent", Qt::CaseInsensitive)) {
-            if (pParent == NULL) {
-                if (pOk == NULL) EXCEPTION(EDATA, -1, name);
+            if (pParent == nullptr) {
+                if (pOk == nullptr) EXCEPTION(EDATA, -1, name);
                 *pOk = false;
                 return QString();
             }
@@ -1560,7 +1560,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             return pParent->getParValue(q, pnm, pOk);
         }
         if (sl.size() > 2) {
-            if (pOk == NULL) EXCEPTION(EDATA, sl.size(), name);
+            if (pOk == nullptr) EXCEPTION(EDATA, sl.size(), name);
             *pOk = false;
             return QString();
         }
@@ -1572,7 +1572,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         if (0 == on.compare(_sNode,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sHost,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sInterface,      Qt::CaseInsensitive)) return nPort().getName(fn);
-        if (pOk == NULL) EXCEPTION(EDATA, 2, name);
+        if (pOk == nullptr) EXCEPTION(EDATA, 2, name);
         *pOk = false;
         return QString();
     }
@@ -1599,7 +1599,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             qlonglong pn = service()->getId(_sPort);
             if (pn == NULL_ID) pn = protoService().getId(_sPort);
             if (pn == NULL_ID) {
-                if (pOk == NULL) EXCEPTION(EDATA, 0, name);
+                if (pOk == nullptr) EXCEPTION(EDATA, 0, name);
                 *pOk = false;
                 return QString();
             }
@@ -1609,7 +1609,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         if (0 == name.compare(_sNodeId,       Qt::CaseInsensitive))return QString::number(nodeId());
         if (0 == name.compare(_sServiceId,    Qt::CaseInsensitive))return QString::number(serviceId());
 
-        if (pOk == NULL) EXCEPTION(EDATA, 1, name);
+        if (pOk == nullptr) EXCEPTION(EDATA, 1, name);
         *pOk = false;
         return QString();
     }
@@ -1625,21 +1625,21 @@ QString cInspector::typeErrMsg(QSqlQuery& q)
              .arg(feature(_sProcess)).arg(feature(_sTiming)).arg(feature(_sMethod))
              .arg(hostService.view(q, _sFeatures))
              .arg(service()->view(q, _sFeatures))
-             .arg(pProtoService == NULL ? cColStaticDescr::rNul : protoService().view(q, _sFeatures))
-             .arg(pPrimeService == NULL ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
+             .arg(pProtoService == nullptr ? cColStaticDescr::rNul : protoService().view(q, _sFeatures))
+             .arg(pPrimeService == nullptr ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
 }
 
 cServiceVar *cInspector::getServiceVar(const QString& name)
 {
 
-    if (pVars == NULL || pVars->isEmpty()) return NULL;
+    if (pVars == nullptr || pVars->isEmpty()) return nullptr;
     return pVars->get(name, EX_IGNORE);
 }
 
 int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg)
 {
     cServiceVar *pVar = getServiceVar(name);
-    if (pVar == NULL) {
+    if (pVar == nullptr) {
         DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2").arg(name).arg(val)) << endl;
 
         return RS_UNREACHABLE;
@@ -1650,7 +1650,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val,
 int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg)
 {
     cServiceVar *pVar = getServiceVar(name);
-    if (pVar == NULL) {
+    if (pVar == nullptr) {
         DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2.").arg(name).arg(val)) << endl;
         return RS_UNREACHABLE;
     }

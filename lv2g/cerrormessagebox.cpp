@@ -106,7 +106,7 @@ void cErrorMessageBox::pushed(int id)
 /// @return Ha a _pe értéke NULL volt, akkor true-val tér vissza
 bool cErrorMessageBox::condMsgBox(cError * _pe, QWidget *parent, const QString &sMainMsg)
 {
-    if (_pe == NULL) return true;
+    if (_pe == nullptr) return true;
     cErrorMessageBox(_pe, parent, sMainMsg).exec();
     delete _pe;
     return false;

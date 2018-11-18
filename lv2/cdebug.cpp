@@ -79,28 +79,28 @@ QString quotedVariantList(const QVariantList& __sl, const QChar &__q, const QCha
     return r;
 }
 
-cDebug *cDebug::instance = NULL;
+cDebug *cDebug::instance = nullptr;
 bool    cDebug::disabled = false;
 
 void cDebug::init(const QString& fn, qlonglong mask)
 {
-    if (instance != NULL) {
+    if (instance != nullptr) {
         delete instance;
-        instance = NULL;
+        instance = nullptr;
     }
     cDebug::instance = new cDebug(mask, fn);
 }
 
 cDebug::cDebug() : mFName(fNameCnv(QString()))
 {
-    mCout                = NULL;
-    mFile                = NULL;
-    mMsgQueue            = NULL;
-    mMsgQueueMutex       = NULL;
-    mThreadStreamsMap    = NULL;
-    mThreadStreamsMapMutex= NULL;
-    mThreadMsgQueue      = NULL;
-    mThreadMsgQueueMutex = NULL;
+    mCout                = nullptr;
+    mFile                = nullptr;
+    mMsgQueue            = nullptr;
+    mMsgQueueMutex       = nullptr;
+    mThreadStreamsMap    = nullptr;
+    mThreadStreamsMapMutex= nullptr;
+    mThreadMsgQueue      = nullptr;
+    mThreadMsgQueueMutex = nullptr;
 
     mMask = DERROR | WARNING | MODMASK;
     mCout = new debugStream(stderr);
@@ -109,14 +109,14 @@ cDebug::cDebug() : mFName(fNameCnv(QString()))
 }
 cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
 {
-    mCout                = NULL;
-    mFile                = NULL;
-    mMsgQueue            = NULL;
-    mMsgQueueMutex       = NULL;
-    mThreadStreamsMap    = NULL;
-    mThreadStreamsMapMutex= NULL;
-    mThreadMsgQueue      = NULL;
-    mThreadMsgQueueMutex = NULL;
+    mCout                = nullptr;
+    mFile                = nullptr;
+    mMsgQueue            = nullptr;
+    mMsgQueueMutex       = nullptr;
+    mThreadStreamsMap    = nullptr;
+    mThreadStreamsMapMutex= nullptr;
+    mThreadMsgQueue      = nullptr;
+    mThreadMsgQueueMutex = nullptr;
     mMaxLogSize          = 0;
     mArcNum              = 0;
 
@@ -137,7 +137,7 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
         mFile = new QFile(mFName);
         if (! mFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             delete mFile;
-            mFile = NULL;
+            mFile = nullptr;
             EXCEPTION(EFOPEN, -1, _fn);
         }
         mMaxLogSize = 1024 * 1024 * 128;
@@ -152,31 +152,31 @@ cDebug::~cDebug()
 {
     flushAll();
     disabled = true;
-    if (mThreadMsgQueueMutex != NULL) {
+    if (mThreadMsgQueueMutex != nullptr) {
         mThreadMsgQueueMutex->tryLock(1000);
         delete mThreadMsgQueueMutex;
-        mThreadMsgQueueMutex = NULL;
+        mThreadMsgQueueMutex = nullptr;
     }
-    if (mThreadMsgQueue != NULL) {
+    if (mThreadMsgQueue != nullptr) {
         delete mThreadMsgQueue;
     }
-    if (mThreadStreamsMapMutex != NULL) {
+    if (mThreadStreamsMapMutex != nullptr) {
         mThreadStreamsMapMutex->tryLock(1000);
         delete mThreadStreamsMapMutex;
-        mThreadStreamsMapMutex = NULL;
+        mThreadStreamsMapMutex = nullptr;
     }
-    if (mThreadStreamsMap != NULL) {
+    if (mThreadStreamsMap != nullptr) {
         debugStream *pS;
         foreach(pS, *mThreadStreamsMap) {
             mCout->disconnect(mCout, SLOT(sRedyLineFromThread()));
             delete pS;
-            pS = NULL;
+            pS = nullptr;
         }
         delete mThreadStreamsMap;
     }
     if (this == instance) {
         if (mMask & INFO) *mCout << QObject::trUtf8("Remove debug object.") << endl;
-        instance = NULL;
+        instance = nullptr;
     }
     else {
         *mCout << QObject::trUtf8("Remove debug object, this not equal instance.") << VDEBPTR(instance) << QChar(',') << VDEBPTR(this) << endl;
@@ -204,7 +204,7 @@ bool cDebug::__pDeb(qlonglong mask)
     if (disabled) {
         return false;
     }
-    if (instance == NULL) {
+    if (instance == nullptr) {
         instance = new cDebug();
     }
     if (mask & DERROR) return true;
@@ -217,17 +217,17 @@ bool cDebug::__pDeb(qlonglong mask)
 debugStream *cDebug::pCout(void)
 {
     // printf("cDebug::cout(void)\n");
-    if (NULL == instance || NULL == instance->mCout) EXCEPTION(EPROGFAIL);
+    if (nullptr == instance || nullptr == instance->mCout) EXCEPTION(EPROGFAIL);
     return instance->mCout;
 }
 
 debugStream& cDebug::cout(void)
 {
     debugStream *pS;
-    if (NULL == instance || NULL == instance->mCout) EXCEPTION(EPROGFAIL);
+    if (nullptr == instance || nullptr == instance->mCout) EXCEPTION(EPROGFAIL);
     if (isMainThread()) return *pCout();
     const QString&  n = currentThreadName();
-    if (instance->mThreadStreamsMap == NULL) {
+    if (instance->mThreadStreamsMap == nullptr) {
         instance->mThreadStreamsMapMutex = new QMutex();
         instance->mThreadStreamsMap = new QMap<QString, debugStream *>();
     }
@@ -270,28 +270,28 @@ QString cDebug::maskName(qlonglong __msk)
 
 void cDebug::setGui(bool __f)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
     if (__f) {  // Set GUI mode
-        if (instance->mMsgQueue == NULL) {
+        if (instance->mMsgQueue == nullptr) {
             instance->mMsgQueue      = new QQueue<QString>();
             instance->mMsgQueueMutex = new QMutex();
         }
     }
     else {      // Unset Gui mode.
-        if (instance->mMsgQueue != NULL) {
+        if (instance->mMsgQueue != nullptr) {
             delete instance->mMsgQueue;
             delete instance->mMsgQueueMutex;
-            instance->mMsgQueue      = NULL;
-            instance->mMsgQueueMutex = NULL;
+            instance->mMsgQueue      = nullptr;
+            instance->mMsgQueueMutex = nullptr;
         }
     }
 }
 
 QString cDebug::dequeue()
 {
-    if (instance == NULL)                   EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance is NULL pointer"));
-    if (instance->mMsgQueue == NULL)        EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueue is NULL pointer"));
-    if (instance->mMsgQueueMutex == NULL)   EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
+    if (instance == nullptr)                   EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance is NULL pointer"));
+    if (instance->mMsgQueue == nullptr)        EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueue is NULL pointer"));
+    if (instance->mMsgQueueMutex == nullptr)   EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
     QMutexLocker locker(instance->mMsgQueueMutex);
     if (instance->mMsgQueue->isEmpty())     return QObject::trUtf8("***** *cDebug::instance->mMsgQueue is empty *****");
     QString r = instance->mMsgQueue->dequeue();
@@ -300,7 +300,7 @@ QString cDebug::dequeue()
 
 void cDebug::chk()
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
 }
 
 QString cDebug::fNameCnv(const QString& _fn)
@@ -320,11 +320,11 @@ void cDebug::flushAll()
 {
     if (cDebug::disabled
      || !isMainThread()
-     || instance == NULL
-     || instance->mThreadMsgQueueMutex == NULL
-     || instance->mThreadMsgQueue == NULL
+     || instance == nullptr
+     || instance->mThreadMsgQueueMutex == nullptr
+     || instance->mThreadMsgQueue == nullptr
      || instance->mThreadMsgQueue->isEmpty()
-     || NULL == instance->mCout)
+     || nullptr == instance->mCout)
         return;
     *instance->mCout << QObject::trUtf8("Flush thread messages :") << endl;
     instance->mThreadMsgQueueMutex->lock();
@@ -336,13 +336,13 @@ void cDebug::flushAll()
 }
 
 /* **************************************************************************************** */
-debugStream *debugStream::mainInstance = NULL;
+debugStream *debugStream::mainInstance = nullptr;
 
 debugStream::debugStream(debugStream *pMain, QObject *pThread)
     : QObject(), stream(), buff()
 {
-    pFILE = NULL;
-    oFile = NULL;
+    pFILE = nullptr;
+    oFile = nullptr;
     stream.setString(&buff, QIODevice::WriteOnly);
     connect(this,    SIGNAL(redyLineFromThread()), pMain, SLOT(sRedyLineFromThread()), Qt::QueuedConnection);
     connect(pThread, SIGNAL(destroyed(QObject*)),  this,  SLOT(sDestroyThread(QObject*)));
@@ -351,7 +351,7 @@ debugStream::debugStream(debugStream *pMain, QObject *pThread)
 debugStream::debugStream(QFile *__f)
     : QObject(), stream(), buff()
 {
-    pFILE = NULL;
+    pFILE = nullptr;
     oFile = __f;
     stream.setString(&buff, QIODevice::WriteOnly);
     mainInstance = this;
@@ -374,18 +374,18 @@ debugStream::~debugStream()
     flush();
     stream.reset();
     if (isMain()) {
-        if (pFILE != NULL) {    // A konstruktor allokálta az oFile objektumot
+        if (pFILE != nullptr) {    // A konstruktor allokálta az oFile objektumot
             delete oFile;
         }
-        mainInstance = NULL;
+        mainInstance = nullptr;
     }
     else {
         cDebug *pD = cDebug::instance;
         // Sanity check
-        if (pD                         == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("cDebug::instance is NULL"));
-        if (pD->mThreadStreamsMapMutex == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("mThreadStreamsMapMutex is NULL"));
-        if (pD->mThreadStreamsMap      == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("mThreadStreamsMap is NULL"));
-        if (parent()                   == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("Parent is NULL"));
+        if (pD                         == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("cDebug::instance is NULL"));
+        if (pD->mThreadStreamsMapMutex == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("mThreadStreamsMapMutex is NULL"));
+        if (pD->mThreadStreamsMap      == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("mThreadStreamsMap is NULL"));
+        if (parent()                   == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("Parent is NULL"));
         // Delete debugStream from mThreadStreamsMap
         QMutexLocker locker(pD->mThreadStreamsMapMutex);
         QMap<QString, debugStream *>::iterator i = pD->mThreadStreamsMap->find(parent()->objectName());
@@ -406,13 +406,13 @@ debugStream& debugStream::flush()
 {
     if (cDebug::disabled || buff.isEmpty()) return *this;
     cDebug *pD = cDebug::instance;
-    if (pD == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance is NULL pointer"));
+    if (pD == nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance is NULL pointer"));
     if (isMain()) {
         // Main thread
         if (pD->mMaxLogSize) writeRollLog(*oFile, buff.toUtf8(), pD->mMaxLogSize, pD->mArcNum);
         else                 oFile->write(buff.toUtf8());
-        if (pD->mMsgQueue != NULL) {    // GUI?
-            if (pD->mMsgQueueMutex == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
+        if (pD->mMsgQueue != nullptr) {    // GUI?
+            if (pD->mMsgQueueMutex == nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
 #if __DEBUG__QUEUE
             QTextStream(stderr) << "Queued to GUI : " << quotedString(buff) << endl;
 #endif
@@ -429,7 +429,7 @@ debugStream& debugStream::flush()
     }
     else {
         // Thread
-        if (pD->mThreadMsgQueueMutex == NULL) {
+        if (pD->mThreadMsgQueueMutex == nullptr) {
             pD->mThreadMsgQueueMutex = new QMutex();
             pD->mThreadMsgQueue = new QQueue<QString>();
         }
@@ -530,5 +530,5 @@ QString debVariantToString(const QVariant& v)
     bool ok;
     QString s = QVariantToString(v, &ok);
     if (!ok) s = "[?]";
-    return quotedString(s) + "::" + (tn == NULL ? _sNULL : QString(tn));
+    return quotedString(s) + "::" + (tn == nullptr ? _sNULL : QString(tn));
 }

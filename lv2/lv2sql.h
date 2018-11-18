@@ -89,6 +89,39 @@ static inline QString arrayDropBracket(const QString& s)
     return s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
 }
 
+/// Egy SQL lekérdezésben a visszaadott integer tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva, és a stringről eltávolítva a {...} zárójelpár.
+EXT_ QVariantList _sqlToIntegerList(const QString& _s);
+/// Egy SQL lekérdezésben a visszaadott integer tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva.
+static inline QVariantList sqlToIntegerList(const QString& _s)
+{
+    QString s = arrayDropBracket(_s);
+    return _sqlToIntegerList(s);
+}
+/// Egy SQL lekérdezésben a visszaadott integer tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték.
+static inline QVariantList sqlToIntegerList(const QVariant& _v)
+{
+    return sqlToIntegerList(_v.toString());
+}
+/// Egy SQL lekérdezésben a visszaadott numerikus tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva, és a stringről eltávolítva a {...} zárójelpár.
+EXT_ QVariantList _sqlToDoubleList(const QString& _s);
+/// Egy SQL lekérdezésben a visszaadott numerikus tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva.
+static inline QVariantList sqlToDoubleList(const QString& _s)
+{
+    QString s = arrayDropBracket(_s);
+    return _sqlToDoubleList(s);
+}
+/// Egy SQL lekérdezésben a visszaadott numerikus tömb érték konvertálása.
+/// @param _s A kiolvasott QVariant típusú érték.
+static inline QVariantList sqlToDoubleList(const QVariant& _v)
+{
+    return sqlToDoubleList(_v.toString());
+}
+
 /// Egy SQL lekérdezésben a visszaadott string tömb érték konvertálása.
 /// @param _s A kiolvasott QVariant típusú érték stringgé konvertálva, és a stringről eltávolítva a {...} zárójelpár.
 EXT_ QStringList _sqlToStringList(const QString& _s);
@@ -108,6 +141,10 @@ static inline QStringList sqlToStringList(const QVariant& v)
     QString s = v.toString();
     return sqlToStringList(s);
 }
+
+EXT_ QString stringListToSql(const QStringList& sl);
+EXT_ QString integerListToSql(const QVariantList& vl);
+EXT_ QString doubleListToSql(const QVariantList& vl);
 
 /*!
 Összefűzi a két stringet, a két érték közé beszúrva egy '.' karaktert.
@@ -165,6 +202,7 @@ static inline QSqlQuery   getQuery(QSqlDatabase *pDb = nullptr) { return     QSq
 EXT_ void dropThreadDb(const QString& tn, enum eEx __ex = EX_ERROR);
 
 /*!
+  UNUSED!
 Beolvas egy sql szövegfájlt, SQL parancsokra tördeli, és végrehalytja egyenként.
 Hiba esetén, ha __e értéke true (vagy nem adtuk meg), akkor dob egy kizárást.
 Ha file nincs megnyitva, akkor olvasásra megnyitja, és nem zárja be.

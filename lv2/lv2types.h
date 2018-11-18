@@ -905,8 +905,8 @@ EXT_ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c = QStrin
 EXT_ int setLanguage(QSqlQuery& q, int id);
 EXT_ int getLanguageId(QSqlQuery& q);
 EXT_ QString getLanguage(QSqlQuery& q, int lid);
-EXT_ QString textId2text(QSqlQuery& q, int id, const QString& _table, int index = 0);
-EXT_ QStringList textId2texts(QSqlQuery& q, int id, const QString& _table);
+EXT_ QString textId2text(QSqlQuery& q, qlonglong id, const QString& _table, int index = 0);
+EXT_ QStringList textId2texts(QSqlQuery& q, qlonglong id, const QString& _table);
 EXT_ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex = EX_ERROR);
 
 /// @enum eParamTypes

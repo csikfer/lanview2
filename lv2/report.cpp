@@ -228,8 +228,8 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     QString text;
     QString title;
     cPatch *po   = nodeToOrigin(q, &_node);
-    cPatch& node = *(po == NULL ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
-    if (po != NULL) {
+    cPatch& node = *(po == nullptr ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
+    if (po != nullptr) {
         if (flags &  CV_PORTS)       node.fetchPorts(q);
         if (flags &  CV_NODE_PARAMS) node.fetchParams(q);
     }
@@ -412,7 +412,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                 qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
                 qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
                 qlonglong mtp = NULL_ID;                            // -> port ID: MAC in MacTab
-                if (pInterface != NULL) {  // Interface ?
+                if (pInterface != nullptr) {  // Interface ?
                     cMacTab mt;
                     mt.setMac(_sHwAddress, pInterface->getMac(_sHwAddress));
                     if (mt.completion(q)) {
@@ -1009,7 +1009,7 @@ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name, const cTa
     }
     // General
     cTableShape shape;
-    if (pShape == NULL) {
+    if (pShape == nullptr) {
         shape.setByName(q, name);
         shape.fetchFields(q);
         shape.fetchText(q);

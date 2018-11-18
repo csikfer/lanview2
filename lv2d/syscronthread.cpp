@@ -45,11 +45,11 @@ void cSysInspector::dbCron()
 {
     DBGFN();
     if (!statMsg.isEmpty()) statMsg += "\n\n";
-    cError *pe = NULL;
+    cError *pe = nullptr;
     try {
         execSqlFunction(*pq, "service_cron", hostServiceId());
     } CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         state = RS_CRITICAL;
         statMsg += trUtf8("ERROR in dbCron() : ") + pe->msg();
         delete pe;
@@ -71,7 +71,7 @@ void cSysInspector::mailCron()
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     // alrms, and user events
     cUserEvent e;
-    cError *pe = NULL;
+    cError *pe = nullptr;
     try {
 
         e.setId(_sEventType,  UE_SENDMAIL);
@@ -150,7 +150,7 @@ void cSysInspector::mailCron()
         if (!r) statMsg += "Sendmail error. ";
         else    statMsg += "Sendmail OK. ";
     } CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         state = RS_CRITICAL;
         statMsg += trUtf8("ERROR in dbCron() send mail : ") + pe->msg();
         delete pe;

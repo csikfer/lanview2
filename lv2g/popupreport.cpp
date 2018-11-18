@@ -81,7 +81,7 @@ cPopupReportWindow* popupReportByIp(QWidget *par, QSqlQuery& q, const QString& s
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 IP cím alapján").arg(sIp);
     msg = htmlReportByIp(q, sIp);
-    if (msg.isEmpty()) return NULL;
+    if (msg.isEmpty()) return nullptr;
     return popupReportWindow(par, msg, title);
 }
 
@@ -90,6 +90,6 @@ cPopupReportWindow* popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& 
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 MAC alapján").arg(sMAC);
     msg = htmlReportByMac(q, sMAC);
-    if (msg.isEmpty()) return NULL;
+    if (msg.isEmpty()) return nullptr;
     return popupReportWindow(par, msg, title);
 }

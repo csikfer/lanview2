@@ -21,11 +21,9 @@ QString ProcessError2String(QProcess::ProcessError __e)
         case QProcess::WriteError:      s = QObject::trUtf8("WriteError");       break;
         case QProcess::ReadError:       s = QObject::trUtf8("ReadError");        break;
         case QProcess::UnknownError:    s = QObject::trUtf8("UnknownError");     break;
-        default:
-            s = sInvalidEnum();
-            DERR() << "QProcess::ProcessError : " << (int)__e << QChar('/') << s << endl;
-            break;
     }
+    s = sInvalidEnum();
+    DERR() << "QProcess::ProcessError : " << int(__e) << QChar('/') << s << endl;
     return s;
 }
 QString ProcessError2Message(QProcess::ProcessError __e)
@@ -50,11 +48,9 @@ QString ProcessError2Message(QProcess::ProcessError __e)
         case QProcess::UnknownError:
             m = QObject::trUtf8("An unknown error occurred. This is the default return value of error().");
             break;
-        default:
-            m = QObject::trUtf8("Invalid QProcess::ProcessError enum value, program error.");
-            DERR() << m << endl;
-            break;
     }
+    m = QObject::trUtf8("Invalid QProcess::ProcessError enum value, program error.");
+    DERR() << m << endl;
     return m;
 }
 
@@ -65,11 +61,9 @@ QString ProcessState2String(QProcess::ProcessState __e)
         case QProcess::NotRunning:  s = QObject::trUtf8("NotRunning");   break;
         case QProcess::Starting:    s = QObject::trUtf8("Starting");     break;
         case QProcess::Running:     s = QObject::trUtf8("Running");      break;
-        default:
-            s = sInvalidEnum();
-            DERR() << "QProcess::ProcessError : " << (int)__e << QChar('/') << s << endl;
-            break;
     }
+    s = sInvalidEnum();
+    DERR() << "QProcess::ProcessError : " << int(__e) << QChar('/') << s << endl;
     return s;
 }
 
@@ -77,7 +71,7 @@ QString dump(const QByteArray& __a)
 {
     QString r = "[";
     foreach (char b, __a) {
-        r += QString("%1,").arg((int)(unsigned char)b,2,16,QChar('0'));
+        r += QString("%1,").arg(int(uchar(b)),2,16,QChar('0'));
     }
     r.chop(1);
     return r + "]";
@@ -124,7 +118,7 @@ QString   cMac::toString() const
     qlonglong m = val;
     for (int i = 6; i > 0; --i) {
         QString b;
-        r.push_front(b.sprintf(":%02X", (int) (m & 0x00ff)));
+        r.push_front(b.sprintf(":%02X", int(m & 0x00ff)));
         m >>= 8;
     }
     return r.right(17);
@@ -193,7 +187,7 @@ cMac& cMac::set(const QByteArray& __mac)
         val = 0;
         for (int i = 0; i < 6; i++) {
             val <<= 8;
-            val |=(unsigned char) __mac[i];
+            val |= uchar(__mac[i]);
         }
     }
     else {
@@ -208,7 +202,7 @@ cMac& cMac::set(const QVariant& __mac)
     if (__mac.isNull()) val = 0LL;
     else switch (__mac.type()) {
         case QVariant::LongLong:
-        case QVariant::ULongLong:   return set(__mac.toULongLong());
+        case QVariant::ULongLong:   return set(__mac.toLongLong());
         case QVariant::ByteArray:   return set(__mac.toByteArray());
         case QVariant::String:      return set(__mac.toString());
         default:
@@ -253,7 +247,7 @@ bool cMac::isValid(const QVariant& v)
 {
     switch (v.userType()) {
     case QMetaType::LongLong:
-    case QMetaType::ULongLong:   return isValid(v.toULongLong());
+    case QMetaType::ULongLong:   return isValid(v.toLongLong());
     case QMetaType::QByteArray:  return isValid(v.toByteArray());
     case QVariant::String:       return isValid(v.toString());
     }
@@ -379,7 +373,7 @@ netAddress& netAddress::setMask(int __m)
 
 quint32 netAddress::bitmask(int __m)
 {
-    ulong bits = 0xffffffffUL;
+    quint32 bits = 0xffffffffUL;
     if (__m < 32) bits = ~(bits >> __m);   // Ha a proci hülye, attól még a fordító lehetne jó :-/
     return bits;
 }
@@ -392,7 +386,7 @@ Q_IPV6ADDR netAddress::bitmask6(int __m)
     int i;
     for (i = 0; i < n; i++) bits[i] = 0xff;
     if (n < 16) {
-        if (b) bits[i++] = 0xff << b;
+        if (b) bits[i++] = quint8(0xff << b);
         for (i = n; i < 16; ++i) bits[i] = 0;
     }
     return bits;
@@ -605,13 +599,12 @@ netAddress& netAddress::setAddressByName(const QString& __hn)
 
 int netAddress::ipv4NetMask(const QString& _mask)
 {
-    uint r = -1;
     bool ok;
     QStringList ml = _mask.split('.');
     if (ml.size() == 1) {
-        r = ml[0].toUInt(&ok);
+        int r = int(ml[0].toUInt(&ok));
         if (!ok || r > 32) return -1;
-        return (int)r;
+        return r;
     }
     if (ml.size() == 4) {
         uint iml[4];
@@ -911,13 +904,13 @@ QString QStringListToString(const QStringList& _v)
 
 QString QVariantListToString(const QVariantList& _v, bool *pOk)
 {
-    if (pOk != NULL) *pOk = true;
+    if (pOk != nullptr) *pOk = true;
     QString r = QChar('{');
     if (_v.size() > 0) {
         bool ok = true;
         foreach (QVariant v, _v) {
             r += QVariantToString(v, &ok) + QChar(',');
-            if (!ok && pOk != NULL) *pOk = false;
+            if (!ok && pOk != nullptr) *pOk = false;
         }
         if (r.size() > 1) r.chop(1);
     }
@@ -950,19 +943,19 @@ QString tPolygonFToString(const tPolygonF& pol)
 QString QVariantToString(const QVariant& _v, bool *pOk)
 {
     int type = _v.userType();
-    if (pOk != NULL) *pOk = true;
+    if (pOk != nullptr) *pOk = true;
     if (type < QMetaType::User) {
         switch (type) {
         case QMetaType::QStringList:    return QStringListToString(_v.toStringList());
         case QMetaType::QVariantList:   return QVariantListToString(_v.toList(), pOk);
         case QMetaType::QPoint:         return QPointTosString(_v.toPoint());
         case QMetaType::QPointF:        return QPointFTosString(_v.toPointF());
-/*      Ezek csak akkor vannak, ha GUI-val fordítunk !!! Kiakad!!!
+/*      These are only when we are compiled GUI !!! Crashes !!!
         case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
         case QMetaType::QPolygonF:      return QPolygonFToString(_v.value<QPolygonF>()); */
         default:                        break;
         }
-        if (pOk != NULL) *pOk = _v.canConvert<QString>();
+        if (pOk != nullptr) *pOk = _v.canConvert<QString>();
         return _v.toString();
     }
 //    if (type == _UMTID_QPoint)          return QPointTosString(_v.value<QPoint>());
@@ -972,7 +965,7 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
     if (type == _UMTID_cMac)            return _v.value<cMac>().toString();
     if (type == _UMTID_netAddress)      return _v.value<netAddress>().toString();
     if (type == _UMTID_netAddressList)  return _v.value<netAddressList>().toString();
-    if (pOk != NULL) *pOk = false;
+    if (pOk != nullptr) *pOk = false;
     return QString();
 }
 
@@ -996,18 +989,20 @@ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c)
         }
     }
     if (l.isNull()) EXCEPTION(ESETTING, 0, QObject::trUtf8("Invalid language : %1, (country : %2)").arg(_l, _c));
-    return execSqlIntFunction(q, NULL, "set_language", l, c);
+    qlonglong r = execSqlIntFunction(q, nullptr, "set_language", l, c);
+    return int(r);
 }
 
 int setLanguage(QSqlQuery& q, int id)
 {
-    return execSqlIntFunction(q, NULL, "set_language_id", id);
+    qlonglong r = execSqlIntFunction(q, nullptr, "set_language_id", id);;
+    return int(r);
 }
 
 int getLanguageId(QSqlQuery& q)
 {
-    int id = execSqlIntFunction(q, NULL, "get_language_id");
-    return id;
+    qlonglong id = execSqlIntFunction(q, nullptr, "get_language_id");
+    return int(id);
 }
 
 QString getLanguage(QSqlQuery& q, int lid)
@@ -1015,14 +1010,14 @@ QString getLanguage(QSqlQuery& q, int lid)
     return execSqlTextFunction(q, "language_id2code", lid);
 }
 
-QString textId2text(QSqlQuery& q, int id, const QString& _table, int index)
+QString textId2text(QSqlQuery& q, qlonglong id, const QString& _table, int index)
 {
     static const QString sql = "SELECT (localization_texts(?, ?)).texts[?]";
     execSql(q, sql, id, _table, index +1);
     return q.value(0).toString();
 }
 
-QStringList textId2texts(QSqlQuery& q, int id, const QString& _table)
+QStringList textId2texts(QSqlQuery& q, qlonglong id, const QString& _table)
 {
     static const QString sql = "SELECT unnest((localization_texts(?, ?)).texts)";
     QStringList sl;

@@ -49,7 +49,7 @@ void cAlarmMsg::replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __
 
 cService::cService() : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cService::descr());
 }
 
@@ -57,7 +57,7 @@ cService::cService(const cService& __o) : cRecord()
 {
     _fields = __o._fields;      // Nincs öröklés !
     _stat    = __o._stat;
-    _pFeatures = __o._pFeatures == NULL ? NULL : new cFeatures(*__o._pFeatures);
+    _pFeatures = __o._pFeatures == nullptr ? nullptr : new cFeatures(*__o._pFeatures);
 }
 
 cService::~cService()
@@ -82,9 +82,9 @@ void cService::toEnd()
 bool cService::toEnd(int i)
 {
     if (i == _ixFeatures) {
-        if (_pFeatures != NULL) {
+        if (_pFeatures != nullptr) {
             delete _pFeatures;
-            _pFeatures = NULL;
+            _pFeatures = nullptr;
             return true;
         }
     }
@@ -162,7 +162,7 @@ const QString& noalarmtype(int _e, enum eEx __ex)
 
 cHostService::cHostService() : cRecord()
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cHostService::descr());
 }
 
@@ -178,7 +178,7 @@ cHostService::~cHostService()
 
 cHostService::cHostService(QSqlQuery& q, const QString& __h, const QString& __p, const QString& __s, const QString& __n)
 {
-    _pFeatures = NULL;
+    _pFeatures = nullptr;
     _set(cHostService::descr());
     setId(_sNodeId,    cNode().getIdByName   (q, __h));
     setId(_sServiceId, cService().getIdByName(q, __s));
@@ -191,7 +191,7 @@ cHostService& cHostService::operator=(const cHostService& __o)
 {
     __cp(__o);
     _fields = __o._fields;              // Nincs öröklés !
-    _pFeatures = __o._pFeatures == NULL ? NULL : new cFeatures(*__o._pFeatures);
+    _pFeatures = __o._pFeatures == nullptr ? nullptr : new cFeatures(*__o._pFeatures);
     return *this;
 }
 
@@ -215,9 +215,9 @@ void cHostService::toEnd()
 bool cHostService::toEnd(int i)
 {
     if (i == _ixFeatures) {
-        if (_pFeatures != NULL) {
+        if (_pFeatures != nullptr) {
             delete _pFeatures;
-            _pFeatures = NULL;
+            _pFeatures = nullptr;
             return true;
         }
     }
@@ -687,8 +687,8 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     tOwnRecords<cServiceVar, cHostService> vars(&hs);
     int n = vars.fetch(q);
     if (n)  {
-        static cTableShape *pShape = NULL;
-        if (pShape == NULL) {
+        static cTableShape *pShape = nullptr;
+        if (pShape == nullptr) {
             pShape = new cTableShape;
             pShape->setByName(q, _sServiceVars);
         }
@@ -1005,24 +1005,24 @@ CRECDEF(cQueryParser)
 
 cQueryParser::cQueryParser() : cRecord()
 {
-    pPostCmd = pPrepCmd = NULL;
-    pListCmd = NULL;
-    pListRExp = NULL;
-    pInspector = NULL;
-    pVarMap    = NULL;
-    pText      = NULL;
-    pParserThread = NULL;
+    pPostCmd = pPrepCmd = nullptr;
+    pListCmd = nullptr;
+    pListRExp = nullptr;
+    pInspector = nullptr;
+    pVarMap    = nullptr;
+    pText      = nullptr;
+    pParserThread = nullptr;
     slave = false;
     _set(cQueryParser::descr());
 }
 
 cQueryParser::cQueryParser(const cQueryParser& __o) : cRecord()
 {
-    pPostCmd = pPrepCmd = NULL;
-    pListCmd = NULL;
-    pListRExp = NULL;
-    pInspector = NULL;
-    pParserThread = NULL;
+    pPostCmd = pPrepCmd = nullptr;
+    pListCmd = nullptr;
+    pListRExp = nullptr;
+    pInspector = nullptr;
+    pParserThread = nullptr;
     slave = false;
     _cp(__o);
 }
@@ -1052,26 +1052,26 @@ void cQueryParser::_insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, boo
 void cQueryParser::setInspector(cInspector *pInsp)
 {
     pInspector = pInsp;
-    pVarMap    = NULL;
+    pVarMap    = nullptr;
 }
 
 void cQueryParser::setMaps(tStringMap *pVM)
 {
     pVarMap    = pVM;
-    pInspector = NULL;
+    pInspector = nullptr;
 }
 
 int cQueryParser::prep(cError *& pe)
 {
-    pe = NULL;
-    if (pParserThread != NULL) EXCEPTION(EPROGFAIL);
+    pe = nullptr;
+    if (pParserThread != nullptr) EXCEPTION(EPROGFAIL);
     QString cmd;
-    if (pPrepCmd != NULL) cmd = substitutions(*pPrepCmd, QStringList());
-    if (pInspector != NULL) {
+    if (pPrepCmd != nullptr) cmd = substitutions(*pPrepCmd, QStringList());
+    if (pInspector != nullptr) {
         pParserThread = new cImportParseThread(cmd, this);
         return pParserThread->startParser(pe);
     }
-    else if (pVarMap != NULL) {
+    else if (pVarMap != nullptr) {
         pDelete(pText);
         pText = new QString(cmd);
     }
@@ -1081,8 +1081,8 @@ int cQueryParser::prep(cError *& pe)
 
 int cQueryParser::parse(QString src,  cError *&pe)
 {
-    pe = NULL;
-    if (pListCmd == NULL || pListRExp == NULL || pListCmd->size() != pListRExp->size()) EXCEPTION(EPROGFAIL);
+    pe = nullptr;
+    if (pListCmd == nullptr || pListRExp == nullptr || pListCmd->size() != pListRExp->size()) EXCEPTION(EPROGFAIL);
     int i, n = pListCmd->size();
     for (i = 0; i < n; i++) {
         QRegExp rexp = pListRExp->at(i);
@@ -1098,11 +1098,11 @@ int cQueryParser::parse(QString src,  cError *&pe)
 int cQueryParser::post(cError *& pe)
 {
     int r = REASON_OK;
-    pe = NULL;
+    pe = nullptr;
     // Záró parancs elküldése, ha van
-    if (pPostCmd != NULL) r = execute(pe, *pPostCmd);
-    if (pInspector != NULL) {
-        if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
+    if (pPostCmd != nullptr) r = execute(pe, *pPostCmd);
+    if (pInspector != nullptr) {
+        if (pParserThread == nullptr) EXCEPTION(EPROGFAIL);
         pParserThread->stopParser();
         // Töröljük a thread-et
         pDelete(pParserThread);
@@ -1112,15 +1112,15 @@ int cQueryParser::post(cError *& pe)
 
 cQueryParser *cQueryParser::newChild(cInspector * _isp)
 {
-    if (slave || pParserThread == NULL) EXCEPTION(EPROGFAIL);
+    if (slave || pParserThread == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
     cQueryParser *p = new cQueryParser;
     slave = true;
     int r = p->load(q, _isp->serviceId(), false, false);
-    if (R_NOTFOUND == r && NULL != _isp->pPrimeService) r = p->load(q, _isp->primeServiceId(), false, false);
-    if (R_NOTFOUND == r && NULL != _isp->pProtoService) r = p->load(q, _isp->protoServiceId(), false, false);
+    if (R_NOTFOUND == r && nullptr != _isp->pPrimeService) r = p->load(q, _isp->primeServiceId(), false, false);
+    if (R_NOTFOUND == r && nullptr != _isp->pProtoService) r = p->load(q, _isp->protoServiceId(), false, false);
     if (R_NOTFOUND == r) {
-        if (pListCmd == NULL || pListRExp == NULL) EXCEPTION(EDATA, 0, _isp->name());
+        if (pListCmd == nullptr || pListRExp == nullptr) EXCEPTION(EDATA, 0, _isp->name());
         pDelete(p);
         return this;
     }
@@ -1134,7 +1134,7 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
 {
     int ixServiceId = toIndex(_sServiceId);
     if (_sid != NULL_ID) {
-        if (pListCmd != NULL && !force && getId(ixServiceId) == _sid) return R_UNCHANGE;
+        if (pListCmd != nullptr && !force && getId(ixServiceId) == _sid) return R_UNCHANGE;
         setId(ixServiceId, _sid);
     }
     pDelete(pPostCmd);
@@ -1197,11 +1197,11 @@ QString cQueryParser::getParValue(const QString& name, const QStringList& args)
         return args.at(i);
     }
     else {
-        if (pInspector != NULL) {
+        if (pInspector != nullptr) {
             QSqlQuery q = getQuery();
             return pInspector->getParValue(q, name);
         }
-        else if (pVarMap != NULL) {
+        else if (pVarMap != nullptr) {
             return (*pVarMap)[name];
         }
         else EXCEPTION(EPROGFAIL);
@@ -1237,8 +1237,8 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 {
     _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
-    if (pInspector != NULL) {
-        if (pParserThread == NULL) {
+    if (pInspector != nullptr) {
+        if (pParserThread == nullptr) {
             if (0 == importParseText(cmd)) return REASON_OK;
             pe = importGetLastError();
             return R_ERROR;
@@ -1247,7 +1247,7 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
             return pParserThread->push(cmd, pe);
         }
     }
-    else if (pVarMap != NULL && pText != NULL) {
+    else if (pVarMap != nullptr && pText != nullptr) {
         *pText += cmd + "\n";
         return REASON_OK;
     }

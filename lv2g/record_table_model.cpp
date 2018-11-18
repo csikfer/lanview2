@@ -138,7 +138,7 @@ QVariant cRecordViewModelBase::_headerData(const QAbstractItemModel *pModel, int
 
 cRecord *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
 {
-    cRecord *p = NULL;
+    cRecord *p = nullptr;
     if (q.value(0).isNull()) {
         p = new cRecordAny(&recDescr);
     }
@@ -173,7 +173,7 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
     bool r = SqlInsert(*pq, pRec);  // Insert, if error, view error message box
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
     if (r && !insertRow(pRec)) {    // Insert ok and view error
-        QMessageBox::warning(NULL, cEnumVal::viewLong(_sDatacharacter, DC_WARNING, dataCharacter(DC_WARNING)),
+        QMessageBox::warning(nullptr, cEnumVal::viewLong(_sDatacharacter, DC_WARNING, dataCharacter(DC_WARNING)),
                              QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"));
     }
     return r;
@@ -250,7 +250,7 @@ cRecord *cRecordTableModel::record(const QModelIndex &index)
             return _records.at(row);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)

@@ -13,23 +13,34 @@ Az adatbázis interfész bázis objektuma, és a rekord ill. mező leíró/kezel
 EXT_  bool metaIsInteger(int id);
 /// Egy QVariant adat típusáról dönti el, hogy egész számként értelmezhető-e
 /// @param _v Az adat referenciája
-EXT_  bool variantIsInteger(const QVariant & _v);
+static inline  bool variantIsInteger(const QVariant & _v)
+{
+    return metaIsInteger(_v.userType());
+}
 /// Egy adat típusról dönti el, hogy string-ként értelmezhető-e
 /// @param id A típushoz tartozó QmetaType::Type érték.
 EXT_  bool metaIsString(int id);
 /// Egy QVariant adat típusáról dönti el, hogy string-ként értelmezhető-e
 /// @param id Az adat referenciája
-EXT_  bool variantIsString(const QVariant & _v);
+static inline  bool variantIsString(const QVariant & _v)
+{
+    return metaIsString(_v.userType());
+}
 /// Egy adat típusról dönti el, hogy lebegőpontos számként értelmezhető-e
 /// @param id A típushoz tartozó QmetaType::Type érték.
 EXT_  bool metaIsFloat(int id);
 /// Egy QVariant adat típusáról dönti el, hogy lebegőpontos számként értelmezhető-e
 /// @param _v Az adat referenciája
-EXT_  bool variantIsFloat(const QVariant & _v);
+static inline  bool variantIsFloat(const QVariant & _v)
+{
+    return metaIsFloat(_v.userType());
+}
 /// Egy QVariant adat típusáról dönti el, hogy számként értelmezhető-e
 /// @param _v Az adat referenciája
-EXT_  bool variantIsNum(const QVariant & _v);
-
+static inline  bool variantIsNum(const QVariant & _v)
+{
+    return variantIsInteger(_v) || variantIsFloat(_v);
+}
 /// Egy stringet bool-lá konvertál:
 /// Ha a string (b) értéke "t", "true", "y", "yes", "on" vagy "1", akkor true-val tér vissza,
 /// Ha a string (b) értéke "f", "false", "n", "no", "off" vagy "0", akkor false-val tér vissza,
@@ -140,10 +151,10 @@ public:
     bool check(const QString& v) const  { return enumValues.contains(v, Qt::CaseInsensitive); }
     bool check(const QStringList& v) const;
     bool checkSet(qlonglong b) const    { return b < (1LL << enumValues.size()); }
-    bool checkEnum(qlonglong i) const   { return i < enumValues.size(); }
+    bool checkEnum(int i) const   { return i < enumValues.size(); }
     const QString& enum2str(qlonglong e, enum eEx __ex = EX_ERROR) const;
     QStringList set2lst(qlonglong b, enum eEx __ex = EX_ERROR) const;
-    qlonglong str2enum(const QString& s, enum eEx __ex = EX_ERROR) const;
+    int str2enum(const QString& s, enum eEx __ex = EX_ERROR) const;
     qlonglong str2set(const QString& s, enum eEx __ex = EX_ERROR) const;
     qlonglong lst2set(const QStringList& s, enum eEx __ex = EX_ERROR) const;
     tIntVector lst2lst(const QStringList& _lst, enum eEx __ex = EX_ERROR) const;
@@ -397,8 +408,6 @@ private:
 /// Az ős cColStaticDescr osztályt az macaddr, inet és cidr típus konverziós függvényivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrAddr)
 };
-
-EXT_ QVariant stringListToSql(const QStringList& sl);
 
 /// @class cColStaticDescrArray
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényeivel egészíti ki.

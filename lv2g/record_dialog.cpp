@@ -246,10 +246,10 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
 {
     _isDialog = dialog;
     _isDisabled = false;
-    _pRecord = NULL;
-    _pLoop   = NULL;
-    _pWidget = NULL;
-    _pButtons= NULL;
+    _pRecord = nullptr;
+    _pLoop   = nullptr;
+    _pWidget = nullptr;
+    _pButtons= nullptr;
     _pOwnerDialog = ownDialog;
     _pOwnerTable  = ownTab;
     tableShape.clone(__tm);
@@ -284,7 +284,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
     }
     tableShape.fetchText(*pq);
     // Ha az owner objektum megnézésére nem jogosult, akkor ezt sem nézheti meg.
-    if (_pOwnerDialog != NULL && _pOwnerDialog->disabled()) {
+    if (_pOwnerDialog != nullptr && _pOwnerDialog->disabled()) {
         _isDisabled = true;
         _viewRights = _pOwnerDialog->_viewRights;
     }
@@ -310,7 +310,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
 
     if (_isDisabled) {  // Neki tltva, csak egy egy üzenet erről.
         Ui::noRightsForm *noRighrs = noRightsSetup(_pWidget, _viewRights, objectName());
-        if (_pOwnerDialog == NULL) {
+        if (_pOwnerDialog == nullptr) {
             connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(cancel()));
         }
         else {          // Az ownernél még szabad lett volna, vannak már gombok
@@ -328,7 +328,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
 
 cRecordDialogBase::~cRecordDialogBase()
 {
-    if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
+    if (_pLoop != nullptr) EXCEPTION(EPROGFAIL);
     if (!close()) EXCEPTION(EPROGFAIL);
     pDelete(_pWidget);
     pDelete( pq);
@@ -337,7 +337,7 @@ cRecordDialogBase::~cRecordDialogBase()
 
 int cRecordDialogBase::exec(bool _close)
 {
-    if (_pButtons == NULL) {
+    if (_pButtons == nullptr) {
         if(_isDisabled == false) EXCEPTION(EPROGFAIL);
     }
     else {
@@ -345,7 +345,7 @@ int cRecordDialogBase::exec(bool _close)
         else             _pButtons->enabeAll();
     }
     if (_close) return dialog().exec();
-    if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
+    if (_pLoop != nullptr) EXCEPTION(EPROGFAIL);
     _pWidget->setWindowModality(Qt::WindowModal);
     show();
     _pLoop = new QEventLoop(_pWidget);
@@ -357,7 +357,7 @@ int cRecordDialogBase::exec(bool _close)
 /// Slot a megnyomtak egy gombot szignálra.
 void cRecordDialogBase::_pressed(int id)
 {
-    if      (_pLoop != NULL) _pLoop->exit(id);
+    if      (_pLoop != nullptr) _pLoop->exit(id);
 
     else if (_isDialog)       dialog().done(id);
     else                     buttonPressed(id);
@@ -365,7 +365,7 @@ void cRecordDialogBase::_pressed(int id)
 
 cRecord& cRecordDialogBase::record()
 {
-    if (_pRecord == NULL) {
+    if (_pRecord == nullptr) {
         _pRecord = new cRecordAny(&rDescr);
     }
     return *_pRecord;
@@ -378,11 +378,11 @@ cRecordDialog::cRecordDialog(const cTableShape& __tm, qlonglong _buttons, bool d
     : cRecordDialogBase(__tm, _buttons, dialog, ownDialog, ownTab, parent)
     , fields()
 {
-    pVBoxLayout = NULL;
+    pVBoxLayout = nullptr;
     //pHBoxLayout = NULL;
-    pSplitter = NULL;
-    pSplittLayout = NULL;
-    pFormLayout = NULL;
+    pSplitter = nullptr;
+    pSplittLayout = nullptr;
+    pFormLayout = nullptr;
     if (_isDisabled) return;
     if (tableShape.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
@@ -411,7 +411,7 @@ void cRecordDialog::init()
     pSplittLayout = new QBoxLayout(QBoxLayout::LeftToRight);
     pSplitter     = new QSplitter(_pWidget);
     pSplittLayout->addWidget(pSplitter);
-    if (_pButtons != NULL) {
+    if (_pButtons != nullptr) {
         pVBoxLayout = new QVBoxLayout;
         pVBoxLayout->setObjectName(name + "_VBox");
         _pWidget->setLayout(pVBoxLayout);
@@ -420,7 +420,7 @@ void cRecordDialog::init()
         pVBoxLayout->addWidget(_pButtons->pWidget(), 0);
     }
     else {
-        pVBoxLayout = NULL;
+        pVBoxLayout = nullptr;
          _pWidget->setLayout(pSplittLayout);
          pSplitter->addWidget(_frame(pFormLayout, _pWidget));
     }
@@ -428,14 +428,14 @@ void cRecordDialog::init()
     _pRecord = new cRecordAny(&rDescr);
 
     if (!tableShape.getStringList(_sTableShapeType).contains(_sReadOnly)) {
-        if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
+        if (_pOwnerTable != nullptr && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int flags = _pOwnerTable->flags;
             if (flags & RTF_CHILD) {
                 int oix = _pOwnerTable->ixToOwner();
                 _pRecord->setId(oix, _pOwnerTable->owner_id);
             }
         }
-        if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
+        if (_pOwnerTable != nullptr && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
             int pix = _pRecord->descr().ixToParent(EX_IGNORE);  // Ha van önmagára mutató ID (öröklések miatt nem biztos)
             if (pix != NULL_IX) _pRecord->setId(pix, _pOwnerTable->parent_id);
         }
@@ -492,7 +492,7 @@ void cRecordDialog::restore(const cRecord *_pRec)
 {
     pDelete(_pRecord);
     _pRecord = new cRecordAny(&rDescr);;
-    if (_pRec != NULL) {
+    if (_pRec != nullptr) {
         _pRecord->set(*_pRec);
         _pRecord->setTexts(_pRec->getTexts());
     }
@@ -553,7 +553,7 @@ cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
         PDEB(VVERBOSE) << "#" << x << " : " << name << endl;
         if (name == __fn) return p;
     }
-    return NULL;
+    return nullptr;
 }
 
 /* ***************************************************************************************************** */
@@ -563,10 +563,10 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
     , tabDescriptors(_tms)
     , tabs()
 {
-    pVBoxLayout = NULL;
-    pTabWidget = NULL;
+    pVBoxLayout = nullptr;
+    pTabWidget = nullptr;
     if (_isDisabled) return;
-    if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
+    if (_pButtons == nullptr) EXCEPTION(EPROGFAIL);
 //    if (isReadOnly) EXCEPTION(EDATA);
     init();
 }
@@ -632,7 +632,7 @@ void cRecordDialogInh::setActTab(int i)
 {
     if (!isContIx(tabs, i)) EXCEPTION(EPROGFAIL, i);
     pTabWidget->setCurrentIndex(i);
-    if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
+    if (_pButtons == nullptr) EXCEPTION(EPROGFAIL);
 }
 
 bool cRecordDialogInh::accept()
@@ -652,7 +652,7 @@ cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
 
 void cRecordDialogInh::restore(const cRecord *_pRec)
 {
-    if (_pRec == NULL) return;
+    if (_pRec == nullptr) return;
     if (disabled()) return;
     foreach (cRecordDialog *pTab, tabs) {
         pTab->restore(_pRec);
@@ -673,7 +673,7 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 /// @param edit Ha értéke true, akkor rekord modosítás történik, ekkor pSample tartalmazza a modosítandó létező rekordot, és nem lehet NULL.
 _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const cRecord *pSample , bool ro, bool edit)
 {
-    if ((ro || edit) && pSample == NULL) EXCEPTION(EENODATA);
+    if ((ro || edit) && pSample == nullptr) EXCEPTION(EENODATA);
     if (ro) ts.enum2setOn(_sTableShapeType, TS_READ_ONLY);
     ts.fetchText(q, false);
     // A dialógusban megjelenítendő nyomógombok. (Csak az explicit read-only van lekezelve!!))
@@ -684,8 +684,8 @@ _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const 
     else {
         buttons = enum2set(DBT_OK, DBT_CANCEL);
     }
-    cRecordDialog   rd(ts, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
-    if (pSample != NULL) {
+    cRecordDialog   rd(ts, buttons, true, nullptr, nullptr, pPar);  // A rekord szerkesztő dialógus
+    if (pSample != nullptr) {
         if (edit && pSample->idIndex(EX_IGNORE) != NULL_IX && !pSample->isNullId()) {
             cRecord *pr = pSample->dup();
             pr->clearId();
@@ -698,7 +698,7 @@ _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const 
     }
     while (true) {
         int r = rd.exec(false);
-        if (r == DBT_CANCEL || ro) return NULL;
+        if (r == DBT_CANCEL || ro) return nullptr;
         if (!rd.accept()) continue;
         if (edit) {
             if (!cErrorMessageBox::condMsgBox(rd.record().tryUpdateById(q, TS_NULL, true))) continue;
@@ -745,9 +745,9 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
 {
     edit = edit || ro;
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
-        cPatch *pSample = NULL;
+        cPatch *pSample = nullptr;
         bool data = false;
-        if (_pSample != NULL) {
+        if (_pSample != nullptr) {
             pSample = new cPatch;
             if (_pSample->getId() != NULL_ID) {
                 pSample->setById(q, _pSample->getId());
@@ -772,7 +772,7 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
         return pRec;
     }
     EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
-    return NULL;    // Warning miatt
+    return nullptr;    // Warning miatt
 }
 
 /* ************************************************************************* */

@@ -23,11 +23,6 @@ bool metaIsInteger(int id)
     }
 }
 
-bool variantIsInteger(const QVariant & _v)
-{
-    return metaIsInteger(_v.userType());
-}
-
 bool metaIsString(int id)
 {
     switch (id) {
@@ -38,10 +33,6 @@ bool metaIsString(int id)
     default:                    return false;
     }
 }
-bool variantIsString(const QVariant & _v)
-{
-    return metaIsString(_v.userType());
-}
 
 bool metaIsFloat(int id)
 {
@@ -51,17 +42,6 @@ bool metaIsFloat(int id)
     default:                    return false;
     }
 }
-
-bool variantIsFloat(const QVariant & _v)
-{
-    return metaIsFloat(_v.userType());
-}
-
-bool variantIsNum(const QVariant & _v)
-{
-    return metaIsFloat(_v.userType()) || metaIsInteger(_v.userType());
-}
-
 
 QString langBool(bool b)
 {
@@ -181,7 +161,7 @@ cColEnumType::cColEnumType(const cColEnumType& _o)
 
 QString cColEnumType::toString() const
 {
-    return "Enum " + dQuoted((QString)*this) + " #" + QString::number(typeId)
+    return "Enum " + dQuoted(QString(*this)) + " #" + QString::number(typeId)
               + " {" + enumValues.join(", ") + "}";
 }
 
@@ -189,7 +169,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
 {
 
     const cColEnumType *r = find(name);
-    if (r != nullptr) return r;        // Ha a típust már beolvastuk
+    if (r != nullptr) return r;        // Type is readed, and found
     QString sql = QString(
                 "SELECT pg_enum.enumlabel, pg_enum.enumtypid FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
                 "WHERE pg_type.typname = '%1' ORDER BY pg_enum.enumsortorder ASC").arg(name);
@@ -202,7 +182,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
         } while(q.next());
         return new cColEnumType(id, name, vals);
     }
-    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Ismeretlrn enumerációs típus név: %1").arg(name));
+    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Unknown enumeration type name: %1").arg(name));
     return nullptr;
 }
 
@@ -217,16 +197,16 @@ bool cColEnumType::check(const QStringList& v) const
 const QString& cColEnumType::enum2str(qlonglong e, eEx __ex) const
 {
     if (isContIx(enumValues, e)) {
-        return enumValues[e];
+        return enumValues[int(e)];
     }
-    if (__ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1.#%2").arg(*this).arg(e));
+    if (__ex) EXCEPTION(EDATA, e, QObject::trUtf8("Invalid enumeration value name : %1.#%2").arg(*this).arg(e));
     return _sNul;
 }
 
 QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
 {
     if (__ex >= EX_ERROR && !checkSet(b)) {
-        EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : [%1]").arg(*this, QString::number(b, 2)));
+        EXCEPTION(EDATA, b, QObject::trUtf8("Invalid enumeration mask (set) value : [%1]").arg(*this, QString::number(b, 2)));
     }
     QStringList r;
     for (int i = 0; i < enumValues.size(); ++i) {
@@ -235,7 +215,7 @@ QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
     return r;
 }
 
-qlonglong cColEnumType::str2enum(const QString& _s, eEx __ex) const
+int cColEnumType::str2enum(const QString& _s, eEx __ex) const
 {
     QString s = _s;
     if (s.endsWith("::" + *this)) { // '<value>'::<type>
@@ -252,17 +232,15 @@ qlonglong cColEnumType::str2enum(const QString& _s, eEx __ex) const
         default:        break;
         }
     }
-    if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(_s));
+    if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid enumeration numeric value : %1.%2").arg(*this).arg(_s));
     return ENUM_INVALID;
 
 }
 qlonglong cColEnumType::str2set(const QString& s, eEx __ex) const
 {
-    for (int i = 0; i < enumValues.size(); ++i) {
-        if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return 1LL << i;
-    }
-    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
-    return 0;
+    int e = str2enum(s, __ex);
+    if (e == ENUM_INVALID) return 0;
+    return 1LL << e;
 }
 qlonglong cColEnumType::lst2set(const QStringList &s, eEx __ex) const
 {
@@ -422,7 +400,7 @@ cColStaticDescr::~cColStaticDescr()
 
 cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 {
-    *(QString *)this = __o;
+    QString(*this) = __o;
     pParent     = __o.pParent;
     colType     = __o.colType;
     udtName     = __o.udtName;
@@ -446,7 +424,7 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 
 QString cColStaticDescr::toString() const
 {
-    QString r = dQuoted((QString&)*this);
+    QString r = dQuoted(QString(*this));
     r += QChar('[') + QString::number(pos) + QChar('/') + QString::number(ordPos) + QChar(']');
     r += QChar(' ') + colType;
     if (chrMaxLenghr > 0) r += QString("(%1)").arg(chrMaxLenghr);
@@ -588,7 +566,7 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
 QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
 {
     if (fKeyType == FT_TEXT_ID) {
-        return textId2text(q, (int)id, pParent->tableName(), 0);
+        return textId2text(q, id, pParent->tableName(), 0);
     }
     QString n = QString::number(id);
     QString r = "[#" + n + "]";    // If fail
@@ -612,6 +590,7 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
     return r;
 }
 
+// Javítani!!! A datacharacter enum-hoz kéne kötni!! De azt a GUI-ban kezeljük....
 const QString  cColStaticDescr::rNul = "[NULL]";
 const QString  cColStaticDescr::rBin = "[BINARY]";
 
@@ -630,7 +609,7 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 QString cColStaticDescr::toViewIx(QSqlQuery&q, const QVariant& _f, int _ix) const
 {
     if (eColType == FT_INTEGER && fKeyType == FT_TEXT_ID) {
-        return textId2text(q, (int)toId(_f), pParent->tableName(), _ix);
+        return textId2text(q, toId(_f), pParent->tableName(), _ix);
     }
     return toView(q, _f);
 }
@@ -659,14 +638,14 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("date",     FT_DATE)
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
-    if      (pEnumType != nullptr)                              eColType = FT_ENUM;
+    if      (pEnumType != nullptr)                           eColType = FT_ENUM;
     else if (udtName.contains("int",   Qt::CaseInsensitive)) eColType = FT_INTEGER;
     else if (udtName.contains("real",  Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("double",Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("char",  Qt::CaseInsensitive)) eColType = FT_TEXT;
     else if (!udtName.compare("text",  Qt::CaseInsensitive)) eColType = FT_TEXT;
     else {
-        EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("Unknown %1 field type %2/%3 ").arg(colName(), colType, udtName));
+        EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("Unknown or not supported %1 field type %2/%3 ").arg(colName(), colType, udtName));
     }
     if (colType == _sARRAY) eColType |= FT_ARRAY;
     return;
@@ -810,10 +789,10 @@ QString cColStaticDescrBool::toView(QSqlQuery&, const QVariant& _f) const
 void cColStaticDescrBool::init()
 {
     const cColEnumType *pt = cColEnumType::find(_sBoolean);
-    QStringList enumVals;
-    enumVals << langBool(false);
-    enumVals << langBool(true);
     if (pt == nullptr) {
+        QStringList enumVals;
+        enumVals << langBool(false);
+        enumVals << langBool(true);
         pt = new cColEnumType(NULL_ID, _sBoolean, enumVals);
     }
     pEnumType = pt;
@@ -823,19 +802,6 @@ CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
 const QVariant cColStaticDescrArray::emptyVariantList = QVariant(QVariantList());
 const QVariant cColStaticDescrArray::emptyStringList  = QVariant(QStringList());
-
-QVariant stringListToSql(const QStringList& sl)
-{
-    bool    empty = true;
-    QString s = QChar('{');
-    foreach (const QString& si, sl) {
-        s += dQuoted(si) + QChar(',');
-        empty = false;
-    }
-    if (empty == false) s.chop(1);
-    s += QChar('}');
-    return QVariant(s);
-}
 
 cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
 {
@@ -920,31 +886,15 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
     if (_f.isNull()) return _f;
     // A tömböket stringen keresztül bontjuk ki
     QString s = arrayDropBracket(_f.toString());
-    // Az elemek közötti szeparátor a vessző
-    QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
     int t = eColType & ~FT_ARRAY;
     if (t == FT_INTEGER) {         // egész tömb
-         QVariantList vl;
-         if (s.size() > 0) foreach (const QString& si, sl) {
-             bool ok;
-             qlonglong i = si.toLongLong(&ok);
-             if (!ok) EXCEPTION(EDBDATA, 2, "Invalid number : " + s);
-             vl << QVariant(i);
-         }
-         return QVariant(vl);
+        return _sqlToIntegerList(s);
     }
     if (t == FT_REAL) {
-        QVariantList vl;
-        if (s.size() > 0) foreach (const QString& si, sl) {
-            bool ok;
-            double i = si.toDouble(&ok);
-            if (!ok) EXCEPTION(EDBDATA, 3, "Invalid number : " + s);
-            vl << QVariant(i);
-        }
-        return QVariant(vl);
+        return _sqlToDoubleList(s);
     }
-    // A többiről feltételezzük, hogy string, De kell valamit kezdeni az idézőjelekkel
-    sl = _sqlToStringList(s);
+    // A többiről feltételezzük, hogy string
+    QStringList sl = _sqlToStringList(s);
     if (sl.isEmpty() && isNullable) return QVariant();
     return QVariant(sl);
 }
@@ -952,34 +902,15 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
-    bool    empty = true;
     QString s;
     switch (eColType) {
     case FT_INTEGER_ARRAY: {    // egész tömb
         QVariantList vl = _f.toList();
-        s = QChar('{');
-        bool ok;
-        foreach (const QVariant& vi, vl) {
-            s += QString::number(vi.toLongLong(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
-            empty = false;
-        }
-        if (empty == false) s.chop(1);
-        s += QChar('}');
-        return QVariant(s);
+        return integerListToSql(vl);
     }
     case FT_REAL_ARRAY:  {
         QVariantList vl = _f.toList();
-        s = QChar('{');
-        bool ok;
-        foreach (const QVariant& vi, vl) {
-            s += QString::number(vi.toDouble(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
-            empty = false;
-        }
-        if (empty == false) s.chop(1);
-        s += QChar('}');
-        return QVariant(s);
+        return doubleListToSql(vl);
     }
     case FT_TEXT_ARRAY: {
         QStringList sl = _f.toStringList();
@@ -4478,8 +4409,8 @@ cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l
     QRegExp p_lc("^([a-z]{2})_([A-Z]{2})$");
     QRegExp p_l3("^[a-z]{3}$");
     bool e = false;
-    QLocale::Language lan;
-    QLocale::Country  cou;
+    QLocale::Language lan = QLocale::AnyLanguage;
+    QLocale::Country  cou = QLocale::AnyCountry;
     if (!p_lc.exactMatch(_lc) || !p_l3.exactMatch(_l3)) {
         e = true;
     }
@@ -4502,8 +4433,8 @@ cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l
     if (_flagId != NULL_ID) _fields[d.toIndex(_sFlagImage)] = _flagId;
     _fields[d.toIndex(_sLang2)]     = p_lc.cap(1);
     _fields[d.toIndex(_sCountryA2)] = p_lc.cap(2);
-    _fields[d.toIndex(_sLangId)]    = (qlonglong)lan;
-    _fields[d.toIndex(_sCountryId)] = (qlonglong)cou;
+    _fields[d.toIndex(_sLangId)]    = qlonglong(lan);
+    _fields[d.toIndex(_sCountryId)] = qlonglong(cou);
 }
 
 

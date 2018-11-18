@@ -8,7 +8,7 @@ cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_up
     : cRecordsViewBase(_isDialog, par)
 {
     pMaster = pUpper = _upper;
-    if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
+    if (pMaster != nullptr && pUpper->pMaster != nullptr) pMaster = pUpper->pMaster;
 //    disableFilters = true;
     initShape(pts);
 }
@@ -20,7 +20,7 @@ cRecordTree::~cRecordTree()
 
 void cRecordTree::init()
 {
-    pTreeView  = NULL;
+    pTreeView  = nullptr;
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER;
     if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
@@ -32,26 +32,26 @@ void cRecordTree::init()
     if (isReadOnly == false) {
         buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
-    if (pUpper != NULL && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_BARE):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_TREE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_TREE):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SINGLE | RTF_TREE;
         initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_TREE, TS_MEMBER):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_MEMBER | RTF_TREE;
         initMaster();
         break;
     case ENUM2SET2(TS_TREE, TS_GROUP):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_GROUP | RTF_TREE;
         initMaster();
         break;
@@ -59,7 +59,7 @@ void cRecordTree::init()
     case ENUM2SET2(TS_TREE, TS_NGROUP):
     case ENUM2SET2(TS_TREE, TS_IMEMBER):
     case ENUM2SET2(TS_TREE, TS_NMEMBER):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_EXPAND << DBT_REFRESH << DBT_SPACER;
@@ -86,18 +86,18 @@ void cRecordTree::init()
         initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_TREE, TS_OWNER):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_OVNER | RTF_TREE;
         initMaster();
         break;
     case ENUM2SET2(TS_TREE, TS_CHILD):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET3(TS_TREE, TS_OWNER, TS_CHILD):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell
         initMaster();
@@ -143,13 +143,13 @@ void cRecordTree::initSimple(QWidget *pW)
     if (!isReadOnly) {
         connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
-    if (pMaster != NULL) {
+    if (pMaster != nullptr) {
         pMaster->pMasterSplitter->addWidget(_pWidget);
     }
     pTreeView->header()->setSectionsClickable(true);
     connect(pTreeView->header(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
     connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-    if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
+    if (pFODialog != nullptr) EXCEPTION(EPROGFAIL);
     pFODialog = new cRecordTableFODialog(pq, *this);
     // A model konstruktorban nem megy az oszlopok eltüntetése, így mégegyszer...
     for (int i = 0; i < fields.size(); ++i) {
@@ -175,7 +175,7 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
         return false;
     }
     int tfix = recDescr().ixToParent();
-    if (pn->pData == NULL || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
+    if (pn->pData == nullptr || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
         // A szűrés miatt nem jó a parent_id IS NULL-ra vizsgálni.
         if (!wl.isEmpty()) sql += " WHERE " + wl.join(" AND ");
         // 'r' lessz a teljes szűrt rekord készlet. Ebből válogatjuk le a rész fák gyökereit.
@@ -191,7 +191,7 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
         wl << (recDescr().columnName(tfix) + " = " + QString::number(parId));
         sql += " WHERE " + wl.join(" AND ");
     }
-    if (pFODialog != NULL) {
+    if (pFODialog != nullptr) {
         QString ord = pFODialog->ord();
         if (!ord.isEmpty()) sql += " ORDER BY " + ord;
     }
@@ -219,17 +219,17 @@ cRecord *cRecordTree::actRecord(const QModelIndex &_mi)
     QModelIndex mi = _mi;
     if (!_mi.isValid()) mi = actIndex();
     cTreeNode * pn = pTreeModel()->nodeFromIndex(mi);
-    if (pn->parent == NULL || pn->pData == NULL) return NULL;
+    if (pn->parent == nullptr || pn->pData == nullptr) return nullptr;
     return pn->pData;
 }
 
 cRecord *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
 {
-    if (!pMi->isValid()) return NULL;
+    if (!pMi->isValid()) return nullptr;
     cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
-    if (pn->parent == NULL) {
+    if (pn->parent == nullptr) {
         *pMi = QModelIndex();
-        return NULL;
+        return nullptr;
     }
     int row = pn->row();
     if (_upRes == 1) {  // Nem változott a fa szerkezete
@@ -247,17 +247,17 @@ cRecord *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
         }
     }
     *pMi = QModelIndex();
-    return NULL;
+    return nullptr;
 }
 
 cRecord *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
-    if (!pMi->isValid()) return NULL;
+    if (!pMi->isValid()) return nullptr;
     cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
-    if (pn->parent == NULL) {
+    if (pn->parent == nullptr) {
         *pMi = QModelIndex();
-        return NULL;
+        return nullptr;
     }
     int row = pn->row();
     if (_upRes == 1) {  // Nem változott a fa szerkezete
@@ -274,7 +274,7 @@ cRecord *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
         }
     }
     *pMi = QModelIndex();
-    return NULL;
+    return nullptr;
 }
 
 void cRecordTree::selectRow(const QModelIndex& mi)

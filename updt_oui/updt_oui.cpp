@@ -38,7 +38,7 @@ lv2UpdateOui::lv2UpdateOui()
     , pq(newQuery())
     , d(urlQueue, pq, this)
 {
-    if (lastError == NULL) {
+    if (lastError == nullptr) {
         try {
 
             insertStart(*pq);
@@ -110,7 +110,7 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
             PDEB(VVERBOSE) << "Result : " << reasons(r) << endl;
         }
     } CATCHS(lanView::getInstance()->lastError);
-    return lanView::getInstance()->lastError == NULL;
+    return lanView::getInstance()->lastError == nullptr;
     DBGFNL();
 }
 
@@ -118,12 +118,12 @@ Downloader::Downloader(QQueue<QUrl> &qr, QSqlQuery *_pq, QObject *parent) :
     QObject(parent), urlQueue(qr), url()
 {
     pq = _pq;
-    manager = NULL;
+    manager = nullptr;
 }
 
 void Downloader::doDownload()
 {
-    if (manager == NULL) {
+    if (manager == nullptr) {
         manager = new QNetworkAccessManager(this);
 
         connect(manager, SIGNAL(finished(QNetworkReply*)),

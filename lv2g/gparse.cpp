@@ -14,11 +14,11 @@ cParseWidget::cParseWidget(QMdiArea *par)
 : cIntSubObj(par)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
-    pExportQueue = NULL;
+    pExportQueue = nullptr;
     pq  = newQuery();
     isRuning = false;
-    pLocalParser = NULL;
-    pLocalParsedStr = NULL;
+    pLocalParser = nullptr;
+    pLocalParsedStr = nullptr;
     pUi = new Ui::GParseWidget();
     pUi->setupUi(this);
 
@@ -99,7 +99,7 @@ void cParseWidget::localParse(const QString& src)
     pUi->textEditResult->clear();
     pUi->textEditLog->clear();
 
-    pLocalError = NULL;
+    pLocalError = nullptr;
     debugStream *pDS = cDebug::getInstance()->pCout();
     connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
     cDebug::getInstance()->setGui();
@@ -122,7 +122,7 @@ void cParseWidget::localParseFinished()
     disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
     cDebug::getInstance()->setGui(false);
     // OK ?
-    if (pLocalError == NULL) {
+    if (pLocalError == nullptr) {
         pUi->textEditLog->append(trUtf8("<p><b> O.K."));
     }
     else {
@@ -228,7 +228,7 @@ void cParseWidget::remoteParse(const QString &src)
 void cParseWidget::setParams()
 {
     cNode *pNode = lanView::getInstance()->pSelfNode;
-    const QString node = pNode == NULL ? _sNil : pNode->getName();
+    const QString node = pNode == nullptr ? _sNil : pNode->getName();
     static const QString _sHostService = "host_service";
     params[_sHostService]   = _sNul;
     params[_sService]       = "import";
@@ -236,11 +236,11 @@ void cParseWidget::setParams()
     params[_sHost]          = node;
     params[_sInterface]     = _sNul;
     params["selfName"]      = node;
-    params[_sAddress]       = pNode == NULL ? _sNul : pNode->getIpAddress().toString();
+    params[_sAddress]       = pNode == nullptr ? _sNul : pNode->getIpAddress().toString();
     params[_sProtocol]      = _sNil;
     params[_sPort]          = _sNul;
     params[_sHostServiceId] = _sNULL;
-    params[_sNodeId]        = pNode == NULL ? _sNULL : QString::number(pNode->getId());
+    params[_sNodeId]        = pNode == nullptr ? _sNULL : QString::number(pNode->getId());
     params[_sServiceId]     = "0";
 }
 
@@ -286,7 +286,7 @@ void cParseWidget::saveQPClicked()
 
 void cParseWidget::parseQPClicked()
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     cQueryParser qp;
     try {
         qlonglong sid = cService::service(*pq, pUi->comboBoxQP->currentText())->getId();
@@ -294,18 +294,18 @@ void cParseWidget::parseQPClicked()
         QString text = pUi->textEditQP->toPlainText();
         qp.setMaps(&params);
         qp.prep(pe);
-        if (pe == NULL) {
+        if (pe == nullptr) {
             foreach (QString line, text.split('\n')) {
                 qp.parse(line.trimmed(), pe);
-                if (pe != NULL) break;
+                if (pe != nullptr) break;
             }
-            if (pe == NULL) {
+            if (pe == nullptr) {
                 qp.post(pe);
             }
         }
     } CATCHS(pe);
     pUi->textEditSrc->setPlainText(qp.getText());
-    if (pe != NULL) {
+    if (pe != nullptr) {
         cErrorMessageBox::messageBox(pe, this);
         pDelete(pe);
     }

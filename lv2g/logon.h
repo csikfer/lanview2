@@ -20,7 +20,7 @@ public:
     ~cLogOn();
     eLogOnResult    getState() const { return _state; }
     qlonglong       getZoneId() const;
-    static eLogOnResult logOn(qlonglong *pZoneId = NULL, QWidget *par = NULL);
+    static eLogOnResult logOn(qlonglong *pZoneId = nullptr, QWidget *par = nullptr);
     static int      _maxProbes;
 private:
     eLogOnResult checkState();

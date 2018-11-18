@@ -8,32 +8,135 @@ QString unTypeQuoted(const QString& _s)
     return unQuoted(s);
 }
 
+QVariantList _sqlToIntegerList(const QString& _s)
+{
+    QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+    QVariantList vl;
+    foreach (const QString& s, sl) {
+        bool ok;
+        qlonglong i = s.toLongLong(&ok);
+        if (ok) {
+            vl << QVariant(i);
+        }
+        else {
+            if (s == _sNULL) vl << QVariant();
+            else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+        }
+    }
+    return vl;
+
+}
+
+QVariantList _sqlToDoubleList(const QString& _s)
+{
+    QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+    QVariantList vl;
+    foreach (const QString& s, sl) {
+        bool ok;
+        double i = s.toDouble(&ok);
+        if (ok) {
+            vl << QVariant(i);
+        }
+        else {
+            if (s == _sNULL) vl << QVariant();
+            else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+        }
+    }
+    return vl;
+}
+
 QStringList _sqlToStringList(const QString& _s)
 {
     QStringList sl = _s.split(QChar(','), QString::KeepEmptyParts);
-    const   QChar   m('"');
+    static const QChar   m('"');
+    static const QString nm("\\\"");
+
     for (int i = 0; i < sl.size(); ++i) {
         QString s = sl[i];
         if (s[0] == m) {
-            while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
-                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + s);
+            while (true) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
+                bool fragment = ! s.endsWith(m);
+                if (!fragment) {
+                    if (s.endsWith(nm)) {
+                        fragment = true;
+                        s.chop(2);
+                        s += m;
+                    }
+                }
+                if (!fragment) break;
+                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid (fragment) string array : ") + _s);
                 sl[i] += QChar(',') + (s = sl[i +1]);
                 sl.removeAt(i +1);
             }
             s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
         }
-        if (s.isEmpty()) sl.removeAt(i--);  // Az üres stringek eltávolítása
+        else if (s == _sNULL) {
+            sl[i].clear();
+            continue;
+        }
+        else if (s.isEmpty()) {
+            EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid string array (empty text) : ") + _s);
+        }
+        sl[i].replace(nm, "\"");
     }
     return sl;
 }
 
+QString stringListToSql(const QStringList& sl)
+{
+    if (sl.isEmpty()) return "{}";
+    QString r = QChar('{');
+    foreach (const QString& s, sl) {
+        if (s.isNull()) r += "NULL,";
+        else            r += dQuoted(QString(s).replace("\"", "\\\"")) + QChar(',');
+    }
+    r.chop(1);  // Drop last comma
+    r += QChar('}');
+    return r;
+}
+
+QString integerListToSql(const QVariantList& vl)
+{
+    if (vl.isEmpty()) return "{}";
+    QString r;
+    foreach (QVariant v, vl) {
+        if (v.isNull()) r += "NULL,";
+        else {
+            bool ok;
+            r += QString::number(v.toLongLong(&ok)) + QChar(',');
+            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
+        }
+
+    }
+    r.chop(1);  // Drop last comma
+    r += QChar('}');
+    return r;
+}
+
+QString doubleListToSql(const QVariantList& vl)
+{
+    if (vl.isEmpty()) return "{}";
+    QString r;
+    foreach (QVariant v, vl) {
+        if (v.isNull()) r += "NULL,";
+        else {
+            bool ok;
+            r += QString::number(v.toDouble(&ok)) + QChar(',');
+            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
+        }
+
+    }
+    r.chop(1);  // Drop last comma
+    r += QChar('}');
+    return r;
+}
 
 QSqlDatabase *  getSqlDb(void)
 {
-    if (lanView::instance == NULL) EXCEPTION(EPROGFAIL, -1, "lanView::instance is NULL.");
+    if (lanView::instance == nullptr) EXCEPTION(EPROGFAIL, -1, "lanView::instance is NULL.");
     QSqlDatabase *pSqlDb;
     pSqlDb = lanView::instance->pDb;
-    if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, "lanView::instance->pDb is NULL.");
+    if (pSqlDb == nullptr) EXCEPTION(EPROGFAIL, -1, "lanView::instance->pDb is NULL.");
     if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, "cLanView::instance->pDb is set, but database is not opened.");
     if (!isMainThread()) {  // Minden thread-nak saját objektum kell!
         // PDEB(INFO) << "Lock by threadMutex, in getSqlDb() ..." << endl;
@@ -57,7 +160,7 @@ QSqlDatabase *  getSqlDb(void)
         }
         lanView::getInstance()->threadMutex.unlock();
         pSqlDb = pDb;
-        if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is NULL.").arg(tn));
+        if (pSqlDb == nullptr) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is NULL.").arg(tn));
         if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is set, but database is not opened.").arg(tn));
         if (newDb) {
             QSqlQuery q(*pSqlDb);
@@ -103,7 +206,6 @@ eTristate trFlag(eTristate __tf)
     case TS_TRUE:
     case TS_FALSE:  return __tf;
     case TS_NULL:   break;
-    default:        EXCEPTION(EPROGFAIL);
     }
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();  // If trhread, then mutex is locked !!
     eTristate tf = pTrl->isEmpty() ? TS_TRUE : TS_FALSE;
@@ -138,7 +240,7 @@ void sqlCommit(QSqlQuery& q, const QString& tn)
 {
     QString msg;
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
-    cError *pe = NULL;
+    cError *pe = nullptr;
     bool r = false;
     if (pTrl->isEmpty()) {
         msg = QObject::trUtf8("End transaction, invalid name : %1; no pending transaction").arg(tn);
@@ -164,7 +266,7 @@ void sqlCommit(QSqlQuery& q, const QString& tn)
     if (!isMainThread()) {
         lanView::getInstance()->threadMutex.unlock();
     }
-    if (pe != NULL) pe->exception();
+    if (pe != nullptr) pe->exception();
     if (!r) SQLQUERYERR(q);
 }
 
@@ -172,7 +274,7 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
 {
     QString msg;
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
-    cError *pe = NULL;
+    cError *pe = nullptr;
     bool r = false;
     int i = pTrl->indexOf(tn);
     if (pTrl->isEmpty()) {
@@ -201,7 +303,7 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
     if (!isMainThread()) {
         lanView::getInstance()->threadMutex.unlock();
     }
-    if (pe != NULL) pe->exception();
+    if (pe != nullptr) pe->exception();
     if (!r) SQLQUERYERR(q);
 }
 
@@ -220,10 +322,11 @@ QString toSqlName(const QString& _n)
 
 /* ********************************************************************************************* */
 
+// Unused
 bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 {
-    cError *   pe = NULL;
-    QSqlQuery *pq = NULL;
+    cError *   pe = nullptr;
+    QSqlQuery *pq = nullptr;
     try {
         QString sql;    // Egy SQL parancs
         QString line;   // Egy beolvasott sor (idézőjel esetén több sor)
@@ -418,7 +521,7 @@ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const Q
         r = v.toLongLong(&ok);
         if (!ok) r = NULL_ID;
     }
-    if (pOk != NULL) *pOk = ok;
+    if (pOk != nullptr) *pOk = ok;
     return r;
 }
 

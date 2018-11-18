@@ -37,14 +37,14 @@ int main (int argc, char * argv[])
 
     int r = app.exec();
     PDEB(INFO) << QObject::trUtf8("Az esemény hurok kilépett.") << endl;
-    r = pmo->lastError == NULL ? r : pmo->lastError->mErrorCode;
+    r = pmo->lastError == nullptr ? r : pmo->lastError->mErrorCode;
     delete pmo;
     exit(r);
 }
 
 lv2icontsrv::lv2icontsrv() : lanView()
 {
-    if (lastError == NULL) {
+    if (lastError == nullptr) {
         try {
             allPortEnabled     = false;
             int i;
@@ -106,8 +106,8 @@ const QString    cGateway::sSerialDefault = "19200 7E1 No";
 cGateway::cGateway(QSqlQuery& q, qlonglong hsid, qlonglong hoid, cInspector * par)
     : cInspector(q, hsid, hoid, par)
 {
-    pSock       = NULL;
-    pSerio      = NULL;
+    pSock       = nullptr;
+    pSerio      = nullptr;
     baudRate    = QSerialPort::Baud19200;
     dataBits    = QSerialPort::Data8;
     stopBits    = QSerialPort::OneStop;
@@ -124,7 +124,7 @@ cGateway::~cGateway()
 void cGateway::setSubs(QSqlQuery &q, const QString &)
 {
     _DBGFN() << name() << endl;
-    if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);
+    if (pSubordinates == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q2 = getQuery();
     QSqlQuery q3 = getQuery();
     static const QString sql =
@@ -218,7 +218,7 @@ void cGateway::close()
     switch (type) {
     case EP_LOCAL:
         /* Serial Port */
-        if (pSerio != NULL) {
+        if (pSerio != nullptr) {
             pSerio->close();
         }
         else {
@@ -227,7 +227,7 @@ void cGateway::close()
         break;
     case EP_TCP_RS:
         /* TCP SOCKET */
-        if (pSock != NULL) {
+        if (pSock != nullptr) {
             pSock->close();
         }
         else {
@@ -242,7 +242,7 @@ void cGateway::close()
 void cGateway::getSerialParams()
 {
     DBGFN();
-    if (pPort == NULL)
+    if (pPort == nullptr)
         EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva lokális soros interfész."));
     if (pPort->ifType().getName() != _sRS485 && pPort->ifType().getName() != _sRS232)
         EXCEPTION(EDATA, -1, QObject::trUtf8("A lekérdezéshez csak RS485-típusú port adható meg."));
@@ -309,7 +309,7 @@ void cGateway::getSerialParams()
 bool cGateway::openSerial(QString& msg)
 {
     DBGFN();
-    if (pSerio == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs serial objektumunk."));
+    if (pSerio == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs serial objektumunk."));
     if (!pSerio->open(QIODevice::ReadWrite)) {
         DERR() << "Serial port " << pSerio->portName() << " (first) open error : " << pSerio->errorString() << endl;
         if (!pSerio->open(QIODevice::ReadWrite)) {   // Elsőre nem sikerül, ha nem volt lezárva rendesen
@@ -354,7 +354,7 @@ void cGateway::getSocketParams()
 
 bool cGateway::openSocket(int to)
 {
-    if (pSock == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs socket objektumunk."));
+    if (pSock == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs socket objektumunk."));
     pSock->connectToHost(sockAddr, sockPort);
     return pSock->waitForConnected(to);
 }
@@ -366,7 +366,7 @@ QIODevice *cGateway::getIoDev()
     case EP_TCP_RS: return pSock;
     default:        EXCEPTION(EPROGFAIL);
     }
-    return NULL;    // !warning
+    return nullptr;    // !warning
 }
 
 bool cGateway::waitForWritten(int msec)
@@ -426,7 +426,7 @@ bool cGateway::com_s(void * io, size_t size, cInspector *pInsp)
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
-    if (pIO == NULL) {
+    if (pIO == nullptr) {
         DERR() << "IO Device is NULL." << endl;
         return false;
     }
@@ -472,7 +472,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg, cInspecto
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
-    if (pIO == NULL) {
+    if (pIO == nullptr) {
         msg = trUtf8("IO Device is NULL.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
@@ -522,7 +522,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg, cInspecto
                 }
                 goto char_drop;
             case 6: case 7: case 8: case 9: case 10: case 11: case 12: case 13:
-                if (strchr(kstat, c) != NULL) {
+                if (strchr(kstat, c) != nullptr) {
                     in->kontakt[n -6] = c;
                     break;
                 }
@@ -562,7 +562,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg, cInspec
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
-    if (pIO == NULL) {
+    if (pIO == nullptr) {
         msg = trUtf8("IO Device is NULL.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
@@ -607,13 +607,13 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg, cInspec
                 goto char_drop;
             case  4: case  5: case  6: case  7: case  8: case  9: case 10: case 11:
             case 12: case 13: case 14: case 15: case 16: case 17: case 18: case 19:
-                if (strchr(kstat, c) != NULL) {
+                if (strchr(kstat, c) != nullptr) {
                     in->kontakt[n -4] = c;
                     break;
                 }
                 goto char_drop;
             case 20: case 21: case 22: case 23: case 24: case 25: case 26: case 27:
-                if (strchr(kstat, c) != NULL) {
+                if (strchr(kstat, c) != nullptr) {
                     in->swstat[n -20] = c;
                     break;
                 }
@@ -788,7 +788,7 @@ cIndAlarmIf::cIndAlarmIf(QSqlQuery& q, qlonglong shid, qlonglong hoid, cInspecto
             EXCEPTION(EDATA, par->service()->getId(), QObject::trUtf8("Nem megfelelő szülő szolgáltatás típus."));
     }
     // A szolgáltatás portja, ha nincs kitöltve, akkor pótoljuk
-    if (pPort == NULL) {
+    if (pPort == nullptr) {
         QSqlQuery qq = getQuery();
         qlonglong ifTypeId;
         if (type != IAIF1S) {   // RS485
@@ -813,7 +813,7 @@ cIndAlarmIf::cIndAlarmIf(QSqlQuery& q, qlonglong shid, qlonglong hoid, cInspecto
 void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
 {
     _DBGFN() << " / " << name() << endl;
-    if (pSubordinates != NULL) EXCEPTION(EDATA);
+    if (pSubordinates != nullptr) EXCEPTION(EDATA);
     inspectorType = IT_TIMING_TIMED;
     interval = variantToId(get(_sNormalCheckInterval), EX_IGNORE, -1);
     retryInt = variantToId(get(_sRetryCheckInterval),  EX_IGNORE, interval);
@@ -846,7 +846,7 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
     default:        EXCEPTION(EPROGFAIL, type, trUtf8("Invalid interface type."));
     }
     int allSensorCount = sensors1Count + sensors2Count;
-    for (int i = 0; i < allSensorCount; ++i) (*pSubordinates) << NULL;
+    for (int i = 0; i < allSensorCount; ++i) (*pSubordinates) << nullptr;
     if (node().ports.size() == 0) node().fetchPorts(q);
     const qlonglong ptid = cIfType::ifType(_sSensor).getId();
     tRecordList<cNPort>::iterator i, n = node().ports.end();
@@ -864,7 +864,7 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
             int ix = pp->getId(_sPortIndex); // A port idex lessz a pSubordinates konténerben is az index.
             // De ez 1-től számozódik!!
             if (ix <= 0 || ix > allSensorCount) EXCEPTION(EDATA, ix, QObject::trUtf8("Nem megfelelő szenzor port index."));
-            if ((*pSubordinates)[ix -1] != NULL) EXCEPTION(EPROGFAIL, ix);
+            if ((*pSubordinates)[ix -1] != nullptr) EXCEPTION(EPROGFAIL, ix);
             cAttached& at = *(cAttached *)((*pSubordinates)[ix -1] = new cAttached(this));
             at.service(q, _sAttached);
             at.pNode = getObjByIdT<cNode>(q, ap.getId(_sNodeId));
@@ -907,10 +907,10 @@ int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
     cGateway *pGate;
     {
         cInspector *p = pParent;;
-        if (p == NULL) EXCEPTION(EPROGFAIL);
+        if (p == nullptr) EXCEPTION(EPROGFAIL);
         if (type == IAIF1S) {               // Itt a Master interface a parent, de nekünk a gateway kell, ami az ő partentje.
             p = p->pParent;
-            if (p == NULL) EXCEPTION(EPROGFAIL);
+            if (p == nullptr) EXCEPTION(EPROGFAIL);
         }
         if (typeid(*p) != typeid(cGateway)) EXCEPTION(EPROGFAIL);   // Egy cGateway objektum kell legyen.
         pGate = (cGateway *)p;
@@ -985,7 +985,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
         if (pPrt->isModify_()) pPrt->update(*pq, false, pPrt->mask(_sPortAStat, _sPortOStat));
 
         cAttached   *pa = (cAttached *)pSubordinates->at(i);
-        if (pa == NULL) continue;
+        if (pa == nullptr) continue;
         pa->hostService.setState(q, sst, nos, g.parentId());
     }
 //    if (conf) sets(qs);

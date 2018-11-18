@@ -27,7 +27,7 @@ int main (int argc, char * argv[])
     // Elmentjük az aktuális könyvtárt
     QString actDir = QDir::currentPath();
     lv2import   mo;
-    if (mo.lastError != NULL) {
+    if (mo.lastError != nullptr) {
         _DBGFNL() << mo.lastError->mErrorCode << endl;
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
@@ -52,7 +52,7 @@ int main (int argc, char * argv[])
             mo.lastError = NEWCERROR(EUNKNOWN);
         }
         cError *ipe = importGetLastError();
-        if (ipe != NULL) mo.lastError = ipe;
+        if (ipe != nullptr) mo.lastError = ipe;
         if (mo.lastError) {
             PDEB(DERROR) << "**** ERROR ****\n" << mo.lastError->msg() << endl;
         }
@@ -61,7 +61,7 @@ int main (int argc, char * argv[])
         }
 
         cDebug::end();
-        return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;
+        return mo.lastError == nullptr ? 0 : mo.lastError->mErrorCode;
     }
 }
 
@@ -79,11 +79,11 @@ void lv2import::abortOldRecords()
 
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
-    cImport     *pImp = NULL;
+    cImport     *pImp = nullptr;
     cExportQueue::init(true);
-    lastError = NULL;
+    lastError = nullptr;
     cError *ipe = importGetLastError(); // Töröljük a hiba objektumot, biztos ami biztos.
-    if (ipe != NULL) {  // Ennek NULL-nak kellene lennie !! Nem kezeltünk egy hibát?!
+    if (ipe != nullptr) {  // Ennek NULL-nak kellene lennie !! Nem kezeltünk egy hibát?!
         ERROR_NESTED(ipe).exception();
     }
     try {
@@ -104,8 +104,8 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
     CATCHS(lastError)
     ipe = importGetLastError();
     static const QBitArray ufmask = pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId) | pImp->mask( _sOutMsg);
-    if (ipe != NULL) {
-        if (lastError != NULL) {    // Többszörös hiba ??!!
+    if (ipe != nullptr) {
+        if (lastError != nullptr) {    // Többszörös hiba ??!!
             QString m = lastError->msg() + "\n" + QString(40, QChar('*')) + "\n" + ipe->msg();
             delete lastError;
             delete ipe;
@@ -114,14 +114,14 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         lastError = ipe;
     }
     pImp->setName(_sOutMsg, cExportQueue::toText(true));
-    if (lastError == NULL) {    // OK
+    if (lastError == nullptr) {    // OK
         pImp->setName(_sExecState, _sOk);
         pImp->setName(_sResultMsg, _sOk);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->clear(_sAppLogId);
         pImp->update(*pQuery, false, ufmask);
     }
-    else if (pImp != NULL) {    // Hiba, a cImport objektum létre lett hozva
+    else if (pImp != nullptr) {    // Hiba, a cImport objektum létre lett hozva
         qlonglong eid = sendError(lastError);
         pImp->setName(_sExecState, _sFaile);
         pImp->setName(_sResultMsg, lastError->msg());
@@ -141,8 +141,8 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
 lv2import::lv2import() : lanView(), fileNm(), in()
 {
     daemonMode = false;
-    pQuery = NULL;
-    if (lastError != NULL) {
+    pQuery = nullptr;
+    if (lastError != nullptr) {
         return;
     }
     pQuery = newQuery();

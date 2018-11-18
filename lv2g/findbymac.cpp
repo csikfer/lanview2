@@ -8,7 +8,7 @@
 
 
 cFBMExpThread::cFBMExpThread(cMac& _mac, QHostAddress& _ip, cSnmpDevice& _st, cFindByMac * _par)
-    : QThread(_par), pEQ(NULL), mac(_mac), ip(_ip), st(_st)
+    : QThread(_par), pEQ(nullptr), mac(_mac), ip(_ip), st(_st)
 {
     ;
 }
@@ -116,7 +116,7 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     pUi(new Ui::FindByMac)
 {
     pq = newQuery();
-    pThread = NULL;
+    pThread = nullptr;
     fMAC = fIP = fSw = false;
     pUi->setupUi(this);
     setAllMac();

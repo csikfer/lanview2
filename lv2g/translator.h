@@ -36,7 +36,7 @@ private:
         QString text;
         if (n >= 0) text = QString::number(n);
         QStandardItem *pi = new QStandardItem(text);
-        pi->setTextAlignment(Qt::AlignRight);
+        pi->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
         return pi;
     }
 };

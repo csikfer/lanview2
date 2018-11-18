@@ -6,7 +6,7 @@ cGSetupWidget::cGSetupWidget(QMdiArea *par)
     : cIntSubObj(par)
     , qset(*lanView::getInstance()->pSet)
 {
-    pSound = NULL;
+    pSound = nullptr;
     enum Qt::Orientation splOrient = lv2g::getInstance()->defaultSplitOrientation;
     QString sounFileAlarm = lv2g::getInstance()->soundFileAlarm;
     int maxRows = lv2g::getInstance()->maxRows;

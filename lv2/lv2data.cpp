@@ -242,7 +242,7 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
 
 void cParamType::fetchParamTypes(QSqlQuery& __q)
 {
-    if (pNull == NULL) pNull = new cParamType();
+    if (pNull == nullptr) pNull = new cParamType();
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (paramTypes.count() == 0) {
         cParamType *p = new cParamType();
@@ -256,7 +256,7 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
     if (!pt.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
     do {
         cParamType *pPt = paramTypes.get(pt.getId(), EX_IGNORE);    // ID alapján rákeresünk
-        if (pPt == NULL) {   // Ez egy új rekord
+        if (pPt == nullptr) {   // Ez egy új rekord
             paramTypes << pt;
         }
         else {                // Frissít
@@ -589,7 +589,7 @@ QStringList cPlaceGroup::getAllZones(QSqlQuery q, QList<qlonglong> *pIds, eEx __
         return zones;
     }
     zones << _sAll;
-    if (pIds != NULL) {
+    if (pIds != nullptr) {
         pIds->clear();
         *pIds << ALL_PLACE_GROUP_ID;
     }
@@ -597,7 +597,7 @@ QStringList cPlaceGroup::getAllZones(QSqlQuery q, QList<qlonglong> *pIds, eEx __
         QString name = q.value(0).toString();
         if (name != _sAll) {
             zones << name;
-            if (pIds != NULL) {
+            if (pIds != nullptr) {
                 bool ok;
                 *pIds << q.value(1).toLongLong(&ok);
                 if (!ok) EXCEPTION(EDATA);
@@ -991,7 +991,7 @@ const cRecStaticDescr&  cIfType::descr() const
 }
 
 tRecordList<cIfType> cIfType::ifTypes;
-cIfType *cIfType::pNull = NULL;
+cIfType *cIfType::pNull = nullptr;
 
 bool cIfType::insert(QSqlQuery &__q, eEx __ex)
 {
@@ -1040,7 +1040,7 @@ qlonglong cIfType::insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, cons
 
 void cIfType::fetchIfTypes(QSqlQuery& __q)
 {
-    if (pNull == NULL) pNull = new cIfType();
+    if (pNull == nullptr) pNull = new cIfType();
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (ifTypes.count() == 0) {
         cIfType *p = new cIfType();
@@ -1054,7 +1054,7 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
     if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
     do {
         cIfType *pIft = ifTypes.get(ift.getId(), EX_IGNORE);    // ID alapján rákeresünk
-        if (pIft == NULL) {   // Ez egy új rekord
+        if (pIft == nullptr) {   // Ez egy új rekord
             ifTypes << ift;
         }
         else {                // Frissít
@@ -1103,7 +1103,7 @@ const cIfType *cIfType::fromIana(int _iana_id)
             }
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /* ------------------------------ cNPort ------------------------------ */
@@ -1211,18 +1211,18 @@ bool cNPort::rewriteById(QSqlQuery &__q, eEx __ex)
 bool cNPort::isContainerValid(qlonglong __mask) const
 {
     QObject *p = parent();
-    if (p == NULL) EXCEPTION(EPROGFAIL, __mask);
+    if (p == nullptr) EXCEPTION(EPROGFAIL, __mask);
     cPatch *pO = qobject_cast<cPatch *>(p);
-    if (pO == NULL) EXCEPTION(EPROGFAIL, __mask);
+    if (pO == nullptr) EXCEPTION(EPROGFAIL, __mask);
     return pO->containerValid & __mask;
 }
 
 void cNPort::setContainerValid(qlonglong __set, qlonglong __clr)
 {
     QObject *p = parent();
-    if (p == NULL) EXCEPTION(EPROGFAIL);
+    if (p == nullptr) EXCEPTION(EPROGFAIL);
     cPatch *pO = qobject_cast<cPatch *>(p);
-    if (pO == NULL) EXCEPTION(EPROGFAIL);
+    if (pO == nullptr) EXCEPTION(EPROGFAIL);
     pO->containerValid = (pO->containerValid & ~__clr) | __set;
 }
 
@@ -1310,7 +1310,7 @@ qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const
 
 cNPort * cNPort::newPortObj(const cIfType& __t)
 {
-    cNPort *r = NULL;
+    cNPort *r = nullptr;
     QString portobjtype = __t.get(_sIfTypeObjType).toString();
     // PDEB(VVERBOSE) <<  __PRETTY_FUNCTION__ << " allocated: " << portobjtype << endl;
     if      (portobjtype == _sNPort)        r = new cNPort();
@@ -1328,7 +1328,7 @@ template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __i
     if (p->completion(q) != 1) {
         delete p;
         if (__ex) EXCEPTION(EDATA);
-        return NULL;
+        return nullptr;
     }
     return p;
 }
@@ -1340,13 +1340,13 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     else if (__tableoid == _tableoid_pports)     return getPortObjByIdT<cPPort>       (q, __port_id, __ex);
     else if (__tableoid == _tableoid_interfaces) return getPortObjByIdT<cInterface>   (q, __port_id, __ex);
     else                                        EXCEPTION(EDATA);
-    return NULL;
+    return nullptr;
 }
 
 cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, eEx __ex)
 {
     qlonglong tableoid = cNPort().setId(__port_id).fetchTableOId(q, __ex);
-    if (tableoid < 0LL) return NULL;
+    if (tableoid < 0LL) return nullptr;
     return getPortObjById(q, tableoid, __port_id, __ex);
 }
 
@@ -1382,14 +1382,14 @@ int cNPort::delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, 
 QString  cNPort::getTextParam(qlonglong _typeId, eEx __ex) const
 {
     const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == NULL) return QString();
+    if (ppp == nullptr) return QString();
     return ppp->getName(_sParamValue);
 }
 
 qlonglong cNPort::getIntParam(qlonglong _typeId, eEx __ex) const
 {
     const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == NULL) return NULL_ID;
+    if (ppp == nullptr) return NULL_ID;
     return ppp->getId(_sParamValue);
 }
 
@@ -1656,7 +1656,7 @@ int cInterface::updateTrunkMembers(QSqlQuery& q, eEx __ex)
 void cInterface::joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st)
 {
     cPortVlan *pv = vlans.get(cPortVlan::ixVlanId(), __id, EX_IGNORE);
-    if (pv == NULL) vlans << (pv = new cPortVlan());
+    if (pv == nullptr) vlans << (pv = new cPortVlan());
     pv->setVlanId(__id);
     pv->setVlanType(__t);
     pv->setSetType(__st);
@@ -1666,7 +1666,7 @@ void cInterface::joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st
 bool cInterface::splitVlan(qlonglong __id)
 {
     cPortVlan * p = vlans.pull(__id, EX_IGNORE);
-    if (p == NULL) return false;
+    if (p == nullptr) return false;
     delete p;
     return true;
 }
@@ -1810,7 +1810,7 @@ cPatch::cPatch(const cPatch& __o)
     _copy(__o, _descr_cPatch());
     __cp(__o);
     containerValid = __o.containerValid;
-    if (__o.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
+    if (__o.pShares == nullptr) EXCEPTION(EPROGFAIL,0,__o.toString());
     *pShares = *__o.pShares;
 }
 
@@ -1826,7 +1826,7 @@ cPatch& cPatch::clone(const cRecord &__o)
         ports.clear();
         params.append(r.params);
         ports.append(r.ports);
-        if (r.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
+        if (r.pShares == nullptr) EXCEPTION(EPROGFAIL,0,__o.toString());
         *pShares = *r.pShares;
     }
     return *this;
@@ -1876,7 +1876,7 @@ bool cPatch::insert(QSqlQuery &__q, eEx __ex)
     }
     if (ports.count()) {
         if (ports.insert(__q, __ex) != ports.count()) return false;
-        if (pShares == NULL) return true;
+        if (pShares == nullptr) return true;
         return updateShares(__q, false, __ex);
     }
     return true;
@@ -1886,7 +1886,7 @@ bool cPatch::rewrite(QSqlQuery &__q, eEx __ex)
 {
     bool r = tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex);
     if (!r) return false;
-    if (pShares == NULL) return true;
+    if (pShares == nullptr) return true;
     return updateShares(__q, false, __ex);
 }
 
@@ -1977,7 +1977,7 @@ void cPatch::setParam(const QString& __par, const QVariant& __val)
 {
     qlonglong typeId = cParamType::paramTypeId(__par);
     cNodeParam *param = params.get(_sParamTypeId, typeId);
-    if (param == NULL) {
+    if (param == nullptr) {
         param = new cNodeParam();
         param->setId(_sParamTypeId, typeId);
         params << param;
@@ -2070,11 +2070,11 @@ cPPort *cPatch::addPort(const QString& __name, const QString& __note, int __ix)
 
 cPPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
 {
-    cPPort *p = NULL;
+    cPPort *p = nullptr;
     for (int i = __from; i <= __to; ++i) {
         p = addPort(nameAndNumber(__n, i + __noff), _sNul, i + __off);
     }
-    if (p == NULL) EXCEPTION(EDATA);
+    if (p == nullptr) EXCEPTION(EDATA);
     return p;
 }
 
@@ -2099,7 +2099,7 @@ cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariant& __v)
 cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __vl)
 {
     int ix = __ix;
-    cNPort *p = NULL;
+    cNPort *p = nullptr;
     foreach (const QVariant& v, __vl) {
         p = portSet(ix, __fn, v);
         ++ix;
@@ -2111,7 +2111,7 @@ cNPort *cPatch::portSetParam(cNPort *port, const QString& __par, const QVariant&
 {
     qlonglong typeId = cParamType::paramTypeId(__par);
     cPortParam *param = port->params.get(_sParamTypeId, typeId);
-    if (param == NULL) {
+    if (param == nullptr) {
         param = new cPortParam();
         param->setId(_sParamTypeId, typeId);
         port->params << param;
@@ -2122,7 +2122,7 @@ cNPort *cPatch::portSetParam(cNPort *port, const QString& __par, const QVariant&
 
 cNPort *cPatch::portSetParam(int __ix, const QString& __par, const QVariantList &__val)
 {
-    cNPort *p = NULL;
+    cNPort *p = nullptr;
     int ix = __ix;
     foreach (const QVariant& v, __val) {
         p = portSetParam(ix, __par, v);
@@ -2138,7 +2138,7 @@ cNPort * cPatch::getPort(int __ix, eEx __ex)
         if (i >= 0) return ports[i];
     }
     if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port index not found.")).arg(__ix))
-    return NULL;
+    return nullptr;
 }
 
 cNPort * cPatch::getPort(const QString& __pn, eEx __ex)
@@ -2146,7 +2146,7 @@ cNPort * cPatch::getPort(const QString& __pn, eEx __ex)
     int i = ports.indexOf(cNPort().nameIndex(), __pn);
     if (i >= 0) return ports[i];
     if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__pn));
-    return NULL;
+    return nullptr;
 }
 
 const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
@@ -2154,7 +2154,7 @@ const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
     qlonglong tableOID = fetchTableOId(q, __ex);
     if (tableOID < 0LL) {
         EXCEPTION(EDATA, getId(), trUtf8("Get tableoid"));
-        return NULL;
+        return nullptr;
     }
     if (tableOID ==    tableoid()) return &descr();
     cPatch pa;
@@ -2164,7 +2164,7 @@ const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
     cSnmpDevice sn;
     if (tableOID == sn.tableoid()) return &sn.descr();
     if (__ex) EXCEPTION(EDATA, tableOID, trUtf8("Invalid tableoid"));
-    return NULL;
+    return nullptr;
 
 }
 
@@ -2174,13 +2174,13 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     else if (__tableoid == cNode().       tableoid()) return getObjByIdT<cNode>      (q, __node_id, __ex);
     else if (__tableoid == cSnmpDevice(). tableoid()) return getObjByIdT<cSnmpDevice>(q, __node_id, __ex);
     else if (__ex)                                    EXCEPTION(EDATA);
-    return NULL;
+    return nullptr;
 }
 
 cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, eEx __ex)
 {
     qlonglong tableoid = cPatch().setId(__node_id).fetchTableOId(q, __ex);
-    if (tableoid < 0LL) return NULL;
+    if (tableoid < 0LL) return nullptr;
     return getNodeObjById(q, tableoid, __node_id, __ex);
 }
 
@@ -2188,7 +2188,7 @@ cPatch * cPatch::getNodeObjByName(QSqlQuery& q, const QString&  __node_name, enu
 {
     cPatch o;
     qlonglong tableoid = o.setName(__node_name).fetchTableOId(q, __ex);
-    if (tableoid < 0LL) return NULL;
+    if (tableoid < 0LL) return nullptr;
     qlonglong id       = o.getIdByName(q, __node_name);
     return getNodeObjById(q, tableoid, id, __ex);
 }
@@ -2197,7 +2197,7 @@ cPatch * cPatch::getNodeObjByName(QSqlQuery& q, const QString&  __node_name, enu
 QString  cPatch::getTextParam(qlonglong _typeId, eEx __ex) const
 {
     const cNodeParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == NULL) return QString();
+    if (ppp == nullptr) return QString();
     return ppp->getName(_sParamValue);
 
 }
@@ -2205,7 +2205,7 @@ QString  cPatch::getTextParam(qlonglong _typeId, eEx __ex) const
 qlonglong cPatch::getIntParam(qlonglong _typeId, eEx __ex) const
 {
     const cNodeParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == NULL) return NULL_ID;
+    if (ppp == nullptr) return NULL_ID;
     return ppp->getId(_sParamValue);
 }
 
@@ -2336,7 +2336,7 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 //  DBGOBJ();
     _copy(__o, _descr_cNode());
     __cp(__o);
-    if (__o.pShares != NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
+    if (__o.pShares != nullptr) EXCEPTION(EPROGFAIL,0,__o.toString());
     ports.append(__o.ports);
     params.append(__o.params);
     bDelCollisionByMac = __o.bDelCollisionByMac;
@@ -2389,8 +2389,8 @@ const cRecStaticDescr&  cNode::descr() const
 void cNode::clearShares()                                       { EXCEPTION(ENOTSUPP); }
 bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOTSUPP); return false; }
 bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOTSUPP); return false; }
-cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return NULL; }
-cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
+cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return nullptr; }
+cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return nullptr; }
 void cNode::insertPort(QSqlQuery&, int, const QString&, const QString&, const QString&) { EXCEPTION(ENOTSUPP); }
 void cNode::updateShared(QSqlQuery&, int, int, int, int, bool)  { EXCEPTION(ENOTSUPP); }
 
@@ -2485,7 +2485,7 @@ int  cNode::fetchPorts(QSqlQuery& __q, int flags)
         qlonglong port_id  = variantToId(__q.value(1));
         cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, EX_ERROR);
         q.finish();
-        if (p == NULL) return -1;
+        if (p == nullptr) return -1;
         ports << p;
         if (tableoid == cNPort::tableoid_interfaces()) {
             cInterface *pi = p->reconvert<cInterface>();
@@ -2531,8 +2531,8 @@ QString cNode::toString() const
 cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
 {
     if (ports.count()) {
-        if (NULL != getPort(__name, EX_IGNORE)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (__ix != NULL_IX && NULL != getPort(__ix, EX_IGNORE)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
+        if (nullptr != getPort(__name, EX_IGNORE)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
+        if (__ix != NULL_IX && nullptr != getPort(__ix, EX_IGNORE)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
     }
     cNPort  *p = cNPort::newPortObj(__t);
     p->setName(__name);
@@ -2544,11 +2544,11 @@ cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString&
 
 cNPort *cNode::addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off)
 {
-    cNPort *p = NULL;
+    cNPort *p = nullptr;
     for (int i = __from; i <= __to; ++i) {
         p = addPort(__t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
     }
-    if (p == NULL) EXCEPTION(EDATA);
+    if (p == nullptr) EXCEPTION(EDATA);
     return p;
 }
 
@@ -2586,7 +2586,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
     bool ok;
     int d = a[3].toInt(&ok);
     if (!ok) EXCEPTION(EDATA);
-    cNPort *p = NULL;
+    cNPort *p = nullptr;
     for (int i = __from; i <= __to; ++i) {
         p = addPort(t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
         cInterface *pIf = p->reconvert<cInterface>();
@@ -2885,9 +2885,9 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 {
     QHostAddress a;
     cMac m;
-    if (ix != NULL_IX && getPort(ix, EX_IGNORE) != NULL) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
-    if (                 getPort(pn, EX_IGNORE) != NULL) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
-    if (mac != NULL) {
+    if (ix != NULL_IX && getPort(ix, EX_IGNORE) != nullptr) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
+    if (                 getPort(pn, EX_IGNORE) != nullptr) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
+    if (mac != nullptr) {
         if (variantIsInteger(*mac)) {
             int i = ports.indexOf(cPPort::ixPortIndex(), *mac);
             if (i < 0) EXCEPTION(EDATA, mac->toInt(), trUtf8("Hibás port index hivatkozás"));
@@ -2905,7 +2905,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
     p->setName(_sPortName, pn);
     if (ix != NULL_IX) p->setId(_sPortIndex, ix);
     if (!d.isEmpty()) p->setName(_sPortNote, d);
-    if (ip != NULL) {   // Hozzá kell adni egy IP címet
+    if (ip != nullptr) {   // Hozzá kell adni egy IP címet
         cInterface *pIf = p->reconvert<cInterface>();    // de akkor a port cInterface kell legyen
         QString sip  = ip->first;   // cím
         QString type = ip->second;  // típusa
@@ -2921,7 +2921,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
         }
         pIf->addIpAddress(a, type);
     }
-    if (mac != NULL) {
+    if (mac != nullptr) {
         if (mac->toString() == _sARP) {
             if (!a.isNull()) EXCEPTION(EDATA, -1, trUtf8("Az ip cím hányában a MAC nem felderíthető."));
             m = cArp::ip2mac(q, a);
@@ -2942,14 +2942,14 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
     setName(_sNodeNote, __note);
     setId(_sPlaceId, __place);
     QString ips, ipt, ifType, pnm;
-    if (__addr != NULL) { ips = __addr->first; ipt = __addr->second; }      // IP cím és típus
-    if (__port != NULL) { pnm = __port->first; ifType = __port->second; }   // port név és típus
+    if (__addr != nullptr) { ips = __addr->first; ipt = __addr->second; }      // IP cím és típus
+    if (__port != nullptr) { pnm = __port->first; ifType = __port->second; }   // port név és típus
     if (ifType.isEmpty()) ifType = _sEthernet;
     if (pnm.isEmpty())    pnm    = _sEthernet;
     QList<QHostAddress> hal;
     QHostAddress ha;
     cMac ma;
-    if (__sMac != NULL && !__sMac->isEmpty()) {
+    if (__sMac != nullptr && !__sMac->isEmpty()) {
         if (*__sMac != _sARP && !ma.set(*__sMac)) {
             _stat |= ES_DEFECTIVE;
             em = trUtf8("Nem értelmezhető MAC : %1; Node : %2").arg(*__sMac).arg(toString());
@@ -2998,7 +2998,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
                 return *this;
             }
             else if (!ma) {  // Nincs MAC, van IP
-                if (__sMac == NULL) {
+                if (__sMac == nullptr) {
                     em = trUtf8("Hiányzó MAC cím. Node : %1").arg(toString());
                     if (__ex >= EX_WARNING) EXCEPTION(EDATA, -1, em);
                 }
@@ -3024,11 +3024,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
     }
     // Van név
     setName(name);
-    if (__addr == NULL) {                   // Nincs IP címe
-        if (__port == NULL && __sMac == NULL) {    // Portja sincs
+    if (__addr == nullptr) {                   // Nincs IP címe
+        if (__port == nullptr && __sMac == nullptr) {    // Portja sincs
             return *this;                   // Akkor kész
         }
-        if (__sMac != NULL && *__sMac == _sARP) {
+        if (__sMac != nullptr && *__sMac == _sARP) {
             _stat |= ES_DEFECTIVE;
             em = trUtf8("Ebben a kontexusban a MAC nem kideríthető. Node : %1").arg(toString());
             if (__ex) EXCEPTION(EDATA, -1, em);
@@ -3039,7 +3039,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
         if (ifType.isEmpty()) ifType = _sEthernet;
         if (pnm.isEmpty())    pnm    = ifType;
         cNPort *p = addPort(ifType, pnm, _sNul, 1);
-        if (__sMac == NULL) return *this;      // Ha nem adtunk meg MAC-et
+        if (__sMac == nullptr) return *this;      // Ha nem adtunk meg MAC-et
         if (!ma) EXCEPTION(EPROGFAIL);
         *p->reconvert<cInterface>() = ma;   // A MAC-et is beállítjuk.
         return *this;
@@ -3070,7 +3070,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
             return *this;
         }
     }
-    if (__sMac != NULL && *__sMac == _sARP) {
+    if (__sMac != nullptr && *__sMac == _sARP) {
         ma = cArp::ip2mac(q, ha);
     }
     if (ifType.isEmpty()) ifType = _sEthernet;
@@ -3269,7 +3269,7 @@ int cSnmpDevice::snmpVersion() const
 bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHostAddress *ip)
 {
     QString msgDummy;
-    QString *pEs = __pEs == NULL ? &msgDummy :__pEs;
+    QString *pEs = __pEs == nullptr ? &msgDummy :__pEs;
 #ifdef SNMP_IS_EXISTS
     QString community = __com;
     if (community.isEmpty()) {
@@ -3280,7 +3280,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
         }
     }
     setName(_sCommunityRd, community);
-    if (ip != NULL && !ip->isNull()) {
+    if (ip != nullptr && !ip->isNull()) {
         ;
     }
     else if (ports.isEmpty()) {
@@ -3304,7 +3304,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
         containerValid = CV_ALL_NODE | CV_PORTS_ADDRESSES; // VLAN-ok nincsenek (még) lekérdezve!! | CV_PORT_VLANS;
         return true;
     }
-    if (__pEs == NULL) expError(*pEs, true);
+    if (__pEs == nullptr) expError(*pEs, true);
 #else // SNMP_IS_EXISTS
     (void)__com;
     (void)ip;
@@ -3323,7 +3323,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
         lastMsg = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, lastMsg);
         DERR() << lastMsg << endl;
-        if (pEMsg != NULL) *pEMsg = lastMsg;
+        if (pEMsg != nullptr) *pEMsg = lastMsg;
         return -1;
     }
     QString comn = getName(_sCommunityRd);
@@ -3340,7 +3340,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
         DWAR() << lastMsg << endl;
     }
     if (__ex && r) EXCEPTION(ESNMP, r, lastMsg);
-    if (pEMsg != NULL) *pEMsg = lastMsg;
+    if (pEMsg != nullptr) *pEMsg = lastMsg;
     return r;
 #else // SNMP_IS_EXISTS
     (void)snmp;
@@ -3424,8 +3424,8 @@ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt)
 {
     int t = nodeObjectType(q, *po);
     if (t == NOT_INVALID) EXCEPTION(EDATA, 0, po->identifying());
-    if ((t & ~NOT_TMSK) == 0) return NULL;
-    cPatch *r = NULL;
+    if ((t & ~NOT_TMSK) == 0) return nullptr;
+    cPatch *r = nullptr;
     if (t & NOT_NEQ) {   // Is parent obj., convert to real type
         switch (t & NOT_TMSK) {
         case NOT_PATCH:
@@ -3451,7 +3451,7 @@ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt)
         }
         r->copy(*po);
     }
-    if (pt != NULL) *pt = t;
+    if (pt != nullptr) *pt = t;
     return r;
 }
 
@@ -3638,9 +3638,9 @@ cAppMemo& cAppMemo::herein(const QString &_memo, int _imp, const QString &_func_
     setName(_sFuncName, _func_name);
     setName(_sSrcName, _src);
     setId(_sSrcLine, _lin);
-    if (pI->pSelfNode        != NULL) setId(_sNodeId,        pI->pSelfNode->getId());
-    if (pI->pSelfHostService != NULL) setId(_sHostServiceId, pI->pSelfHostService->getId());
-    if (pI->pUser            != NULL) setId(_sUserId,        pI->pUser->getId());
+    if (pI->pSelfNode        != nullptr) setId(_sNodeId,        pI->pSelfNode->getId());
+    if (pI->pSelfHostService != nullptr) setId(_sHostServiceId, pI->pSelfHostService->getId());
+    if (pI->pUser            != nullptr) setId(_sUserId,        pI->pUser->getId());
     setName(_sImportance, notifSwitch(_imp));
     setName(_sMemo, _memo);
     return *this;

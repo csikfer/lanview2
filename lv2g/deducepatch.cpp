@@ -122,7 +122,7 @@ bool cDPRow::isChecked()
 
 int cDPRow::row() const
 {
-    if (pItemIndex == NULL) EXCEPTION(EPROGFAIL);
+    if (pItemIndex == nullptr) EXCEPTION(EPROGFAIL);
     return pItemIndex->row();
 }
 
@@ -383,7 +383,7 @@ QList<tStringPair> cDPRow::exporter(const QVector<int> &cid2col)
         int col = cid2col[cid];                      // To column index
         if (col >= 0) {                             // Index valid (show)?
             QStandardItem *pi = model.item(row(), col); // Get sell item
-            if (pi == NULL) {
+            if (pi == nullptr) {
                 r << tStringPair();
             }
             else {
@@ -1138,7 +1138,7 @@ void cDeducePatch::on_pushButtonSave_clicked()
         return;
     }
     QSqlQuery q = getQuery();
-    cError *pe = NULL;
+    cError *pe = nullptr;
     QString tr = "deduce_patch";
     try {
         sqlBegin(q, tr);
@@ -1148,7 +1148,7 @@ void cDeducePatch::on_pushButtonSave_clicked()
         sqlCommit(q, tr);
     }
     CATCHS(pe)
-    if (pe != NULL) {
+    if (pe != nullptr) {
         sqlRollback(q, tr);
         cErrorMessageBox::messageBox(pe, this);
         delete pe;

@@ -8,7 +8,7 @@
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
-    if (lv2g::pMainWindow != NULL) EXCEPTION(EPROGFAIL);
+    if (lv2g::pMainWindow != nullptr) EXCEPTION(EPROGFAIL);
     lv2g::pMainWindow = this;
     QString title = trUtf8("LanView %1 V%2, API V%3")
             .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
@@ -38,7 +38,7 @@ void cMainWindow::init(bool _setup)
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) {
             QString msg = trUtf8("Nincs menü a GUI applikációhoz");
             if (lanView::isAuthorized(PL_ADMIN)) {
-                QMessageBox::warning(NULL, dcViewShort(DC_WARNING), msg);
+                QMessageBox::warning(nullptr, dcViewShort(DC_WARNING), msg);
                 setSetupMenu();
             }
             else {
@@ -57,7 +57,7 @@ void cMainWindow::init(bool _setup)
 
 cMainWindow::~cMainWindow()
 {
-    lv2g::pMainWindow = NULL;
+    lv2g::pMainWindow = nullptr;
 }
 
 void cMainWindow::setSetupMenu()
@@ -70,7 +70,7 @@ void cMainWindow::setSetupMenu()
 
     QString nm = trUtf8("Setup");
     pa = pm->addAction(nm);
-    cIntSubObj *pot =  new cSetupWidget(NULL);
+    cIntSubObj *pot =  new cSetupWidget(nullptr);
     pot->setObjectName(nm);
     po  = new cMenuAction(pot, INT_SETUP, pa, pMdiArea);
     po->setObjectName(nm);
@@ -94,7 +94,7 @@ void cMainWindow::setSetupMenu()
 
         QString nm = trUtf8("Import");
         pa = pm->addAction(nm);
-        cIntSubObj *pot =  new cParseWidget(NULL);
+        cIntSubObj *pot =  new cParseWidget(nullptr);
         pot->setObjectName(nm);
         po  = new cMenuAction(pot, INT_PARSER, pa, pMdiArea);
         po->setObjectName(nm);
@@ -113,15 +113,15 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         QMenu *pm = new QMenu(this);
         pm->setObjectName(sm.getName());
         pa->setMenu(pm);
-        if (pq == NULL) EXCEPTION(EPROGFAIL);
+        if (pq == nullptr) EXCEPTION(EPROGFAIL);
         if (sm.fetchFirstItem(*pq, _mi.getName(_sAppName), _mi.getId())) {
             PDEB(VERBOSE) << "Menu :" << _mi.getName() << " #" << pq->size() << " sub menü:" << endl;
             do {
-                cError *pe = NULL;
+                cError *pe = nullptr;
                 try {
                     sm.splitFeature(); // features
                 } CATCHS(pe);
-                if (pe == NULL) {
+                if (pe == nullptr) {
                     PDEB(VERBOSE) << _mi.getName() << " sub menu : " << sm.getName() << endl;
                     QSqlQuery *pq2 = newQuery();
                     sm.fetchText(*pq2);

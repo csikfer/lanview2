@@ -27,13 +27,13 @@ int main (int argc, char * argv[])
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
-    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+    exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
 lv2portVLan::lv2portVLan() : lanView()
 {
-    pSelfInspector = NULL;  // Main service == APPNAME, standard init
-    if (lastError == NULL) {
+    pSelfInspector = nullptr;  // Main service == APPNAME, standard init
+    if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
             subsDbNotif();
@@ -106,7 +106,7 @@ cInspector * cPortVLans::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong 
 
 /******************************************************************************/
 
-const cService *cDevicePV::pSrvSnmp   = NULL;
+const cService *cDevicePV::pSrvSnmp   = nullptr;
 
 cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)

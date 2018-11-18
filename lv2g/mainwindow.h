@@ -24,7 +24,7 @@ public:
     QMdiArea   *pMdiArea;
 private:
     ///
-    void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
+    void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = nullptr);
     /// Ha nincs menű, akkor a beállításokat lehetővétevő menu beállítása.
     void setSetupMenu();
 // private slots:

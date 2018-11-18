@@ -11,8 +11,8 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
 , qset(*lanView::getInstance()->pSet)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
-    pLl = NULL;
-    pSelLang = NULL;
+    pLl = nullptr;
+    pSelLang = nullptr;
     pUi = new Ui::SetupWidget();
     pUi->setupUi(this);
     if (lanView::getInstance()->dbIsOpen()) {
@@ -72,7 +72,7 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
 cSetupWidget::~cSetupWidget()
 {
     PDEB(OBJECT) << "delete (cSetupWidget *)" << p2string(this) << endl;
-    if (pLl != NULL) delete pLl;
+    if (pLl != nullptr) delete pLl;
     DBGFNL();
 }
 
@@ -80,7 +80,7 @@ void cSetupWidget::applicate()
 {
     DBGFN();
     bool ok = false;
-    if (pSelLang != NULL) {
+    if (pSelLang != nullptr) {
         int langId = pSelLang->currentLangId();
         qset.setValue(_sLangId,  langId);
     }
@@ -172,7 +172,7 @@ void cSetupWidget::logLevelMoreClicked()
     bool ok;
     qlonglong l = pUi->debugLevelLE->text().toLongLong(&ok, 0);
     if (!ok) DERR() << "Invalid log level : " << pUi->logFileNameLE->text() << endl;
-    if (pLl == NULL) {
+    if (pLl == nullptr) {
         pLl = new cLogLevelDialog(l, this);
         connect(pLl,   SIGNAL(accepted()),this, SLOT(setLogLevel()));
     }
@@ -183,7 +183,7 @@ void cSetupWidget::logLevelMoreClicked()
 
 void cSetupWidget::setLogLevel(void)
 {
-    if (pLl == NULL) {
+    if (pLl == nullptr) {
         DERR() << "Program error: cSetupWidget::pLl is NULL, ignored signal to " << __PRETTY_FUNCTION__ << " slot" << endl;
         return;
     }
@@ -307,7 +307,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
                     + "databaseText : " + le.databaseText();
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         delete pDb;
-        return NULL;
+        return nullptr;
     }
     pDb->setHostName(   pUi->sqlHostLE->text());
     pDb->setPort(       pUi->sqlPortSB->value());
@@ -322,13 +322,13 @@ QSqlDatabase * cSetupWidget::SqlOpen()
                     + "databaseText : " + le.databaseText();
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         delete pDb;
-        return NULL;
+        return nullptr;
     }
     QSqlQuery q(*pDb);
     if (!checkDbVersion(q, msg)) {
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         delete pDb;
-        return NULL;
+        return nullptr;
     }
     return pDb;
 }
@@ -337,7 +337,7 @@ void cSetupWidget::checkSqlLogin()
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     QSqlDatabase *pDb = SqlOpen();
-    if (pDb == NULL) return;
+    if (pDb == nullptr) return;
     QMessageBox::information(this, dcViewShort(DC_INFO), trUtf8("Database open is successful."));
     pDb->close();
     delete pDb;

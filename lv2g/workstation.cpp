@@ -79,13 +79,13 @@ void cSetDialog::set(qlonglong _on, qlonglong _off)
     qlonglong m = 1;
     for (i = 0; i < n; ++i, m <<= 1) {
         pp = pCheckBoxs->button(i);
-        if (pp == NULL) {
+        if (pp == nullptr) {
             if (m & on) EXCEPTION(EPROGFAIL, i);
             continue;
         }
         if (tristate) {
             QCheckBox *p = qobject_cast<QCheckBox *>(pp);
-            if (p  == NULL) EXCEPTION(EPROGFAIL, i);
+            if (p  == nullptr) EXCEPTION(EPROGFAIL, i);
             if      (on  & m) p->setCheckState(Qt::Checked);
             else if (off & m) p->setCheckState(Qt::Unchecked);
             else              p->setCheckState(Qt::PartiallyChecked);
@@ -95,7 +95,7 @@ void cSetDialog::set(qlonglong _on, qlonglong _off)
         }
     }
     pp = pCheckBoxs->button(n);
-    if (pp == NULL) EXCEPTION(EPROGFAIL, i);
+    if (pp == nullptr) EXCEPTION(EPROGFAIL, i);
     pp->setChecked(isNul);
 }
 
@@ -130,12 +130,12 @@ QString cSetDialog::toWhere(const QString& _fn, qlonglong _addOff, qlonglong _ad
     QStringList wl;
     qlonglong m = on | _addOn;
     if (m != 0) {
-        QString ons = quoted(stringListToSql(enumType.set2lst(m)).toString());
+        QString ons = quoted(stringListToSql(enumType.set2lst(m)));
         wl << QString("%1 @> %2::%3[]").arg(_fn, ons, enumType);
     }
     m = off | _addOff;
     if (m != 0) {
-        QString offs = quoted(stringListToSql(enumType.set2lst(m)).toString());
+        QString offs = quoted(stringListToSql(enumType.set2lst(m)));
         wl << QString("NOT %1 && %2::%3[]").arg(_fn, offs, enumType);
     }
     return wl.join(" AND ");
@@ -149,11 +149,11 @@ void cSetDialog::clickedCheckBox(int id)
     }
     else {
         QAbstractButton *pp = pCheckBoxs->button(id);
-        if (pp == NULL) EXCEPTION(EPROGFAIL, id);
+        if (pp == nullptr) EXCEPTION(EPROGFAIL, id);
         qlonglong m = enum2set(id);
         if (tristate) {
             QCheckBox *p = qobject_cast<QCheckBox *>(pp);
-            if (p  == NULL) EXCEPTION(EPROGFAIL, id);
+            if (p  == nullptr) EXCEPTION(EPROGFAIL, id);
             switch (p->checkState()) {
             case Qt::Checked:           on |=  m; off &= ~m; break;
             case Qt::Unchecked:         on &= ~m; off |=  m; break;
@@ -196,7 +196,7 @@ void cSetDialog::clickedCheckBox(int id)
         }
         else {
             pp = pCheckBoxs->button(n);
-            if (pp == NULL) EXCEPTION(EPROGFAIL, id);
+            if (pp == nullptr) EXCEPTION(EPROGFAIL, id);
             pp->setChecked(isNull);
         }
     }
@@ -234,7 +234,7 @@ cWorkstation::cBatchBlocker::cBatchBlocker(cWorkstation *_po, tPSet _pFSet, cBat
     pOwner  = _po;
     pFSet   = _pFSet;
     pParent = _par;
-    if (pParent != NULL) pParent->childList << this;
+    if (pParent != nullptr) pParent->childList << this;
 }
 
 cWorkstation::cBatchBlocker::~cBatchBlocker()
@@ -253,7 +253,7 @@ bool cWorkstation::cBatchBlocker::test() const
 {
     if (counter > 0)
         return false;
-    if (pParent != NULL && !pParent->test())
+    if (pParent != nullptr && !pParent->test())
         return false;
     return true;
 }
@@ -271,7 +271,7 @@ bool cWorkstation::cBatchBlocker::enforce(bool f)
 void cWorkstation::cBatchBlocker::referState()
 {
     cBatchBlocker *pRoot = this;
-    while (pRoot->pParent != NULL) pRoot = pRoot->pParent;
+    while (pRoot->pParent != nullptr) pRoot = pRoot->pParent;
     bool ok = pRoot->getStat();
     pOwner->pUi->pushButtonSave->setEnabled(ok);
     QStringList l;
@@ -351,11 +351,11 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pSetDialogType->addCollision(NT_NODE, ENUM2SET4(NT_HOST, NT_AP, NT_SERVER, NT_WINDOWS));
     pSetDialogType->addAutoset(NT_HOST, ENUM2SET2(NT_NODE, NT_HOST));
     excludedNodeType &= ~ENUM2SET(NT_PATCH); // nem kell
-    pSample = NULL;
-    pnp = NULL;
-    pit = NULL;
-    pif = NULL;
-    pip = NULL;
+    pSample = nullptr;
+    pnp = nullptr;
+    pit = nullptr;
+    pif = nullptr;
+    pip = nullptr;
     isModify = false;
     bbNode.begin();
     // Form
@@ -421,7 +421,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pSelNode->setSlave(pSelPlace, false);
     pSelLinked   = new cSelectLinkedPort(pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, pUi->comboBoxLinkNode,
                                    pUi->comboBoxLinkPort, pLinkTypeButtons, pUi->comboBoxLinkPortShare, iTab(ES_, ES_A, ES_B),
-                                   pUi->lineEditLinkPlacePat, NULL, _sNul, _sNul, this);
+                                   pUi->lineEditLinkPlacePat, nullptr, _sNul, _sNul, this);
     pSelPlace->refresh(false);
     pSelLinked->refresh(false);
 
@@ -508,7 +508,7 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
     }
     cPatch *pn = cPatch::getNodeObjByName(*pq, s, EX_IGNORE);
     isModify = pUi->radioButtonMod->isChecked();    // nem mindíg frissül
-    if (pn != NULL) {
+    if (pn != nullptr) {
         if (!(isModify && node.getId() == pn->getId())) { // Name is not unique
             sErrs << htmlError(trUtf8("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
             QString t = trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : ");
@@ -571,7 +571,7 @@ void cWorkstation::setStatPortType(bool f, QStringList& sErrs, QStringList& sInf
 
 void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    if (!f || pip == NULL) return;
+    if (!f || pip == nullptr) return;
     int state = pIpEditWidget->state();
     if (state & cIpEditWidget::IES_SUBNET_IS_NULL) {
         sErrs << htmlError(trUtf8("Nincs megadva alhálózat, vagy VLAN."));
@@ -606,7 +606,7 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
 
 void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    if (!f || pif == NULL) return;
+    if (!f || pif == nullptr) return;
     QString sMac = pUi->lineEditPMAC->text();
     if (sMac.isEmpty()) {
         sErrs << htmlWarning(trUtf8("Nincs megadva a MAC."));
@@ -751,7 +751,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
                 }
             }
         }
-        if (pif != NULL && pif->getMac(_sHwAddress).isValid()) {
+        if (pif != nullptr && pif->getMac(_sHwAddress).isValid()) {
             cMacTab mt;
             mt.setMac(_sHwAddress, pif->getMac(_sHwAddress));
             if (mt.completion(*pq)) {
@@ -772,9 +772,9 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
 
 void cWorkstation::node2gui(bool setModOn)
 {
-    pnp = NULL;
-    pif = NULL;
-    pip = NULL;
+    pnp = nullptr;
+    pif = nullptr;
+    pip = nullptr;
     bbNode.begin();
     pl.clear();
     pSelPlace->setCurrentPlace(node.getId(_sPlaceId));
@@ -796,9 +796,9 @@ void cWorkstation::node2gui(bool setModOn)
     pit = &cIfType::ifType(pnp->getId(__sIfTypeId));
     QString sIfType = pit->getName();
     _setCurrentIndex(sIfType, pUi->comboBoxPType, EX_IGNORE);
-    pUi->lineEditPMAC->setText(pif == NULL ? _sNul : pif->getName(_sHwAddress));
+    pUi->lineEditPMAC->setText(pif == nullptr ? _sNul : pif->getName(_sHwAddress));
     // Ip
-    if (pif != NULL) {
+    if (pif != nullptr) {
         if (pif->addresses.isEmpty()) pif->addIpAddress(QHostAddress(), AT_DYNAMIC);
         pip = pif->addresses.first();
         pIpEditWidget->set(pip);
@@ -848,9 +848,9 @@ void cWorkstation::selectedNode(qlonglong id)
     qlonglong nid = pSelNode->currentNodeId();
     pSample = cPatch::getNodeObjById(*pq, nid)->reconvert<cNode>();
     node.clear();
-    pnp = NULL;
-    pif = NULL;
-    pip = NULL;
+    pnp = nullptr;
+    pif = nullptr;
+    pip = nullptr;
     node.set(*pSample);
     node.fetchPorts(*pq, CV_PORTS_ADDRESSES);
     if (node.ports.size() != 1) EXCEPTION(EPROGFAIL);   // Elvileg az egy portosokat olvastuk be.
@@ -871,7 +871,7 @@ void cWorkstation::addressChanged(const QHostAddress& _a, int _st)
 {
     (void)_a;
     (void)_st;
-    if (pip != NULL) {
+    if (pip != nullptr) {
         pIpEditWidget->get(pip);
         bbIp.enforce();
     }
@@ -888,7 +888,7 @@ void cWorkstation::ip_info()
 
 void cWorkstation::ip_go()
 {
-    if (pip != NULL) {
+    if (pip != nullptr) {
         bool set = false;
         QHostAddress ip = pip->address();
         int cnt = -1;
@@ -945,7 +945,7 @@ void cWorkstation::ip_go()
 
 void cWorkstation::ip_query()
 {
-    if (pif != NULL) {
+    if (pif != nullptr) {
         cMac mac = pif->mac();
         if (mac.isValid()) {
             QList<QHostAddress> al = cArp::mac2ips(*pq, mac);
@@ -999,7 +999,7 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
     if      (ot == _sNPort)     isInterface = false;    // new type is interface
     else if (ot == _sInterface) isInterface = true;     // new type is passive port
     else                        EXCEPTION(EDATA, 0, pit->identifying(false));
-    bool changeType = isInterface == (pif == NULL);     // Changed interface object típe?
+    bool changeType = isInterface == (pif == nullptr);     // Changed interface object típe?
     bool isLinkage  = pit->isLinkage();               // New port type is linkable?
     bool togleLink  = isLinkage != portIsLinkage;       // Change link ?
     pnp->setId(_sIfTypeId, pit->getId());
@@ -1021,8 +1021,8 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
             pnp->set(*pnp);
             node.ports.clear();
             node.ports << pnp;
-            pif = NULL;
-            pip = NULL;
+            pif = nullptr;
+            pip = nullptr;
         }
         pUi->lineEditPMAC->setEnabled(isInterface);
         pUi->toolButtonIP2MAC->setEnabled(isInterface);
@@ -1043,7 +1043,7 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
 void cWorkstation::on_lineEditPMAC_textChanged(const QString &arg1)
 {
     (void)arg1;
-    if (pif != NULL) {
+    if (pif != nullptr) {
         if (arg1.isEmpty()) pif->clear(_sHwAddress);
         else pif->setMac(_sHwAddress, cMac(arg1));
         bbPortMac.enforce();
@@ -1121,7 +1121,7 @@ void cWorkstation::on_toolButtonNodeType_clicked()
 
 void cWorkstation::on_toolButtonIP2MAC_clicked()
 {
-    if (pip != NULL) {
+    if (pip != nullptr) {
         QHostAddress a = pip->address();
         if (!a.isNull()) {
             cMac mac = cArp::ip2mac(*pq, a);
@@ -1145,7 +1145,7 @@ void cWorkstation::on_toolButtonAddPlace_clicked()
 
 void cWorkstation::on_toolButtonSelectByMAC_clicked()
 {
-    if (pif != NULL) {
+    if (pif != nullptr) {
         bool set = false;
         cMac mac = pif->mac();
         int cnt = -1;
@@ -1229,7 +1229,7 @@ void cWorkstation::on_pushButtonDelete_clicked()
         }
         if (cErrorMessageBox::condMsgBox(node.tryRemove(*pq))) {
             // Az adatok maradnak, de az ID-ket töröljük
-            if (pip != NULL) pip->clearId();
+            if (pip != nullptr) pip->clearId();
             node.ports.clearId();
             node.clearId(); // A konténerekben töröltük az ID-ket először, igy azokat nem törli!
             pSelNode->refresh(false);
@@ -1256,7 +1256,7 @@ void cWorkstation::on_pushButtonGoServices_clicked()
         }
         QWidget *pw = lv2g::getInstance()->pMainWindow->pMdiArea->currentSubWindow()->widget();
         cHSOperate *pHSOp = dynamic_cast<cHSOperate *>(pw);
-        if (pHSOp == NULL) {
+        if (pHSOp == nullptr) {
             QString msg = trUtf8("A szervízpéldányt manipuláló adatlap kiválasztása sikertelen.");
             pUi->textEditMsg->append(htmlError(msg));
             return;
@@ -1281,7 +1281,7 @@ void cWorkstation::on_pushButtonSave_clicked()
     pnp->set(pnp->noteIndex(), pEditPNote->get());
     pnp->set(_sPortTag, pEditPTag->get());
     pnp->setId(_sIfTypeId, pit->getId());
-    if (pif != NULL) {
+    if (pif != nullptr) {
         pif->setName(_sHwAddress, pUi->lineEditPMAC->text());
         pIpEditWidget->get(pip);
         ok = ok && pif->addresses.size() == 1 && pif->addresses.first() == pip;
@@ -1294,7 +1294,7 @@ void cWorkstation::on_pushButtonSave_clicked()
         ok = cErrorMessageBox::condMsgBox(node.tryUpdateById(*pq), this, trUtf8("Az eszköz modosítása sikertelen."));
     }
     else {
-        if (pip != NULL) pip->clearId();
+        if (pip != nullptr) pip->clearId();
         node.ports.clearId();
         node.clearId(); // A konténerekben töröltük az ID-ket először, igy azokat nem törli!
         node.clear(_sNodeStat);
@@ -1339,7 +1339,7 @@ void cWorkstation::on_toolButtonEditLinkNode_clicked()
         patch.setById(*pq, id);
         patch.fetchPorts(*pq);
         cPatch *p = patchEditDialog(*pq, this, &patch);
-        if (p != NULL) {
+        if (p != nullptr) {
             pSelLinked->refresh();
             pDelete(p);
         }

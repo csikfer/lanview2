@@ -17,10 +17,10 @@ processXml::processXml(QString __cmd, QObject * parent)
 
 void processXml::_init()
 {
-    pe          = NULL;
+    pe          = nullptr;
     domStatus   = EMPTY;
     exitCode    = -1;
-    proc        = NULL;
+    proc        = nullptr;
 }
 #define MAXWAITSEC  10
 void processXml::clear()
@@ -33,11 +33,11 @@ void processXml::clear()
             if (i++ >= MAXWAITSEC) EXCEPTION(ETO);
         }
         delete proc;
-        proc = NULL;
+        proc = nullptr;
     }
     if (pe) {
         delete pe;
-        pe = NULL;
+        pe = nullptr;
     }
     domStatus   = EMPTY;
     exitCode    = -1;

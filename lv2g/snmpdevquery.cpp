@@ -17,7 +17,7 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pDevShape->fetchFields(*pq);
     cTableShapeField *pFieldShape = pDevShape->shapeFields.get(_sNodeType);
     pFieldShape->setName(_sFeatures, ":column=2:hide=patch,node,hub,host,snmp:");
-    pTypeWidget = new cSetWidget(*pDevShape, *pFieldShape, (*pDev)[_sNodeType], 0, NULL);
+    pTypeWidget = new cSetWidget(*pDevShape, *pFieldShape, (*pDev)[_sNodeType], 0, nullptr);
 
     ui->setupUi(this);
     pButtobGroupSnmpV = new QButtonGroup(this);
@@ -54,7 +54,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
     QString name = ui->lineEditName->text();
     QString note = ui->lineEditNote->text();
     qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
-    cError *pe = NULL;
+    cError *pe = nullptr;
     QString msg;
     bool isInsert = pDev->getId() == NULL_ID;
     if (isInsert) {
@@ -84,7 +84,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
         }
         sqlCommit(*pq, tn);
     } CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         ui->textEdit->append(htmlError(pe->msg(), true));
         sqlRollback(*pq, tn);
         delete pe;
@@ -98,7 +98,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
 void cSnmpDevQuery::on_pushButtonQuery_clicked()
 {
     bool f = false;
-    cError * pe = NULL;
+    cError * pe = nullptr;
     QString name = ui->lineEditName->text();
     QString comm = ui->lineEditCom->text();
     pDev->setName(_sSnmpVer, ui->radioButtonSnmpV1->isChecked() ? "1" : "2c");
@@ -116,7 +116,7 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
         }
         f = pDev->setBySnmp(comm, EX_ERROR, &msg, &a);
     } CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         pe->mDataMsg = msg;
         expError(pe->msg(), true);
         delete pe;

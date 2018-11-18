@@ -16,7 +16,7 @@ void setAppHelp()
 
 int main(int argc, char * argv[])
 {
-    cError * pe = NULL;
+    cError * pe = nullptr;
     cLv2GQApp app(argc, argv);
     QStringList slAutoOpen;
     QStringList arguments = app.arguments();
@@ -84,7 +84,7 @@ int main(int argc, char * argv[])
                 mo.pMainWindow->adjustSize();
                 break;
             }
-            if (mo.pSplash != NULL) {
+            if (mo.pSplash != nullptr) {
                 mo.pSplash->finish(mo.pMainWindow);
             }
             foreach (QString a, slAutoOpen) {
@@ -96,7 +96,7 @@ int main(int argc, char * argv[])
             app.exec();
         } CATCHS(pe);
     }
-    if (pe != NULL) {
+    if (pe != nullptr) {
         if (pe->mErrorCode == eError::EOK) {
             PDEB(INFO) << "**** EOK exit ****" << endl;
         }
@@ -116,10 +116,10 @@ int  lv2Gui::_nScreen = 1;
 lv2Gui::lv2Gui() : lv2g()
 {
     DBGFN();
-    if (lastError == NULL) {
+    if (lastError == nullptr) {
         try {
-            if (pMainWindow == NULL) EXCEPTION(EPROGFAIL);
-            if (nonFatal != NULL) {
+            if (pMainWindow == nullptr) EXCEPTION(EPROGFAIL);
+            if (nonFatal != nullptr) {
                 cErrorMessageBox::messageBox(nonFatal);
                 pDelete(nonFatal);
                 _setup = true;
@@ -133,7 +133,7 @@ lv2Gui::lv2Gui() : lv2g()
 lv2Gui::~lv2Gui()
 {
     DBGFN();
-    if (pMainWindow != NULL) delete pMainWindow;
+    if (pMainWindow != nullptr) delete pMainWindow;
     DBGFNL();
 }
 

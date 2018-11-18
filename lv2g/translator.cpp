@@ -26,9 +26,9 @@ cTransRow::cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlon
     pModel->setItem(firstRow, CIX_EDITED_TEXT, new QStandardItem(editTexts.first()));
     if (height > 1) {
         for (int i = 1; i < height; ++i) {
-            pModel->setItem(firstRow, CIX_TID_NAME,    new QStandardItem(pTextEnum->enumValues.at(i)));
-            pModel->setItem(firstRow, CIX_SAMPLE_TEXT, new QStandardItem(sampleTexts.at(i)));
-            pModel->setItem(firstRow, CIX_EDITED_TEXT, new QStandardItem(editTexts.at(i)));
+            pModel->setItem(firstRow +i, CIX_TID_NAME,    new QStandardItem(pTextEnum->enumValues.at(i)));
+            pModel->setItem(firstRow +i, CIX_SAMPLE_TEXT, new QStandardItem(sampleTexts.at(i)));
+            pModel->setItem(firstRow +i, CIX_EDITED_TEXT, new QStandardItem(editTexts.at(i)));
         }
         pTable->setSpan(firstRow, CIX_REC_ID, height, 1);
         pTable->setSpan(firstRow, CIX_REC_NAME, height, 1);
@@ -211,8 +211,16 @@ void cTranslator::on_pushButtonView_clicked()
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         return;
     }
-    int size = pTextNameEnumType->enumValues.size();
     clearRows();
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_REC_ID,     new QStandardItem(trUtf8("ID")));
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_REC_NAME,   new QStandardItem(trUtf8("Név")));
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_TID,        new QStandardItem(trUtf8("T.ID")));
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_REC_ID,     new QStandardItem(trUtf8("T.név")));
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_SAMPLE_TEXT,new QStandardItem(sampleLanguage.getName()));
+    pTableModel->setHorizontalHeaderItem(cTransRow::CIX_EDITED_TEXT,new QStandardItem(editedLanguage.getName()));
+    ui->label->setText(trUtf8("A %1 tábla szövegeinek fordítása: %2 --> %3")
+                       .arg(sTableName, sampleLanguage.getName(), editedLanguage.getName()));
+    int size = pTextNameEnumType->enumValues.size();
     do {
         qlonglong recId   = q.value(0).toLongLong();
         QString   recName = q.value(1).toString();
@@ -233,6 +241,8 @@ void cTranslator::on_pushButtonView_clicked()
         while (editList.size() < size) editList << _sNul;
         rows << new cTransRow(this, recId, recName, textId, sampleList, editList);
     } while (q.next());
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->resizeRowsToContents();
 }
 
 void cTranslator::on_pushButtonSave_clicked()

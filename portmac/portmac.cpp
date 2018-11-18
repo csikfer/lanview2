@@ -28,12 +28,12 @@ int main (int argc, char * argv[])
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
-    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+    exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
 lv2portMac::lv2portMac() : lanView()
 {
-    if (lastError == NULL) {
+    if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
             subsDbNotif();
@@ -94,11 +94,11 @@ int cPortMac::run(QSqlQuery &__q, QString& runMsg)
 
 /******************************************************************************/
 
-const cService *cDevicePMac::pSrvSnmp = NULL;
-const cService *cDevicePMac::pSrvPMac = NULL;
-cOId    *cDevicePMac::pOId1 = NULL;
-cOId    *cDevicePMac::pOId2 = NULL;
-cOId    *cDevicePMac::pOIdx = NULL;
+const cService *cDevicePMac::pSrvSnmp = nullptr;
+const cService *cDevicePMac::pSrvPMac = nullptr;
+cOId    *cDevicePMac::pOId1 = nullptr;
+cOId    *cDevicePMac::pOId2 = nullptr;
+cOId    *cDevicePMac::pOIdx = nullptr;
 
 cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
@@ -261,7 +261,7 @@ cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglon
      cRightMac *p = new cRightMac(_q, _hsid, _toid, _par);
      if (p->flag) return p; // Ha nem volt hiba
      delete p;              // Ha valami nem OK, töröljük, a statust a konstruktor beállította.
-     return NULL;           // Ez az elem nem kerül a listába
+     return nullptr;           // Ez az elem nem kerül a listába
 }
 
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
@@ -360,9 +360,9 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
         msg = trUtf8("Nem támogatott szervíz : %1. Itt csak a 'rightmac' szervíz támogatott.").arg(service()->getName());
     }
     else {
-        if (pPort == NULL || 0 != pPort->chkObjType<cInterface>(EX_IGNORE)) {
+        if (pPort == nullptr || 0 != pPort->chkObjType<cInterface>(EX_IGNORE)) {
             flag = false;
-            if (pPort == NULL) msg = trUtf8("Nincs megadva port.\n");
+            if (pPort == nullptr) msg = trUtf8("Nincs megadva port.\n");
             else               msg = trUtf8("A port típusa csak interface lehet.\n");
         }
         else {

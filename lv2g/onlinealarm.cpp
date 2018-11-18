@@ -12,7 +12,7 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
     lanView::getInstance()->subsDbNotif(_sAlarm);
     connect(getSqlDb()->driver(), SIGNAL(notification(QString,QSqlDriver::NotificationSource,QVariant)),
             this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
-    pTargetRec = pActRecord = NULL;
+    pTargetRec = pActRecord = nullptr;
     isTicket  = false;
     pSound = new QSound(lv2g::getInstance()->soundFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
@@ -73,7 +73,7 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
         connect(pAckAllButton, SIGNAL(clicked()), this, SLOT(allAcknowledge()));
     }
     else {
-        pAckButton = NULL;
+        pAckButton = nullptr;
     }
     noAckDataReloded(pNoAckModel->records());
 
@@ -91,7 +91,7 @@ cOnlineAlarm::~cOnlineAlarm()
 void cOnlineAlarm::map()
 {
     static const QString _sBr = "<br>";
-    if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
+    if (pActRecord == nullptr) EXCEPTION(EPROGFAIL);
     if (isTicket) {
         isTicket = false;
         pDelete(pTargetRec);
@@ -191,13 +191,13 @@ void cOnlineAlarm::curRowChgNoAck(QItemSelection, QItemSelection)
     QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
     int row;
     int sel = mil.size();
-    if (sel > 0 && pActRecord != NULL) {
+    if (sel > 0 && pActRecord != nullptr) {
         disconnect(pActRecord, SIGNAL(destroyed(QObject*)), this, SLOT(actRecordDestroyed(QObject*)));
     }
     switch (sel) {
     case 0:
         if (pRecTabNoAck->tableView()->selectionModel()->selectedRows().size() == 0) {
-            pActRecord = NULL;
+            pActRecord = nullptr;
         }
         break;
     case 1:
@@ -210,13 +210,13 @@ void cOnlineAlarm::curRowChgNoAck(QItemSelection, QItemSelection)
         break;
     default:
         if (!isAdmin) EXCEPTION(EPROGFAIL);
-        pActRecord = NULL;
+        pActRecord = nullptr;
         break;
     }
     if (sel > 0) {
         pRecTabAckAct->tableView()->selectionModel()->clearSelection();
     }
-    if (pActRecord == NULL) {
+    if (pActRecord == nullptr) {
         pAckButton->setDisabled(true);
         pAckAllButton->setEnabled(sel > 1);
         clearMap();
@@ -237,7 +237,7 @@ void cOnlineAlarm::curRowChgAckAct(QItemSelection sel, QItemSelection)
     else {
         mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
         if (mil.size() == 0) {
-            pActRecord = NULL;
+            pActRecord = nullptr;
             clearMap();
         }
     }
@@ -251,7 +251,7 @@ void cOnlineAlarm::allAcknowledge()
     foreach (QModelIndex mi, mil) {
         int row = mi.row();
         const cRecord *pr = pRecTabNoAck->recordAt(row, EX_IGNORE);
-        if (pr == NULL) {
+        if (pr == nullptr) {
             DERR() << trUtf8("Invalid selected row : %1").arg(row) << endl;
             continue;
         }
@@ -265,7 +265,7 @@ void cOnlineAlarm::allAcknowledge()
 void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 {
     (void)pO;
-    pActRecord = NULL;
+    pActRecord = nullptr;
     pAckButton->setDisabled(true);
     pAckAllButton->setDisabled(true);
     clearMap();
@@ -274,7 +274,7 @@ void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 
 void cOnlineAlarm::acknowledge()
 {
-    if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
+    if (pActRecord == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong aid = pTargetRec->getId();
     qlonglong uid = lanView::user().getId();
     cAckDialog dialog(this);
@@ -317,7 +317,7 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
     }
     if (isAlarm) {                  // Riasztás
         pSound->play();             // Sziréna (ha van hangfájl.)
-        if (lv2g::pMainWindow != NULL) {    // Aktíváljuk az ablakot
+        if (lv2g::pMainWindow != nullptr) {    // Aktíváljuk az ablakot
             lv2g::pMainWindow->pMdiArea->setActiveSubWindow(pSubWindow);
         }
     }
@@ -352,7 +352,7 @@ cAckDialog::cAckDialog(cOnlineAlarm *par)
         pUi->lineEditTo->setText(par->pTargetRec->getName(_sEndTime));
     }
     connect(pUi->textEditMsg, SIGNAL(textChanged()), this, SLOT(changed()));
-    if (par->pTicket != NULL && !par->isTicket) pUi->checkBoxTicket->setEnabled(true);
+    if (par->pTicket != nullptr && !par->isTicket) pUi->checkBoxTicket->setEnabled(true);
 }
 
 cAckDialog::~cAckDialog()
