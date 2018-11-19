@@ -152,6 +152,12 @@ cFindByMac::~cFindByMac()
     delete pq;
 }
 
+void cFindByMac::setMacAnIp(const cMac& mac, const QHostAddress& a)
+{
+    pUi->comboBoxIP->setCurrentText(a.toString());
+    pUi->comboBoxMAC->setCurrentText(mac.toString());
+}
+
 void cFindByMac::setAllMac()
 {
     // Query: All known MAC
@@ -177,14 +183,18 @@ void cFindByMac::setSwitchs()
 #ifdef SNMP_IS_EXISTS
     static const QString sql = "SELECT node_name FROM snmpdevices WHERE 'switch' = ANY (node_type) ORDER BY node_name";
     QStringList items;
+    QString centralSwitchName = cSysParam::getTextSysParam(*pq, "central_switch_name");
+    int currentIndex = 0;
     if (execSql(*pq, sql)) do {
         // pUi->comboBox->addItem(pq->value(0).toString()); // SLOW !!
-        items << pq->value(0).toString();
+        QString switchName = pq->value(0).toString();
+        if (switchName == centralSwitchName) currentIndex = items.size();
+        items << switchName;
     } while (pq->next());
     pUi->comboBoxSw->clear();
     pUi->comboBoxSw->addItems(items);
     fSw = !items.isEmpty();
-    if (fSw) pUi->comboBoxSw->setCurrentIndex(0);
+    if (fSw) pUi->comboBoxSw->setCurrentIndex(currentIndex);
 #endif
 }
 

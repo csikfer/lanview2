@@ -10,17 +10,19 @@ QString unTypeQuoted(const QString& _s)
 
 QVariantList _sqlToIntegerList(const QString& _s)
 {
-    QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
     QVariantList vl;
-    foreach (const QString& s, sl) {
-        bool ok;
-        qlonglong i = s.toLongLong(&ok);
-        if (ok) {
-            vl << QVariant(i);
-        }
-        else {
-            if (s == _sNULL) vl << QVariant();
-            else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+    if (!_s.isEmpty()) {
+        QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+        foreach (const QString& s, sl) {
+            bool ok;
+            qlonglong i = s.toLongLong(&ok);
+            if (ok) {
+                vl << QVariant(i);
+            }
+            else {
+                if (s == _sNULL) vl << QVariant();
+                else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+            }
         }
     }
     return vl;
@@ -29,17 +31,19 @@ QVariantList _sqlToIntegerList(const QString& _s)
 
 QVariantList _sqlToDoubleList(const QString& _s)
 {
-    QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
     QVariantList vl;
-    foreach (const QString& s, sl) {
-        bool ok;
-        double i = s.toDouble(&ok);
-        if (ok) {
-            vl << QVariant(i);
-        }
-        else {
-            if (s == _sNULL) vl << QVariant();
-            else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+    if (!_s.isEmpty()) {
+        QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+        foreach (const QString& s, sl) {
+            bool ok;
+            double i = s.toDouble(&ok);
+            if (ok) {
+                vl << QVariant(i);
+            }
+            else {
+                if (s == _sNULL) vl << QVariant();
+                else EXCEPTION(EDBDATA, 0, "Invalid number : " + s);
+            }
         }
     }
     return vl;
@@ -47,37 +51,40 @@ QVariantList _sqlToDoubleList(const QString& _s)
 
 QStringList _sqlToStringList(const QString& _s)
 {
-    QStringList sl = _s.split(QChar(','), QString::KeepEmptyParts);
-    static const QChar   m('"');
-    static const QString nm("\\\"");
+    QStringList sl;
+    if (!_s.isEmpty()) {
+        sl = _s.split(QChar(','), QString::KeepEmptyParts);
+        static const QChar   m('"');
+        static const QString nm("\\\"");
 
-    for (int i = 0; i < sl.size(); ++i) {
-        QString s = sl[i];
-        if (s[0] == m) {
-            while (true) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
-                bool fragment = ! s.endsWith(m);
-                if (!fragment) {
-                    if (s.endsWith(nm)) {
-                        fragment = true;
-                        s.chop(2);
-                        s += m;
+        for (int i = 0; i < sl.size(); ++i) {
+            QString s = sl[i];
+            if (s[0] == m) {
+                while (true) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
+                    bool fragment = ! s.endsWith(m);
+                    if (!fragment) {
+                        if (s.endsWith(nm)) {
+                            fragment = true;
+                            s.chop(2);
+                            s += m;
+                        }
                     }
+                    if (!fragment) break;
+                    if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid (fragment) string array : ") + _s);
+                    sl[i] += QChar(',') + (s = sl[i +1]);
+                    sl.removeAt(i +1);
                 }
-                if (!fragment) break;
-                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid (fragment) string array : ") + _s);
-                sl[i] += QChar(',') + (s = sl[i +1]);
-                sl.removeAt(i +1);
+                s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
             }
-            s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
+            else if (s == _sNULL) {
+                sl[i].clear();
+                continue;
+            }
+            else if (s.isEmpty()) {
+                EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid string array (empty text) : ") + _s);
+            }
+            sl[i].replace(nm, "\"");
         }
-        else if (s == _sNULL) {
-            sl[i].clear();
-            continue;
-        }
-        else if (s.isEmpty()) {
-            EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid string array (empty text) : ") + _s);
-        }
-        sl[i].replace(nm, "\"");
     }
     return sl;
 }

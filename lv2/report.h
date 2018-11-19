@@ -136,7 +136,7 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     int col, row;
     int cols = shape.shapeFields.size();
     int rows = list.size();
-    for (col = 0; col < rows; ++col) {
+    for (row = 0; row < rows; ++row) {
         data << QStringList();
     }
     for (col = 0; col < cols; ++col) {   // COLUMNS
@@ -147,7 +147,9 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
         head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
         QString fn = fs.getName(_sTableShapeFieldName);
         for (row = 0; row < rows; ++row) {   // ROWS
-            data[row] << list.at(row)->view(q, fn);
+            R *p = list.at(row);
+            int fix = p->toIndex(fn);
+            data[row] << p->view(q, fix, &fs.features());
         }
     }
     return htmlTable(head, data);
@@ -175,7 +177,8 @@ QString rec2html(QSqlQuery& q, const R& o, cTableShape& shape, bool shrt = true)
         QString fn = fs.getName(_sTableShapeFieldName);
         QStringList row;
         row << fs.getText(cTableShapeField::LTX_DIALOG_TITLE, fs.getName());
-        row << o.view(q, fn);
+        int fix = o.toIndex(fn);
+        row << o.view(q, fix, &fs.features());
         data << row;
     }
     return htmlTable(QStringList(), data);

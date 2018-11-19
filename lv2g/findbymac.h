@@ -48,6 +48,7 @@ public:
     explicit cFindByMac(QMdiArea *parent = 0);
     ~cFindByMac();
     static const enum ePrivilegeLevel rights;
+    void setMacAnIp(const cMac& mac, const QHostAddress& a);
 private:
     void setAllMac();
     void setSwitchs();

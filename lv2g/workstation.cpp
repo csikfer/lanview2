@@ -12,6 +12,7 @@
 #include "mainwindow.h"
 #include "hsoperate.h"
 #include "cerrormessagebox.h"
+#include "findbymac.h"
 
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
@@ -1244,8 +1245,8 @@ void cWorkstation::on_pushButtonDelete_clicked()
 void cWorkstation::on_pushButtonGoServices_clicked()
 {
     if (node.getId() != NULL_ID) {
-        const QString _sHSOperate = "hsop";
-        QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(_sHSOperate);
+        const QString sMenuItemName = "hsop";
+        QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(sMenuItemName);
         if (i != cMenuAction::actionsMap.end()) {
             (*i)->triggered();
         }
@@ -1356,5 +1357,36 @@ void cWorkstation::on_toolButtonInfoNode_clicked()
     qlonglong nid = pSelNode->currentNodeId();
     if (nid != NULL_ID) {
         popupReportNode(this, *pq, nid);
+    }
+}
+
+void cWorkstation::on_pushButtonFindMac_clicked()
+{
+    QString sMac = pUi->lineEditPMAC->text();
+    cMac mac(sMac);
+    QHostAddress a;
+    if (pip != nullptr) {
+        a = pip->address();
+    }
+
+    if (mac.isValid() && !a.isNull()) {
+        const QString sMenuItemName = "findmac";
+        QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(sMenuItemName);
+        if (i != cMenuAction::actionsMap.end()) {
+            (*i)->triggered();
+        }
+        else {
+            QString msg = trUtf8("Nincs cím szerinti keresés adatlap a menüben.");
+            pUi->textEditMsg->append(htmlError(msg));
+            return;
+        }
+        QWidget *pw = lv2g::getInstance()->pMainWindow->pMdiArea->currentSubWindow()->widget();
+        cFindByMac *pFBMp = dynamic_cast<cFindByMac *>(pw);
+        if (pFBMp == nullptr) {
+            QString msg = trUtf8("A cím szerinti keresés adatlap kiválasztása sikertelen.");
+            pUi->textEditMsg->append(htmlError(msg));
+            return;
+        }
+        pFBMp->setMacAnIp(mac, a);
     }
 }
