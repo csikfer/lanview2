@@ -13,57 +13,49 @@ QString sInvalidEnum() { return QObject::trUtf8("Invalid"); }
 
 QString ProcessError2String(QProcess::ProcessError __e)
 {
-    QString s;
     switch (__e) {
-        case QProcess::FailedToStart:   s = QObject::trUtf8("FailedToStart");    break;
-        case QProcess::Crashed:         s = QObject::trUtf8("Crashed");          break;
-        case QProcess::Timedout:        s = QObject::trUtf8("Timedout");         break;
-        case QProcess::WriteError:      s = QObject::trUtf8("WriteError");       break;
-        case QProcess::ReadError:       s = QObject::trUtf8("ReadError");        break;
-        case QProcess::UnknownError:    s = QObject::trUtf8("UnknownError");     break;
+        case QProcess::FailedToStart:   return QObject::trUtf8("FailedToStart");
+        case QProcess::Crashed:         return QObject::trUtf8("Crashed");
+        case QProcess::Timedout:        return QObject::trUtf8("Timedout");
+        case QProcess::WriteError:      return QObject::trUtf8("WriteError");
+        case QProcess::ReadError:       return QObject::trUtf8("ReadError");
+        case QProcess::UnknownError:    return QObject::trUtf8("UnknownError");
     }
-    s = sInvalidEnum();
-    DERR() << "QProcess::ProcessError : " << int(__e) << QChar('/') << s << endl;
+    QString s = QString("QProcess::ProcessError %1 : %2").arg(sInvalidEnum()).arg(int(__e));
+    DERR() << s << endl;
     return s;
 }
 QString ProcessError2Message(QProcess::ProcessError __e)
 {
-    QString m;
     switch (__e) {
         case QProcess::FailedToStart:
-            m = QObject::trUtf8("The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.");
-            break;
+            return QObject::trUtf8("The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.");
         case QProcess::Crashed:
-            m = QObject::trUtf8("The process crashed some time after starting successfully.");
-            break;
+            return QObject::trUtf8("The process crashed some time after starting successfully.");
         case QProcess::Timedout:
-            m = QObject::trUtf8("The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.");
-            break;
+            return QObject::trUtf8("The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.");
         case QProcess::WriteError:
-            m = QObject::trUtf8("An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.");
-            break;
+            return QObject::trUtf8("An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.");
         case QProcess::ReadError:
-            m = QObject::trUtf8("An error occurred when attempting to read from the process. For example, the process may not be running.");
-            break;
+            return QObject::trUtf8("An error occurred when attempting to read from the process. For example, the process may not be running.");
         case QProcess::UnknownError:
-            m = QObject::trUtf8("An unknown error occurred. This is the default return value of error().");
-            break;
+            return QObject::trUtf8("An unknown error occurred. This is the default return value of error().");
     }
-    m = QObject::trUtf8("Invalid QProcess::ProcessError enum value, program error.");
-    DERR() << m << endl;
-    return m;
+    QString s = QString("QProcess::ProcessError %1 : %2").arg(sInvalidEnum()).arg(int(__e));
+    DERR() << s << endl;
+    return s;
 }
 
 QString ProcessState2String(QProcess::ProcessState __e)
 {
     QString s;
     switch (__e){
-        case QProcess::NotRunning:  s = QObject::trUtf8("NotRunning");   break;
-        case QProcess::Starting:    s = QObject::trUtf8("Starting");     break;
-        case QProcess::Running:     s = QObject::trUtf8("Running");      break;
+        case QProcess::NotRunning:  return QObject::trUtf8("NotRunning");
+        case QProcess::Starting:    return QObject::trUtf8("Starting");
+        case QProcess::Running:     return QObject::trUtf8("Running");
     }
-    s = sInvalidEnum();
-    DERR() << "QProcess::ProcessError : " << int(__e) << QChar('/') << s << endl;
+    s = QString("QProcess::ProcessState %1 : %2").arg(sInvalidEnum()).arg(int(__e));
+    DERR() << s << endl;
     return s;
 }
 
