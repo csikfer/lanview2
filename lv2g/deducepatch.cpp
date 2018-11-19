@@ -1024,7 +1024,7 @@ void cDeducePatch::report()
             " JOIN term_front_links AS lr ON pl.port_id2 = lr.port_id"
             " WHERE ll.node_id = ? AND %1 pl.phs_link_type1 = 'Back' AND pl.phs_link_type2 = 'Back' "
             " ORDER BY ll.port_index ASC";
-    QString sql = _sql.arg(nidr == NULL_ID ? _sNul : "AND lr.node_id = ?");
+    QString sql = _sql.arg(nidr == NULL_ID ? _sNul : "lr.node_id = ? AND");
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, QVariant(nidl));
     if (nidr != NULL_ID) q.bindValue(1, QVariant(nidr));
