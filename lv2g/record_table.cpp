@@ -28,8 +28,8 @@ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QStri
 qlonglong cRecordTableFilter::type2filter()
 {
     static QMap<int, qlonglong> map;
+    QSqlQuery q = getQuery();
     if (map.isEmpty()) {
-        QSqlQuery q = getQuery();
         const cColEnumType *pFiltEnum = cColEnumType::fetchOrGet(q, _sFiltertype);
         pFiltEnum->checkEnum(filterType, filterType);
         map[cColStaticDescr::FT_INTEGER]    = enum2set(FT_EQUAL, FT_LITLE, FT_BIG, FT_INTERVAL);
@@ -54,12 +54,13 @@ qlonglong cRecordTableFilter::type2filter()
     if (field.pColDescr->isNullable)                    m |= ENUM2SET(FT_NULL);
     // CAST TO ?
     if (ft == cColStaticDescr::FT_TEXT) {
-        QStringList tt = field.shapeField.features().sListValue("cast");
-        if (!tt.isEmpty()) {
-            QSqlQuery q = getQuery();
-            const cColEnumType *pTypeEnum = cColEnumType::fetchOrGet(q, _sParamTypeType);
-            qlonglong ts = pTypeEnum->lst2set(tt);
-            m = filterSetAndTypeSet(m, ts);
+        QString ffc = field.shapeField.feature("cast");
+        if (!ffc.isEmpty()) {
+            const cColEnumType *pTypeEnum = cColEnumType::fetchOrGet(q, "paramtype");
+            qlonglong mm = cFeatures::value2set(ffc, pTypeEnum->enumValues);
+            if (mm != 0LL) {
+                m = filterSetAndTypeSet(m, mm);
+            }
         }
     }
     return m;
@@ -994,6 +995,14 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
     , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
+    sf.features().merge(table.tableShape().features(), sf.getName());
+    sf.modifyByFeature(_sFieldSequenceNumber);
+    sf.modifyByFeature(_sOrdTypes);
+    sf.modifyByFeature(_sOrdInitSequenceNumber);
+    sf.modifyByFeature(_sFieldFlags);
+    sf.modifyByFeature(_sExpression);
+    sf.modifyByFeature(_sDefaultValue);
+
     fieldIndex = recDescr.toIndex(sf.getName(), EX_IGNORE);
     pColDescr  = nullptr;
     textIndex  = NULL_IX;
@@ -1621,6 +1630,9 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     if ((pTableShape->containerValid & CV_LL_TEXT) == 0) {
         pTableShape->fetchText(*pq);
     }
+    pTableShape->modifyByFeature(_sTableShapeType);
+    pTableShape->modifyByFeature(_sRefine);
+    pTableShape->modifyByFeature(_sStyleSheet);
 
     pTableShape->setParent(this);
 
@@ -1889,10 +1901,7 @@ void cRecordsViewBase::setButtons()
 QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
 {
     QStringList r;
-    QString refine = tableShape().feature(_sRefine);    // A feature változó, ha van fellülírja a refine mező értékét.
-    if (refine.isEmpty()) {
-        refine = tableShape().getName(_sRefine);
-    }
+    QString refine = tableShape().getName(_sRefine);
     if (! refine.isEmpty()) {  // Ha megadtak egy általános érvényű szűrőt
         QStringList rl = splitBy(refine);
         r << rl.at(0);
@@ -2472,6 +2481,7 @@ void cRecordTable::copy()
     }
         break;
     case TET_WIN:
+        if (f == TEF_CSV) r = toHtml(r, true);
         popupReportWindow(this->pWidget(), r, tableShape().getText(cTableShape::LTX_TABLE_TITLE));
         break;
     default:

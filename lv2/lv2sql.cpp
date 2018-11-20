@@ -89,10 +89,13 @@ QStringList _sqlToStringList(const QString& _s)
     return sl;
 }
 
+static const QString sEmptyArray = "{}";
+
 QString stringListToSql(const QStringList& sl)
 {
-    if (sl.isEmpty()) return "{}";
-    QString r = QChar('{');
+    QString r = sEmptyArray;
+    if (sl.isEmpty()) return r;
+    r.chop(1);
     foreach (const QString& s, sl) {
         if (s.isNull()) r += "NULL,";
         else            r += dQuoted(QString(s).replace("\"", "\\\"")) + QChar(',');
@@ -104,8 +107,9 @@ QString stringListToSql(const QStringList& sl)
 
 QString integerListToSql(const QVariantList& vl)
 {
-    if (vl.isEmpty()) return "{}";
-    QString r;
+    QString r = sEmptyArray;
+    if (vl.isEmpty()) return r;
+    r.chop(1);
     foreach (QVariant v, vl) {
         if (v.isNull()) r += "NULL,";
         else {
@@ -122,8 +126,9 @@ QString integerListToSql(const QVariantList& vl)
 
 QString doubleListToSql(const QVariantList& vl)
 {
-    if (vl.isEmpty()) return "{}";
-    QString r;
+    QString r = sEmptyArray;
+    if (vl.isEmpty()) return r;
+    r.chop(1);
     foreach (QVariant v, vl) {
         if (v.isNull()) r += "NULL,";
         else {

@@ -2801,7 +2801,8 @@ public: \
     QString feature(const QString &_nm) const { return features().value(_nm); } \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
     R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  } \
-    qlonglong feature(const QString &_nm, qlonglong _def) const { return intFeature(*this, _nm, _def); }
+    qlonglong feature(const QString &_nm, qlonglong _def) const { return intFeature(*this, _nm, _def); } \
+    void modifyByFeature(const QString& _fn) { cRecordFieldRef fr = (*this)[_fn]; features().modifyField(fr); }
 
 
 class LV2SHARED_EXPORT cLanguage : public cRecord {

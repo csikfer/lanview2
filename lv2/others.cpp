@@ -130,14 +130,6 @@ qlonglong cFeatures::value2set(const QString &s, const QStringList& enums)
     return m;
 }
 
-QStringList cFeatures::sListValue(const QString &_nm) const
-{
-    QStringList sl;
-    if (contains(_nm)) {
-        sl = value2list(value(_nm));
-    }
-    return sl;
-}
 qlonglong cFeatures::eValue(const QString &_nm, const QStringList& enums) const
 {
     qlonglong r = 0;
@@ -235,6 +227,56 @@ QString cFeatures::join() const
         r += QChar(':');
     }
     return r;
+}
+
+cFeatures& cFeatures::merge(const cFeatures& _o, const QString& _cKey)
+{
+    QString cKey = _cKey + QChar('.');
+    int cKeySize = cKey.size();
+    foreach (QString key, _o.keys()) {
+        QString val;
+        if (cKeySize > 1) {
+            if (!key.startsWith(cKey)) continue;
+            val = _o.value(key);
+            key = key.mid(cKeySize);
+        }
+        else {
+            val = _o.value(key);
+        }
+        if (val == "!") remove(key);
+        else            insert(key, val);
+    }
+    return *this;
+}
+
+void cFeatures::modifyField(cRecordFieldRef& _fr)
+{
+    QString key = _fr.columnName();
+    QString val = value(key);
+    if (val.isEmpty()) return;
+    const cColEnumType *pEnumType = _fr.descr().getPEnumType();
+    if (pEnumType == nullptr || _fr.descr().colType == cColStaticDescr::FT_ENUM) { // Is not set or text_id
+        if (val == "!") _fr.clear();
+        else            _fr = val;
+    }
+    else if (_fr.descr().fKeyType == cColStaticDescr::FT_TEXT_ID) {
+        ;   // talán majd késöbb ...
+    }
+    else if (_fr.descr().colType == cColStaticDescr::FT_SET) {
+        QStringList sl = value2list(val);
+        QVariant fr = _fr;
+        QStringList set = fr.toStringList();
+        foreach (QString ev, sl) {
+            if (ev.startsWith(QChar('!'))) {
+                ev = ev.mid(1);
+                set.removeAll(ev);
+            }
+            else {
+                if (!set.contains(ev)) set << ev;
+            }
+        }
+        _fr = set;
+    }
 }
 
 /******************************************************************************/

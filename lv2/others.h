@@ -145,6 +145,7 @@ EXT_ QString nameAndNumber(const QString& __pat, int __num, char __c = '?');
 
 EXT_ QStringList splitBy(const QString& s, const QChar& sep = QChar(':'), const QChar& esc = QChar('\\'));
 
+class cRecordFieldRef;
 
 /// @class cFeatures
 /// \brief A features mezőt kezelő osztály. A kulcs a metódusokban mindíg kisbetüssé van konvertálva.
@@ -167,10 +168,18 @@ public:
     ///         ha viszont nincs paraméternek értéke, akkor egy üres string
     QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
     QStringList slValue(const QString &_nm) const { return value2list(value(_nm)); }
-    ///
+    /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
+    /// space karakter van, akkor azt a space karaktert eldobja a metódus.
+    /// @param s A darabolandó string.
+    /// @return A szét darabolt stringgek litája
     static QStringList value2list(const QString &s);
+    /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
+    /// space karakter van, akkor azt a space karaktert eldobja a metódus.
+    /// A kapott lista elemeket enumerációs értékeknek tekintve (a listát set-nek) összeállít egy maszk értéket.
+    /// @param s A darabolandó string.
+    /// @param enums Az enumerációs értékek, sorrendben.
+    /// @return A maszk
     static qlonglong value2set(const QString &s, const QStringList& enums);
-    QStringList sListValue(const QString &_nm) const;
     qlonglong eValue(const QString &_nm, const QStringList& enums) const;
     static QMap<QString, QStringList> value2map(const QString &s);
     static QMap<int, qlonglong> mapEnum(QMap<QString, QStringList> smap, const QStringList& enums);
@@ -184,6 +193,13 @@ public:
     /// @param __map a forrás konténer
     /// @return Az eredmény string
     QString join() const;
+    /// Összefésül két objektumot.
+    /// Ha megadtuk az _cKey kulcsot, akkor csak azok a mezők kerülnek az objektumba, melyeknek a kulcsa
+    /// a megadott kulcssal, és egy pont karakterrel kezdödnek, ekkor a kulcsból ez az előteag tölődik, és
+    /// így kerül az objektumba. Ha a _o -ban egy (modosított)kulcsértékhez a "!" van rendelve,
+    /// akkor az ez alatti érték törődik az objektumban.
+    cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
+    void modifyField(cRecordFieldRef& _fr);
 };
 
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).

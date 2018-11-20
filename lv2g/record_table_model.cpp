@@ -397,22 +397,25 @@ QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
     const tRecordTableColumns& columns = recordView.fields;
     QList<QStringList> r;
     QStringList lrow;
+    // Header
     for (col = 0; col <colnums; ++col) {
         if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
             lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
         }
     }
     r << lrow;
+    // Table content
     for (row = 0; row < rownums; ++row) {
-        if (selectedRows.isEmpty() || !selectedRows.contains(row)) continue;
-        lrow.clear();
-        for (col = 0; col <colnums; ++col) {
-            if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
-                QModelIndex mi = index(row, col);
-                lrow << data(mi, Qt::DisplayRole).toString();
+        if (selectedRows.isEmpty() || selectedRows.contains(row)) {
+            lrow.clear();
+            for (col = 0; col <colnums; ++col) {
+                if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
+                    QModelIndex mi = index(row, col);
+                    lrow << data(mi, Qt::DisplayRole).toString();
+                }
             }
+            r << lrow;
         }
-        r << lrow;
     }
     return r;
 }
