@@ -870,6 +870,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
  STRDEF(Expression, "expression")
  STRDEF(DefaultValue, "default_value")
  dnl features, tool_typ, is_read_only, view_rights, edit_rights flag
+ STRDEF(TableFieldName, "table_field_name")
 STRDEF(EnumVals, "enum_vals")
  STRDEF(EnumValId, "enum_val_id")
  STRDEF(EnumValName, "enum_val_name")

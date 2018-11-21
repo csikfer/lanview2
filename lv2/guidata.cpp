@@ -383,11 +383,12 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
     for (int i = 0; rDescr.isIndex(i); ++i) {
         const cColStaticDescr& cDescr = rDescr.colDescr(i);
         cTableShapeField fm;
-        fm.setName(cDescr); // mező név a rekordban
+        fm.setName(cDescr);             // Column name in view or dialog
+        fm.setName(_sTableFieldName);   // Field name in database table
         fm.setName(_sTableShapeFieldNote, cDescr);
         fm.setText(cTableShapeField::LTX_TABLE_TITLE, cDescr);
         fm.setText(cTableShapeField::LTX_DIALOG_TITLE, cDescr);
-        fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // mezők megjelenítési sorrendje
+        fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // Column sequence number
         bool ro = !cDescr.isUpdatable;
         bool hide = false;
         if (i == 0 && rDescr.idIndex(EX_IGNORE) == 0 && rDescr.autoIncrement().at(0)) {
@@ -651,14 +652,15 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, eEx __ex)
     return true;
 }
 
-cTableShapeField *cTableShape::addField(const QString& _name, const QString& _note, eEx __ex)
+cTableShapeField *cTableShape::addField(const QString& _name, const QString& _as, const QString& _note, eEx __ex)
 {
     if (0 <= shapeFields.indexOf(_name)) {
         if (__ex) EXCEPTION(EUNIQUE, -1, _name);
         return nullptr;
     }
     cTableShapeField *p = new cTableShapeField();
-    p->setName(_name);
+    p->setName(_sTableFieldName, _name);
+    p->setName(_as.isNull() ? _name : _as);
     p->setText(cTableShapeField::LTX_TABLE_TITLE, _name);
     p->setText(cTableShapeField::LTX_DIALOG_TITLE, _name);
     if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
@@ -724,8 +726,9 @@ const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn
 
 /* ------------------------------ cTableShapeField ------------------------------ */
 
-int cTableShapeField::_ixTableShapeId = NULL_IX;
 int cTableShapeField::_ixFeatures = NULL_IX;
+int cTableShapeField::_ixTableFieldName = NULL_IX;
+int cTableShapeField::_ixTableShapeId = NULL_IX;
 int cTableShapeField::_ixFieldFlags = NULL_IX;
 
 cTableShapeField::cTableShapeField() : cRecord()
@@ -757,6 +760,7 @@ const cRecStaticDescr&  cTableShapeField::descr() const
 {
     if (initPDescr<cTableShapeField>(_sTableShapeFields)) {
         STFIELDIX(cTableShapeField, Features);
+        STFIELDIX(cTableShapeField, TableFieldName);
         STFIELDIX(cTableShapeField, TableShapeId);
         STFIELDIX(cTableShapeField, FieldFlags);
         CHKENUM(_sOrdTypes,   orderType);
@@ -831,6 +835,25 @@ qlonglong cTableShapeField::getIdByNames(QSqlQuery& q, const QString& tsn, const
     cTableShapeField o;
     o.fetchByNames(q, tsn, fn, EX_IGNORE);
     return o.getId();
+}
+
+QString cTableShapeField::view(QSqlQuery &q, const cRecord& o, qlonglong fix) const
+{
+    static const cTableShapeField *lastThis = nullptr;
+    static QString      lastMsg;
+    if (fix == -1) {   // Not Specified (default parameter value)
+        QString tfn = getName(_ixTableFieldName);
+        fix = o.toIndex(tfn, EX_IGNORE);
+    }
+    if (fix < 0) {              // Table field name not found
+        if (lastThis != this) { // Error message cache
+            lastThis = this;
+            lastMsg  = trUtf8("Invalid field name : %1, in %2:%3")
+                    .arg(getName(_ixTableFieldName), cTableShape().getNameById(q, getId(_sTableShapeId), EX_IGNORE), getName());
+        }
+        return lastMsg;
+    }
+    return o.view(q, fix, &features());
 }
 
 

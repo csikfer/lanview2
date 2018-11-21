@@ -333,7 +333,9 @@ inline bool tableIsReadOnly(const cTableShape &_tm, const cRecord& _r)
 
 inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf, const cRecordFieldRef& _fr)
 {
+    static const QString _sNotRO = "!" + _sReadOnly;
     if (tableIsReadOnly(_tm, _fr.record()))              return true;   // A táblát nem lehet/szabad modosítani
+    if (_tf.feature(_sFieldFlags).contains(_sNotRO))     return false;
     if (!(_fr.descr().isUpdatable))                      return true;   // A mező nem modosítható
     if (_tf.getBool(_sFieldFlags,     FF_READ_ONLY))     return true;   // Read only flag a mező megj, leíróban
     if (!lanView::isAuthOrNull(_tf.getId(_sEditRights))) return true;   // Az aktuális user-nek nics joga modosítani a mezőt

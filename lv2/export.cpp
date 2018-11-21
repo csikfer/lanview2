@@ -43,10 +43,9 @@ QString cExport::escaped(const QString& s)
     return r + _sDq;
 }
 
-QString cExport::head(const QString& kw, cRecord& o)
+QString cExport::head(const QString& kw, const QString& s, const QString& n)
 {
-    QString r = kw + _sSp + escaped(o.getName());
-    QString n = o.getNote();
+    QString r = kw + _sSp + escaped(s);
     if (!n.isEmpty()) r += _sSp + escaped(n);
     return r;
 }
@@ -361,7 +360,10 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     for (int i = 0; i < o.shapeFields.size(); ++i) {
         cTableShapeField& f = *o.shapeFields.at(i);
         f.fetchText(q);
-        r += lineBeginBlock(head("ADD FIELD ", f));
+        QString h;
+        if (f.getName() != f.getName(_sTableFieldName)) h = f.getName(_sTableFieldName) + " AS ";
+        h += f.getName();
+        r += lineBeginBlock(head("ADD FIELD ", h, f.getNote()));
         QString b;
         b  = lineTitles(_sTITLE, f, cTableShapeField::LTX_TABLE_TITLE, cTableShapeField::LTX_DIALOG_TITLE);
         b += lineText(_sTOOL_TIP,   f, cTableShapeField::LTX_TOOL_TIP);

@@ -1600,7 +1600,7 @@ static inline cEnumVal& actEnum()
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T
-%token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
+%token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
 
 %token <i>  INTEGER_V
@@ -1617,7 +1617,7 @@ static inline cEnumVal& actEnum()
 %type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from as
 %type  <sl> strs strs_z strs_zz alert list_m nsws nsws_
 %type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
@@ -2712,11 +2712,14 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
-        | ADD_T FIELD_T str str_z ';'           { pTableShape->addField(sp2s($3), sp2s($4)); }
-        | ADD_T FIELD_T str str_z '{'           { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4)); }
+        | ADD_T FIELD_T str as str_z ';'        { pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
+        | ADD_T FIELD_T str as str_z '{'        { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
             fmodps '}'                          { pTableShapeField = nullptr; }
         | FIELD_T str '{'                       { pTableShapeField = pTableShape->shapeFields.get(sp2s($2)); }
             fmodps '}'                          { pTableShapeField = nullptr; }
+        ;
+as      : AS_T str                              { $$ = $2; }
+        |                                       { $$ = new QString(); }
         ;
 tstypes : tstype                                { $$ = $1; }
         | tstypes ',' tstype                    { $$ = $1 | $3; }
@@ -3088,7 +3091,7 @@ static const struct token {
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED)
-    TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
+    TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },

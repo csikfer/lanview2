@@ -1003,7 +1003,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     sf.modifyByFeature(_sExpression);
     sf.modifyByFeature(_sDefaultValue);
 
-    fieldIndex = recDescr.toIndex(sf.getName(), EX_IGNORE);
+    fieldIndex = recDescr.toIndex(sf.getName(_sTableFieldName), EX_IGNORE);
     pColDescr  = nullptr;
     textIndex  = NULL_IX;
     pTextEnum  = nullptr;

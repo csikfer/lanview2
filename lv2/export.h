@@ -68,7 +68,8 @@ protected:
     }
     QString line(const QString& s) { return QString(actIndent * EXPORT_INDENT_SIZE, QChar(' ')) + s + '\n'; }
     static QString escaped(const QString& s);
-    static QString head(const QString& kw, cRecord &o);
+    static QString head(const QString& kw, const QString& s, const QString &n);
+    static QString head(const QString& kw, const cRecord &o) { return head(kw, o.getName(), o.getNote()); }
     static QString str(const cRecordFieldRef& fr, bool sp = true);
     static QString str_z(const cRecordFieldRef &fr, bool sp = true);
     static QString value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);

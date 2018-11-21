@@ -446,7 +446,7 @@ void cRecordDialog::init()
         const cTableShapeField& mf = **i;
         if (mf.getBool(_sFieldFlags, FF_DIALOG_HIDE)) continue;
         int flags = _isReadOnly || mf.getBool(_sFieldFlags, FF_READ_ONLY) ? FEB_READ_ONLY : FEB_EDIT;   // FEB_INSERT !!
-        int fieldIx = rDescr.toIndex(mf.getName(), EX_IGNORE);
+        int fieldIx = rDescr.toIndex(mf.getName(_sTableFieldName), EX_IGNORE);
         cFieldEditBase *pFW;
         if (fieldIx == NULL_IX) {
             fieldIx = rDescr.textIdIndex(); // text_id index

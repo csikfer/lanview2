@@ -145,11 +145,14 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
             continue;
         }
         head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
-        QString fn = fs.getName(_sTableShapeFieldName);
+        QString fn = fs.getName(_sTableFieldName);
+        int fix = NULL_IX;
+        if (rows) {
+            fix = list.first()->toIndex(fn, EX_IGNORE);
+        }
         for (row = 0; row < rows; ++row) {   // ROWS
             R *p = list.at(row);
-            int fix = p->toIndex(fn);
-            data[row] << p->view(q, fix, &fs.features());
+            data[row] << fs.view(q, *p, fix);
         }
     }
     return htmlTable(head, data);
@@ -167,18 +170,17 @@ QString rec2html(QSqlQuery& q, const R& o, cTableShape& shape, bool shrt = true)
 {
     if (shape.shapeFields.isEmpty()) shape.fetchFields(q);
     QList<QStringList> data;
-    int i, j;
-    int n = shape.shapeFields.size();
-    for (i = 0; i < n; ++i) {   // Fields (COLUMNS)
-        const cTableShapeField& fs = *shape.shapeFields.at(i);
+    int col;
+    int cols = shape.shapeFields.size();
+    for (col = 0; col < cols; ++col) {
+        const cTableShapeField& fs = *shape.shapeFields.at(col);
         if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
             continue;
         }
         QString fn = fs.getName(_sTableShapeFieldName);
         QStringList row;
         row << fs.getText(cTableShapeField::LTX_DIALOG_TITLE, fs.getName());
-        int fix = o.toIndex(fn);
-        row << o.view(q, fix, &fs.features());
+        row << fs.view(q, o);
         data << row;
     }
     return htmlTable(QStringList(), data);
