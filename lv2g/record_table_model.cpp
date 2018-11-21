@@ -58,10 +58,10 @@ cRecordViewModelBase::~cRecordViewModelBase()
     delete pq;
 }
 
-QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool bTxt) const
+QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
     qlonglong& ff = column.fieldFlags;
-    if (bTxt) fix = column.textIndex;
+    if (isTextId) fix = column.textIndex;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
@@ -69,14 +69,14 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     if (fix < 0) {          // A mező nem létezik, vagy text_id
         return dcRole(DC_HAVE_NO, role);
     }
-    if (!bTxt && pr->isNull(fix)) {  // A mező értéke NULL
+    if (!isTextId && pr->isNull(fix)) {  // A mező értéke NULL
         return dcRole(DC_NULL,    role);
     }
     // Az opcionális mező dekorációs típus neve (vagy egy " = " string)
     QString et = column.enumTypeName;
     if (et == _sEquSp) {    // A mező tartalma a szín
         QString c = pr->getName(fix);
-        if (!bTxt && !c.isEmpty()) switch (role) {
+        if (!isTextId && !c.isEmpty()) switch (role) {
         case Qt::TextColorRole:
         case Qt::BackgroundRole:
             return QColor(c);
@@ -86,7 +86,14 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         et.clear();
     }
     if (et.isEmpty()) {
-        if (role == Qt::DisplayRole) return bTxt ? pr->getText(fix) : column.shapeField.view(*pq, *pr, fix);
+        if (role == Qt::DisplayRole) {
+            if (isTextId) {
+                return pr->getText(fix);
+            }
+            else {
+                return column.shapeField.view(*pq, *pr, fix);
+            }
+        }
         return dcRole(column.dataCharacter, role);
     }
     int        id = (int)pr->getId(fix);

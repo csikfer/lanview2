@@ -1045,20 +1045,17 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
 
 bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
 {
-    QString s;
-    s = shapeField.feature(_sViewFunc); // Konverziós függvény a megjelenítésnél
-    if (s.isEmpty() == false) {
-        if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
-        _name = s + "(" + pColDescr->colNameQ() + ")";
-        return true;
+    QString fn   = shapeField.feature(_sViewFunc); // Konverziós függvény a megjelenítésnél
+    QString expr = shapeField.feature(_sViewExpr); // Konverziós SQL kifelyezés a megjelenítésnél
+    if (fn.isEmpty() == false) {
+        expr = fn + "(?)";
     }
-    s = shapeField.feature(_sViewExpr); // Konverziós SQL kifelyezés a megjelenítésnél
-    if (s.isEmpty() == false) {
-        if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a kifelyxezéssel text-re
-        _name = s.replace("?", pColDescr->colNameQ());
-        return true;
+    else if (expr.isEmpty()) {
+        return false;
     }
-    return false;
+    if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // new type
+    _name = expr.replace("?", pColDescr->colNameQ());
+    return true;
 }
 
 /* ***************************************************************************************************** */
@@ -1601,7 +1598,7 @@ void cRecordsViewBase::initView()
     inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
     if (inheritTableList.isEmpty()) return; // Üres a lista, mégnincs öröklés
     QString schema = pTableShape->getName(_sSchemaName);
-    viewName = pTableShape->getName(_sTableName) + "_view"; // Az ideiglenes view tábla neve
+    viewName = pTableShape->getName() + "_tmp_view"; // Az ideiglenes view tábla neve
     QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
     sql += "SELECT tableoid, * FROM ONLY";
     sql += recDescr().fullTableNameQ();
