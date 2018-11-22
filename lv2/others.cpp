@@ -1,6 +1,7 @@
 #include "lanview.h"
 #include "others.h"
 #include <QCoreApplication>
+#include <QTextStream>
 
 /*!
 @file lv2datab.h
@@ -432,4 +433,164 @@ QVariantList list_longlong2variant(const QList<qlonglong> &v)
     return r;
 }
 
+/* ***************************************************************************************** */
 
+cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv)
+{
+    __csv.line.chop(1); // Drop last separator
+    *__csv.pStream << __csv.line << endl;
+    __csv.line.clear();
+    return __csv;
+}
+
+cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv)
+{
+    __csv.pStream->seek(0);
+    return next(__csv);
+}
+
+cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv)
+{
+    __csv.values.clear();
+    __csv.line  = __csv.pStream->readLine();
+    int st = __csv.pStream->status();
+    __csv.state = st;
+    if (st == 0) __csv.splitLine();
+    return __csv;
+}
+
+
+const QChar cCommaSeparatedValues::sep = QChar(';');
+const QChar cCommaSeparatedValues::quo = QChar('"');
+
+cCommaSeparatedValues::cCommaSeparatedValues(const QString& _csv)
+{
+    csv     = _csv;
+    pStream = new QTextStream(&csv, QIODevice::ReadWrite);
+}
+
+cCommaSeparatedValues::cCommaSeparatedValues(QIODevice *pIODev)
+{
+    pStream = new QTextStream(pIODev);
+}
+
+cCommaSeparatedValues::~cCommaSeparatedValues()
+{
+    delete pStream;
+}
+
+void cCommaSeparatedValues::clear()
+{
+    QIODevice *pIODev = pStream->device();
+    if (pIODev != nullptr) pIODev->close();
+    delete pStream;
+    csv.clear();
+    line.clear();
+    pStream = new QTextStream(&csv, QIODevice::ReadWrite);
+}
+
+const QString& cCommaSeparatedValues::toString() const
+{
+    return csv;
+}
+
+cCommaSeparatedValues& cCommaSeparatedValues::operator <<(const QString& _s)
+{
+    state = CSVE_OK;
+    QString r;
+    int n = _s.size();
+    bool quote = false;
+    for (int i = 0; i < n; ++i) {
+        QChar c = _s.at(i);
+        if (!quote && c == sep) quote = true;
+        else if (c.isSpace()) {
+            quote = true;
+            QString esc;
+            switch (c.toLatin1()) {
+            case '\r':  esc = "\\r";    break;
+            case '\n':  esc = "\\n";    break;
+            default:                    break;
+            }
+            if (!esc.isEmpty()) {
+                if (!dropCrLf) {
+                    c = QChar(' ');
+                    state = CSVE_DROP_CRLF;
+                }
+                else {
+                    r += esc;
+                    continue;
+                }
+            }
+        }
+        else if (c == quo || c == QChar('\\')) {
+            r += c;
+            quote = true;
+        }
+        else if (!c.isPrint()) {
+            state = CSVE_DROP_INVCH;
+            continue;
+        }
+        r += c;
+    }
+    if (quote) r.prepend(quo).append(quo);
+    line += r + sep;
+    return *this;
+}
+
+cCommaSeparatedValues& cCommaSeparatedValues::operator >>(QString& _v)
+{
+    if (values.isEmpty()) {
+        state = CSVE_END_OF_LINE;
+        _v.clear();
+    }
+    else {
+        state = CSVE_OK;
+        _v = values.takeFirst();
+    }
+    return *this;
+}
+
+void cCommaSeparatedValues::splitLine()
+{
+    values.clear();
+    if (line.isEmpty()) {
+        state = CSVE_EMPTY_LINE;
+        return;
+    }
+    state = CSVE_OK;
+    QStringList r = line.split(sep);
+    QRegExp p1("^\\s*(\")+");
+    QRegExp p2("(\")+\\s*$");
+    QString tr = "\"";
+    QString q2 = "\"\"";
+    for (int i = 0; i < r.size(); ++i) {
+        QString& f = r[i];
+        bool quoted = p1.indexIn(f) >= 0;
+        bool spnum  = quoted ? p1.cap(1).size() : 0;
+        quoted = 0 != spnum % 2;
+        if (quoted) {
+            if (spnum) f.replace(p1, tr);
+            quoted = p2.indexIn(f) >= 0;
+            spnum  = quoted ? p2.cap(1).size() : 0;
+            quoted = 0 != spnum % 2;
+            if (quoted) {
+                f.replace(p2, tr);
+            }
+            else {  // Splitted string
+                if (i + 1 >= r.size()) {
+                    state = CSVE_PARSE_ERROR;
+                    return;
+                }
+                f += sep + r.takeAt(i + 1);
+                --i;
+                continue;
+            }
+            f.replace("\\r", "\r");
+            f.replace("\\n", "\n");
+            f.replace(q2, tr);
+        }
+        else {
+            f = f.trimmed();
+        }
+    }
+}

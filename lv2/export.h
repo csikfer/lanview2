@@ -73,6 +73,7 @@ protected:
     static QString str(const cRecordFieldRef& fr, bool sp = true);
     static QString str_z(const cRecordFieldRef &fr, bool sp = true);
     static QString value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
+    static QString langComment();
     QString lineText(const QString &kw, const cRecord& o, int _tix);
     /// Title texts
     /// @param kw Keyword(s)

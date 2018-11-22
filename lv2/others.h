@@ -292,5 +292,50 @@ inline const QString& msgAppend(QString *pMsg, const QString& m)
 /* ******************************  ****************************** */
 EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
 
+/* ****************************** CSV ****************************** */
+
+class QTextStream;
+class cCommaSeparatedValues;
+cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
+cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
+cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
+
+enum eErrorCSV {
+    CSVE_OK = 0,
+    CSVE_EOF = -1, CSVE_DROP_CRLF = -2, CSVE_DROP_INVCH = -3, CSVE_END_OF_LINE = -4, CSVE_EMPTY_LINE = -5,
+    CSVE_PARSE_ERROR = -6
+};
+
+class LV2SHARED_EXPORT cCommaSeparatedValues {
+    friend cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
+    friend cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
+    friend cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
+public:
+    cCommaSeparatedValues(const QString& _csv = QString());
+    cCommaSeparatedValues(QIODevice *pIODev);
+    ~cCommaSeparatedValues();
+    void clear();
+    const QString& toString() const;
+    static const QChar sep;
+    static const QChar quo;
+    cCommaSeparatedValues& operator <<(qlonglong i) { line += QString::number(i) + sep; return *this; }
+    cCommaSeparatedValues& operator <<(double d)    { line += QString::number(d) + sep; return *this; }
+    cCommaSeparatedValues& operator <<(const QString& _s);
+    cCommaSeparatedValues& operator >>(QString &_v);
+    QString msg;
+    int state;
+    bool dropCrLf;
+protected:
+    void splitLine();
+    QString csv;
+    QString line;
+    QStringList values;
+    QTextStream *pStream;
+};
+
+cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
+static inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &)) { return (*__pf)(__s); }
+
+
 #endif // OTHERS_H
 

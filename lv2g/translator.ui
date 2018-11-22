@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QLabel" name="labelObj">
        <property name="text">
@@ -30,45 +30,105 @@
       <widget class="QComboBox" name="comboBoxObj"/>
      </item>
      <item>
-      <widget class="QLabel" name="labelSample">
-       <property name="text">
-        <string>Minta nyelv :</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxSample"/>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelEdit">
-       <property name="text">
-        <string>Szerkesztendő nyelv :</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxEdit"/>
+      <widget class="QLineEdit" name="lineEditObj"/>
      </item>
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Válasszon nyelvet, és nyomja meg a &quot;Megjelenít&quot; gombot !</string>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayoutComboBoxs">
+       <item>
+        <widget class="QLabel" name="labelLang1">
+         <property name="text">
+          <string>Nyelv #1 :</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxLang1"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelLang2">
+         <property name="text">
+          <string>Nyelv #2 :</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxLang2"/>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonAddComboBox">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonDelComboBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/minus.ico</normaloff>:/icons/minus.ico</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonAddLanguage">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/db_add.ico</normaloff>:/icons/db_add.ico</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
    </item>
    <item>
-    <widget class="QTableView" name="tableView"/>
+    <widget class="QTableWidget" name="tableWidget"/>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -105,7 +165,17 @@
      <item>
       <widget class="QPushButton" name="pushButtonView">
        <property name="text">
-        <string>Megjelenít</string>
+        <string>Betölt</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonImport">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;CSV fájl importálható be.&lt;/p&gt;&lt;p&gt;A CSV fájl nem tartalmazza, hogy az oszlopok milyen nyelvet tartalmaznak.&lt;/p&gt;&lt;p&gt;Arról, hogy a nyelvek sorrendje és száma ugyan az legyen, mint a kiexportáláskor, a felhasználónak kell gondoskodnia!&lt;/p&gt;&lt;p&gt;A beimportált szövegeket a &amp;quot;Ment&amp;quot; gombbal mentheti az adatbázisba, a nyelvek sorrendjének ellenörzése után.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Import</string>
        </property>
       </widget>
      </item>
@@ -130,6 +200,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pushButtonExport">
+       <property name="text">
+        <string>Export</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer_4">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -146,6 +223,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="lv2g.qrc"/>
+ </resources>
  <connections/>
 </ui>

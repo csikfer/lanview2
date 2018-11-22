@@ -1,13 +1,15 @@
 #include "popupreport.h"
 
-cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
+cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title, bool isHtml)
     : QWidget(_par, Qt::Window)
 {
     QString title = _title.isEmpty() ? trUtf8("Report") : _title;
     setWindowTitle(title);
     pVLayout = new QVBoxLayout;
     setLayout(pVLayout);
-    pTextEdit = new QTextEdit(_text);
+    pTextEdit = new QTextEdit();
+    if (isHtml) pTextEdit->setHtml(_text);
+    else        pTextEdit->setPlainText(_text);
     pVLayout->addWidget(pTextEdit, 1);
     pHLayout = new QHBoxLayout;
     pVLayout->addLayout(pHLayout, 0);
@@ -46,11 +48,6 @@ void cPopupReportWindow::save()
 {
     static QString fn;
     textEditToFile(fn, pTextEdit, this);
-}
-
-cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
-{
-    return new cPopupReportWindow(_par, _text, _title);
 }
 
 cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)

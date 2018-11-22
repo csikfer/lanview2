@@ -11,39 +11,54 @@ class cTranslator;
 
 class cTranslator;
 
+class cTransLang : public QObject {
+    Q_OBJECT
+public:
+    cTransLang(int ix, cTranslator *par);
+    ~cTransLang();
+    const cLanguage&    language() const { return _language; }
+    qlonglong           langId() const   { return _langId; }
+    void setEnable(bool f);
+private:
+    cTranslator *       parent;
+    int                 langIndex;
+    bool                enabled;
+    QComboBox *         pComboBox;
+    QLabel *            pLabel;
+    cRecordListModel *  pModel;
+    QLineEdit *         pLineEdit;
+    qlonglong           _langId;
+    cLanguage           _language;
+protected slots:
+    void on_comboBox_currentIndexChanged(int index);
+};
+
 class cTransRow : public QObject {
     Q_OBJECT
 public:
-    enum {
-        CIX_REC_ID, CIX_REC_NAME, CIX_TID, CIX_TID_NAME, CIX_SAMPLE_TEXT, CIX_EDITED_TEXT,
-        CIX_COLUMNS
-    };
-    cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlonglong _tid, const QStringList& _sl, const QStringList& _el);
-
+    cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlonglong _tid, const QList<QStringList> &_texts);
+    ~cTransRow();
     cTranslator *parent;
     int         height;
     int         firstRow;
+    int         langNum;
     qlonglong   recId;
     QString     recName;
     qlonglong   textId;
-    QStringList sampleTexts;
-    QStringList editTexts;
-    QTableView *pTable;
-    QStandardItemModel *pModel;
+    QList<QStringList> texts;
+    QTableWidget *pTable;
     const cColEnumType *pTextEnum;
 private:
-    QStandardItem *number(qlonglong n) {
-        QString text;
-        if (n >= 0) text = QString::number(n);
-        QStandardItem *pi = new QStandardItem(text);
-        pi->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        return pi;
-    }
+    static QTableWidgetItem *numberItem(qlonglong n);
+    QTableWidgetItem *textItem(const QString& text);
+    QTableWidgetItem *editItem(const QString& text);
+    void subRow(int i);
 };
 
 class cTranslator : public cIntSubObj
 {
     friend class cTransRow;
+    friend class cTransLang;
     Q_OBJECT
 
 public:
@@ -56,42 +71,42 @@ protected:
     QList<QString>      recNameList;
     QList<QStringList>  sampleTexts;
     QList<QStringList>  editedTexts; */
+    int                 langNum = 0;
+    QList<qlonglong>    langIds;
     QList<cTransRow *>  rows;
-
+    QList<const cLanguage *> languages;
 private slots:
-    void on_comboBoxSample_currentIndexChanged(int index);
-
-    void on_comboBoxEdit_currentIndexChanged(int index);
-
     void on_comboBoxObj_currentIndexChanged(int index);
-
     void on_pushButtonView_clicked();
-
     void on_pushButtonSave_clicked();
+    void on_toolButtonAddComboBox_clicked();
+    void on_toolButtonAddLanguage_clicked();
+
+    void on_toolButtonDelComboBox_clicked();
+
+    void on_pushButtonCancel_clicked();
+
+    void on_pushButtonExport_clicked();
 
 protected:
     const cRecStaticDescr * index2TableDescr(int ix = NULL_IX);
     const cColEnumType *table2objEnum(const cRecStaticDescr * _pd);
     const cColEnumType *index2objEnum(int ix = NULL_IX);
     void clearRows();
-
+    void enableCombos(bool e);
     Ui::cTranslator *ui;
-    QStandardItemModel *pTableModel;
-    cRecordListModel *pSampleLangModel;
-    cRecordListModel *pEditedLangModel;
-    cEnumListModel   *pTableListModel;
-    QSqlQuery       q;
-    bool            viewed;
-    bool            modifyed;
-    const cColEnumType *pTextNameEnumType;
-    cLanguage       sampleLanguage;
-    qlonglong       sampleLangId;
-    cLanguage       editedLanguage;
-    qlonglong       editedLangId;
-    const cColEnumType& enumTableForText;
-    const cRecStaticDescr *pTableDescr;
-    QString         sTableName;
-
+    const cColEnumType&     enumTableForText;
+    QList<cTransLang *>     selectLangs;
+    cEnumListModel         *pTableListModel;
+    QSqlQuery               q;
+    bool                    init, down;
+    bool                    viewed;
+    const cColEnumType     *pTextNameEnumType;
+    const cRecStaticDescr  *pTableDescr;
+    QString                 sTableName;
+private:
+    QString itemText(int row, int col) const;
+    qlonglong itemId(int row, int col) const;
 };
 
 #endif // TRANSLATOR_H

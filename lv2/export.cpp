@@ -152,6 +152,23 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     return r;
 }
 
+QString cExport::langComment()
+{
+    QSqlQuery q = getQuery();
+    static const QString sql =
+            "SELECT 'default : ' || "
+            " COALESCE((SELECT language_name FROM languages WHERE language_id = get_int_sys_param('default_language' )), '?')"
+            "  || ' ; failower : ' || "
+            " COALESCE((SELECT language_name FROM languages WHERE language_id = get_int_sys_param('failower_language')), '?')";
+    execSql(q, sql);
+    cLanguage *pAct = lanView::getInstance()->pLanguage;
+    if (pAct == nullptr) EXCEPTION(EPROGFAIL);
+    QString r;
+    r  = "// Act Language : " + pAct->getName();
+    r += "; ( " + q.value(0).toString() + ")\n";
+    return r;
+}
+
 QString cExport::lineText(const QString& kw, const cRecord& o, int _tix)
 {
     QString r;
@@ -302,7 +319,8 @@ QString cExport::tableShapes(eEx __ex)
     divert.clear();
     cTableShape o;
     QString r;
-    r = sympleExport(o, o.toIndex(_sTableShapeName), __ex);
+    r  = langComment();
+    r += sympleExport(o, o.toIndex(_sTableShapeName), __ex);
     r += divert;
     divert.clear();
     return r;
@@ -418,6 +436,7 @@ QString cExport::menuItems(eEx __ex)
     static const QString sql = "SELECT DISTINCT(app_name) FROM menu_items ORDER BY app_name ASC";
     QSqlQuery q = getQuery();
     QString r;
+    r  = langComment();
     if (execSql(q, sql)) {
         do {
             QString sAppName = q.value(0).toString();
@@ -494,7 +513,10 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
 QString cExport::enumVals(eEx __ex)
 {
     cEnumVal o;
-    return sympleExport(o, o.ixTypeName(), __ex, o.mask(o.ixValName()));
+    QString r;
+    QSqlQuery q = getQuery();
+    r  = langComment();
+    return r + sympleExport(o, o.ixTypeName(), __ex, o.mask(o.ixValName()));
 }
 
 QString cExport::_export(QSqlQuery &q, cEnumVal &o)

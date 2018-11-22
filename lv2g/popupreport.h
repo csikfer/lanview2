@@ -7,7 +7,7 @@
 class LV2GSHARED_EXPORT cPopupReportWindow : public QWidget {
     Q_OBJECT
 public:
-    cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString());
+    cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString(), bool isHtml = true);
     void resizeByText();
     QVBoxLayout *pVLayout;
     QTextEdit   *pTextEdit;
@@ -19,7 +19,15 @@ private slots:
     void save();
 };
 
-_GEX cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString());
+static inline cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
+{
+    return new cPopupReportWindow(_par, _text, _title);
+}
+
+static inline cPopupReportWindow* popupTextWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
+{
+    return new cPopupReportWindow(_par, _text, _title, false);
+}
 
 _GEX cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid);
 _GEX cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po);
