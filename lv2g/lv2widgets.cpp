@@ -2818,10 +2818,7 @@ void cBinaryWidget::loadDataFromFile()
     QString fn = QFileDialog::getOpenFileName(this);
     if (fn.isEmpty()) return;
     QFile f(fn);
-    if (f.open(QIODevice::ReadOnly) == false && f.isReadable() == false) {
-        QMessageBox::warning(this, dcViewShort(DC_ERROR), trUtf8("A megadott %1 nevű fájl nem olvasható").arg(fn));
-        return;
-    }
+    if (!cMsgBox::tryOpenRead(f, this)) return;
     data = f.readAll();
     pRadioButtonNULL->setChecked(false);
     pRadioButtonNULL->setCheckable(true);

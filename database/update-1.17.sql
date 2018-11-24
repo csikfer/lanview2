@@ -32,4 +32,8 @@ ALTER TABLE table_shape_fields ADD CONSTRAINT table_shape_fields_name_unique_ind
 COMMENT ON COLUMN public.table_shape_fields.table_shape_field_name IS 'Column name.';
 COMMENT ON COLUMN public.table_shape_fields.table_field_name IS 'Table field name (using of query).';
 
+-- 2018.11.23.
+
+ALTER TYPE datacharacter ADD VALUE 'question';
+
 SELECT set_db_version(1, 17);

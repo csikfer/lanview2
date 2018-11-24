@@ -1,6 +1,7 @@
 #include "record_table.h"
 #include "object_dialog.h"
 #include "lv2validator.h"
+#include "popupreport.h"
 
 class pINetValidator;
 /*
@@ -153,7 +154,7 @@ cPatch * cPatchDialog::getPatch()
         ok = ok && p->setShare(a, ab, b, bb, cd);
         if (!ok) {
             QString msg = trUtf8("A megadott kábelmegosztás nem állítható be (bázis port #%1)").arg(i);
-            QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
+            cMsgBox::warning(msg, this);
             pDelete(p);
             break;
         }
@@ -192,14 +193,14 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             if (ix < 0) {       //
                 QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem találok.").
                         arg(pp->getName()).arg(spid);
-                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
+                cMsgBox::warning(msg, this);
                 continue;
             }
             ix = rowsData[i]->listPortIxRow.indexOf(ix);    // Kiválasztható ?
             if (ix < 0) {                   // nem találta
                 QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem választható ki.").
                         arg(pp->getName()).arg(spid);
-                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
+                cMsgBox::warning(msg, this);
                 continue;
             }
             rowsData[i]->comboBoxPortIx->setCurrentIndex(ix +1);

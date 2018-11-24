@@ -388,7 +388,8 @@ enum eDataCharacter {
     DC_ERROR,
     DC_NOT_PERMIT,
     DC_HAVE_NO,
-    DC_TEXT
+    DC_TEXT,
+    DC_QUESTION
 };
 
 EXT_ int dataCharacter(const QString& n, eEx __ex = EX_ERROR);

@@ -1,6 +1,7 @@
 #include "record_tree_model.h"
 #include "record_tree.h"
 #include "cerrormessagebox.h"
+#include "popupreport.h"
 
 cTreeNode::cTreeNode(cRecord *__po, cTreeNode * _parentNode)
     : pData(__po)
@@ -288,11 +289,8 @@ bool cRecordTreeModel::removeRec(const QModelIndex & mi)
 {
     static const QString tn = "delete_tree";
     cTreeNode *pn = nodeFromIndex(mi);
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Egy rész fa teljes törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt %1 nevű objektumot, az összes alárendelt objektummal eggyütt ?\n").arg(pn->name()) + sIrrevocable,
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return false;
+    QString msg = trUtf8("Valóban törölni akarja a kijelölt %1 nevű objektumot, az összes alárendelt objektummal eggyütt ?\n").arg(pn->name()) + sIrrevocable;
+    if (!cMsgBox::yes(msg, recordView.pWidget())) return false;
     beginRemoveRows(mi.parent(), mi.row(), mi.row());
     sqlBegin(*pq, tn);
     bool r = removeNode(pn);
@@ -360,7 +358,7 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
     // Lecsekkoljuk, változott-e a fa, az új rendben van-e, és mi a parent új indexe
     int chkr = checkUpdateRow(mi, pRec, npi);
     if (chkr == 0) {    // Az új fa szerkezet nem OK
-        QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
+        cMsgBox::warning(trUtf8("Nem megengedett szülő megadása. Hurok a fában."), recordView.pWidget());
         return 0;
     }
     if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq, TS_NULL, true))) {

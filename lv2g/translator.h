@@ -16,8 +16,12 @@ class cTransLang : public QObject {
 public:
     cTransLang(int ix, cTranslator *par);
     ~cTransLang();
-    const cLanguage&    language() const { return _language; }
-    qlonglong           langId() const   { return _langId; }
+    const cLanguage&    current() const { return _language; }
+    qlonglong           currentId() const { return _langId; }
+    const QString       currentName() const { return _language.getName(); }
+    void                refresh()        { pModel->refresh(); }
+    bool                setCurrent(qlonglong _id) { return pModel->setCurrent(_id); }
+    bool                setCurrent(const QString& _n) { return pModel->setCurrent(_n); }
     void setEnable(bool f);
 private:
     cTranslator *       parent;
@@ -66,11 +70,6 @@ public:
     ~cTranslator();
     static const enum ePrivilegeLevel rights;
 protected:
-    /*
-    QList<qlonglong>    textIdList;
-    QList<QString>      recNameList;
-    QList<QStringList>  sampleTexts;
-    QList<QStringList>  editedTexts; */
     int                 langNum = 0;
     QList<qlonglong>    langIds;
     QList<cTransRow *>  rows;
@@ -81,12 +80,10 @@ private slots:
     void on_pushButtonSave_clicked();
     void on_toolButtonAddComboBox_clicked();
     void on_toolButtonAddLanguage_clicked();
-
     void on_toolButtonDelComboBox_clicked();
-
     void on_pushButtonCancel_clicked();
-
     void on_pushButtonExport_clicked();
+    void on_pushButtonImport_clicked();
 
 protected:
     const cRecStaticDescr * index2TableDescr(int ix = NULL_IX);
@@ -105,8 +102,9 @@ protected:
     const cRecStaticDescr  *pTableDescr;
     QString                 sTableName;
 private:
-    QString itemText(int row, int col) const;
+    QString itemText(int row, int col, eEx __ex = EX_ERROR) const;
     qlonglong itemId(int row, int col) const;
+    void setHeader(int cols);
 };
 
 #endif // TRANSLATOR_H

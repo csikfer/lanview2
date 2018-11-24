@@ -595,6 +595,39 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
     return *this;
 }
 
+bool cRecordListModel::setCurrent(qlonglong _id)
+{
+    if (pComboBox == nullptr) return false;
+    if (_id != currendId()) {
+        int ix = indexOf(_id);
+        if (ix < 0) return false;
+        pComboBox->setCurrentIndex(ix);
+    }
+    return true;
+}
+
+bool cRecordListModel::setCurrent(const QString &_n)
+{
+    if (pComboBox == nullptr) return false;
+    if (_n != currendName()) {
+        int ix = indexOf(_n);
+        if (ix < 0) return false;
+        pComboBox->setCurrentIndex(ix);
+    }
+    return true;
+}
+
+bool cRecordListModel::refresh()
+{
+    qlonglong id = NULL_ID;
+    if (pComboBox != nullptr) {
+        int ix = pComboBox->currentIndex();
+        if (ix >= 0) id = atId(ix);
+    }
+    setFilter();
+    return setCurrent(id);
+}
+
 void cRecordListModel::joinWith(QComboBox *_pComboBox)
 {
     pComboBox = _pComboBox;

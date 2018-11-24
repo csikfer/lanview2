@@ -13,7 +13,6 @@
 #include <QPushButton>
 #include <QDateTimeEdit>
 #include <QFileDialog>
-#include <QMessageBox>
 #include <QTableWidget>
 
 #include "lv2g.h"

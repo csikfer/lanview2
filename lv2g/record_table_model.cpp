@@ -1,7 +1,7 @@
 #include "record_table_model.h"
 #include "record_table.h"
 #include "cerrormessagebox.h"
-#include "report.h"
+#include "popupreport.h"
 
 QString cRecordViewModelBase::sIrrevocable;
 
@@ -180,8 +180,7 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
     bool r = SqlInsert(*pq, pRec);  // Insert, if error, view error message box
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
     if (r && !insertRow(pRec)) {    // Insert ok and view error
-        QMessageBox::warning(nullptr, cEnumVal::viewLong(_sDatacharacter, DC_WARNING, dataCharacter(DC_WARNING)),
-                             QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"));
+        cMsgBox::warning(QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"), recordView.pWidget());
     }
     return r;
 }
@@ -302,11 +301,7 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
         }
     }
 
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Kijelölt objektu(mo)k törlése!"),
-                         text,
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return;
+    if (!cMsgBox::yes(text, recordView.pWidget())) return;
     for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
         if (rb[i]) removeRec(index(i, 0));
     }

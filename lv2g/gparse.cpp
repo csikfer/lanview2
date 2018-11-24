@@ -3,6 +3,7 @@
 #include "import_parser.h"
 #include "cerrormessagebox.h"
 #include "lv2widgets.h"
+#include "popupreport.h"
 
 #if defined(Q_CC_GNU)
 #include <unistd.h>
@@ -66,14 +67,14 @@ cParseWidget::~cParseWidget()
 void cParseWidget::loadClicked()
 {
     QString text;
-    if (textFromFile(fileName, text, this)) {
+    if (cFileDialog::textFromFile(fileName, text, this)) {
         pUi->textEditSrc->setText(text);
     }
 }
 
 void cParseWidget::saveClicked()
 {
-    textToFile(fileName, pUi->textEditSrc->toPlainText(), this);
+    cFileDialog::textToFile(fileName, pUi->textEditSrc->toPlainText(), this);
 }
 
 void cParseWidget::parseClicked()
@@ -274,14 +275,14 @@ void cParseWidget::exportLine()
 void cParseWidget::loadQPClicked()
 {
     QString text;
-    if (textFromFile(fileNamePQ, text, this)) {
+    if (cFileDialog::textFromFile(fileNamePQ, text, this)) {
         pUi->textEditQP->setText(text);
     }
 }
 
 void cParseWidget::saveQPClicked()
 {
-    textToFile(fileNamePQ, pUi->textEditQP->toPlainText(), this);
+    cFileDialog::textToFile(fileNamePQ, pUi->textEditQP->toPlainText(), this);
 }
 
 void cParseWidget::parseQPClicked()
@@ -326,10 +327,10 @@ void cParseWidget::on_checkBoxQP_toggled(bool checked)
 
 void cParseWidget::on_pushButtonRepSave_clicked()
 {
-    textEditToFile(fileName, pUi->textEditResult, this);
+    cFileDialog::textEditToFile(fileName, pUi->textEditResult, this);
 }
 
 void cParseWidget::on_pushButtonLogSave_clicked()
 {
-    textEditToFile(fileName, pUi->textEditLog, this);
+    cFileDialog::textEditToFile(fileName, pUi->textEditLog, this);
 }

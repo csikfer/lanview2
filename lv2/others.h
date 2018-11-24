@@ -301,9 +301,22 @@ cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
 cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
 
 enum eErrorCSV {
-    CSVE_OK = 0,
-    CSVE_EOF = -1, CSVE_DROP_CRLF = -2, CSVE_DROP_INVCH = -3, CSVE_END_OF_LINE = -4, CSVE_EMPTY_LINE = -5,
-    CSVE_PARSE_ERROR = -6
+    CSVE_OK                     = QTextStream::Ok,
+    CSVE_STRM_ReadPastEnd       = QTextStream::ReadPastEnd,
+    CSVE_STRM_ReadCorruptData   = QTextStream::ReadCorruptData,
+    CSVE_STRM_WriteFailed       = QTextStream::WriteFailed,
+    CSVE_EMPTY_LINE             = 0x0010,
+    CSVE_PARSE_ERROR            = 0x0020,
+    CSVE_IS_NOT_NUMBER          = 0x0030,
+    CSVE_DROP_INVCH             = 0x0100,
+    CSVE_DROP_CRLF              = 0x0200,
+    CSVE_END_OF_LINE            = 0x1000,
+    CSVE_EDD_OF_FILE            = 0x2000,
+    CSVE_STRM                   = 0x000f,
+    CSVE_FORM                   = 0x00f0,
+    CSVE_DROP                   = 0x0f00,
+    CSVE_END_OF                 = 0xf000,
+    CSVE_CRIT                   = 0x00ff
 };
 
 class LV2SHARED_EXPORT cCommaSeparatedValues {
@@ -316,17 +329,22 @@ public:
     ~cCommaSeparatedValues();
     void clear();
     const QString& toString() const;
+    int lineNo() { return _lineNo; }
+    int state(QString &msg);
+    int state() { return _state; }
     static const QChar sep;
     static const QChar quo;
     cCommaSeparatedValues& operator <<(qlonglong i) { line += QString::number(i) + sep; return *this; }
     cCommaSeparatedValues& operator <<(double d)    { line += QString::number(d) + sep; return *this; }
     cCommaSeparatedValues& operator <<(const QString& _s);
     cCommaSeparatedValues& operator >>(QString &_v);
+    cCommaSeparatedValues& operator >>(qlonglong &_v);
     QString msg;
-    int state;
     bool dropCrLf;
 protected:
     void splitLine();
+    int _state;
+    int _lineNo;
     QString csv;
     QString line;
     QStringList values;

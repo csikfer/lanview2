@@ -1284,7 +1284,7 @@ void cRecordsViewBase::insert(bool _similar)
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
                         if (!ok) {
-                            QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
+                            cMsgBox::warning(trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"), pWidget());
                             refresh();
                             break;
                         }
@@ -1461,7 +1461,7 @@ void cRecordsViewBase::modify(eEx __ex)
                 bool r = pRecordDialog->accept(); // Bevitt adatok rendben?
                 if (!r) {
                     // Nem ok az adat
-                    QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
+                    cMsgBox::warning(pRd->errMsg(), pWidget());
                     // Újra
                     continue;
                 }
@@ -2455,7 +2455,7 @@ void cRecordTable::copy()
         EXCEPTION(EPROGFAIL);
     }
     if (r.isEmpty()) {
-        QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("Nincs adat."));
+        cMsgBox::warning(trUtf8("Nincs adat."), pWidget());
         return;
     }
     switch (t) {
@@ -2472,7 +2472,7 @@ void cRecordTable::copy()
                     return;
                 }
             }
-            QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("Hiba a fájl kiírásánál."));
+            cMsgBox::warning(trUtf8("Hiba a fájl kiírásánál."), pWidget());
             path = dialog.getOtherPath();
         }
     }

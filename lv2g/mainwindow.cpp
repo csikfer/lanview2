@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "setup.h"
 #include "gparse.h"
+#include "popupreport.h"
 
 
 
@@ -38,7 +39,7 @@ void cMainWindow::init(bool _setup)
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) {
             QString msg = trUtf8("Nincs menü a GUI applikációhoz");
             if (lanView::isAuthorized(PL_ADMIN)) {
-                QMessageBox::warning(nullptr, dcViewShort(DC_WARNING), msg);
+                cMsgBox::warning(msg, this);
                 setSetupMenu();
             }
             else {

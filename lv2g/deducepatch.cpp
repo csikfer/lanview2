@@ -1134,9 +1134,7 @@ void cDeducePatch::on_pushButtonSave_clicked()
                 "Valóban menti a kijelölt linkeket?\n"
                 "Az ütköző linkek automatikusan törlődnek."
                 "A művelet visszavonására nincs legetőség.");
-    if (QMessageBox::Ok != QMessageBox::warning(this, dcViewShort(DC_WARNING), msg, QMessageBox::Ok, QMessageBox::Cancel)) {
-        return;
-    }
+    if (!cMsgBox::yes(msg, this)) return;
     QSqlQuery q = getQuery();
     cError *pe = nullptr;
     QString tr = "deduce_patch";

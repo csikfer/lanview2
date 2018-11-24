@@ -446,6 +446,7 @@ cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv)
 cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv)
 {
     __csv.pStream->seek(0);
+    __csv._lineNo = 0;
     return next(__csv);
 }
 
@@ -453,12 +454,18 @@ cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv)
 {
     __csv.values.clear();
     __csv.line  = __csv.pStream->readLine();
-    int st = __csv.pStream->status();
-    __csv.state = st;
-    if (st == 0) __csv.splitLine();
+    __csv._state = __csv.pStream->status();
+    if (__csv._state == 0) {
+        if (__csv.line.isNull() && __csv.pStream->atEnd()) {
+            __csv._state = CSVE_EDD_OF_FILE;
+        }
+        else {
+            __csv._lineNo++;
+            __csv.splitLine();
+        }
+    }
     return __csv;
 }
-
 
 const QChar cCommaSeparatedValues::sep = QChar(';');
 const QChar cCommaSeparatedValues::quo = QChar('"');
@@ -472,6 +479,8 @@ cCommaSeparatedValues::cCommaSeparatedValues(const QString& _csv)
 cCommaSeparatedValues::cCommaSeparatedValues(QIODevice *pIODev)
 {
     pStream = new QTextStream(pIODev);
+    pStream->setCodec("UTF-8");
+    pStream->setGenerateByteOrderMark(true);
 }
 
 cCommaSeparatedValues::~cCommaSeparatedValues()
@@ -494,9 +503,33 @@ const QString& cCommaSeparatedValues::toString() const
     return csv;
 }
 
+int cCommaSeparatedValues::state(QString& msg)
+{
+    switch (_state) {
+    case CSVE_OK:                   msg.clear(); break;
+    case CSVE_STRM_ReadPastEnd:     msg = QObject::trUtf8("Stream: ReadPastEnd.");  break;
+    case CSVE_STRM_ReadCorruptData: msg = QObject::trUtf8("Stream: ReadCorruptData.");  break;
+    case CSVE_STRM_WriteFailed:     msg = QObject::trUtf8("Stream: WriteFailed.");  break;
+    case CSVE_EMPTY_LINE:           msg = QObject::trUtf8("Emoty line.");  break;
+    case CSVE_PARSE_ERROR:          msg = QObject::trUtf8("Parse error.");  break;
+    case CSVE_IS_NOT_NUMBER:        msg = QObject::trUtf8("A mező nem egész szám típus.");  break;
+    case CSVE_DROP_INVCH:           msg = QObject::trUtf8("Invalid character, dropped.");  break;
+    case CSVE_DROP_CRLF:            msg = QObject::trUtf8("Cr. or Lf. dropped.");  break;
+    case CSVE_END_OF_LINE:          msg = QObject::trUtf8("End of line.");  break;
+    case CSVE_EDD_OF_FILE:          msg = QObject::trUtf8("End of file.");  break;
+    default:                        msg = QObject::trUtf8("Invalid result state (%1).").arg(_state);  break;
+    }
+    if (_state != CSVE_OK) {
+        msg.prepend(QObject::trUtf8("Line %1 : ").arg(_lineNo));
+        msg += " Last line :\n" + line;
+    }
+    return _state;
+}
+
+
 cCommaSeparatedValues& cCommaSeparatedValues::operator <<(const QString& _s)
 {
-    state = CSVE_OK;
+    _state = CSVE_OK;
     QString r;
     int n = _s.size();
     bool quote = false;
@@ -514,7 +547,7 @@ cCommaSeparatedValues& cCommaSeparatedValues::operator <<(const QString& _s)
             if (!esc.isEmpty()) {
                 if (!dropCrLf) {
                     c = QChar(' ');
-                    state = CSVE_DROP_CRLF;
+                    _state = CSVE_DROP_CRLF;
                 }
                 else {
                     r += esc;
@@ -527,7 +560,7 @@ cCommaSeparatedValues& cCommaSeparatedValues::operator <<(const QString& _s)
             quote = true;
         }
         else if (!c.isPrint()) {
-            state = CSVE_DROP_INVCH;
+            _state = CSVE_DROP_INVCH;
             continue;
         }
         r += c;
@@ -540,12 +573,26 @@ cCommaSeparatedValues& cCommaSeparatedValues::operator <<(const QString& _s)
 cCommaSeparatedValues& cCommaSeparatedValues::operator >>(QString& _v)
 {
     if (values.isEmpty()) {
-        state = CSVE_END_OF_LINE;
+        _state = CSVE_END_OF_LINE;
         _v.clear();
     }
     else {
-        state = CSVE_OK;
+        _state = CSVE_OK;
         _v = values.takeFirst();
+    }
+    return *this;
+}
+
+cCommaSeparatedValues& cCommaSeparatedValues::operator >>(qlonglong &_v)
+{
+    _v = NULL_ID;
+    QString s;
+    operator >>(s);
+    if (_state == CSVE_OK) {
+        bool ok;
+        qlonglong r = s.toLongLong(&ok);
+        if (ok) _v = r;
+        else _state = CSVE_IS_NOT_NUMBER;
     }
     return *this;
 }
@@ -554,17 +601,17 @@ void cCommaSeparatedValues::splitLine()
 {
     values.clear();
     if (line.isEmpty()) {
-        state = CSVE_EMPTY_LINE;
+        _state = CSVE_EMPTY_LINE;
         return;
     }
-    state = CSVE_OK;
-    QStringList r = line.split(sep);
+    _state = CSVE_OK;
+    values = line.split(sep, QString::KeepEmptyParts);
     QRegExp p1("^\\s*(\")+");
     QRegExp p2("(\")+\\s*$");
     QString tr = "\"";
     QString q2 = "\"\"";
-    for (int i = 0; i < r.size(); ++i) {
-        QString& f = r[i];
+    for (int i = 0; i < values.size(); ++i) {
+        QString& f = values[i];
         bool quoted = p1.indexIn(f) >= 0;
         bool spnum  = quoted ? p1.cap(1).size() : 0;
         quoted = 0 != spnum % 2;
@@ -577,14 +624,15 @@ void cCommaSeparatedValues::splitLine()
                 f.replace(p2, tr);
             }
             else {  // Splitted string
-                if (i + 1 >= r.size()) {
-                    state = CSVE_PARSE_ERROR;
+                if (i + 1 >= values.size()) {
+                    _state = CSVE_PARSE_ERROR;
                     return;
                 }
-                f += sep + r.takeAt(i + 1);
+                f += sep + values.takeAt(i + 1);
                 --i;
                 continue;
             }
+            f = f.mid(1, f.size() -2);
             f.replace("\\r", "\r");
             f.replace("\\n", "\n");
             f.replace(q2, tr);

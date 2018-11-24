@@ -164,25 +164,26 @@ const QString& menuItemType(int e, eEx __ex)
 
 int dataCharacter(const QString& n, eEx __ex)
 {
-    if (0 == n.compare(_sHead,   Qt::CaseInsensitive)) return DC_HEAD;
-    if (0 == n.compare(_sData,   Qt::CaseInsensitive)) return DC_DATA;
-    if (0 == n.compare(_sId,     Qt::CaseInsensitive)) return DC_ID;
-    if (0 == n.compare(_sName,   Qt::CaseInsensitive)) return DC_NAME;
-    if (0 == n.compare(_sPrimary,Qt::CaseInsensitive)) return DC_PRIMARY;
-    if (0 == n.compare(_sKey,    Qt::CaseInsensitive)) return DC_KEY;
-    if (0 == n.compare(_sFname,  Qt::CaseInsensitive)) return DC_FNAME;
-    if (0 == n.compare(_sDerived,Qt::CaseInsensitive)) return DC_DERIVED;
-    if (0 == n.compare(_sTree,   Qt::CaseInsensitive)) return DC_TREE;
-    if (0 == n.compare(_sForeign,Qt::CaseInsensitive)) return DC_FOREIGN;
-    if (0 == n.compare(_sNull,   Qt::CaseInsensitive)) return DC_NULL;
-    if (0 == n.compare(_sDefault,Qt::CaseInsensitive)) return DC_DEFAULT;
-    if (0 == n.compare(_sAuto,   Qt::CaseInsensitive)) return DC_AUTO;
-    if (0 == n.compare(_sInfo,   Qt::CaseInsensitive)) return DC_INFO;
-    if (0 == n.compare(_sWarning,Qt::CaseInsensitive)) return DC_WARNING;
-    if (0 == n.compare(_sError,  Qt::CaseInsensitive)) return DC_ERROR;
-    if (0 == n.compare(_sNotPermit,Qt::CaseInsensitive))return DC_NOT_PERMIT;
-    if (0 == n.compare(_sHaveNo, Qt::CaseInsensitive)) return DC_HAVE_NO;
-    if (0 == n.compare(_sText,   Qt::CaseInsensitive)) return DC_TEXT;
+    if (0 == n.compare(_sHead,      Qt::CaseInsensitive)) return DC_HEAD;
+    if (0 == n.compare(_sData,      Qt::CaseInsensitive)) return DC_DATA;
+    if (0 == n.compare(_sId,        Qt::CaseInsensitive)) return DC_ID;
+    if (0 == n.compare(_sName,      Qt::CaseInsensitive)) return DC_NAME;
+    if (0 == n.compare(_sPrimary,   Qt::CaseInsensitive)) return DC_PRIMARY;
+    if (0 == n.compare(_sKey,       Qt::CaseInsensitive)) return DC_KEY;
+    if (0 == n.compare(_sFname,     Qt::CaseInsensitive)) return DC_FNAME;
+    if (0 == n.compare(_sDerived,   Qt::CaseInsensitive)) return DC_DERIVED;
+    if (0 == n.compare(_sTree,      Qt::CaseInsensitive)) return DC_TREE;
+    if (0 == n.compare(_sForeign,   Qt::CaseInsensitive)) return DC_FOREIGN;
+    if (0 == n.compare(_sNull,      Qt::CaseInsensitive)) return DC_NULL;
+    if (0 == n.compare(_sDefault,   Qt::CaseInsensitive)) return DC_DEFAULT;
+    if (0 == n.compare(_sAuto,      Qt::CaseInsensitive)) return DC_AUTO;
+    if (0 == n.compare(_sInfo,      Qt::CaseInsensitive)) return DC_INFO;
+    if (0 == n.compare(_sWarning,   Qt::CaseInsensitive)) return DC_WARNING;
+    if (0 == n.compare(_sError,     Qt::CaseInsensitive)) return DC_ERROR;
+    if (0 == n.compare(_sNotPermit, Qt::CaseInsensitive)) return DC_NOT_PERMIT;
+    if (0 == n.compare(_sHaveNo,    Qt::CaseInsensitive)) return DC_HAVE_NO;
+    if (0 == n.compare(_sText,      Qt::CaseInsensitive)) return DC_TEXT;
+    if (0 == n.compare(_sQuestion,  Qt::CaseInsensitive)) return DC_QUESTION;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
     return DC_INVALID;
 }
@@ -209,6 +210,7 @@ const QString& dataCharacter(int e, eEx __ex)
     case DC_NOT_PERMIT: return _sNotPermit;
     case DC_HAVE_NO:    return _sHaveNo;
     case DC_TEXT:       return _sText;
+    case DC_QUESTION:   return _sQuestion;
     default:            break;
     }
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);

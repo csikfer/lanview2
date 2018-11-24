@@ -290,6 +290,16 @@ public:
     QString atView(int __i) const   { return __i < 0 || __i >= viewList.size() ? QString() : viewList[__i]; }
     ///
     cRecordListModel& copy(const cRecordListModel& _o);
+    /// Ha a modelhez csatolva van QComboBox objektum, akkor beállítja a kiválasztott értéket az ID szerint.
+    /// @return Ha beállította az aktuális értéket.
+    bool setCurrent(qlonglong _id);
+    /// Ha a modelhez csatolva van QComboBox objektum, akkor beállítja a kiválasztott értéket az név szerint.
+    /// @return Ha beállította az aktuális értéket.
+    bool setCurrent(const QString& _n);
+    /// Frissíti a listát.
+    /// Ha a modelhez csatolva van QComboBox objektum, akkor visszaállítja az aktuálisan kiválasztott értéket.
+    /// @return true, ha az aktuális érték változatlan.
+    bool refresh();
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
     bool                nullable;

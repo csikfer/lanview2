@@ -76,6 +76,7 @@ STRDEF(Datacharacter, "datacharacter")
  STRDEF(Error, "error")
  STRDEF(NotPermit, "not_permit")
  STRDEF(HaveNo, "have_no");
+ STRDEF(Question, "question")
  dnl text
 dnl eFilterType ENUM
 STRDEF(Filtertype, "filtertype")

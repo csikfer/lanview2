@@ -2,6 +2,7 @@
 #include "export.h"
 #include "cerrormessagebox.h"
 #include <QRegExp>
+#include "popupreport.h"
 
 const enum ePrivilegeLevel cExportsWidget::rights = PL_OPERATOR;
 
@@ -59,7 +60,7 @@ void cExportsWidget::start()
 
 void cExportsWidget::save()
 {
-    textToFile(fileName, pUi->plainTextEdit->toPlainText(), this);
+    cFileDialog::textToFile(fileName, pUi->plainTextEdit->toPlainText(), this);
 }
 
 void cExportsWidget::changedName(const QString& tn)

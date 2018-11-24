@@ -3,6 +3,7 @@
 #include "QRegExp"
 #include "lv2validator.h"
 #include "object_dialog.h"
+#include "popupreport.h"
 
 /// Tartalom alapján beállítja az aktuális indexet a megadott comboBox-on
 /// @param name Az érték, amire az aktuális indexnek mutatnia kell (megjelenített)
@@ -538,7 +539,7 @@ bool cRecordDialog::accept()
         _pRecord->_stat |= s & ES_DEFECTIVE;
     }
     if (0 == (_pRecord->_stat & ES_DEFECTIVE)) return true;
-    QMessageBox::warning(_pWidget, trUtf8("Adat hiba"), _errMsg);
+    cMsgBox::warning(_errMsg, _pWidget);
     return false;
 }
 

@@ -1,4 +1,5 @@
 #include "gsetupwidget.h"
+#include "popupreport.h"
 
 const enum ePrivilegeLevel cGSetupWidget::rights = PL_VIEWER;
 
@@ -66,9 +67,9 @@ void cGSetupWidget::applicate()
                 err = trUtf8("Invalid QSettings status : ") + QString::number((int)st);
                 break;
         }
-        QMessageBox::warning(this, dcViewShort(DC_ERROR), err);
+        cMsgBox::warning(err, this);
     }
-    else QMessageBox::information(this, dcViewShort(DC_INFO), trUtf8("New settings accepted."));
+    else cMsgBox::info(trUtf8("New settings accepted."), this);
     DBGFNL();
 }
 
@@ -102,7 +103,7 @@ void cGSetupWidget::testAlarmFile()
 {
     QString fn = pUi->lineEditAlarm->text();
     if (fn.isEmpty()) {
-        QMessageBox::warning(this, dcViewShort(DC_WARNING), trUtf8("Nincs megadva hang fájl."));
+        cMsgBox::warning(trUtf8("Nincs megadva hang fájl."), this);
         return;
     }
     pDelete(pSound);

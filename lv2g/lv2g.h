@@ -266,10 +266,6 @@ _GEX QVariant enumRole(const cEnumVal& ev, int role, int e = NULL_IX);
 _GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
 _GEX QVariant dcRole(int id, int role);
 
-_GEX bool textToFile(QString &fileName, const QString& text, QWidget *par = nullptr);
-_GEX bool textFromFile(QString &fileName, QString &text, QWidget * par = nullptr);
-_GEX bool textEditToFile(QString &fileName, const QTextEdit *pTE, QWidget * par = nullptr);
-
 _GEX QString condAddJoker(const QString& pat);
 
 #endif // LV2G_H

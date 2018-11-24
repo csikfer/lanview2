@@ -43,7 +43,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
             msg = trUtf8("A %1 nevű menúben a %2 nevű tábla megelenítő rekordot (table_shapes) nem sikerült beolvasni.")
                     .arg(pmi->getName(), param);
             msg += trUtf8("A leíró vaószínüleg nem létezik. A menüpont le lessz tiltva.");
-            QMessageBox::warning(par, _sError, msg);
+            cMsgBox::warning(msg, par);
             pa->setDisabled(true);
         }
         else if (lanView::isAuthorized(tableShape.getId(_sViewRights))) {           // Jog?
@@ -79,7 +79,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
             msg = trUtf8("A %1 nevű menüben ismeretlen %2 nevű form.")
                    .arg(pmi->getName(), param);
             msg += trUtf8("A menüpont le lessz tiltva.");
-            QMessageBox::warning(par, _sError, msg);
+            cMsgBox::warning(msg, par);
             pa->setDisabled(true);
             break;
         }
@@ -105,7 +105,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         msg = trUtf8("A %1 nevű menü típusa '%2' ismeretlen.")
                .arg(pmi->getName(), pmi->getName(cMenuItem::ixMenuItemType()));
         msg += trUtf8("A menüpont le lessz tiltva.");
-        QMessageBox::warning(par, _sError, msg);
+        cMsgBox::warning(msg, par);
         pa->setDisabled(true);
         break;
     }

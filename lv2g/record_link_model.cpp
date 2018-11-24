@@ -1,5 +1,6 @@
 #include "record_link_model.h"
 #include "record_link.h"
+#include "popupreport.h"
 
 cRecordLinkModel::cRecordLinkModel(cRecordLink& _rt)
     : cRecordTableModel(_rt)
@@ -16,11 +17,8 @@ void cRecordLinkModel::removeRecords(const QModelIndexList &mil)
 {
     QBitArray   rb = index2map(mil);
     if (rb.count(true) == 0) return;
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Kijelölt link(ek) törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt linke(ke)t ?\n") + sIrrevocable,
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return;
+    QString msg = trUtf8("Valóban törölni akarja a kijelölt linke(ke)t ?\n") + sIrrevocable;
+    if (!cMsgBox::yes(msg, recordView.pWidget())) return;
     int s = rb.size();    // Az összes rekord száma
     for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
         if (rb[i]) removeRec(index(i, 0));
