@@ -49,7 +49,7 @@ cTransLang::cTransLang(int ix, cTranslator *par)
         if (currentIx < 0) EXCEPTION(EDATA);
     }
     pComboBox->setCurrentIndex(currentIx);
-    pLineEdit = NULL;
+    pLineEdit = nullptr;
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_currentIndexChanged(int)));
 }
 
@@ -117,10 +117,10 @@ cTransRow::cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlon
     pTable->setItem(firstRow, CIX_REC_ID,      numberItem(recId));
     pTable->setItem(firstRow, CIX_REC_NAME,    textItem(recName));
     pTable->setItem(firstRow, CIX_TID,         numberItem(textId));
-    subRow(0);
+    subRows(0);
     if (height > 1) {
         for (int i = 1; i < height; ++i) {
-            subRow(i);
+            subRows(i);
         }
         pTable->setSpan(firstRow, CIX_REC_ID, height, 1);
         pTable->setSpan(firstRow, CIX_REC_NAME, height, 1);
@@ -133,37 +133,59 @@ cTransRow::~cTransRow()
     ;
 }
 
+void cTransRow::save()
+{
+    QSqlQuery &q = parent->q;
+    for (int i = 0; i < langNum; ++i) {
+        QStringList texts;
+        int col = CIX_FIRST_LANG;
+        for (int h = 0; h < height; ++h) {
+            texts << getText(firstRow + i, col);
+        }
+        cLangTexts::saveText(q, parent->sTableName, parent->pTextNameEnumType, textId, parent->languages.at(i)->getId(), texts);
+    }
+}
+
 QTableWidgetItem *cTransRow::numberItem(qlonglong n)
 {
     QString text;
     if (n >= 0) text = QString::number(n);
     QTableWidgetItem *pi = new QTableWidgetItem(text);
     pi->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    int itf = pi->flags();
-    itf &= ~Qt::ItemIsEditable;
-    pi->setFlags(Qt::ItemFlag(itf));
+    QFlags<Qt::ItemFlag> itf = pi->flags();
+    itf.setFlag(Qt::ItemIsEditable, false);
+    pi->setFlags(itf);
     return pi;
 }
 
 QTableWidgetItem *cTransRow::textItem(const QString& text)
 {
     QTableWidgetItem *pi = new QTableWidgetItem(text);
-    int itf = pi->flags();
-    itf &= ~Qt::ItemIsEditable;
-    pi->setFlags(Qt::ItemFlag(itf));
+    QFlags<Qt::ItemFlag> itf = pi->flags();
+    itf.setFlag(Qt::ItemIsEditable, false);
+    pi->setFlags(itf);
     return pi;
 }
 
 QTableWidgetItem *cTransRow::editItem(const QString& text)
 {
     QTableWidgetItem *pi = new QTableWidgetItem(text);
-    int itf = pi->flags();
-    itf |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEditable;
-    pi->setFlags(Qt::ItemFlag(itf));
+    QFlags<Qt::ItemFlag> itf = pi->flags();
+    itf.setFlag(Qt::ItemIsEditable, true);
+    itf.setFlag(Qt::ItemIsDragEnabled, true);
+    itf.setFlag(Qt::ItemIsDropEnabled, true);
+    pi->setFlags(itf);
     return pi;
 }
 
-void cTransRow::subRow(int i)
+QString cTransRow::getText(int row, int col)
+{
+    QTableWidgetItem *pi = pTable->item(row, col);
+    if (pi == nullptr) EXCEPTION(EPROGFAIL);
+    return pi->text();
+}
+
+void cTransRow::subRows(int i)
 {
     pTable->setItem(firstRow +i, CIX_TID_NAME, textItem(pTextEnum->enumValues.at(i)));
     for (int j = 0; j < langNum; ++j) {
@@ -341,7 +363,9 @@ void cTranslator::on_pushButtonView_clicked()
 
 void cTranslator::on_pushButtonSave_clicked()
 {
-
+    foreach (cTransRow *p, rows) {
+        p->save();
+    }
 }
 
 void cTranslator::on_toolButtonAddComboBox_clicked()

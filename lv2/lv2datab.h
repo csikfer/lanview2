@@ -897,7 +897,8 @@ public:
     void setTexts(const QString& _langName, const QStringList& texts);
     void setTexts(const qlonglong _langId, const QStringList& texts) { textMap[_langId] = texts; }
     // static QString tableName2textTypeName(const QString& _tn);
-    static void saveText(QSqlQuery& q, const QStringList& texts, cRecord *po, qlonglong lid = NULL_ID);
+    static void saveText(QSqlQuery& q, const QStringList& texts, cRecord *po, qlonglong _lid = NULL_ID);
+    static void saveText(QSqlQuery& q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, qlonglong lid, QStringList texts);
     void saveTexts(QSqlQuery& q);
     void loadTexts(QSqlQuery& q);
 protected:

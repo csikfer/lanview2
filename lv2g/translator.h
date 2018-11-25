@@ -42,6 +42,7 @@ class cTransRow : public QObject {
 public:
     cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlonglong _tid, const QList<QStringList> &_texts);
     ~cTransRow();
+    void save();
     cTranslator *parent;
     int         height;
     int         firstRow;
@@ -56,7 +57,8 @@ private:
     static QTableWidgetItem *numberItem(qlonglong n);
     QTableWidgetItem *textItem(const QString& text);
     QTableWidgetItem *editItem(const QString& text);
-    void subRow(int i);
+    QString getText(int row, int col);
+    void subRows(int i);
 };
 
 class cTranslator : public cIntSubObj
