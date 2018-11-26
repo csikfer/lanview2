@@ -60,8 +60,28 @@ cRecordViewModelBase::~cRecordViewModelBase()
 
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
+    if (column.isImage) {
+        switch (role) {
+        case Qt::DecorationRole: {
+            qlonglong id;
+            cImage  image;
+            QPixmap pix;
+            id = pr->getId(fix);
+            image.setById(*pq, id);
+            if (pixmap(image, pix)) return QVariant(pix);
+            return QVariant();
+        }   break;
+        case Qt::TextColorRole:
+        case Qt::BackgroundRole:
+        case Qt::DisplayRole:
+        case Qt::FontRole:
+            return QVariant();
+        default:
+            break;
+        }
+    }
+    else if (isTextId) fix = column.textIndex;
     qlonglong& ff = column.fieldFlags;
-    if (isTextId) fix = column.textIndex;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
@@ -365,16 +385,14 @@ void cRecordTableModel::clear()
 
 QString             cRecordTableModel::toCSV()
 {
-    QString r;
+    cCommaSeparatedValues csv;
     foreach (QStringList row, toStringTable()) {
         foreach (QString cel, row) {
-            r += quotedString(cel) + ';';
+            csv << cel;
         }
-        r.chop(1);
-        r += '\n';
+        csv << endl;
     }
-    r.chop(1);
-    return r;
+    return csv.toString();
 }
 
 QString             cRecordTableModel::toHtml()
@@ -424,16 +442,14 @@ QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
 
 QString cRecordTableModel::toCSV(QModelIndexList mil)
 {
-    QString r;
+    cCommaSeparatedValues csv;
     foreach (QStringList row, toStringTable(mil)) {
         foreach (QString cel, row) {
-            r += quotedString(cel) + ';';
+            csv << cel;
         }
-        r.chop(1);
-        r += '\n';
+        csv << endl;
     }
-    r.chop(1);
-    return r;
+    return csv.toString();
 }
 
 QString cRecordTableModel::toHtml(QModelIndexList mil)

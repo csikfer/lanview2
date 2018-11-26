@@ -20,17 +20,21 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     case 0: // #1 (static)
         pComboBox = parent->ui->comboBoxLang1;
         pLabel    = parent->ui->labelLang1;
+        pFlag     = parent->ui->labelFlag1;
         break;
     case 1: // #2 (static)
         pComboBox = parent->ui->comboBoxLang2;
         pLabel    = parent->ui->labelLang2;
+        pFlag     = parent->ui->labelFlag2;
         pModel->nullable = true;
         break;
     default:// #2+ (dynamic)
         pComboBox = new QComboBox;
         pLabel    = new QLabel;
+        pFlag     = new QLabel;
         parent->ui->horizontalLayoutComboBoxs->addWidget(pLabel);
         parent->ui->horizontalLayoutComboBoxs->addWidget(pComboBox);
+        parent->ui->horizontalLayoutComboBoxs->addWidget(pFlag);
         pModel->nullable = true;
         break;
     }
@@ -51,6 +55,7 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     pComboBox->setCurrentIndex(currentIx);
     pLineEdit = nullptr;
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_currentIndexChanged(int)));
+    on_comboBox_currentIndexChanged(currentIx);
 }
 
 cTransLang::~cTransLang()
@@ -59,6 +64,7 @@ cTransLang::~cTransLang()
     if (langIndex < MIN_LANGUAGES || parent->selectLangs.size() != langIndex) EXCEPTION(EPROGFAIL, langIndex);
     delete pLabel;
     delete pComboBox;
+    delete pFlag;
     if (pLineEdit != nullptr) delete pLineEdit;
 }
 
@@ -88,9 +94,16 @@ void cTransLang::on_comboBox_currentIndexChanged(int index)
     _langId = pModel->atId(index);
     if (_langId == NULL_ID) {
         _language.clear();
+        pFlag->clear();
     }
     else {
         _language.setById(parent->q, _langId);
+        qlonglong iid = _language.getId(_sFlagImage);
+        if (iid != NULL_ID) {
+            cImage im;
+            im.setById(parent->q, iid);
+            if (pixmap(im, flag)) pFlag->setPixmap(flag);
+        }
     }
 }
 
@@ -136,15 +149,28 @@ cTransRow::~cTransRow()
 void cTransRow::save()
 {
     QSqlQuery &q = parent->q;
+    bool fromImport = parent->fromImport;
     for (int i = 0; i < langNum; ++i) {
-        QStringList texts;
-        int col = CIX_FIRST_LANG;
+        QStringList txts;
         for (int h = 0; h < height; ++h) {
-            texts << getText(firstRow + i, col);
+            txts << getText(firstRow + h, CIX_FIRST_LANG + i);
         }
-        cLangTexts::saveText(q, parent->sTableName, parent->pTextNameEnumType, textId, parent->languages.at(i)->getId(), texts);
+        if (!fromImport && txts == texts[i]) continue;
+        cLangTexts::saveText(q, parent->sTableName, parent->pTextNameEnumType, textId, parent->languages.at(i)->getId(), txts);
     }
 }
+
+bool cTransRow::isChanged()
+{
+    for (int i = 0; i < langNum; ++i) {
+        for (int h = 0; h < height; ++h) {
+            QString txt = getText(firstRow + h, CIX_FIRST_LANG + i);
+            if (texts[i][h] != txt) return true;
+        }
+    }
+    return false;
+}
+
 
 QTableWidgetItem *cTransRow::numberItem(qlonglong n)
 {
@@ -181,7 +207,9 @@ QTableWidgetItem *cTransRow::editItem(const QString& text)
 QString cTransRow::getText(int row, int col)
 {
     QTableWidgetItem *pi = pTable->item(row, col);
-    if (pi == nullptr) EXCEPTION(EPROGFAIL);
+    if (pi == nullptr) {
+        EXCEPTION(EPROGFAIL);
+    }
     return pi->text();
 }
 
@@ -205,6 +233,7 @@ cTranslator::cTranslator(QMdiArea *par)
     init   = true;
     down   = false;
     viewed = false;
+    fromImport = false;
     pTextNameEnumType = nullptr;
 
     ui->setupUi(this);
@@ -358,13 +387,30 @@ void cTranslator::on_pushButtonView_clicked()
     } while (q.next());
     ui->tableWidget->resizeColumnsToContents();
     ui->tableWidget->resizeRowsToContents();
+    fromImport = false;
     enableCombos(false);
 }
 
 void cTranslator::on_pushButtonSave_clicked()
 {
-    foreach (cTransRow *p, rows) {
-        p->save();
+    if (fromImport || isChanged()) {
+        cError *pe = nullptr;
+        static const QString st = "Translator";
+        sqlBegin(q, st);
+        try {
+            foreach (cTransRow *p, rows) {
+                p->save();
+            }
+        } CATCHS(pe);
+        if (pe == nullptr) {
+            sqlCommit(q, st);
+        }
+        else {
+            sqlRollback(q, st);
+            QString msg = trUtf8("Hiba történt a mentés közben.");
+            cErrorMessageBox::messageBox(pe, this, msg);
+        }
+        fromImport = false;
     }
 }
 
@@ -401,17 +447,25 @@ void cTranslator::on_toolButtonDelComboBox_clicked()
 
 void cTranslator::on_pushButtonCancel_clicked()
 {
-    QString text = trUtf8("Valóban eldobja a táblázatot, és a modosításokat ?");
-    int r = QMessageBox::warning(this, dcViewLong(DC_WARNING), text, QMessageBox::No, QMessageBox::Yes);
-    if (r == QMessageBox::Yes) {
-        clearRows();
-        enableCombos(true);
+    if (isChanged()) {
+        QString text = trUtf8("Valóban eldobja a táblázatot, és a modosításokat ?");
+        if (!cMsgBox::yes(text, this)) return;
     }
+    clearRows();
+    enableCombos(true);
 }
 
+/// Export table to CSV
 void cTranslator::on_pushButtonExport_clicked()
 {
     QString fileName;
+    static const QChar sep = QChar('-');
+    fileName = sTableName + sep;
+    foreach (const cLanguage *p, languages) {
+        fileName += p->getName() + sep;
+    }
+    fileName.replace(QChar(' '), QChar('_'));
+    fileName += ".csv";
     QFile *pFile = cFileDialog::trgFile(fileName, cFileDialog::sCsvFileFilter, this);
     if (pFile == nullptr) return;
     cCommaSeparatedValues csv(pFile);
@@ -464,6 +518,7 @@ qlonglong cTranslator::itemId(int row, int col) const
     return r;
 }
 
+/// Import CSV to table
 void cTranslator::on_pushButtonImport_clicked()
 {
     clearRows();
@@ -534,6 +589,7 @@ void cTranslator::on_pushButtonImport_clicked()
                 ui->tableWidget->resizeColumnsToContents();
                 ui->tableWidget->resizeRowsToContents();
                 enableCombos(false);
+                fromImport = true;
                 return;
             }
             if (csv.state(msg) & CSVE_CRIT) goto import_error;
@@ -591,6 +647,14 @@ void cTranslator::setHeader(int cols)
         QString s = languages.at(ix)->getName();
         ui->tableWidget->setHorizontalHeaderItem(i, new QTableWidgetItem(s));
     }
+}
+
+bool cTranslator::isChanged()
+{
+    foreach (cTransRow *p, rows) {
+        if (p->isChanged()) return true;
+    }
+    return false;
 }
 
 

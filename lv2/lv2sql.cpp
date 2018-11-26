@@ -282,7 +282,7 @@ void sqlCommit(QSqlQuery& q, const QString& tn)
     if (!r) SQLQUERYERR(q);
 }
 
-void sqlRollback(QSqlQuery& q, const QString& tn)
+cError *sqlRollback(QSqlQuery& q, const QString& tn, eEx __ex)
 {
     QString msg;
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
@@ -315,8 +315,26 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
     if (!isMainThread()) {
         lanView::getInstance()->threadMutex.unlock();
     }
-    if (pe != nullptr) pe->exception();
-    if (!r) SQLQUERYERR(q);
+    if (pe != nullptr) {
+        if (__ex == EX_IGNORE) {
+            delete pe;
+            return nullptr;
+
+        }
+        if (__ex == EX_ERROR) {
+            pe->exception();
+        }
+        return pe;
+    }
+    if (r) return nullptr;
+    if (__ex == EX_IGNORE) {
+        return nullptr;
+    }
+    if (__ex == EX_ERROR) {
+        SQLQUERYERR(q);
+    }
+    SQLQUERYNEWERR(pe, q);
+    return pe;
 }
 
 QString toSqlName(const QString& _n)

@@ -266,7 +266,7 @@ QFile *cFileDialog::srcFile(QString &fileName, const QString& filter, QWidget *p
 QFile *cFileDialog::trgFile(QString &fileName, const QString& filter, QWidget *par)
 {
     QString fn;
-    fn = QFileDialog::getSaveFileName(par, sSrcFileTitle, dirName(fileName), filter);
+    fn = QFileDialog::getSaveFileName(par, sSrcFileTitle, fileName, filter);
     if (fn.isEmpty()) return nullptr;
     fileName = fn;
     QFile* pFile = new QFile(fileName);

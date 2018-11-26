@@ -229,7 +229,7 @@ EXT_ void sqlBegin(QSqlQuery& q, const QString& tn);
 /// Tranzakció befejezése
 EXT_ void sqlCommit(QSqlQuery& q, const QString& tn);
 /// Tranzakció visszagörgetése
-EXT_ void sqlRollback(QSqlQuery& q, const QString& tn);
+EXT_ cError * sqlRollback(QSqlQuery& q, const QString& tn, eEx __ex = EX_ERROR);
 
 /// Minden nem alfanumerikus vagy nem ASCII karakter '_' karakterrel helyettesít.
 /// Ha az első karakter szám, akkor beszúr elé egy '_' karaktert.

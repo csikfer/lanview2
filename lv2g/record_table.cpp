@@ -995,6 +995,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
     , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
+    isImage = false;
     sf.features().merge(table.tableShape().features(), sf.getName());
     sf.modifyByFeature(_sFieldSequenceNumber);
     sf.modifyByFeature(_sOrdTypes);
@@ -1002,6 +1003,18 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     sf.modifyByFeature(_sFieldFlags);
     sf.modifyByFeature(_sExpression);
     sf.modifyByFeature(_sDefaultValue);
+    // Features => fieldFlags
+    foreach (QString sFF, sf.colDescr(_sFieldFlags).enumType().enumValues) {
+        if (sf.isFeature(sFF)) {
+            QString v = sf.feature(sFF);
+            if (v == "!") sf.enum2setOff(_sFieldFlags, fieldFlag(v));
+            else          sf.enum2setOn (_sFieldFlags, fieldFlag(v));
+        }
+    }
+    // 'raw' => features use by view() methode
+    if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
+        sf.features().insert(_sRaw, _sNul);
+    }
 
     fieldIndex = recDescr.toIndex(sf.getName(_sTableFieldName), EX_IGNORE);
     pColDescr  = nullptr;
@@ -1019,10 +1032,12 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     else {
         pColDescr = &recDescr.colDescr(fieldIndex);
         dataCharacter = defaultDataCharter(recDescr, fieldIndex);
-        if (pColDescr->eColType == cColStaticDescr::FT_INTEGER && pColDescr->fKeyType == cColStaticDescr::FT_NONE)
+        if (pColDescr->eColType == cColStaticDescr::FT_INTEGER && pColDescr->fKeyType == cColStaticDescr::FT_NONE) {
             dataAlign |= Qt::AlignRight;
-        else if (pColDescr->eColType == cColStaticDescr::FT_REAL)
+        }
+        else if (pColDescr->eColType == cColStaticDescr::FT_REAL) {
             dataAlign |= Qt::AlignRight;
+        }
         // 'XX_color' vagy 'font' vagy 'tool_tip' flag esetén kell az enum típusa!
         if (pColDescr->eColType == cColStaticDescr::FT_ENUM ||pColDescr->eColType == cColStaticDescr::FT_BOOLEAN) {
             if (fieldFlags & ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
@@ -1035,11 +1050,15 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
             }
         }
         else if (fieldFlags & ENUM2SET2(FF_BG_COLOR, FF_FG_COLOR)) {
-            enumTypeName = _sEquSp; // maga a mező a szín
+            enumTypeName = _sEquSp; // Field is color
         }
-    }
-    if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
-        sf.features().insert(_sRaw, _sNul);         // Megjelenítésnél a features-eket kapja meg a view() metódus.
+        if (fieldFlags & ENUM2SET(FF_IMAGE) && pColDescr->eColType == cColStaticDescr::FT_INTEGER) {
+            if (pColDescr->compare(_sImageId) == 0      // Field name is image_id
+             || pColDescr->fKeyType != cColStaticDescr::FT_NONE && pColDescr->fKeyTable.compare(_sImages) == 0) {   // Foreign key to images
+                isImage = true;
+            }
+        }
+
     }
 }
 

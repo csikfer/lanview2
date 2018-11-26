@@ -36,4 +36,8 @@ COMMENT ON COLUMN public.table_shape_fields.table_field_name IS 'Table field nam
 
 ALTER TYPE datacharacter ADD VALUE 'question';
 
+-- 2018.11.26.
+
+ALTER TYPE fieldflag ADD VALUE 'image';
+
 SELECT set_db_version(1, 17);

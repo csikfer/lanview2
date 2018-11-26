@@ -21,6 +21,8 @@
 #include "imagedrv.h"
 #include "lv2link.h"
 
+_GEX bool pixmap(const cImage& o, QPixmap &image);
+
 static inline qlonglong bitByButton(QAbstractButton *p, qlonglong m)
 {
     if (p == nullptr) EXCEPTION(EPROGFAIL);
@@ -76,7 +78,7 @@ public:
     bool test() const { return batchCount == 0; }
 };
 
-class cSelectLanguage : QObject {
+class LV2GSHARED_EXPORT cSelectLanguage : QObject {
     Q_OBJECT
 public:
     cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar);
@@ -99,7 +101,7 @@ signals:
 /// \return Ha nincs hiba, akkor true.
 _GEX bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __ex = EX_ERROR);
 
-class cLineWidget : public QWidget {
+class LV2GSHARED_EXPORT cLineWidget : public QWidget {
     Q_OBJECT
 public:
     cLineWidget(QWidget *par = nullptr, bool _ro = false, bool _horizontal = true);

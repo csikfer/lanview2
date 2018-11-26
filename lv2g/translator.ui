@@ -52,6 +52,13 @@
         <widget class="QComboBox" name="comboBoxLang1"/>
        </item>
        <item>
+        <widget class="QLabel" name="labelFlag1">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="labelLang2">
          <property name="text">
           <string>Nyelv #2 :</string>
@@ -63,6 +70,13 @@
        </item>
        <item>
         <widget class="QComboBox" name="comboBoxLang2"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelFlag2">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

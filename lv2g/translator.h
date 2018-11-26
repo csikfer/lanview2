@@ -29,6 +29,8 @@ private:
     bool                enabled;
     QComboBox *         pComboBox;
     QLabel *            pLabel;
+    QLabel *            pFlag;
+    QPixmap             flag;
     cRecordListModel *  pModel;
     QLineEdit *         pLineEdit;
     qlonglong           _langId;
@@ -43,6 +45,7 @@ public:
     cTransRow(cTranslator *par, qlonglong _rid, const QString& _rnm, qlonglong _tid, const QList<QStringList> &_texts);
     ~cTransRow();
     void save();
+    bool isChanged();
     cTranslator *parent;
     int         height;
     int         firstRow;
@@ -100,6 +103,7 @@ protected:
     QSqlQuery               q;
     bool                    init, down;
     bool                    viewed;
+    bool                    fromImport;
     const cColEnumType     *pTextNameEnumType;
     const cRecStaticDescr  *pTableDescr;
     QString                 sTableName;
@@ -107,6 +111,7 @@ private:
     QString itemText(int row, int col, eEx __ex = EX_ERROR) const;
     qlonglong itemId(int row, int col) const;
     void setHeader(int cols);
+    bool isChanged();
 };
 
 #endif // TRANSLATOR_H

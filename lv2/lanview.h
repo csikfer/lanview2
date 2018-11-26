@@ -200,7 +200,7 @@ class LV2SHARED_EXPORT lanView  : public QObject {
     friend LV2SHARED_EXPORT eTristate trFlag(eTristate __tf);
     friend LV2SHARED_EXPORT void sqlBegin(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlCommit(QSqlQuery& q, const QString& tn);
-    friend LV2SHARED_EXPORT void sqlRollback(QSqlQuery& q, const QString& tn);
+    friend LV2SHARED_EXPORT cError *sqlRollback(QSqlQuery& q, const QString& tn, eEx __ex);
     friend LV2SHARED_EXPORT qlonglong sendError(const cError *pe, lanView *_instance);
    Q_OBJECT
 public:

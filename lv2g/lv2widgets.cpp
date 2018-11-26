@@ -13,7 +13,17 @@
 
 #include "popupreport.h"
 
-/* Language */
+bool pixmap(const cImage& o, QPixmap &image)
+{
+    bool f = o.dataIsPic();
+    if (!f) return false;
+    const char * _type = o._getType();
+    QByteArray   _data = o.getImage();
+    if (!image.loadFromData(_data, _type)) return false;
+    return true;
+}
+
+/* ***************************************** cSelectLanguage ***************************************** */
 
 cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar)
     : QObject(_pPar)
@@ -144,11 +154,7 @@ bool cImageWidget::setImage(const cImage& __o, const QString& __t)
 {
     hide();
     scale = 0;
-    bool f = __o.dataIsPic();
-    if (!f) return false;
-    const char * _type = __o._getType();
-    QByteArray   _data = __o.getImage();
-    if (!image.loadFromData(_data, _type)) return false;
+    if (!pixmap(__o, image)) return false;
     QString title = __t;
     if (title.isEmpty()) title = __o.getNote();
     setWindowTitle(title);

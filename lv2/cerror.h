@@ -325,7 +325,6 @@ static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& s
     pe->mSqlErrDbText = le.databaseText();
     pe->mSqlQuery     = sql;
     pe->mSqlBounds    = bound;
-    pe->exception();
 }
 
 static inline void _sql_derr_ex(cError *pe, QSqlQuery& q)
@@ -374,15 +373,29 @@ Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is.
     }
 
 /**
+@def SQLQUERYNEWERR(pe, o)
+SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
+@param pe A változó, a hiba objektum poinerének.
+@param o Objektum, amelyel kapcsolatban a hiba történt (QSqlQuery)
+@relates cError
+ */
+#define SQLQUERYNEWERR(pe, o)  { \
+        QSqlError le = (o).lastError(); \
+        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + " / Bind { " + _sql_err_bound(o) + "}"); \
+        pe = NEWCERROR(EQUERY, le.number(), le.text()); \
+        _sql_err_ex(pe, le, (o).lastQuery(), _sql_err_bound(o)); \
+    }
+
+/**
 @def SQLQUERYERR(o)
 Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
 @param o Objektum, amelyel kapcsolatban a hiba történt (QSqlQuery)
 @relates cError
  */
 #define SQLQUERYERR(o)  { \
-        QSqlError le = (o).lastError(); \
-        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + " / Bind { " + _sql_err_bound(o) + "}"); \
-        _sql_err_ex(NEWCERROR(EQUERY, le.number(), le.text()), le, (o).lastQuery(), _sql_err_bound(o)); \
+        cError *pe; \
+        SQLQUERYNEWERR(pe, o) \
+        pe->exception(); \
     }
 
 /**

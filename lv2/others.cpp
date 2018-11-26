@@ -467,7 +467,7 @@ cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv)
     return __csv;
 }
 
-const QChar cCommaSeparatedValues::sep = QChar(';');
+const QChar cCommaSeparatedValues::sep = QChar(',');
 const QChar cCommaSeparatedValues::quo = QChar('"');
 
 cCommaSeparatedValues::cCommaSeparatedValues(const QString& _csv)

@@ -99,8 +99,8 @@ enum eFieldFlag {
     FF_FONT,
     FF_TOOL_TIP,
     FF_HTML,            ///< HTML (szűkített) táblában megjelenítendő
-    FF_RAW
-
+    FF_RAW,
+    FF_IMAGE
 };
 
 EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);

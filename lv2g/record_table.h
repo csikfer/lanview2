@@ -226,6 +226,7 @@ public:
     QString                 enumTypeName;
     qlonglong               fieldFlags;
     static qlonglong        type2filter(int _type);
+    bool                    isImage;
 };
 
 /// A tábla viszonyát meghatározó flag értékek
