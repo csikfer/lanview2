@@ -268,7 +268,7 @@ void  cMenuAction::executeIt()
     }
         break;
     default:
-        DERR() << "Invalid type : #" << (int)type << endl;
+        DERR() << "Invalid type : #" << int(type) << endl;
         break;
     }
 }

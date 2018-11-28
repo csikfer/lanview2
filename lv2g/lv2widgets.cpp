@@ -97,9 +97,9 @@ bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __ex)
 
 cLineWidget::cLineWidget(QWidget *par, bool _ro, bool _horizontal)
     : QWidget(par)
-    , pLayout(_horizontal ? (QLayout *)new QHBoxLayout : (QLayout *)new QVBoxLayout)
+    , pLayout(_horizontal ? static_cast<QLayout *>(new QHBoxLayout) : static_cast<QLayout *>(new QVBoxLayout))
     , pLineEdit(new QLineEdit)
-    , pNullButton(_ro ? (QToolButton *) new cROToolButton : new QToolButton)
+    , pNullButton(static_cast<QToolButton *>(_ro ? new cROToolButton : new QToolButton))
 {
     pLineEdit->setReadOnly(_ro);
     pNullButton->setIcon(lv2g::iconNull);

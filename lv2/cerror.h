@@ -66,14 +66,6 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
 // Error codes
 #include "errcodes.h"
 
-#ifdef Q_CC_GNU
-#define _ATR_NORET_ __attribute__((noreturn))
-#elif  Q_CC_MSVC
-#define _ATR_NORET_ __declspec(noreturn)
-#else
-#define _ATR_NORET_
-#endif
-
 /*!
 @class cError
 @brief Hiba kezelő objektum
@@ -153,12 +145,13 @@ be a függvényhívásokat a hiba string konténerének az új hibastringekkel v
 Ugyanúgy használható, mint az ERRCODE makró, de itt nem adjuk meg a hiba kód értékét, az egyel nagyobb lessz mint az előző.
 */
 class LV2SHARED_EXPORT cError {
+    friend class lanView;
    public:
 /*!
 @brief Alapértelmezett 'üres' konstruktor
 
 Alapértelmezett konstruktor. Minden adattagot alaphelyzetbe állít (hibakódol 0, hiba stringek nul string),
-kivéve az mErrorSysCode adattagot, ebbe belásolja az errno aktuális értékét.
+kivéve az mErrorSysCode adattagot, ebbe bemásolja az errno aktuális értékét.
 Az adattagok inicializálása után hívja a circulation() metódust
  */
     cError();
@@ -269,12 +262,13 @@ Az adattagok inicializálása után hívja a circulation() metódust
     QThread *pThread;               ///< A hibaobjektumot létrehozó szál
     QStringList slBackTrace;
 
-    static QList<cError *> errorList;
     static int errCount() { return errorList.size(); }
+    static bool errStat();
     static int      mMaxErrCount;   ///< A maximálisan létrehozhatü cError objektumok széma
     static bool     mDropAll;       ///< Ha értéke true, akkor nem hoz létre hiba objektumokat, a továbbiakban no_init_ objektummal dobja a hibát
 protected:
-    static  QMap<int, QString>      mErrorStringMap;///< Hiba string konténer
+    static QList<cError *> errorList;
+    static QMap<int, QString>      mErrorStringMap;///< Hiba string konténer
 public:
     static const QMap<int, QString>& errorMap() { return mErrorStringMap; }
 };

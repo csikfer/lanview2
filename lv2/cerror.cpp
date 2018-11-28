@@ -272,6 +272,16 @@ void cError::init()
 #include "errcodes.h"
 }
 
+bool cError::errStat()
+{
+    bool r = false;
+    foreach (cError *pe, errorList) {
+        r = pe->mErrorCode != eError::EOK;
+        if (r) break;
+    }
+    return r;
+}
+
 QString SqlErrorTypeToString(int __et)
 {
     switch (__et) {

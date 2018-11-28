@@ -34,7 +34,7 @@ private:
     // cRecordListModel *  pModel;
     cSelectLanguage *   pSelectLanguage;
     QLineEdit *         pLineEdit;
-    qlonglong           _langId;
+    int                 _langId;
     cLanguage           _language;
 protected slots:
     void on_languageIdChanged(int lid);
@@ -59,8 +59,8 @@ public:
     const cColEnumType *pTextEnum;
 private:
     static QTableWidgetItem *numberItem(qlonglong n);
-    QTableWidgetItem *textItem(const QString& text);
-    QTableWidgetItem *editItem(const QString& text);
+    static QTableWidgetItem *textItem(const QString& text);
+    static QTableWidgetItem *editItem(const QString& text);
     QString getText(int row, int col);
     void subRows(int i);
 };

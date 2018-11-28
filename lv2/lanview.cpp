@@ -164,7 +164,7 @@ qlonglong sendError(const cError *pe, lanView *_instance)
 
 void settingIntParameter(QSqlQuery& q, const QString& pname)
 {
-    int i = cSysParam::getIntegerSysParam(q, pname);
+    qlonglong i = cSysParam::getIntegerSysParam(q, pname);
     if (i > 0) {
         QString sql = QString("SET %1 TO %2").arg(pname).arg(i);
         EXECSQL(q, sql);

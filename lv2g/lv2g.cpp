@@ -152,8 +152,8 @@ int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
 
 cIntSubObj::cIntSubObj(QMdiArea *par) :QWidget(par)
 {
-    if (par == NULL) {
-        pSubWindow = NULL;
+    if (par == nullptr) {
+        pSubWindow = nullptr;
     }
     else {
 #if 0

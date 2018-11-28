@@ -78,6 +78,12 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
 
 /******************************************************************************/
 
+cFeatures::cFeatures()
+    : QMap<QString, QString>()
+{
+    ;
+}
+
 bool cFeatures::split(const QString& __ms, eEx __ex)
 {
     QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));

@@ -2824,13 +2824,13 @@ QString cLangTexts::tableName2textTypeName(const QString& _tn)
 }
 */
 
-void cLangTexts::saveText(QSqlQuery& _q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, qlonglong lid, QStringList texts)
+void cLangTexts::saveText(QSqlQuery& _q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, int _lid, QStringList texts)
 {
     int n = pEnumType->enumValues.size();
     QString qs;
     QVariantList vl;
     vl << tid << sTableName;
-    if (lid != NULL_ID) vl << lid;
+    if (_lid != NULL_IX) vl << _lid;
     for (int i = 0; i < n; ++i) {
         qs += "?,";
         vl << (isContIx(texts, i) ? texts.at(i) : _sNul);
@@ -2840,11 +2840,11 @@ void cLangTexts::saveText(QSqlQuery& _q, const QString& sTableName, const cColEn
             "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
                 " VALUES (?, ?, %1, ARRAY[%2]) "
             "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
-                ).arg(lid == NULL_ID ? "get_language_id()" : "?").arg(qs);
+                ).arg(_lid == NULL_IX ? "get_language_id()" : "?").arg(qs);
     execSql(_q, sql, vl);
 }
 
-void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po, qlonglong lid)
+void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po, int _lid)
 {
     int tidix = po->descr().textIdIndex();
     qlonglong tid = po->getId(tidix);
@@ -2858,24 +2858,7 @@ void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po,
         if (!ok) EXCEPTION(EPROGFAIL, po->getId(), po->identifying());
         po->setId(tidix, tid);
     }
-    saveText(_q, po->tableName(), po->colDescr(tidix).pEnumType, tid, lid, _texts);
-/*    int n = po->colDescr(tidix).pEnumType->enumValues.size();
-    QString qs;
-    QVariantList vl;
-    vl << tid << po->tableName();
-    if (lid != NULL_ID) vl << lid;
-    QStringList texts = _texts;
-    for (int i = 0; i < n; ++i) {
-        qs += "?,";
-        vl << (isContIx(texts, i) ? texts.at(i) : _sNul);
-    }
-    qs.chop(1);
-    QString sql = QString(
-            "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
-                " VALUES (?, ?, %1, ARRAY[%2]) "
-            "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
-                ).arg(lid == NULL_ID ? "get_language_id()" : "?").arg(qs);
-    execSql(_q, sql, vl); */
+    saveText(_q, po->tableName(), po->colDescr(tidix).pEnumType, tid, _lid, _texts);
 }
 
 void cLangTexts::saveTexts(QSqlQuery& q)

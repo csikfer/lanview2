@@ -13,7 +13,7 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     langIndex = ix;
     enabled   = true;
     if (parent->selectLangs.size() != langIndex) EXCEPTION(EPROGFAIL);
-    _langId   = NULL_ID;
+    _langId   = NULL_IX;    // ID is int!!
     bool nullable = true;
     switch (langIndex) {
     case 0: // #1 (static)
@@ -40,7 +40,10 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     pLabel->setText(trUtf8("Nyelv #%1").arg(langNum));
     parent->ui->toolButtonAddComboBox->setEnabled(langNum < MAX_LANGUAGES);
     pSelectLanguage = new cSelectLanguage(pComboBox, pFlag, nullable, this);
-    if (!nullable) _langId = pSelectLanguage->currentLangId();
+    if (!nullable) {
+        qlonglong id = pSelectLanguage->currentLangId();
+        _langId = id == NULL_ID ? NULL_IX : int(id);
+    }
     pLineEdit = nullptr;
     connect(pSelectLanguage, SIGNAL(languageIdChanged(int)), this, SLOT(on_languageIdChanged(int)));
     on_languageIdChanged(_langId);
@@ -49,6 +52,10 @@ cTransLang::cTransLang(int ix, cTranslator *par)
 cTransLang::~cTransLang()
 {
     if (parent->down) return;
+    if (parent->init) {   // :-o
+        if (cError::errStat()) return;
+        EXCEPTION(EPROGFAIL);
+    }
     if (langIndex < MIN_LANGUAGES || parent->selectLangs.size() != langIndex) EXCEPTION(EPROGFAIL, langIndex);
     delete pLabel;
     delete pComboBox;
@@ -80,7 +87,7 @@ void cTransLang::setEnable(bool f)
 void cTransLang::on_languageIdChanged(int lid)
 {
     _langId = lid;
-    if (_langId == NULL_ID) {
+    if (_langId == NULL_IX) {
         _language.clear();
     }
     else {
@@ -137,7 +144,7 @@ void cTransRow::save()
             txts << getText(firstRow + h, CIX_FIRST_LANG + i);
         }
         if (!fromImport && txts == texts[i]) continue;
-        cLangTexts::saveText(q, parent->sTableName, parent->pTextNameEnumType, textId, parent->languages.at(i)->getId(), txts);
+        cLangTexts::saveText(q, parent->sTableName, parent->pTextNameEnumType, textId, int(parent->languages.at(i)->getId()), txts);
     }
 }
 
@@ -208,8 +215,8 @@ cTranslator::cTranslator(QMdiArea *par)
     : cIntSubObj(par)
     , ui(new Ui::cTranslator)
     , enumTableForText(*cColEnumType::fetchOrGet(q, toTypeName(_sTableForText)))
-    , q(getQuery())
 {
+    q = getQuery();
     int ix;
     init   = true;
     down   = false;

@@ -30,6 +30,14 @@ This file is part of LanView2.
 
 #define EXT_ extern LV2SHARED_EXPORT
 
+#ifdef Q_CC_GNU
+#define _ATR_NORET_ __attribute__((noreturn))
+#elif  Q_CC_MSVC
+#define _ATR_NORET_ __declspec(noreturn)
+#else
+#define _ATR_NORET_
+#endif
+
 /// @def NULL_ID
 /// NULL ID-t reprezentáló konstans.
 #define NULL_ID     LLONG_MIN
@@ -53,6 +61,7 @@ enum eEx {
     EX_NOOP         // Akkor is kizárást dob, ha nem történt változás
 };
 
-static inline enum eEx bool2ex(bool b, eEx ex = EX_ERROR) { return b ? ex : EX_IGNORE; }
+inline enum eEx bool2ex(bool b, eEx ex = EX_ERROR) { return b ? ex : EX_IGNORE; }
+
 
 #endif // LV2_GLOBAL_H

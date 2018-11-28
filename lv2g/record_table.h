@@ -19,7 +19,7 @@ namespace Ui {
 #include    <QModelIndex>
 
 /// Nincs jogosultsága form megjelenítése
-Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
+Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, ePrivilegeLevel _need, const QString& _obj, const QString& _html = QString());
 
 class cRecordTable;
 class cRecordTableColumn;
@@ -92,7 +92,7 @@ class LV2GSHARED_EXPORT cRecordTableOrd : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
 public:
-    cRecordTableOrd(cRecordTableFODialog &par, cRecordTableColumn &_rtc, int types);
+    cRecordTableOrd(cRecordTableFODialog &par, cRecordTableColumn &_rtc, qlonglong types);
     ~cRecordTableOrd();
     QString             ord();
     bool operator<(const cRecordTableOrd& _o) const { return sequence_number < _o.sequence_number; }
@@ -222,7 +222,6 @@ public:
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
     int                     dataCharacter;  // eDataCharacter
-    const cEnumVal&         defaultDc;
     QString                 enumTypeName;
     qlonglong               fieldFlags;
     static qlonglong        type2filter(int _type);

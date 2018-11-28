@@ -64,7 +64,7 @@ static inline QBitArray _bit(int i) { return _mask(i+1,i); }
 static inline QBitArray _bits(int i1, int i2) { return _mask(qMax(i1, i2) +1,i1, i2); }
 
 /// Az enumerációs értéket a set-ben reprezentáló bit visszaadása.
-static inline qlonglong enum2set(int e) { return ((qlonglong)1) << e; }
+static inline qlonglong enum2set(int e) { return (qlonglong(1)) << e; }
 static inline qlonglong enum2set(int e1, int e2) { return enum2set(e1) | enum2set(e2); }
 static inline qlonglong enum2set(int e1, int e2, int e3) { return enum2set(e1, e2) | enum2set(e3); }
 static inline qlonglong enum2set(int e1, int e2, int e3, int e4) { return enum2set(e1, e2, e3) | enum2set(e4); }
@@ -152,7 +152,7 @@ class cRecordFieldRef;
 class LV2SHARED_EXPORT cFeatures : public QMap<QString, QString>
 {
 public:
-    cFeatures() : QMap<QString, QString>() { ; }
+    cFeatures();
     /// Egy magic stringet szétvág és objektumot feltölti, ill. összefésüli az elemeivel
     /// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
     /// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
@@ -237,7 +237,7 @@ template <typename T> struct PtrGreat
     }
 };
 
-EXT_ void appReStart();
+_ATR_NORET_ EXT_ void appReStart();
 
 /* ******************************  ****************************** */
 

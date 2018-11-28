@@ -99,7 +99,7 @@ public:
     /// A dialógust megvalósító widget objektum pointerével tér vissza
     QWidget *pWidget()  { return _pWidget; }
     /// A dialógust megvalósító dialógus objektum referenciájával tér vissza, ha nem QDialóg objektum valósítja meg a dialógust, akkor dob egy kizárást.
-    QDialog& dialog()   { if (!_isDialog) EXCEPTION(EPROGFAIL); return *(QDialog *)_pWidget; }
+    QDialog& dialog()   { if (!_isDialog) EXCEPTION(EPROGFAIL); return *static_cast<QDialog *>(_pWidget); }
     /// A hiba string tartalmával tér vissza
     const QString& errMsg() const { return _errMsg; }
     bool disabled() const { return _isDisabled; }
@@ -152,7 +152,7 @@ protected:
     bool                    _isReadOnly;
     /// A tábla nézet nem nyitható meg. (alternatív hiba üzenet az _errMsg -ben, ha van).
     bool                    _isDisabled;
-    qlonglong               _viewRights;
+    ePrivilegeLevel         _viewRights;
     /// A szerkesztett értékek rekordba másolásakor a hiba üzenetek buffere
     QString                 _errMsg;
  signals:
@@ -237,14 +237,14 @@ private:
 _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar = nullptr, const cRecord *pSample = nullptr, bool ro = false, bool edit = false);
 _GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = nullptr, const cRecord *pSample = nullptr, bool ro = false, bool edit = false);
 
-static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
+inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;
     QTableWidgetItem *pItem = pW->item(row, col);
     if (pItem != nullptr) r = pItem->text();
     return r;
 }
 
-static inline QTableWidgetItem * setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
+inline QTableWidgetItem * setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
     QTableWidgetItem *pItem = pW->item(row, col);
     if (pItem == nullptr) {
         pItem = new QTableWidgetItem(text);

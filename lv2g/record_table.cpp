@@ -8,7 +8,7 @@
 #include "popupreport.h"
 
 
-Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
+Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, ePrivilegeLevel _need, const QString& _obj, const QString& _html)
 {
     Ui::noRightsForm *noRights;
     noRights = new Ui::noRightsForm();
@@ -89,7 +89,8 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
         filtTypes   = pullFilter(filtTypesEx);  // Filter types (SET)
         toTypes     = pullType(filtTypesEx);    // type casts (SET)
     }
-    qlonglong m, i;
+    qlonglong m;
+    int i;
     for (i = 0, m = 1; m < filtTypes; m <<= 1, ++i) {
         if (filtTypes & m) {
             filterTypeList << &cEnumVal::enumVal(_sFiltertype, i);
@@ -429,11 +430,11 @@ void cRecordTableFilter::changedText()
 
 /* ***************************************************************************************************** */
 
-cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _rtc, int types)
+cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _rtc, qlonglong types)
     : QObject(&par)
     , field(_rtc)
 {
-    sequence_number = (int)field.shapeField.getId(_sOrdInitSequenceNumber);
+    sequence_number = int(field.shapeField.getId(_sOrdInitSequenceNumber));
     pRowName= new QLineEdit(&par);
     pType   = new QComboBox(&par);
     pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
@@ -524,7 +525,7 @@ void cEnumCheckBox::_chageStat(int st)
         switch (st) {
         case Qt::Checked:           *pOn |=  m;             break;
         case Qt::Unchecked:         *pOn &= ~m;             break;
-        case Qt::PartiallyChecked:  EXCEPTION(EPROGFAIL);   break;
+        case Qt::PartiallyChecked:  EXCEPTION(EPROGFAIL);
         }
     }
     else {
@@ -598,14 +599,15 @@ int cRecordTableHideRow::columns()
 
 QString cRecordTableHideRow::colTitle(int i)
 {
+    QString s;
     switch (i) {
-    case HRC_NAME:      return trUtf8("Mező név");
-    case HRC_TITLE:     return trUtf8("Oszlop név");
-    case HRC_HIDE_TAB:  return trUtf8("Táblában");
-    case HRC_HIDE_TEXT: return trUtf8("Exportban");
+    case HRC_NAME:      s = trUtf8("Mező név");     break;
+    case HRC_TITLE:     s = trUtf8("Oszlop név");   break;
+    case HRC_HIDE_TAB:  s = trUtf8("Táblában");     break;
+    case HRC_HIDE_TEXT: s = trUtf8("Exportban");    break;
     default:            EXCEPTION(EPROGFAIL);
     }
-    return QString();
+    return s;
 }
 
 /* ----------------------------------------------------------------------------------------------------- */
@@ -652,7 +654,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     QStringList cols;
     for (i = recordView.fields.cbegin(); i != n; ++i) {
         cTableShapeField& tsf = (*i)->shapeField;
-        int ord = tsf.getId(_sOrdTypes);
+        qlonglong ord = tsf.getId(_sOrdTypes);
         if (ord & ~enum2set(OT_NO)) {
             cRecordTableOrd *pOrd = new cRecordTableOrd(*this, **i, ord);
             ords << pOrd;
@@ -727,7 +729,7 @@ int cRecordTableFODialog::indexOf(cRecordTableOrd * _po)
         if (_po == ords[i]) return i;
     }
     EXCEPTION(EPROGFAIL);
-    return -1;
+    // return -1;
 }
 
 void cRecordTableFODialog::setGridLayoutOrder()
@@ -993,7 +995,6 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     : shapeField(sf)
     , recDescr(table.recDescr())
     , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
-    , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
     isImage = false;
     sf.features().merge(table.tableShape().features(), sf.getName());
@@ -1139,20 +1140,22 @@ void cRecordsViewBase::buttonDisable(int id, bool d)
 cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableShape, const QString &_tn, bool ro)
 {
     cTableShape *p = new cTableShape();
-    // Az alapértelmezett azonos tábla és shape rekord név
+    // Default: table name == shape name
     if (p->fetchByName(q, _tn) && _tn == p->getName(_sTableName)) {
         if (ro) p->enum2setOn(_sTableShapeType, TS_READ_ONLY);
         p->fetchFields(q);
-        return p;
     }
     // Ha nincs, akkor esetleg jó lessz az alap shape rekord?
-    if (_tn == pTableShape->getName(_sTableName)) {
+    else if (_tn == pTableShape->getName(_sTableName)) {
         p->cRecord::set(*pTableShape);
         p->fetchFields(q);
         return p;
     }
-    EXCEPTION(EDATA);
-    return nullptr;
+    else {
+        EXCEPTION(EDATA);
+    }
+    p->features() = pTableShape->features();
+    return p;
 }
 
 const cRecStaticDescr& cRecordsViewBase::inhRecDescr(qlonglong i) const
@@ -1171,7 +1174,6 @@ const cRecStaticDescr& cRecordsViewBase::inhRecDescr(const QString& tn) const
         if (r.tableName() == tn) return r;
     }
     EXCEPTION(EDATA, -1, tn);
-    return *(const cRecStaticDescr *)nullptr;    // Csak hogy ne ugasson a fordító
 }
 
 void cRecordsViewBase::buttonPressed(int id)
@@ -1227,7 +1229,6 @@ void cRecordsViewBase::refresh(bool first)
             break;
         default:
             EXCEPTION(ENOTSUPP);
-            break;
         }
     } CATCHS(pe)
     if (pe != nullptr) {
@@ -1276,7 +1277,7 @@ void cRecordsViewBase::insert(bool _similar)
         return;
     }
     // A dialógusban megjelenítendő nyomógombok.
-    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
+    qlonglong buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY: {
@@ -1385,7 +1386,7 @@ void cRecordsViewBase::modify(eEx __ex)
     }
 
     pRec = pRec->dup();           // Saját másolat
-    int buttons;
+    qlonglong buttons;
     if (isReadOnly) {
         buttons = enum2set(DBT_CANCEL, DBT_NEXT, DBT_PREV);
     }
@@ -1405,7 +1406,7 @@ void cRecordsViewBase::modify(eEx __ex)
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY:
-        pShape = getInhShape(pTableShape, pRec->descr());
+        pShape = getInhShape(pTableShape, pRec->descr()); // ??
         pRd = new cRecordDialog(*pShape, buttons, true, nullptr, this, pWidget());
         pRecordDialog = pRd;
         break;
@@ -1519,7 +1520,6 @@ void cRecordsViewBase::modify(eEx __ex)
             break;
         default:
             EXCEPTION(EPROGFAIL);
-            break;
         }
         break;
     }
@@ -1612,7 +1612,7 @@ qlonglong cRecordsViewBase::actId(eEx __ex)
 
 void cRecordsViewBase::initView()
 {
-    tableInhType = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+    tableInhType = eTableInheritType(pTableShape->getId(_sTableInheritType));
     if (tableInhType == TIT_NO) return;     // Nincs öröklés, nem kell view
     inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
     if (inheritTableList.isEmpty()) return; // Üres a lista, mégnincs öröklés
@@ -1974,7 +1974,6 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
         }   break;
         default:
             EXCEPTION(EPROGFAIL);
-            break;
         }
     }
     wl << filterWhere(qParams);
@@ -1989,7 +1988,7 @@ bool cRecordsViewBase::enabledBatchEdit(const cTableShapeField& tsf)
     if (tableInhType != TIT_NO) return false;
     if (!tsf.getBool(_sFieldFlags, FF_BATCH_EDIT)) return false;            // Mezőnként kell engedélyezni
     if (lanView::isAuthorized(PL_ADMIN)) return true;                       // ADMIN-nak ok
-    ePrivilegeLevel pl = (ePrivilegeLevel)privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE);
+    ePrivilegeLevel pl = ePrivilegeLevel(privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE));
     return lanView::isAuthorized(pl);
 }
 
@@ -2252,7 +2251,7 @@ void cRecordTable::init()
     connect(pTableView->horizontalHeader(), SIGNAL(sectionClicked(int)),       this, SLOT(clickedHeader(int)));
     connect(pTableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));
     // Auto refresh ?
-    qlonglong ar = pTableShape->getId(_sAutoRefresh);
+    int ar = int(pTableShape->getId(_sAutoRefresh));
     if (ar > 0) {
         pTimer = new QTimer(this);
         connect(pTimer, SIGNAL(timeout()), this, SLOT(autoRefresh()));
@@ -2682,7 +2681,7 @@ void cRecordTable::refresh(bool all)
     if (!actIdList.isEmpty()) {
         pTableView->setSelectionMode(QAbstractItemView::MultiSelection);
         foreach (qlonglong id, actIdList) {
-            row = ((cRecordTableModel *)pModel)->records().indexOf(id);
+            row = static_cast<cRecordTableModel *>(pModel)->records().indexOf(id);
             if (row >= 0) {
                 pTableView->selectRow(row);
             }

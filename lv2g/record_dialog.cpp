@@ -254,6 +254,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
     _pOwnerDialog = ownDialog;
     _pOwnerTable  = ownTab;
     tableShape.clone(__tm);
+    tableShape.features() = __tm.features();
 
     pq = newQuery();
     setObjectName(name);
@@ -290,7 +291,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
         _viewRights = _pOwnerDialog->_viewRights;
     }
     else {
-        _viewRights = tableShape.getId(_sViewRights);
+        _viewRights = ePrivilegeLevel(tableShape.getId(_sViewRights));
         _isDisabled = !lanView::isAuthorized(_viewRights);
     }
     _isReadOnly = _isDisabled || tableShape.getBool(_sTableShapeType, TS_READ_ONLY);
@@ -678,7 +679,7 @@ _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const 
     if (ro) ts.enum2setOn(_sTableShapeType, TS_READ_ONLY);
     ts.fetchText(q, false);
     // A dialógusban megjelenítendő nyomógombok. (Csak az explicit read-only van lekezelve!!))
-    int buttons;
+    qlonglong buttons;
     if (ts.getBool(_sTableShapeType, TS_READ_ONLY)) {
         buttons = enum2set(DBT_CANCEL);
     }
@@ -744,6 +745,7 @@ cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRe
 /// | cPatchDialog | patchDialog
 cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample, bool ro, bool edit)
 {
+    cRecord *pRec = nullptr;
     edit = edit || ro;
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
         cPatch *pSample = nullptr;
@@ -767,13 +769,13 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
         if (!data) {
             if (edit || ro) EXCEPTION(EPROGFAIL);
         }
-        cRecord *pRec;
         if (edit) pRec = patchEditDialog(q, pPar, pSample, ro);
         else      pRec = patchInsertDialog(q, pPar, pSample);
-        return pRec;
     }
-    EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
-    return nullptr;    // Warning miatt
+    else {
+        EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
+    }
+    return pRec;
 }
 
 /* ************************************************************************* */
