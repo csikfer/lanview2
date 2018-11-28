@@ -229,9 +229,9 @@ protected:
     cTableShape        *pShape;
     cRecordDialog      *pSinge;
     bool                lockSlot;
+    cSelectLanguage    *pSelLang;
+    int                 langId;
     // Val
-    int                 langIdVal;
-    cSelectLanguage    *pSelLangVal;
     QString             enumValTypeName;
     const cColEnumType *pEnumValType;
     cEnumVal            val;

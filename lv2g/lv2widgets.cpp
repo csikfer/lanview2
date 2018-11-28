@@ -13,36 +13,70 @@
 
 #include "popupreport.h"
 
-bool pixmap(const cImage& o, QPixmap &image)
+bool pixmap(const cImage& o, QPixmap &_pixmap)
 {
     bool f = o.dataIsPic();
     if (!f) return false;
     const char * _type = o._getType();
     QByteArray   _data = o.getImage();
-    if (!image.loadFromData(_data, _type)) return false;
+    if (!_pixmap.loadFromData(_data, _type)) return false;
     return true;
+}
+
+bool setPixmap(cImage im, QLabel *pw)
+{
+    QPixmap pm;
+    bool r = pixmap(im, pm);
+    pw->setPixmap(pm);
+    return r;
+}
+
+bool setPixmap(QSqlQuery& q, qlonglong iid, QLabel *pw)
+{
+    if (iid == NULL_ID) {
+        pw->setPixmap(QPixmap());
+        return false;
+    }
+    cImage im;
+    im.setById(q, iid);
+    return setPixmap(im, pw);
 }
 
 /* ***************************************** cSelectLanguage ***************************************** */
 
-cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar)
+cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QLabel * _pFlag, bool _nullable, QObject *_pPar)
     : QObject(_pPar)
 {
     pComboBox = _pComboBox;
-    QSqlQuery q = getQuery();
+    pFlag     = _pFlag;
     pModel = new cRecordListModel(_sLanguages);
     pModel->joinWith(pComboBox);
+    pModel->nullable = _nullable;
     pModel->setFilter();
-    int id = getLanguageId(q);
-    int ix = pModel->indexOf(id);
-    if (ix < 0) ix = 0;
+    int ix;
+    if (_nullable) {
+        ix = 0;
+    }
+    else {
+        QSqlQuery q = getQuery();
+        int id = getLanguageId(q);
+        ix = pModel->indexOf(id);
+        if (ix < 0) ix = 0;
+    }
     pComboBox->setCurrentIndex(ix);
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(_languageChanged(int)));
+    _languageChanged(ix);
 }
 
 void cSelectLanguage::_languageChanged(int ix)
 {
     languageIdChanged(pModel->atId(ix));
+    if (pFlag != nullptr) {
+        QSqlQuery q = getQuery();
+        cLanguage language;
+        language.fetchById(q, pModel->currendId());
+        setPixmap(q, language.getId(_sFlagImage), pFlag);
+    }
 }
 
 /* ***************************************** cLineWidget ***************************************** */
@@ -113,6 +147,62 @@ void cLineWidget::on_LineEdit_textChanged(const QString& s)
     changed(val);
 }
 
+/* **************************************** cComboLineWidget **************************************** */
+
+cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& sqlWhere, bool _horizontal, QWidget *par)
+    : QWidget(par)
+    , pLayout(_horizontal ? (QLayout *)new QHBoxLayout : (QLayout *)new QVBoxLayout)
+    , pComboBox(new QComboBox)
+    , pNullButton(new QToolButton)
+    , pModel(new cRecFieldSetOfValueModel(_cfr, sqlWhere))
+{
+    pComboBox->setEditable(true);
+    pModel->joinWith(pComboBox);
+    pNullButton->setIcon(lv2g::iconNull);
+    pNullButton->setCheckable(true);
+    pLayout->setMargin(0);
+    setLayout(pLayout);
+    pLayout->addWidget(pComboBox);
+    pLayout->addWidget(pNullButton);
+    connect(pComboBox,   SIGNAL(currentTextChanged(QString)), this, SLOT(on_ComboBox_textChanged(QString)));
+    connect(pNullButton, SIGNAL(toggled(bool)),               this, SLOT(on_NullButton_togled(bool)));
+}
+
+void cComboLineWidget::set(const QVariant& _val)
+{
+    val = _val;
+    bool _isNull = !_val.isValid();
+    pNullButton->setChecked(_isNull);
+    pComboBox->setDisabled(_isNull);
+    if (!_isNull) {
+        QString s = val.toString();
+        pModel->setCurrent(s);
+    }
+}
+
+void cComboLineWidget::setDisabled(bool _f)
+{
+    pComboBox->setDisabled(_f || isNull());
+    pNullButton->setDisabled(_f);
+}
+
+void cComboLineWidget::on_NullButton_togled(bool f)
+{
+    pComboBox->setDisabled(f);
+    QVariant newVal = get();
+    if (val == newVal) return;
+    val = newVal;
+    changed(val);
+}
+
+void cComboLineWidget::on_ComboBox_textChanged(const QString& s)
+{
+    (void)s;
+    QVariant newVal = get();
+    if (val == newVal) return;
+    val = newVal;
+    changed(val);
+}
 
 /* **************************************** cImageWindows **************************************** */
 
@@ -1066,11 +1156,14 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     pLineEdit      = NULL;
     pPlainTextEdit = NULL;
-    isPwd = false;
+    pComboBox      = NULL;
+    pModel         = NULL;
+    isPwd          = false;
+    const QString sSetOfValue = "setOfValue";
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
-        _wType = FEW_LINES;  // Widget típus azonosító
+        _wType = FEW_LINES;  // Widget type
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
 //        QSizePolicy spol = pPlainTextEdit->sizePolicy();
 //        spol.setVerticalPolicy(QSizePolicy::MinimumExpanding);
@@ -1078,8 +1171,15 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pLayout->addWidget(pPlainTextEdit);
         _height = 4;
     }
+    else if (!_readOnly && _fieldShape.isFeature(sSetOfValue)) {
+        _wType = FEW_COMBO_BOX;  // Widget type
+        pEditWidget = pComboBox = new QComboBox;
+        pLayout->addWidget(pComboBox);
+        pModel = new cRecFieldSetOfValueModel(_fr, _fieldShape.feature(sSetOfValue));
+        pModel->joinWith(pComboBox);
+    }
     else {
-        _wType = FEW_LINE;  // Widget típus azonosító
+        _wType = FEW_LINE;  // Widget type
         pEditWidget = pLineEdit = new QLineEdit;
         pLayout->addWidget(pLineEdit);
         isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);   // Password?
@@ -1105,19 +1205,29 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         case cColStaticDescr::FT_CIDR:      pLineEdit->setValidator(new cCidrValidator(_nullable, pLineEdit));   break;
         default:    EXCEPTION(ENOTSUPP);
         }
-        if (isPwd) {
-            pLineEdit->setEchoMode(QLineEdit::Password);
-            pLineEdit->setText("");
-            _value.clear();
-            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
-        }
-        else if (pLineEdit != NULL){
+        switch(_wType) {
+        case FEW_LINE:
+            if (isPwd) {
+                pLineEdit->setEchoMode(QLineEdit::Password);
+                pLineEdit->setText("");
+                _value.clear();
+                connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+                break;
+            }
             pLineEdit->setText(_fr);
             connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
-        }
-        else {
+            break;
+        case FEW_LINES:
             pPlainTextEdit->setPlainText(_fr);
             connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+            break;
+        case FEW_COMBO_BOX:
+            pModel->setCurrent(_fr);
+            connect(pComboBox, SIGNAL(currentTextChanged(QString)),  this, SLOT(setFromEdit()));
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
+            break;
         }
     }
     else {
@@ -1135,10 +1245,11 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             pLineEdit->setText(tx);
             pLineEdit->setReadOnly(true);
         }
-        else {
+        else if (_wType == FEW_LINES) {
             pPlainTextEdit->setPlainText(tx);
             pPlainTextEdit->setReadOnly(true);
         }
+        else EXCEPTION(EPROGFAIL);
     }
 }
 
@@ -1162,11 +1273,27 @@ int cFieldLineWidget::set(const QVariant& v)
         else {
             txt = _colDescr.toView(*pq, _value);
         }
-        if (_wType == FEW_LINE) pLineEdit->setText(txt);
-        else                    pPlainTextEdit->setPlainText(txt);
+        switch (_wType) {
+        case FEW_LINE:      pLineEdit->setText(txt);            break;
+        case FEW_LINES:     pPlainTextEdit->setPlainText(txt);  break;
+        case FEW_COMBO_BOX: pModel->setCurrent(txt);            break;
+        default:            EXCEPTION(EPROGFAIL, _wType)        break;
+        }
     }
     return r;
 }
+
+void cFieldLineWidget::setFromEdit()
+{
+    if ((pNullButton != NULL && pNullButton->isChecked()) || _wType != FEW_COMBO_BOX) {
+        cFieldEditBase::setFromEdit();
+    }
+    else {
+        QString s = pComboBox->currentText();
+        setFromWidget(QVariant(s));
+    }
+}
+
 
 /* **************************************** cFieldSpinBoxWidget ****************************************  */
 

@@ -16,7 +16,7 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
     pUi = new Ui::SetupWidget();
     pUi->setupUi(this);
     if (lanView::getInstance()->dbIsOpen()) {
-        pSelLang = new cSelectLanguage(pUi->comboBoxLang, this);
+        pSelLang = new cSelectLanguage(pUi->comboBoxLang, pUi->labelFlag, false, this);
     }
 
     bool forced = !lanView::dbIsOpen();

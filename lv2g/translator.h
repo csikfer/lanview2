@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include "lv2g.h"
-#include "lv2models.h"
+#include "lv2widgets.h"
 
 namespace Ui {
 class cTranslator;
@@ -19,9 +19,9 @@ public:
     const cLanguage&    current() const { return _language; }
     qlonglong           currentId() const { return _langId; }
     const QString       currentName() const { return _language.getName(); }
-    void                refresh()        { pModel->refresh(); }
-    bool                setCurrent(qlonglong _id) { return pModel->setCurrent(_id); }
-    bool                setCurrent(const QString& _n) { return pModel->setCurrent(_n); }
+    bool                refresh()        { return pSelectLanguage->refresh(); }
+    bool                setCurrent(int _id) { return pSelectLanguage->setCurrent(_id); }
+    bool                setCurrent(const QString& _n) { return pSelectLanguage->setCurrent(_n); }
     void setEnable(bool f);
 private:
     cTranslator *       parent;
@@ -31,12 +31,13 @@ private:
     QLabel *            pLabel;
     QLabel *            pFlag;
     QPixmap             flag;
-    cRecordListModel *  pModel;
+    // cRecordListModel *  pModel;
+    cSelectLanguage *   pSelectLanguage;
     QLineEdit *         pLineEdit;
     qlonglong           _langId;
     cLanguage           _language;
 protected slots:
-    void on_comboBox_currentIndexChanged(int index);
+    void on_languageIdChanged(int lid);
 };
 
 class cTransRow : public QObject {

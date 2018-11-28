@@ -132,8 +132,8 @@ private:
     cLineWidget     *pEditNote;
     cLineWidget     *pEditSerialNumber;
     cLineWidget     *pEditInventoryNumber;
-    cLineWidget     *pEditModelNumber;
-    cLineWidget     *pEditModelName;
+    cComboLineWidget*pEditModelNumber;
+    cComboLineWidget*pEditModelName;
     cLineWidget     *pEditPNote;
     cLineWidget     *pEditPTag;
     cIpEditWidget   *pIpEditWidget;

@@ -440,4 +440,18 @@ signals:
     void currentEnumChanged(int e);
 };
 
+class LV2GSHARED_EXPORT cRecFieldSetOfValueModel : public QSqlQueryModel {
+    Q_OBJECT
+public:
+    cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QString& sqlWhere);
+    void refresh();
+    void joinWith(QComboBox * _pComboBox);
+    void setCurrent(const QString& s);
+    int indexOf(const QString& s);
+protected:
+    QSqlQuery   q;
+    QString     sql;
+    QComboBox  *        pComboBox;
+};
+
 #endif // LV2MODELS_H

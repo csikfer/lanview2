@@ -950,4 +950,52 @@ void cEnumListModel::currentIndex(int i)
     emit currentEnumChanged(atInt(i));
 }
 
+/************************************************ cRecFieldSetOfValueModel ****************************************************/
 
+cRecFieldSetOfValueModel::cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QString& sqlWhere)
+    :   QSqlQueryModel()
+{
+    pComboBox = nullptr;
+    q = getQuery();
+    QString fieldName = _cfr.columnName();
+    QString tableName = _cfr.recDescr().tableName();
+    sql = "SELECT DISTINCT(" + fieldName + ")"
+        + " FROM " + tableName
+        + " WHERE " + fieldName + " IS NOT NULL AND " + fieldName + " <> ''";
+    if (!sqlWhere.isEmpty()) sql += " AND " + sqlWhere;
+    sql += " ORDER BY " + fieldName + " ASC";
+    refresh();
+}
+
+void cRecFieldSetOfValueModel::refresh()
+{
+    QString currentText;
+    if (pComboBox != nullptr) currentText = pComboBox->currentText();
+    execSql(q, sql);
+    setQuery(q);
+    if (pComboBox != nullptr) {
+        int ix = pComboBox->findText(currentText);
+        if (ix >= 0)                    pComboBox->setCurrentIndex(ix);
+        else if (!currentText.isEmpty())pComboBox->setCurrentText(currentText);
+    }
+}
+
+void cRecFieldSetOfValueModel::joinWith(QComboBox *_pComboBox)
+{
+    pComboBox = _pComboBox;
+    pComboBox->setModel(this);
+}
+
+void cRecFieldSetOfValueModel::setCurrent(const QString& s)
+{
+    if (pComboBox == nullptr) return;
+    int ix = pComboBox->findText(s);
+    if (ix >= 0) pComboBox->setCurrentIndex(ix);
+    else         pComboBox->setCurrentText(s);
+}
+
+int cRecFieldSetOfValueModel::indexOf(const QString &s)
+{
+   if (pComboBox == nullptr) return NULL_IX;
+   return pComboBox->findText(s);
+}

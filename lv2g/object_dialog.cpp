@@ -847,8 +847,8 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     // pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
     connect(pUi->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(clicked(QAbstractButton*)));
 
-    pSelLangVal = new cSelectLanguage(pUi->comboBoxValLang, this);
-    langIdVal = pSelLangVal->currentLangId();
+    pSelLang = new cSelectLanguage(pUi->comboBoxLang, pUi->labelFlag, false, this);
+    langId = pSelLang->currentLangId();
 
     pShape = new cTableShape;
     if (!pShape->fetchByName(*pq, _sEnumVals)) {

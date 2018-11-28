@@ -362,11 +362,12 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // Form
     pUi->setupUi(this);
 
+    const QString sqlWhere  = "'workstation' = ANY (node_type)";
     pEditNote            = new cLineWidget;
     pEditSerialNumber    = new cLineWidget;
     pEditInventoryNumber = new cLineWidget;
-    pEditModelNumber     = new cLineWidget;
-    pEditModelName       = new cLineWidget;
+    pEditModelNumber     = new cComboLineWidget(node[_sModelNumber], sqlWhere);
+    pEditModelName       = new cComboLineWidget(node[_sModelName],   sqlWhere);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelNote,       pEditNote);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelSerial,     pEditSerialNumber);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelInventory,  pEditInventoryNumber);
@@ -1325,6 +1326,8 @@ void cWorkstation::on_pushButtonSave_clicked()
     pSelLinked->refresh(false);
     node2gui(true);
     pUi->textEditMsg->append(trUtf8("A bevitt adatok sikeresen el lettek mentve."));
+    pEditModelName->refresh();
+    pEditModelNumber->refresh();
 }
 
 void cWorkstation::on_pushButtonPlaceEqu_clicked()

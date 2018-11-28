@@ -15,9 +15,50 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QFormLayout" name="formLayoutLang">
+     <property name="formAlignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item row="0" column="0">
+      <widget class="QLabel" name="labeLang">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Nyelv kiválasztása :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
+       <item>
+        <widget class="QComboBox" name="comboBoxLang">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelFlag">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="tabEnumValue">
       <attribute name="title">
@@ -48,6 +89,20 @@
          </item>
          <item row="1" column="1">
           <widget class="QLineEdit" name="lineEditValTypeNote">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelValTypeToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Tip) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QTextEdit" name="textEditValTypeToolTip">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -104,6 +159,13 @@
            </property>
           </widget>
          </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="labelValFontAttr">
+           <property name="text">
+            <string>Karakter attibutum(ok) :</string>
+           </property>
+          </widget>
+         </item>
          <item row="11" column="0">
           <widget class="QLabel" name="labelValValNote">
            <property name="text">
@@ -123,37 +185,6 @@
          </item>
          <item row="12" column="1">
           <widget class="QTextEdit" name="textEditValValTolTip"/>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="labelValTypeToolTip">
-           <property name="text">
-            <string>Helyi súgó (Tool Tip) :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QTextEdit" name="textEditValTypeToolTip">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="0">
-          <widget class="QLabel" name="labelValFontAttr">
-           <property name="text">
-            <string>Karakter attibutum(ok) :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="labelValLang">
-           <property name="text">
-            <string>Nyelv kiválasztása :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="comboBoxValLang"/>
          </item>
         </layout>
        </item>
@@ -189,6 +220,36 @@
          <item row="0" column="1">
           <widget class="QComboBox" name="comboBoxTypeType"/>
          </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelTypeShort">
+           <property name="text">
+            <string>Rövid megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditTypeShort"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelTypeLong">
+           <property name="text">
+            <string>Hosszú megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditTypeLong"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelTypeTypeNote">
+           <property name="text">
+            <string>Megjegyzés a típushoz :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditTypeTypeNote"/>
+         </item>
          <item row="4" column="0">
           <widget class="QLabel" name="labelTypeTypeToolTip">
            <property name="text">
@@ -217,36 +278,6 @@
             </size>
            </property>
           </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="labelTypeLong">
-           <property name="text">
-            <string>Hosszú megjelenített név :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="labelTypeShort">
-           <property name="text">
-            <string>Rövid megjelenített név :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="lineEditTypeShort"/>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEditTypeLong"/>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="labelTypeTypeNote">
-           <property name="text">
-            <string>Megjegyzés a típushoz :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="lineEditTypeTypeNote"/>
          </item>
         </layout>
        </item>
@@ -369,16 +400,6 @@
          <item row="3" column="1">
           <widget class="QLineEdit" name="lineEditBoolTypeLong"/>
          </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="labelBoolToolTip">
-           <property name="text">
-            <string>Helyi súgó (Tool Tip) :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QTextEdit" name="textEditBoolToolTip"/>
-         </item>
          <item row="4" column="0">
           <widget class="QLabel" name="labelBoolTypeNote">
            <property name="text">
@@ -388,6 +409,16 @@
          </item>
          <item row="4" column="1">
           <widget class="QLineEdit" name="lineEditBoolTypeNote"/>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelBoolToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Tip) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QTextEdit" name="textEditBoolToolTip"/>
          </item>
         </layout>
        </item>
@@ -404,7 +435,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <widget class="QWidget" name="layoutWidget">
-          <layout class="QVBoxLayout" name="verticalLayout_4">
+          <layout class="QVBoxLayout" name="verticalLayoutTrue">
            <item>
             <widget class="QLabel" name="labelTrue">
              <property name="font">
@@ -496,7 +527,7 @@
           </layout>
          </widget>
          <widget class="QWidget" name="layoutWidget">
-          <layout class="QVBoxLayout" name="verticalLayoutFlae">
+          <layout class="QVBoxLayout" name="verticalLayoutFalse">
            <item>
             <widget class="QLabel" name="label_17">
              <property name="font">

@@ -13,20 +13,19 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     langIndex = ix;
     enabled   = true;
     if (parent->selectLangs.size() != langIndex) EXCEPTION(EPROGFAIL);
-    pModel    = new cRecordListModel(_language.descr());
-    pModel->_setOrder(OT_ASC, _sLanguageName);
     _langId   = NULL_ID;
+    bool nullable = true;
     switch (langIndex) {
     case 0: // #1 (static)
         pComboBox = parent->ui->comboBoxLang1;
         pLabel    = parent->ui->labelLang1;
         pFlag     = parent->ui->labelFlag1;
+        nullable = false;
         break;
     case 1: // #2 (static)
         pComboBox = parent->ui->comboBoxLang2;
         pLabel    = parent->ui->labelLang2;
         pFlag     = parent->ui->labelFlag2;
-        pModel->nullable = true;
         break;
     default:// #2+ (dynamic)
         pComboBox = new QComboBox;
@@ -35,27 +34,16 @@ cTransLang::cTransLang(int ix, cTranslator *par)
         parent->ui->horizontalLayoutComboBoxs->addWidget(pLabel);
         parent->ui->horizontalLayoutComboBoxs->addWidget(pComboBox);
         parent->ui->horizontalLayoutComboBoxs->addWidget(pFlag);
-        pModel->nullable = true;
         break;
     }
     int langNum = langIndex + 1;
     pLabel->setText(trUtf8("Nyelv #%1").arg(langNum));
     parent->ui->toolButtonAddComboBox->setEnabled(langNum < MAX_LANGUAGES);
-    pModel->joinWith(pComboBox);
-    pModel->setFilter();
-    int currentIx = 0;
-    if (langIndex == 0) {
-        cLanguage *pLang = lanView::getInstance()->pLanguage;
-        if (pLang == nullptr) EXCEPTION(EPROGFAIL);
-        _language.clone(*pLang);
-        _langId = current().getId();
-        currentIx = pModel->indexOf(_langId);
-        if (currentIx < 0) EXCEPTION(EDATA);
-    }
-    pComboBox->setCurrentIndex(currentIx);
+    pSelectLanguage = new cSelectLanguage(pComboBox, pFlag, nullable, this);
+    if (!nullable) _langId = pSelectLanguage->currentLangId();
     pLineEdit = nullptr;
-    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_currentIndexChanged(int)));
-    on_comboBox_currentIndexChanged(currentIx);
+    connect(pSelectLanguage, SIGNAL(languageIdChanged(int)), this, SLOT(on_languageIdChanged(int)));
+    on_languageIdChanged(_langId);
 }
 
 cTransLang::~cTransLang()
@@ -89,21 +77,14 @@ void cTransLang::setEnable(bool f)
 }
 
 
-void cTransLang::on_comboBox_currentIndexChanged(int index)
+void cTransLang::on_languageIdChanged(int lid)
 {
-    _langId = pModel->atId(index);
+    _langId = lid;
     if (_langId == NULL_ID) {
         _language.clear();
-        pFlag->clear();
     }
     else {
         _language.setById(parent->q, _langId);
-        qlonglong iid = _language.getId(_sFlagImage);
-        if (iid != NULL_ID) {
-            cImage im;
-            im.setById(parent->q, iid);
-            if (pixmap(im, flag)) pFlag->setPixmap(flag);
-        }
     }
 }
 

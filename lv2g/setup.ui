@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>613</width>
-    <height>717</height>
+    <width>954</width>
+    <height>804</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -421,6 +421,13 @@
        </property>
       </widget>
      </item>
+     <item row="5" column="0">
+      <widget class="QPushButton" name="CheckSql">
+       <property name="text">
+        <string>SQL ellenőrzése</string>
+       </property>
+      </widget>
+     </item>
      <item row="6" column="0">
       <widget class="QLabel" name="label_10">
        <property name="text">
@@ -429,14 +436,18 @@
       </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QComboBox" name="comboBoxLang"/>
-     </item>
-     <item row="5" column="0">
-      <widget class="QPushButton" name="CheckSql">
-       <property name="text">
-        <string>SQL ellenőrzése</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="1,0">
+       <item>
+        <widget class="QComboBox" name="comboBoxLang"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelFlag">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

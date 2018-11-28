@@ -280,6 +280,17 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
     }
 }
 
+cFeatures cFeatures::noSimle() const
+{
+    cFeatures r;
+    foreach (QString key, keys()) {
+        if (key.contains(QChar('.'))) {
+            r[key] = value(key);
+        }
+    }
+    return r;
+}
+
 /******************************************************************************/
 
 qlonglong variantToId(const QVariant& v, eEx _ex, qlonglong def)

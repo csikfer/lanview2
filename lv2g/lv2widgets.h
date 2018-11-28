@@ -21,7 +21,9 @@
 #include "imagedrv.h"
 #include "lv2link.h"
 
-_GEX bool pixmap(const cImage& o, QPixmap &image);
+_GEX bool pixmap(const cImage& o, QPixmap &_pixmap);
+_GEX bool setPixmap(cImage im, QLabel *pw);
+_GEX bool setPixmap(QSqlQuery& q, qlonglong iid, QLabel *pw);
 
 static inline qlonglong bitByButton(QAbstractButton *p, qlonglong m)
 {
@@ -78,14 +80,18 @@ public:
     bool test() const { return batchCount == 0; }
 };
 
-class LV2GSHARED_EXPORT cSelectLanguage : QObject {
+class LV2GSHARED_EXPORT cSelectLanguage : public QObject {
     Q_OBJECT
 public:
-    cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar);
-    int currentLangId() { return pModel->atId(pComboBox->currentIndex()); }
+    cSelectLanguage(QComboBox *_pComboBox, QLabel *pFlag, bool _nullable, QObject *_pPar);
+    int currentLangId()         { return pModel->atId(pComboBox->currentIndex()); }
+    bool refresh()              { return pModel->refresh(); }
+    bool setCurrent(int lid)    { return pModel->setCurrent(lid); }
+    bool setCurrent(const QString& s)   { return pModel->setCurrent(s); }
 protected:
     QComboBox *pComboBox;
     cRecordListModel *pModel;
+    QLabel           *pFlag;
 private slots:
     void _languageChanged(int ix);
 signals:
@@ -101,6 +107,8 @@ signals:
 /// \return Ha nincs hiba, akkor true.
 _GEX bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __ex = EX_ERROR);
 
+/// \brief The cLineWidget class
+/// Egy soros editor + egy NULL toolButton
 class LV2GSHARED_EXPORT cLineWidget : public QWidget {
     Q_OBJECT
 public:
@@ -118,6 +126,34 @@ private:
 private slots:
     void on_NullButton_togled(bool f);
     void on_LineEdit_textChanged(const QString& s);
+public slots:
+    void setDisabled(bool f);
+    void setEnabled(bool f) { setDisabled(!f); }
+signals:
+    void changed(const QVariant& val);
+};
+
+/// \brief The cComboLineWidget class
+/// Egy soros editor6 COMBObOX + egy NULL toolButton
+class LV2GSHARED_EXPORT cComboLineWidget : public QWidget {
+    Q_OBJECT
+public:
+    cComboLineWidget(const cRecordFieldRef& _cfr, const QString& sqlWhere = QString(), bool _horizontal = true, QWidget *par = nullptr);
+    QLayout     * const pLayout;
+    QComboBox   * const pComboBox;
+    QToolButton * const pNullButton;
+
+    void setNullIcon (const QIcon& icon) { pNullButton->setIcon(icon); }
+    void set(const QVariant& val);
+    bool isNull()  { return pNullButton->isChecked(); }
+    QVariant get() { return isNull() ? QVariant() : QVariant(pComboBox->currentText()); }
+    void refresh() { pModel->refresh(); }
+private:
+    cRecFieldSetOfValueModel *pModel;
+    QVariant val;
+private slots:
+    void on_NullButton_togled(bool f);
+    void on_ComboBox_textChanged(const QString& s);
 public slots:
     void setDisabled(bool f);
     void setEnabled(bool f) { setDisabled(!f); }
@@ -235,6 +271,7 @@ enum eFieldWidgetType {
     FEW_ENUM_RADIO,     ///< cEnumRadioWidget
     FEW_LINE,           ///< cFieldLineWidget
     FEW_LINES,          ///< cFieldLineWidget/long text
+    FEW_COMBO_BOX,      ///< cFieldLineWidget/combo box
     FEW_SPIN_BOX,       ///<
     FEW_ARRAY,          ///< cArrayWidget
     FEW_FKEY_ARRAY,     ///< cFKeyArrayWidget
@@ -507,10 +544,14 @@ protected:
     /// Nem lehet ReadOnly, adat szinkronizálás csak a valid slot-on keresztül.
     /// Csak olyan adat típus engedélyezett, aminél az Array típus kezelve vean.
     cFieldLineWidget(const cColStaticDescr& _cd, QWidget * par);
-    QLineEdit *pLineEdit;
-    QPlainTextEdit *pPlainTextEdit;
+    QLineEdit      *pLineEdit;          ///< One line edit
+    QPlainTextEdit *pPlainTextEdit;     ///< Multi line edit (huge flag/features)
+    QComboBox      *pComboBox;          ///< ComboBox (setOfValues features)
+    cRecFieldSetOfValueModel *pModel;
     /// Ha  ez egy jelszó
     bool    isPwd;
+protected slots:
+    void setFromEdit();
 };
 
 /// @class cFieldSpinBoxWidget

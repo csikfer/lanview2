@@ -1054,7 +1054,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
         }
         if (fieldFlags & ENUM2SET(FF_IMAGE) && pColDescr->eColType == cColStaticDescr::FT_INTEGER) {
             if (pColDescr->compare(_sImageId) == 0      // Field name is image_id
-             || pColDescr->fKeyType != cColStaticDescr::FT_NONE && pColDescr->fKeyTable.compare(_sImages) == 0) {   // Foreign key to images
+             || (pColDescr->fKeyType != cColStaticDescr::FT_NONE && pColDescr->fKeyTable.compare(_sImages) == 0)) {   // Foreign key to images
                 isImage = true;
             }
         }

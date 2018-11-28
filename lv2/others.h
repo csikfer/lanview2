@@ -200,6 +200,7 @@ public:
     /// akkor az ez alatti érték törődik az objektumban.
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
     void modifyField(cRecordFieldRef& _fr);
+    cFeatures noSimle() const;
 };
 
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).
