@@ -112,7 +112,7 @@ public:
     // / Insert modal dialog
     // static cRecord *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
-    cTableShape      tableShape;
+    cTableShape       tableShape;
     /// Rekord descriptor
     const cRecStaticDescr&  rDescr;
     /// Owner dialógus pointere, ha van, vagy NULL
@@ -221,7 +221,7 @@ public:
     virtual bool accept();
     const cRecStaticDescr& actType() { return record().descr(); }
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
-    tRecordList<cTableShape>&tabDescriptors;
+    tRecordList<cTableShape>&tabeShapes;
     virtual cFieldEditBase * operator[](const QString& __fn);
     virtual void restore(const cRecord *_pRec = nullptr);
 protected:

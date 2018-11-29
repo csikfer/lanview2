@@ -14,7 +14,7 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pDev->setParent(this);
     pDevShape = new cTableShape();              // A típus widgethez kellenek a leírók (shape)
     pDevShape->setByName(*pq, _sSnmpDevices);
-    pDevShape->fetchFields(*pq);
+    pDevShape->fetchFields(*pq, true);
     cTableShapeField *pFieldShape = pDevShape->shapeFields.get(_sNodeType);
     pFieldShape->setName(_sFeatures, ":column=2:hide=patch,node,hub,host,snmp:");
     pTypeWidget = new cSetWidget(*pDevShape, *pFieldShape, (*pDev)[_sNodeType], 0, nullptr);

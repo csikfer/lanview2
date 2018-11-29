@@ -997,21 +997,6 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
 {
     isImage = false;
-    sf.features().merge(table.tableShape().features(), sf.getName());
-    sf.modifyByFeature(_sFieldSequenceNumber);
-    sf.modifyByFeature(_sOrdTypes);
-    sf.modifyByFeature(_sOrdInitSequenceNumber);
-    sf.modifyByFeature(_sFieldFlags);
-    sf.modifyByFeature(_sExpression);
-    sf.modifyByFeature(_sDefaultValue);
-    // Features => fieldFlags
-    foreach (QString sFF, sf.colDescr(_sFieldFlags).enumType().enumValues) {
-        if (sf.isFeature(sFF)) {
-            QString v = sf.feature(sFF);
-            if (v == "!") sf.enum2setOff(_sFieldFlags, fieldFlag(v));
-            else          sf.enum2setOn (_sFieldFlags, fieldFlag(v));
-        }
-    }
     // 'raw' => features use by view() methode
     if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
         sf.features().insert(_sRaw, _sNul);
@@ -1143,18 +1128,16 @@ cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableSha
     // Default: table name == shape name
     if (p->fetchByName(q, _tn) && _tn == p->getName(_sTableName)) {
         if (ro) p->enum2setOn(_sTableShapeType, TS_READ_ONLY);
-        p->fetchFields(q);
     }
     // Ha nincs, akkor esetleg jó lessz az alap shape rekord?
     else if (_tn == pTableShape->getName(_sTableName)) {
         p->cRecord::set(*pTableShape);
-        p->fetchFields(q);
-        return p;
     }
     else {
         EXCEPTION(EDATA);
     }
     p->features() = pTableShape->features();
+    p->fetchFields(q);
     return p;
 }
 

@@ -267,9 +267,14 @@ cTableShape& cTableShape::clone(const cRecord& __o)
 {
     clear();
     copy(__o);
-    shapeFields.clear();
-    foreach (cTableShapeField *p, (const QList<cTableShapeField *>)__o.creconvert<cTableShape>()->shapeFields) {
-        shapeFields << new cTableShapeField(*p);
+    if (__o.chkObjType<cTableShape>(EX_IGNORE) == 0) {
+        const cTableShape *po = __o.creconvert<cTableShape>();
+        features() = po->features();
+        shapeFields.clear();
+        foreach (cTableShapeField *p, static_cast<const QList<cTableShapeField *> >(po->shapeFields)) {
+            shapeFields << new cTableShapeField(*p);
+            shapeFields.last()->features() = p->features();
+        }
     }
     return *this;
 }
@@ -345,7 +350,7 @@ cTableShape& cTableShape::setShapeType(qlonglong __t)
     return *this;
 }
 
-int cTableShape::fetchFields(QSqlQuery& q)
+int cTableShape::fetchFields(QSqlQuery& q, bool raw)
 {
     shapeFields.clear();
     cTableShapeField f;
@@ -358,6 +363,28 @@ int cTableShape::fetchFields(QSqlQuery& q)
     }
     foreach (cTableShapeField *p, (QList<cTableShapeField *>)shapeFields) {
         p->fetchText(q);
+        if (!raw) {
+            p->features().merge(features(), p->getName());
+            p->modifyByFeature(_sFieldSequenceNumber);
+            p->modifyByFeature(_sOrdTypes);
+            p->modifyByFeature(_sOrdInitSequenceNumber);
+            p->modifyByFeature(_sFieldFlags);
+            p->modifyByFeature(_sExpression);
+            p->modifyByFeature(_sDefaultValue);
+            // Features => fieldFlags
+            foreach (QString sFF, p->colDescr(_sFieldFlags).enumType().enumValues) {
+                if (p->isFeature(sFF)) {
+                    QString v = p->feature(sFF);
+                    if (v == "!")           p->enum2setOff(_sFieldFlags, fieldFlag(sFF));
+                    else if (v.isEmpty())   p->enum2setOn (_sFieldFlags, fieldFlag(sFF));
+                    else switch (str2tristate(v, EX_IGNORE)) {
+                        case TS_TRUE:       p->enum2setOn (_sFieldFlags, fieldFlag(sFF)); break;
+                        case TS_FALSE:      p->enum2setOff(_sFieldFlags, fieldFlag(sFF)); break;
+                        default:            break;
+                    }
+                }
+            }
+        }
     }
     return shapeFields.count();
 }

@@ -2952,12 +2952,17 @@ void cRecord::clearToEnd()
 
 void cRecord::toEnd()
 {
+    int nix = descr()._nameIndex;
+    if (nix >= 0) toEnd(nix);
     // _DBGFN() << " *** EMPTY ***" << endl;
 }
 
 bool cRecord::toEnd(int i)
 {
-    i = i;
+    int nix = descr()._nameIndex;
+    if (nix == i) {
+        if (!isEmpty()) setObjectName(getName(nix));
+    }
     // _DBGFN() << " @(" << i << ") *** EMPTY ***" << endl;
     // text ??!!??
     return false;

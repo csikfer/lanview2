@@ -254,7 +254,6 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
     _pOwnerDialog = ownDialog;
     _pOwnerTable  = ownTab;
     tableShape.clone(__tm);
-    tableShape.features() = __tm.features();
 
     pq = newQuery();
     setObjectName(name);
@@ -562,7 +561,7 @@ cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
 
 cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget * parent)
     : cRecordDialogBase(_tm, _buttons, dialog, ownDialog, ownTab, parent)
-    , tabDescriptors(_tms)
+    , tabeShapes(_tms)
     , tabs()
 {
     pVBoxLayout = nullptr;
@@ -592,9 +591,9 @@ void cRecordDialogInh::init()
     pVBoxLayout->addWidget(pTabWidget);
     pVBoxLayout->addWidget(_pButtons->pWidget());   // Nyomógombok a TAB alatt
     // Egyenként megcsináljuk a widgeteket a különböző rekord típusokra.
-    int i, n = tabDescriptors.size();
+    int i, n = tabeShapes.size();
     for (i = 0; i < n; ++i) {
-        cTableShape& shape = *tabDescriptors[i];
+        cTableShape& shape = *tabeShapes[i];
         cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, this, _pOwnerTable, pTabWidget);
 /*      cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk

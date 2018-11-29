@@ -372,7 +372,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
             }
         }
     }
-    if (o.shapeFields.isEmpty()) o.fetchFields(q);
+    if (o.shapeFields.isEmpty()) o.fetchFields(q, true);    // raw = true
     QMap<int, QStringList>      ordFields;  ///< Sequence Number - field name
     QMap<QString, QStringList>  ordTypes;   ///< Types           - field list
     for (int i = 0; i < o.shapeFields.size(); ++i) {

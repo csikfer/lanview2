@@ -142,10 +142,11 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
+
     virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     cTableShape& setShapeType(qlonglong __t);
-    int fetchFields(QSqlQuery& q);
+    int fetchFields(QSqlQuery& q, bool raw = false);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
     /// Az adatokat az adatbázisban nem tárolja el, feltételezi, hogy az adattábla neve ismert.
     /// Ha a tábla nem létezik, akkor dob egy kizárást.
@@ -174,7 +175,6 @@ public:
     /// @return Hiba esetén false, egyébként true.
     bool setFieldSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
     bool setOrdSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
-
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
