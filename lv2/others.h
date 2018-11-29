@@ -297,9 +297,9 @@ EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
 
 class QTextStream;
 class cCommaSeparatedValues;
-cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
-cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
-cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
+EXT_ cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
+EXT_ cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
+EXT_ cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
 
 enum eErrorCSV {
     CSVE_OK                     = QTextStream::Ok,
@@ -321,9 +321,9 @@ enum eErrorCSV {
 };
 
 class LV2SHARED_EXPORT cCommaSeparatedValues {
-    friend cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
-    friend cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
-    friend cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
+    friend LV2SHARED_EXPORT cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
+    friend LV2SHARED_EXPORT cCommaSeparatedValues&  first(cCommaSeparatedValues& __csv);
+    friend LV2SHARED_EXPORT cCommaSeparatedValues&  next(cCommaSeparatedValues& __csv);
 public:
     cCommaSeparatedValues(const QString& _csv = QString());
     cCommaSeparatedValues(QIODevice *pIODev);
@@ -352,8 +352,7 @@ protected:
     QTextStream *pStream;
 };
 
-cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv);
-static inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &)) { return (*__pf)(__s); }
+inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &)) { return (*__pf)(__s); }
 
 
 #endif // OTHERS_H

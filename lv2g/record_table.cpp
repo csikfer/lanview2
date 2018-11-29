@@ -729,7 +729,7 @@ int cRecordTableFODialog::indexOf(cRecordTableOrd * _po)
         if (_po == ords[i]) return i;
     }
     EXCEPTION(EPROGFAIL);
-    // return -1;
+    return -1;
 }
 
 void cRecordTableFODialog::setGridLayoutOrder()

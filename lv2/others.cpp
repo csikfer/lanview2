@@ -630,13 +630,13 @@ void cCommaSeparatedValues::splitLine()
     for (int i = 0; i < values.size(); ++i) {
         QString& f = values[i];
         bool quoted = p1.indexIn(f) >= 0;
-        bool spnum  = quoted ? p1.cap(1).size() : 0;
-        quoted = 0 != spnum % 2;
+        int  spnum  = quoted ? p1.cap(1).size() : 0;
+        quoted = 0 != (spnum % 2);
         if (quoted) {
             if (spnum) f.replace(p1, tr);
             quoted = p2.indexIn(f) >= 0;
             spnum  = quoted ? p2.cap(1).size() : 0;
-            quoted = 0 != spnum % 2;
+            quoted = 0 != (spnum % 2);
             if (quoted) {
                 f.replace(p2, tr);
             }
