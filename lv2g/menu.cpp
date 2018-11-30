@@ -203,30 +203,38 @@ void cMenuAction::displayIt()
     if (pMdiArea == nullptr) {
         EXCEPTION(EPROGFAIL, -1, trUtf8("pMdiArea is NULL"));
     }
-    if (pIntSubObj == nullptr) {
-        cnt = 1;
-        switch (type) {
-        case MAT_SHAPE:     initRecordTable();                          break;
-        case MAT_OWN:       initInt();                                  break;
-        case MAT_WIDGET:    EXCEPTION(ENOTSUPP, type);                  break;
-        default:            EXCEPTION(EPROGFAIL,-1,"Invalid signal.");  break;
+    cError *pe = nullptr;
+    try {
+        if (pIntSubObj == nullptr) {
+            cnt = 1;
+            switch (type) {
+            case MAT_SHAPE:     initRecordTable();                          break;
+            case MAT_OWN:       initInt();                                  break;
+            case MAT_WIDGET:    EXCEPTION(ENOTSUPP, type);                  break;
+            default:            EXCEPTION(EPROGFAIL,-1,"Invalid signal.");  break;
+            }
+            pIntSubObj->setWindowTitle(pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName()));
         }
-        pIntSubObj->setWindowTitle(pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName()));
-    }
-    else {
-        // Tábla, több példányos
-        if (MAT_SHAPE == type && pMenuItem->isFeature("multi")) {
-            cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
-            QString t = pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName());
-            p->setWindowTitle(t + QString(" (%1)").arg(++cnt));
-            connect(p, SIGNAL(closeIt()), this, SLOT(deleteLater()));
-            pMdiArea->setActiveSubWindow(p->pSubWindow);
-            p->pWidget()->show();
-            return;
+        else {
+            // Tábla, több példányos
+            if (MAT_SHAPE == type && pMenuItem->isFeature("multi")) {
+                cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
+                QString t = pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName());
+                p->setWindowTitle(t + QString(" (%1)").arg(++cnt));
+                connect(p, SIGNAL(closeIt()), this, SLOT(deleteLater()));
+                pMdiArea->setActiveSubWindow(p->pSubWindow);
+                p->pWidget()->show();
+                return;
+            }
         }
-    }
-    pMdiArea->setActiveSubWindow(pIntSubObj->pSubWindow);
-    pIntSubObj->pWidget()->show();
+        pMdiArea->setActiveSubWindow(pIntSubObj->pSubWindow);
+        pIntSubObj->pWidget()->show();
+        return;
+    } CATCHS(pe);
+    QString msg = trUtf8("Program, vagy adat hiba miatt a kért funkció nem elérhető.");
+    cErrorMessageBox::messageBox(pe, pMdiArea, msg);
+    delete pe;
+    pIntSubObj = nullptr;
 }
 
 void cMenuAction::removeIt()
