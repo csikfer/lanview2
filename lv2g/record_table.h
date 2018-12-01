@@ -212,6 +212,7 @@ class LV2GSHARED_EXPORT cRecordTableColumn {
 public:
     cRecordTableColumn(cTableShapeField& sf, cRecordsViewBase &table);
     bool colExpr(QString &_name, int *pEColType = nullptr);
+    cRecordsViewBase       *parent;
     cTableShapeField&       shapeField;
     const cRecStaticDescr&  recDescr;
     int                     fieldIndex;

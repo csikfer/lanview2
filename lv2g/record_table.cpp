@@ -156,6 +156,7 @@ inline QString arrayAnyAll(bool isArray, bool any, QString o, QString n, int t =
         }
         r += QString(" %1 ?").arg(o);
     }
+    _DBGFNL() << r << endl;
     return r;
 }
 
@@ -992,7 +993,8 @@ void cRecordTableFODialog::filtType(int _t)
 /* ***************************************************************************************************** */
 
 cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &table)
-    : shapeField(sf)
+    : parent(&table)
+    , shapeField(sf)
     , recDescr(table.recDescr())
     , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
 {
@@ -1059,7 +1061,8 @@ bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
         return false;
     }
     if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // new type
-    _name = expr.replace("?", pColDescr->colNameQ());
+    QString name = dQuotedCat(parent->viewName, pColDescr->colName());
+    _name = expr.replace("?", name);
     return true;
 }
 
@@ -1968,7 +1971,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
 bool cRecordsViewBase::enabledBatchEdit(const cTableShapeField& tsf)
 {
     // While it is incorrect in case of inheritance, it is disabled
-    if (tableInhType != TIT_NO) return false;
+    // if (tableInhType != TIT_NO) return false;
     if (!tsf.getBool(_sFieldFlags, FF_BATCH_EDIT)) return false;            // Mezőnként kell engedélyezni
     if (lanView::isAuthorized(PL_ADMIN)) return true;                       // ADMIN-nak ok
     ePrivilegeLevel pl = ePrivilegeLevel(privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE));
@@ -2025,23 +2028,37 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         foreach (QModelIndex mi, mil) {
             selectRow(mi);
             cRecord *ar = actRecord();
+            bool ignore = false;
             try {
                 for (int i = 0; i < dataFieldIndexList.size(); ++i) {
                     QVariant v = febList[i]->get();
-                    ar->set(dataFieldIndexList[i], v);
+                    int fix = dataFieldIndexList[i];
+                    if (ar->isIndex(fix)) {
+                        ar->set(fix, v);
+                    }
+                    else  {
+                        QString msg = trUtf8(
+                                    "A kijelöltölt soron nincs értelmezve a modosítás : \n"
+                                    "%1\n"
+                                    "A sor kijelölése figyelmen kívül lesz hagyva."
+                                    ).arg(ar->identifying());
+                        cMsgBox::warning(msg, pWidget());
+                        ignore = true;
+                        break;
+                    }
                 }
-                ar->update(*pq, false, setMask);
+                if (!ignore) ar->update(*pq, false, setMask);
             } CATCHS(pe);
             if (pe != nullptr) {
                 spoiling = !first;
                 break;
             }
-            first = false;
+            if (!ignore) first = false;
         }
         if (pe != nullptr) {
+            sqlRollback(*pq, tn);
             cErrorMessageBox::messageBox(pe, pDialog);
             pDelete(pe);
-            sqlRollback(*pq, tn);
             continue;
         }
         sqlCommit(*pq, tn);
