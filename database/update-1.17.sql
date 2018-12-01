@@ -40,4 +40,11 @@ ALTER TYPE datacharacter ADD VALUE 'question';
 
 ALTER TYPE fieldflag ADD VALUE 'image';
 
+-- 2018.11.26.
+
+ALTER TYPE nodetype ADD VALUE 'unix_like';
+ALTER TYPE nodetype ADD VALUE 'thin_client';
+ALTER TYPE nodetype ADD VALUE 'display';
+
+-- --------------------------------------------------------
 SELECT set_db_version(1, 17);
