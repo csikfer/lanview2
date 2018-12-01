@@ -2293,6 +2293,9 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sWindows,     Qt::CaseInsensitive)) return NT_WINDOWS;
     if (0 == __n.compare(_sServer,      Qt::CaseInsensitive)) return NT_SERVER;
     if (0 == __n.compare(_sCluster,     Qt::CaseInsensitive)) return NT_CLUSTER;
+    if (0 == __n.compare(_sUnixLike,    Qt::CaseInsensitive)) return NT_UNIX_LIKE;
+    if (0 == __n.compare(_sThinClient,  Qt::CaseInsensitive)) return NT_THIN_CLIENT;
+    if (0 == __n.compare(_sDisplay,     Qt::CaseInsensitive)) return NT_DISPLAY;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -2319,6 +2322,9 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_WINDOWS:    return _sWindows;
     case NT_SERVER:     return _sServer;
     case NT_CLUSTER:    return _sCluster;
+    case NT_UNIX_LIKE:  return _sUnixLike;
+    case NT_THIN_CLIENT:return _sThinClient;
+    case NT_DISPLAY:    return _sDisplay;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;

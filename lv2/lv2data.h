@@ -177,7 +177,10 @@ enum eNodeType {
     NT_UPS,
     NT_WINDOWS,
     NT_SERVER,
-    NT_CLUSTER
+    NT_CLUSTER,
+    NT_UNIX_LIKE,
+    NT_THIN_CLIENT,
+    NT_DISPLAY
 };
 
 /// Node típus név konverzió
