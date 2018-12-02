@@ -46,5 +46,54 @@ ALTER TYPE nodetype ADD VALUE 'unix_like';
 ALTER TYPE nodetype ADD VALUE 'thin_client';
 ALTER TYPE nodetype ADD VALUE 'display';
 
+-- 2018.12.02. Hibajavítás (Nem vette figyelembe a languages.next_id mezőt.)
+
+CREATE OR REPLACE FUNCTION localization_texts(tid bigint, tft tablefortext) RETURNS localizations AS $$
+DECLARE
+    r   localizations;
+    lid integer;
+    lids integer[];
+BEGIN
+    lid := get_language_id();	-- actual
+    SELECT * INTO r FROM localizations WHERE text_id = tid AND language_id = lid;
+    IF FOUND THEN
+        RETURN r;
+    END IF;
+    lids := ARRAY[lid];
+    SELECT next_id INTO lid FROM languages WHERE language_id = lid;    -- next
+    IF lid IS NOT NULL THEN
+        SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft AND language_id = lid;
+        IF FOUND THEN
+            RETURN r;
+        END IF;
+    END IF;
+    lids := lids || lid;
+    SELECT language_id INTO lid FROM languages WHERE language_name = get_text_sys_param('default_language');	-- default
+    IF lid IS NOT NULL AND NOT lid = ANY (lids) THEN
+        SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft AND language_id = lid;
+        IF FOUND THEN
+            RETURN r;
+        END IF;
+    END IF;
+    lids := lids || lid;
+    SELECT language_id INTO lid FROM languages WHERE language_name = get_text_sys_param('failower_language');	-- failower
+    IF lid IS NOT NULL AND NOT lid = ANY (lids) THEN
+        SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft AND language_id = lid;
+        IF FOUND THEN
+            RETURN r;
+        END IF;
+    END IF;
+    -- any
+    SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft LIMIT 1;
+    IF FOUND THEN
+        RETURN r;
+    END IF;
+    r.text_id := tid;
+    r.language_id := lids[1];
+    -- r.texts := ARRAY['Unknown text id ' || tft || '#' || tid::text];
+    return r;
+END;
+$$ LANGUAGE plpgsql;
+
 -- --------------------------------------------------------
 SELECT set_db_version(1, 17);
