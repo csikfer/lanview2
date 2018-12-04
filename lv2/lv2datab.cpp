@@ -4026,12 +4026,12 @@ int cRecord::addValueArrayFieldByNames(QSqlQuery& q, const QStringList& _nl, con
     int r = 0;
     QString nfn = nameName();
     const QString sql = QString("UPDATE %1 SET %2 = array_append(%3, ?) WHERE %4 = ?").arg(fullTableNameQ(), _fn, _fn, nfn);
-    int ix = toIndex(_fn);
+    QVariant v = _v;
+    /*int ix = toIndex(_fn);
     const cColStaticDescr& cd = colDescr(ix);
-    QVariant v;
     qlonglong st;
     v = cd.set(_v, st);     // Conversion to local format
-    v = cd.toSql(v);        // Conversion to SQL
+    v = cd.toSql(v);     // Conversion to SQL (v nem lehet tömb, de a konverzió vonatkozhat tömbre, ez nem így nem jó, kikommentezve sem tuti) */
     foreach (QString n, _nl) {
         execSql(q, sql, v, n);
         if (q.numRowsAffected() == 1) ++r;

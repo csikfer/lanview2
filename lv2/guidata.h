@@ -179,13 +179,13 @@ public:
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
     /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
-    /// @param _name  A mező neve a táblában
-    /// @param _as Az oszlop neve a táblázatban. Ha üres, akkor az oszlop név azonos a mező névvel.
+    /// @param _name  Az oszlop ill. a leíró neve neve
+    /// @param _tname Az oszlop neve a táblázatban.
     /// @param _title   A mező/oszlop fejlécen kiírt neve
     /// @param _note Megjegyzés
     /// @return Az új (konténerbe helyezett) objektum pointere.
     /// @exception Ha már létezik ilyen nevű elem a konténerben.
-    cTableShapeField *addField(const QString& _name, const QString &_as, const QString& _note = _sNul, eEx __ex = EX_ERROR);
+    cTableShapeField *addField(const QString& _name, const QString &_tname, const QString& _note = _sNul, eEx __ex = EX_ERROR);
     ///
     void addRightShape(QStringList& _sn);
     void setRightShape(QStringList& _sn) { clear(_sRightShapeIds); addRightShape(_sn); }

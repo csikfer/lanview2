@@ -600,13 +600,13 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex
     }
 
     foreach (QString fn, _fnl) {
-        int i = shapeFields.indexOf(fn);
-        if (i < 0) {
+        int ix = shapeFields.indexOf(fn);
+        if (ix < 0) {
             if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(fn));
             DERR() << emFieldNotFound(fn) << endl;
             return false;
         }
-        cTableShapeField& f = *(shapeFields[i]);
+        cTableShapeField& f = *(shapeFields[ix]);
         f.setId(_sOrdTypes, s);
         f.setId(_sOrdInitType, deford);
         seq += step;
@@ -683,15 +683,15 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, eEx __ex)
     return true;
 }
 
-cTableShapeField *cTableShape::addField(const QString& _name, const QString& _as, const QString& _note, eEx __ex)
+cTableShapeField *cTableShape::addField(const QString& _name, const QString& _tname, const QString& _note, eEx __ex)
 {
     if (0 <= shapeFields.indexOf(_name)) {
         if (__ex) EXCEPTION(EUNIQUE, -1, _name);
         return nullptr;
     }
     cTableShapeField *p = new cTableShapeField();
-    p->setName(_sTableFieldName, _name);
-    p->setName(_as.isNull() ? _name : _as);
+    p->setName(_sTableFieldName, _tname);
+    p->setName(_name);
     p->setText(cTableShapeField::LTX_TABLE_TITLE, _name);
     p->setText(cTableShapeField::LTX_DIALOG_TITLE, _name);
     if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
@@ -806,6 +806,7 @@ void cTableShapeField::toEnd()
 {
     toEnd(_descr_cTableShapeField().idIndex());
     toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cTableShapeField::toEnd(int i)

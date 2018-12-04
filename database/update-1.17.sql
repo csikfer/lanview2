@@ -7,7 +7,7 @@ ALTER TABLE table_shape_fields ALTER COLUMN table_field_name SET NOT NULL;
 CREATE OR REPLACE FUNCTION check_shape_field() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.table_field_name IS NULL THEN
-	NEW.table_field_name = NEW.table_shape_field_name;
+	NEW.table_field_name := NEW.table_shape_field_name;
     END IF;
     RETURN NEW;
 END;

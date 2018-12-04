@@ -1517,16 +1517,50 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
     if (pActEnum != nullptr) EXCEPTION(EPROGFAIL);
     setReplace(_rep);
     actEnumType = _type;
-    const cColEnumType& cType = cColEnumType::get(actEnumType);
-    if (_pval == nullptr) {
-        pActEnum = new cEnumVal(actEnumType);
+    const QChar cSep = QChar('.');
+    if (actEnumType.contains(cSep)) { // boolean ?
+        QStringList sl = actEnumType.split(cSep);
+        if (sl.size() == 2) {
+            QString sTableName = sl.first();
+            QString sFieldName = sl.at(1);
+            cRecordAny rec(sTableName);
+            if (rec.colDescr(sFieldName).eColType == FT_BOOLEAN) {
+                if (_pval == nullptr) {
+                    pActEnum = new cEnumVal(actEnumType);
+                    return;
+                }
+                else {
+                    if (0 != _sTrue.compare(*_pval, Qt::CaseInsensitive) && 0 != _sFalse.compare(*_pval, Qt::CaseInsensitive)) {
+                        yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+                        delete _pval;
+                        return;
+                    }
+                    pActEnum = new cEnumVal(actEnumType, _pval->toLower());
+                    delete _pval;
+                    return;
+                }
+            }
+        }
+        pDelete(_pval);
+        yyerror(QObject::trUtf8("Invalid boolean field name : %1").arg(actEnumType));
+        return;
     }
     else {
-        if (!cType.check(*_pval)) {
-            yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+        const cColEnumType& cType = *cColEnumType::fetchOrGet(qq(), actEnumType);
+        if (_pval == nullptr) {
+            pActEnum = new cEnumVal(actEnumType);
+            return;
         }
-        pActEnum = new cEnumVal(actEnumType, *_pval);
-        delete _pval;
+        else {
+            if (!cType.check(*_pval)) {
+                yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+                delete _pval;
+                return;
+            }
+            pActEnum = new cEnumVal(actEnumType, *_pval);
+            delete _pval;
+            return;
+        }
     }
 }
 
@@ -1617,7 +1651,7 @@ static inline cEnumVal& actEnum()
 %type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from as
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
 %type  <sl> strs strs_z strs_zz alert list_m nsws nsws_
 %type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
@@ -1627,7 +1661,7 @@ static inline cEnumVal& actEnum()
 %type  <pnt> point
 %type  <pol> frame points rectangle
 %type  <ids> vlan_ids grpids
-%type  <ss>  ip_qq ip_q ip_a
+%type  <ss>  ip_qq ip_q ip_a as
 %type  <mac> mac
 %type  <sh>  snmph
 %type  <hss> hss hsss
@@ -2712,14 +2746,14 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
-        | ADD_T FIELD_T str as str_z ';'        { pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
-        | ADD_T FIELD_T str as str_z '{'        { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
+        | ADD_T FIELD_T as str_z ';'            { pTableShape->addField($3->first, $3->second, sp2s($4)); delete $3; }
+        | ADD_T FIELD_T as str_z '{'            { pTableShapeField = pTableShape->addField($3->first, $3->second, sp2s($4)); delete $3; }
             fmodps '}'                          { pTableShapeField = nullptr; }
         | FIELD_T str '{'                       { pTableShapeField = pTableShape->shapeFields.get(sp2s($2)); }
             fmodps '}'                          { pTableShapeField = nullptr; }
         ;
-as      : AS_T str                              { $$ = $2; }
-        |                                       { $$ = new QString(); }
+as      : str AS_T str                          { $$ = new tStringPair(sp2s($3), sp2s($1)); }
+        | str                                   { $$ = new tStringPair(*$1, *$1); delete $1; }
         ;
 tstypes : tstype                                { $$ = $1; }
         | tstypes ',' tstype                    { $$ = $1 | $3; }
