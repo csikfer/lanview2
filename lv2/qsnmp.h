@@ -314,6 +314,8 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// Az előző sikeres lekérdezésnél használt objektum(ok) utáni objektumo(ka)t kérdezi le.
     /// @exception Ha nem egy sikeres lekérdezés után hívtuk.
     int getNext(void);
+    /// Egy táblázat lekérdezéséhez ellenörzi, hogy minden oszlop lekérdezhető-e,
+    int checkTableColumns(const cOIdVector& Ids, QBitArray& result);
     /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról.
     /// @param baseId A táblázat ezen az OID-n bellül található
     /// @param columns Az oszlopok nevei, ill. a baseId-hez képesti relatív azonosítói.

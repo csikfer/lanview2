@@ -763,34 +763,49 @@ int cSnmp::getTable(const QString& baseId, const QStringList& columns, cTable& r
     }
     return getTable(ov, columns, result);
 }
+
+int cSnmp::checkTableColumns(const cOIdVector& Ids, QBitArray& result)
+{
+    if (getNext(Ids)) return 1;
+    int ncol = Ids.size();
+    result.resize(ncol);
+    for (int i = 0; i < ncol; ++i) {    // Columns
+        if (actVar == nullptr) EXCEPTION(EPROGFAIL);
+        const cOId&     oib = Ids[i];       // Column base OID
+        const cOId      oia = name();       // Cell OID
+        result[i] = (oib < oia);            // Overrun? (if no)
+    }
+    return 0;   // OK
+}
+
 int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& result)
 {
-    int ncol = columns.size();
+    int ncol = columns.size();      // Table column number
     if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);
     if (getNext(Ids)) return 1;
-    int over = 0;
-    unsigned int row = 0;        // Sor "index", nem sorszám
+    int over = 0;                   // Overruns counter
+    unsigned int row = 0;           // Row SNMP index
     result.clear();
     first();
-    while (true) {
-        for (int i = 0; i < ncol; ++i) {
+    while (true) {                          // ROWS
+        for (int i = 0; i < ncol; ++i) {    // Columns
             if (actVar == nullptr) EXCEPTION(EPROGFAIL);
-            const QString&  col = columns[i];   // Oszlop név
-            const cOId&     oib = Ids[i];       // Oszlop bázis ID
-            const cOId      oia = name();       // cella ID
-            QVariantVector& vv  = result[col];
+            const QString&  col = columns[i];   // Column name
+            const cOId&     oib = Ids[i];       // Column base OID
+            const cOId      oia = name();       // Cell OID
+            QVariantVector& vv  = result[col];  // Result table column reference
             PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
-            if (oib < oia) {                    // A kívánt tartományban vagyunk
-                if (i == 0) {                   // első oszlop indexe
-                    row = oia.last();
+            if (oib < oia) {                    // Overrun? (if no)
+                if (i == 0) {                   // First column
+                    row = oia.last();           // Row SNMP index
                 }
-                else if (row != oia.last()) {   // Az index-eknek eggyeznie kell
+                else if (row != oia.last()) {   // Check SNMP index
                     emsg = "Confused indexes : " + oia.toNumString() + " / " + QString::number(row);
                     return 1;
                 }
                 vv << value();
             }
-            else {                              // tulfutottunk, nincs több sor
+            else {                              // Overrun, end of row
                 if (over != i) {                // Mindegyik oszlopnak ugyanott van vége!
                     emsg = QString("Confused last column: key = %1, i(%2) != over(%3)").arg(col).arg(i).arg(over);
                     return 1;
