@@ -1060,11 +1060,16 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     eval = getId();
     _wType = FEW_ENUM_COMBO;
-    pComboBox = new QComboBox;
+    pEditWidget = pComboBox = new QComboBox;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
-    setupNullButton();
+    bool isNull = false;
+    if (_nullable || _hasDefault) {
+        isNull = eval == NULL_ID;
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
     evalDef = ENUM_INVALID;
     if (_hasDefault) {
         evalDef = _colDescr.enumType().str2enum(_colDescr.colDefault);
@@ -1074,6 +1079,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     pComboBox->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+    if (!isNull) setFromEdit(pComboBox->currentIndex());
 }
 
 cEnumComboWidget::~cEnumComboWidget()
@@ -1125,7 +1131,7 @@ void cEnumComboWidget::togleNull(bool f)
 int cEnumComboWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (1 == r) {
+    if (1 == r) {           // Change
         setFromWidget(v);
         eval = getId();
         setWidget();

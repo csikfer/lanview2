@@ -522,7 +522,7 @@ bool cRecordDialog::accept()
         int rfi = field.fieldIndex();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
         // ?! if (field._fieldShape.getBool(_sFieldFlags, FF_AUTO_SET)) continue; // Ezt sem kell ellenörizni
-        QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
+        QVariant fv = field.get();     // A mező widget-jéből kivesszük az értéket
         if (field.isText()) {
             _pRecord->setText(field._fieldShape.getName(), fv.toString());
             continue;
