@@ -2431,6 +2431,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
   // DBGFL();
 }
 
+/*
 int cRecStaticDescr::toIndex(const QString& __n, eEx __ex) const
 {
     // _DBGFN() << " @(" << __n << "): " << fullTableName() << endl;
@@ -2470,6 +2471,7 @@ int cRecStaticDescr::toIndex(const QString& __n, eEx __ex) const
     QString name = unQuoted(m.first());
     return _columnDescrs.toIndex(name, __ex);
 }
+*/
 
 const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
 {

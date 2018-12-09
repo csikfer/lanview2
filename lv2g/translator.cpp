@@ -414,13 +414,13 @@ void cTranslator::on_toolButtonAddLanguage_clicked()
 {
     cRecord *p = recordDialog(q, _sLanguages, this);
     if (p == nullptr) return;
-    qlonglong id = p->getId();
+    qlonglong lid = p->getId();
     delete p;
     foreach (cTransLang *p, selectLangs) {
         p->refresh();
-        if (p->currentId() == NULL_ID || id != NULL_ID) {
-            p->setCurrent(id);
-            id = NULL_ID;
+        if (p->currentId() == NULL_ID || lid != NULL_ID) {
+            p->setCurrent(int(lid));
+            lid = NULL_ID;
         }
     }
 }
@@ -518,13 +518,13 @@ void cTranslator::on_pushButtonImport_clicked()
     int height  = 0;
     int langNum = 0;
     int row, col, h, i;
-    qlonglong recId, textId;
+    row = col = 0;
+    qlonglong recId = NULL_ID, textId = NULL_ID;
     QString recName;
     QList<QStringList> texts;
     if (first(csv).state(msg) & CSVE_CRIT) goto import_error;   // Start CSV read
     // read header
     // CIX_REC_ID (tableName)
-    row = col = 0;
     csv >> sTableName;
     if (csv.state(msg) != CSVE_OK) goto import_error;
     if (!enumTableForText.enumValues.contains(sTableName)) {

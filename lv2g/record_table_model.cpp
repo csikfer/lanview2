@@ -84,7 +84,8 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     qlonglong& ff = column.fieldFlags;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
-        return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
+        const QColor& c = bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
+        return QVariant(c);
     }
     if (fix < 0) {          // A mező nem létezik, vagy text_id
         return dcRole(DC_HAVE_NO, role);

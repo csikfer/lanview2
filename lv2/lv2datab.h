@@ -690,7 +690,7 @@ public:
     /// @param __n A keresett mező neve
     /// @param __ex Ha értéke nem EX_IGNORE, és nem találja a keresett mezőt, akkor dob egy kizárást.
     /// @return A mező indexe, vagy ha nem talált ilyen nevű mezőt, és __ex értéke nem EX_IGNORE, akkor NULL_IX (negatív).
-    int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const;
+    int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const { return _columnDescrs.toIndex(__n, __ex); };
     /// A séma nevet adja vissza
     const QString&  schemaName() const              { return _schemaName; }
     /// A tábla nevet adja vissza

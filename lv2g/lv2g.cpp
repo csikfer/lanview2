@@ -5,8 +5,8 @@
 #include "QInputDialog"
 #include "QFileDialog"
 
-cMainWindow *    lv2g::pMainWindow = NULL;
-QSplashScreen *  lv2g::pSplash = NULL;
+cMainWindow *    lv2g::pMainWindow = nullptr;
+QSplashScreen *  lv2g::pSplash = nullptr;
 bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
 const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
@@ -25,7 +25,7 @@ lv2g::lv2g() :
     lanView()//,
 //    pDesign(0)
 {
-    if (lastError != 0) return;
+    if (lastError != nullptr) return;
     try {
         // Ubuntu 16.04 Unity-ben  nincs (nem jelenik meg) a natív menü
         nativeMenubar = str2bool(pSet->value(sNativeMenubar).toString(), EX_IGNORE);
@@ -39,20 +39,18 @@ lv2g::lv2g() :
         #include "errcodes.h"
         if (dbIsOpen()) {
             splashMessage(QObject::trUtf8("Logon..."));
-            switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL, pMainWindow)) {
-            case LR_OK:
-                break;
-            case LR_INVALID:
-                EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
-                break;  //  warning...
-            case LR_CANCEL:     // EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
-            default:            EXCEPTION(EOK);
+            eLogOnResult lor = cLogOn::logOn(zoneNeeded ? &zoneId : nullptr, pMainWindow);
+            if (lor != LR_OK) {
+                if (lor == LR_INVALID) {
+                    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
+                }
+                EXCEPTION(EOK);
             }
             QSqlQuery q = getQuery();
-            maxRows = (int)cSysParam::getIntegerSysParam(q, sMaxRows, 100);
+            maxRows = int(cSysParam::getIntegerSysParam(q, sMaxRows, 100));
             bool ok;
             maxRows = pSet->value(sMaxRows, maxRows).toInt(&ok);
-            if (!ok) maxRows = (int)cSysParam::getIntegerSysParam(q, sMaxRows, 100);
+            if (!ok) maxRows = int(cSysParam::getIntegerSysParam(q, sMaxRows, 100));
             dialogRows = pSet->value(sDialogRows, 16).toInt();
             soundFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }
@@ -111,7 +109,7 @@ void lv2g::changeZone(QWidget * par)
 
 void lv2g::splashMessage(const QString& msg)
 {
-    if (pSplash != NULL) {
+    if (pSplash != nullptr) {
         pSplash->showMessage(msg, Qt::AlignCenter);
         pSplash->repaint();
         QApplication::processEvents(QEventLoop::AllEvents);
@@ -135,14 +133,14 @@ int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
     case cColStaticDescr::FT_OWNER:
     {
         cRecordAny *pF = cd.pFRec;
-        if (pF == NULL) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
+        if (pF == nullptr) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
         bool n = pF->isIndex(pF->nameIndex(EX_IGNORE));
-        if (cd.pFRec == NULL) delete pF;
+        if (cd.pFRec == nullptr) delete pF;
         if (n) return DC_FNAME;
         if (!cd.fnToName.isEmpty())     return DC_DERIVED;
         return DC_FOREIGN;
     }
-        break;
+        // break;
     default:
         break;
     }
@@ -185,7 +183,7 @@ cLv2GQApp::~cLv2GQApp()
 
 bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
 {
-    static cError *lastError = NULL;
+    static cError *lastError = nullptr;
     try {
         return QApplication::notify(receiver, event);
     }
@@ -235,7 +233,7 @@ const QColor& bgColorByEnum(const QString& __t, int e)
         QSqlQuery q = getQuery();
         const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
         int n;
-        if (pType == NULL) {        // boolean ??
+        if (pType == nullptr) {        // boolean ??
             if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
             n = 3;
         }
@@ -275,7 +273,7 @@ const QColor& fgColorByEnum(const QString& __t, int e)
         QSqlQuery q = getQuery();
         const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
         int n;
-        if (pType == NULL) {        // boolean ??
+        if (pType == nullptr) {        // boolean ??
             if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
             n = 3;
         }
