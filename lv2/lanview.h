@@ -330,12 +330,12 @@ public:
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(qlonglong pl) {
         if (pl < 0 || pl > PL_SYSTEM) return false;
-        return isAuthorized((enum ePrivilegeLevel)pl);
+        return isAuthorized(ePrivilegeLevel(pl));
     }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét, NULL_ID esetén OK.
     static bool isAuthOrNull(qlonglong pl) {
         if (pl == NULL_ID) return true;
-        return isAuthorized((enum ePrivilegeLevel)pl);
+        return isAuthorized(ePrivilegeLevel(pl));
     }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(const QString& pl);
@@ -351,7 +351,7 @@ public:
     cError         *lastError;  ///< Pointer to last error object or NULL
     cError         *nonFatal;   ///< Init, nem fatális hiba
     QStringList     args;       ///< Argumentum lista
-    qlonglong       languageId; ///< Language ID
+    int             languageId; ///< Language ID
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
 

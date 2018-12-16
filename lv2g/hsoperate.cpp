@@ -58,16 +58,16 @@ const QString cHSOperate::_sql =
         " JOIN services AS s USING(service_id)";
 const QString cHSOperate::_ord = " ORDER BY node_name, service_name, hs.port_id ASC";
 
-const cColEnumType    *cHSORow::pPlaceType   = NULL;
-const cColEnumType    *cHSORow::pNoAlarmType = NULL;
-const cColEnumType    *cHSORow::pNotifSwitch = NULL;
+const cColEnumType    *cHSORow::pPlaceType   = nullptr;
+const cColEnumType    *cHSORow::pNoAlarmType = nullptr;
+const cColEnumType    *cHSORow::pNotifSwitch = nullptr;
 
 cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
     : QObject(par), nsub(0), rec(q.record()), row(_row)
 {
     pDialog = par->pDialog;
-    pCheckBoxSub = NULL;
-    pCheckBoxSet = NULL;
+    pCheckBoxSub = nullptr;
+    pCheckBoxSet = nullptr;
     pq = par->pq;
     staticInit();
     set = pDialog->permit == PERMIT_ALL;
@@ -77,14 +77,14 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
     if (!ok) EXCEPTION(EDATA, RX_ID, rec.value(RX_ID).toString());
     QVariant v = rec.value(RX_NSUB);
     if (v.isValid()) {
-        nsub  = v.toLongLong(&ok);
+        nsub  = v.toInt(&ok);
         if (!ok) EXCEPTION(EDATA, RX_NSUB, v.toString());
     }
 }
 
 void cHSORow::staticInit()
 {
-    if (pPlaceType == NULL) {
+    if (pPlaceType == nullptr) {
         QSqlQuery q = getQuery();
         pPlaceType   = cColEnumType::fetchOrGet(q, "placetype");
         pNoAlarmType = cColEnumType::fetchOrGet(q, "noalarmtype");
@@ -102,7 +102,7 @@ QCheckBox * cHSORow::getCheckBoxSet()
 
 QWidget * cHSORow::getWidgetSub()
 {
-    if (nsub == 0) return NULL;
+    if (nsub == 0) return nullptr;
     QWidget *pWidget = new QWidget;
     QHBoxLayout *pLayout = new QHBoxLayout;
     pLayout->setMargin(0);
@@ -130,11 +130,11 @@ QToolButton* cHSORow::getButtonReset()
         QRegExp sep("\\s*,\\s*");
         srvList << s.split(sep);
     }
-    if (pDialog->permit != PERMIT_ALL) return NULL;
+    if (pDialog->permit != PERMIT_ALL) return nullptr;
     QString srvName = rec.value(RX_SERVICE_NAME).toString();
     bool disabled = rec.value(RX_DISABLED).toBool();
     disabled = disabled || rec.value(RX_SRV_DISABLED).toBool();
-    QToolButton *pButton = NULL;
+    QToolButton *pButton = nullptr;
     if (!disabled && srvList.contains(srvName)) {
         pButton = new QToolButton();
         pButton->setIcon(QIcon("://icons/system-restart.ico"));
@@ -147,7 +147,7 @@ QToolButton* cHSORow::getButtonReset()
 QTableWidgetItem * cHSORow::item(int vix)
 {
     QVariant v = rec.value(vix);
-    if (v.isNull()) return NULL;
+    if (v.isNull()) return nullptr;
     return new QTableWidgetItem(v.toString());
 }
 
@@ -170,7 +170,7 @@ QTableWidgetItem * cHSORow::item(int vix, int eix, const cColEnumType * pType)
 QTableWidgetItem * cHSORow::item(int ix, const cColStaticDescr &cd)
 {
     QVariant v = rec.value(ix);
-    if (v.isNull()) return NULL;
+    if (v.isNull()) return nullptr;
     v = cd.fromSql(v);
     QString s = cd.toView(*pq, v);
     return new QTableWidgetItem(s);
@@ -201,9 +201,9 @@ void cHSORow::goSub() {
 void cHSORow::pressReset()
 {
     QString srvName = rec.value(RX_SERVICE_NAME).toString();
-    sqlNotify(*pq, srvName, _sReset);
+    QString sPayload = _sReset + _sSpace + QString::number(id);
+    sqlNotify(*pq, srvName, sPayload);
 }
-
 
 cHSOState::cHSOState(QSqlQuery& q, const QString& _sql, const QVariantList _binds, cHSOperate *par)
     : QObject(par), sql(_sql), binds(_binds)
@@ -241,7 +241,7 @@ cHSORow * cHSOState::rowAtId(qlonglong id)
     foreach (cHSORow *p, rows) {
         if (p->id == id) return p;
     }
-    return NULL;
+    return nullptr;
 }
 
 enum eFilterButtonId {
@@ -271,7 +271,7 @@ enum eTableColumnIx {
 
 /* *************************************************************************************** */
 
-QString _sMinInterval = "DisableAlarmMinInterval";
+static QString _sMinInterval = "DisableAlarmMinInterval";
 
 cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
@@ -544,7 +544,7 @@ void cHSOperate::refresh()
     foreach (cHSORow *pRow, p->rows) {
         qlonglong id = pRow->id;
         cHSORow *pOldRow = pOld->rowAtId(id);
-        if (pOldRow != NULL) {
+        if (pOldRow != nullptr) {
             pRow->set = pOldRow->set;
             pRow->sub = pOldRow->sub;
         }
@@ -714,7 +714,7 @@ void cHSOperate::set()
     if (permit != PERMIT_ALL) {
         if (disable || enable || clrStat || statLog || alarm || memo) EXCEPTION(EPROGFAIL);
     }
-    cError *pe = NULL;
+    cError *pe = nullptr;
     sqlBegin(*pq2, tn);
     try {
         for (int row = 0; row < rows; ++row) {
@@ -781,7 +781,7 @@ void cHSOperate::set()
                 if (um.count(true) > 0) {
                     hs.setId(id);
                     pe = hs.tryUpdate(*pq2, false, um);
-                    if (pe != NULL) break;
+                    if (pe != nullptr) break;
                 }
                 if (statLog) {
                     static const QString sql = "DELETE FROM host_service_logs WHERE host_service_id = ?";
@@ -798,7 +798,7 @@ void cHSOperate::set()
             }
         }
     } CATCHS(pe)
-    if (pe != NULL) {
+    if (pe != nullptr) {
         sqlRollback(*pq2, tn);
         cErrorMessageBox::messageBox(pe, this);
         refresh();  // Elrontottuk, újra olvassuk
@@ -868,7 +868,7 @@ void cHSOperate::setButton()
 
 cHSOState * cHSOperate::actState(eEx __ex)
 {
-    if (__ex == EX_IGNORE && stateIx < 0) return NULL;
+    if (__ex == EX_IGNORE && stateIx < 0) return nullptr;
     if (!isContIx(states, stateIx)) EXCEPTION(ENOINDEX, stateIx);
     return states.at(stateIx);
 }
@@ -877,11 +877,11 @@ void cHSOperate::all()
 {
     if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
     cHSOState *pStat = actState(EX_IGNORE);
-    if (pStat == NULL) return;
+    if (pStat == nullptr) return;
     lockSetButton = true;
     foreach (cHSORow *pRow, pStat->rows) {
         QCheckBox *pCheckBox = pRow->pCheckBoxSet;
-        if (pCheckBox != NULL) {
+        if (pCheckBox != nullptr) {
             pCheckBox->setChecked(true);
         }
     }
@@ -892,11 +892,11 @@ void cHSOperate::all()
 void cHSOperate::none()
 {
     cHSOState *pStat = actState(EX_IGNORE);
-    if (pStat == NULL) return;
+    if (pStat == nullptr) return;
     lockSetButton = true;
     foreach (cHSORow *pRow, pStat->rows) {
         QCheckBox *pCheckBox = pRow->pCheckBoxSet;
-        if (pCheckBox != NULL) {
+        if (pCheckBox != nullptr) {
             pCheckBox->setChecked(false);
         }
     }
@@ -907,10 +907,10 @@ void cHSOperate::none()
 void cHSOperate::subAll()
 {
     cHSOState *pStat = actState(EX_IGNORE);
-    if (pStat == NULL) return;
+    if (pStat == nullptr) return;
     foreach (cHSORow *pRow, pStat->rows) {
         QCheckBox *pCheckBox = pRow->pCheckBoxSub;
-        if (pCheckBox != NULL) {
+        if (pCheckBox != nullptr) {
             pCheckBox->setChecked(true);
         }
     }
@@ -919,10 +919,10 @@ void cHSOperate::subAll()
 void cHSOperate::subNone()
 {
     cHSOState *pStat = actState(EX_IGNORE);
-    if (pStat == NULL) return;
+    if (pStat == nullptr) return;
     foreach (cHSORow *pRow, pStat->rows) {
         QCheckBox *pCheckBox = pRow->pCheckBoxSub;
-        if (pCheckBox != NULL) {
+        if (pCheckBox != nullptr) {
             pCheckBox->setChecked(false);
         }
     }
@@ -1007,7 +1007,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
     int col = mi.column();
     QTableWidgetItem *pi = pUi->tableWidget->item(row, col);
     QString s;
-    if (pi == NULL) {
+    if (pi == nullptr) {
         if (col != TC_EXT) return;
     }
     else {
@@ -1051,9 +1051,9 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         cTableShape *pTs = new cTableShape();
         pTs->setByName(*pq2, "host_services_tree");
         pTs->enum2setOn(_sTableShapeType, TS_READ_ONLY);
-        cRecordTree rt(pTs, true, NULL, this);
+        cRecordTree rt(pTs, true, nullptr, this);
         rt.init();
-        cRecordTreeModel *pModel = (cRecordTreeModel *)rt.pModel;
+        cRecordTreeModel *pModel = static_cast<cRecordTreeModel *>(rt.pModel);
         pModel->rootId = actState()->rows.at(row)->id;
         rt.refresh();
         rt.dialog().exec();

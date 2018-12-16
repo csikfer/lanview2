@@ -84,7 +84,7 @@ class LV2GSHARED_EXPORT cSelectLanguage : public QObject {
     Q_OBJECT
 public:
     cSelectLanguage(QComboBox *_pComboBox, QLabel *pFlag, bool _nullable, QObject *_pPar);
-    int currentLangId()         { return pModel->atId(pComboBox->currentIndex()); }
+    int currentLangId()         { qlonglong id = pModel->atId(pComboBox->currentIndex()); return id == NULL_ID ? NULL_IX : int(id); }
     bool refresh()              { return pModel->refresh(); }
     bool setCurrent(int lid)    { return pModel->setCurrent(lid); }
     bool setCurrent(const QString& s)   { return pModel->setCurrent(s); }

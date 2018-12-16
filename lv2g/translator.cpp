@@ -41,8 +41,7 @@ cTransLang::cTransLang(int ix, cTranslator *par)
     parent->ui->toolButtonAddComboBox->setEnabled(langNum < MAX_LANGUAGES);
     pSelectLanguage = new cSelectLanguage(pComboBox, pFlag, nullable, this);
     if (!nullable) {
-        qlonglong id = pSelectLanguage->currentLangId();
-        _langId = id == NULL_ID ? NULL_IX : int(id);
+        _langId = pSelectLanguage->currentLangId();
     }
     pLineEdit = nullptr;
     connect(pSelectLanguage, SIGNAL(languageIdChanged(int)), this, SLOT(on_languageIdChanged(int)));

@@ -227,8 +227,8 @@ lanView::lanView()
             testSelfName = pSet->value(_sLv2testSetSelfNname).toString();
         }
         homeDir = pSet->value(_sHomeDir, QVariant(homeDefault)).toString();
-        ipv4Pol = (eIPV4Pol)IPV4Pol(pSet->value(_sIPV4Pol, QVariant(_sStrict)).toString());
-        ipv6Pol = (eIPV6Pol)IPV6Pol(pSet->value(_sIPV6Pol, QVariant(_sPermissive)).toString());
+        ipv4Pol = eIPV4Pol(IPV4Pol(pSet->value(_sIPV4Pol, QVariant(_sStrict)).toString()));
+        ipv6Pol = eIPV6Pol(IPV6Pol(pSet->value(_sIPV6Pol, QVariant(_sPermissive)).toString()));
         QDir    d(homeDir);
         if (!QDir::setCurrent(d.path())) {
             // Ha GUI, és nem volt megadva könyvtár, akkor az user home könyvtár lessz a home
@@ -277,11 +277,11 @@ lanView::lanView()
         // Language
         bool lok;
         languageId = pSet->value(_sLangId).toInt(&lok);
-        if (!lok) languageId = NULL_ID;
+        if (!lok) languageId = NULL_IX;
         pLocale   = new QLocale;
         if (pQuery != nullptr) {
             pLanguage = new cLanguage;
-            if (languageId != NULL_ID) {
+            if (languageId != NULL_IX) {
                 if (pLanguage->fetchById(*pQuery, languageId)) {
                     *pLocale = pLanguage->locale();
                     QLocale::setDefault(*pLocale);
@@ -289,7 +289,7 @@ lanView::lanView()
                 }
                 else {
                     pLanguage->setByLocale(*pQuery, *pLocale);
-                    languageId = NULL_ID;
+                    languageId = NULL_IX;
                 }
             }
         }
@@ -351,7 +351,7 @@ static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
 lanView::~lanView()
 {
     instance = nullptr;    // "Kifelé" már nincs objektum
-    PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg((qulonglong)this) << endl;
+    PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg(qulonglong(this), 0, 16) << endl;
     // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
     rollback_all("main", pDb, mainTrasactions);
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
@@ -455,8 +455,8 @@ bool checkDbVersion(QSqlQuery& q, QString& msg)
 {
     // A cSysParam objektumot nem használhatjuk !!
     bool ok1, ok2;
-    int vmajor = (int)execSqlIntFunction(q, &ok1, "get_int_sys_param", "version_major");
-    int vminor = (int)execSqlIntFunction(q, &ok2, "get_int_sys_param", "version_minor");
+    int vmajor = int(execSqlIntFunction(q, &ok1, "get_int_sys_param", "version_major"));
+    int vminor = int(execSqlIntFunction(q, &ok2, "get_int_sys_param", "version_minor"));
     if (!(ok1 && ok2)) {
         msg = QObject::trUtf8("The database version numbers wrong format or missing.");
         DERR() << msg << endl;
@@ -480,7 +480,7 @@ bool lanView::openDatabase(eEx __ex)
     pDb = new  QSqlDatabase(QSqlDatabase::addDatabase(_sQPSql));
     if (!pDb->isValid()) SQLOERR(*pDb);
     pDb->setHostName(pSet->value(_sSqlHost).toString());
-    pDb->setPort(pSet->value(_sSqlPort).toUInt());
+    pDb->setPort(pSet->value(_sSqlPort).toInt());
     pDb->setUserName(scramble(pSet->value(_sSqlUser).toString()));
     pDb->setPassword(scramble(pSet->value(_sSqlPass).toString()));
     pDb->setDatabaseName(pSet->value(_sDbName).toString());
@@ -701,15 +701,32 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         case QSqlDriver::SelfSource:    src = "Self";       break;
         case QSqlDriver::OtherSource:   src = "Other";      break;
         case QSqlDriver::UnknownSource:
-        default:                        src = "Unknown";    break;
+     /* default:  */                    src = "Unknown";    break;
         }
         cDebug::cout() << HEAD() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
     }
+    if (pSelfHostService == nullptr) return;
     QString sPayload = payload.toString();
-    if (0 == appName.compare(name,     Qt::CaseInsensitive)
-     && 0 == _sReset.compare(sPayload, Qt::CaseInsensitive)) {
-        PDEB(INFO) << trUtf8("Esemény : NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
-        reSet();
+    if (sPayload.isNull()) return;
+    QStringList hsids = sPayload.split(_sSpace);
+    QString     cmd = hsids.takeFirst();
+    if (0 == pSelfHostService->getName().compare(name, Qt::CaseInsensitive)
+     && 0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
+        bool reset = hsids.isEmpty(); // No specified any host_service_id
+        if (!reset) {
+            foreach (QString shsid, hsids) {
+                bool ok;
+                qlonglong hsid = shsid.toInt(&ok);
+                if (ok && selfHostServiceId == hsid) {
+                    reset = true;
+                    break;
+                }
+            }
+        }
+        if (reset) {
+            PDEB(INFO) << trUtf8("Esemény : NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
+            reSet();
+        }
     }
 }
 

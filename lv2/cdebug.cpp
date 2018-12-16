@@ -370,7 +370,7 @@ debugStream::debugStream(FILE *__f)
 debugStream::~debugStream()
 {
     // printf("Remove debugStream: %p...\n", this);
-    PDEB(INFO) << QObject::trUtf8("Remove debugStream: %1...").arg((qulonglong)this) << endl;
+    PDEB(INFO) << QObject::trUtf8("Remove debugStream: %1...").arg(qulonglong(this)) << endl;
     flush();
     stream.reset();
     if (isMain()) {
