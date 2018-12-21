@@ -1,6 +1,9 @@
 #ifndef LV2CONT_H
 #define LV2CONT_H
 #include <typeinfo>
+#include <lv2types.h>
+
+class SqlQuery;
 
 /*!
 @file lv2cont.h
@@ -94,8 +97,8 @@ public:
         EXCEPTION(EPROGFAIL, 0, typeid(T).name() + QString(" :: ") + __o.toString());
     }
 
-    QList<T *>& list()  { return *(QList<T *> *)this; }
-    const QList<T *>& list() const { return *(const QList<T *> *)this; }
+    QList<T *>& list()             { return *static_cast<      QList<T *> *>(this); }
+    const QList<T *>& list() const { return *static_cast<const QList<T *> *>(this); }
     /// Kiüríti a konténert, az összes elemet (pointerek) felszabadítja
     tRecordList& clear()
     {
@@ -327,7 +330,7 @@ public:
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         if (__st != 0) {
             if (__st < 0) return -1;
-            if (__st >= (int)QList<T *>::size()) return -1;
+            if (__st >= list().size()) return -1;
             i += __st;
         }
         for (; i < QList<T *>::constEnd(); i++, __st++) {
@@ -344,7 +347,7 @@ public:
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         if (__st != 0) {
             if (__st < 0) return -1;
-            if (__st >= (int)QList<T *>::size()) return -1;
+            if (__st >= list().size()) return -1;
             i += __st;
         }
         for (; i < QList<T *>::constEnd(); i++, __st++) {
@@ -663,6 +666,8 @@ public:
 protected:
     O  * pOwner;
 public:
+    QList<C *>& list()             { return *static_cast<      QList<C *> *>(this); }
+    const QList<C *>& list() const { return *static_cast<const QList<C *> *>(this); }
     /// Konstruktor, üres konténert hoz létre
     /// @param __po Tulajdonos objektum pointere.
     /// @remark Az owner id indexét egy C().descr().ixToOwner(tableName) hívással állapitja meg.
@@ -772,7 +777,7 @@ public:
             (*i)->setFlag(false);
             if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
-        removeMarked(__q);    // Ha flag = true maradt, akkor töröljük
+        removeMarked(__q, TS_FALSE);    // If flag is true then remove from database, list unchanged
         return r == QList<C *>::size();
     }
     /// Az ID-k alapján írja újra a rekordokat.
@@ -800,21 +805,38 @@ public:
                 if ((*i)->rewriteById(__q, __ex)) ++r;
             }
         }
-        removeMarked(__q);    // Ha flag = true maradt, akkor töröljük
+        removeMarked(__q, TS_FALSE);    // If flag is true then remove from database, list unchanged
         return r == QList<C *>::size();
     }
 
-    int mark(QSqlQuery &__q) const {
+    int mark(QSqlQuery &__q, bool flag = true) const {
         if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
-        return o.setId(ixOwnerId, oid).mark(__q, o.mask(ixOwnerId), true);
+        return o.setId(ixOwnerId, oid).mark(__q, o.mask(ixOwnerId), flag);
     }
-    int removeMarked(QSqlQuery& __q) const {
+    int removeMarked(QSqlQuery& __q, eTristate f = TS_FALSE) {
         if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
-        return o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(ixOwnerId));
+        // Delete from database
+        int r = o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(ixOwnerId));
+        // Delete from list
+        if (f != TS_FALSE && !list().isEmpty() && r > 0) {
+            int i, n = list().size(), rn = 0;
+            int fix = o.flagIndex();
+            for (i = 0; i < n; ++i) {
+                C *po = list().at(i);
+                if (po->getBool(fix)) {
+                    list().removeAt(i);
+                    delete po;
+                    --i; --n;
+                    ++rn;
+                }
+            }
+            if (f == TS_TRUE && r != rn) EXCEPTION(EDATA, n);   // Check
+        }
+        return r;
     }
     O& owner() { return *pOwner; }
 protected:

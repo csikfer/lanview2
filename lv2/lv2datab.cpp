@@ -1936,7 +1936,7 @@ cColStaticDescrList::~cColStaticDescrList()
 
 cColStaticDescrList& cColStaticDescrList::operator<<(cColStaticDescr * __o)
 {
-    *(list *)this << __o;
+    *static_cast<list *>(this) << __o;
     if (size() != __o->pos) EXCEPTION(EDBDATA,0,QString("Table : %1, pos = %2, and list síze = %3, is not equal.").arg(tableName()).arg(__o->pos).arg(size()));
     return *this;
 }
@@ -1973,13 +1973,13 @@ const cColStaticDescr& cColStaticDescrList::operator[](const QString& __n) const
 cColStaticDescr& cColStaticDescrList::operator[](int i)
 {
     if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i, tableName());
-    return *(*(list *)this)[i];
+    return *(*static_cast<list *>(this))[i];
 }
 
 const cColStaticDescr& cColStaticDescrList::operator[](int i) const
 {
     if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i, tableName());
-    return *(*(const list *)this)[i];
+    return *(*static_cast<const list *>(this))[i];
 }
 
 QString cColStaticDescrList::fullColName(const QString& _col) const {
@@ -2810,7 +2810,7 @@ cLangTexts::~cLangTexts()
 void cLangTexts::setTexts(const QString& _langName, const QStringList& texts)
 {
     cRecordAny  lang(_sLanguages);
-    qlonglong lid = lang.getIdByName(_langName);
+    int lid = int(lang.getIdByName(_langName));
     setTexts(lid, texts);
 }
 
@@ -2865,7 +2865,7 @@ void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po,
 
 void cLangTexts::saveTexts(QSqlQuery& q)
 {
-    foreach (qlonglong lid, textMap.keys()) {
+    foreach (int lid, textMap.keys()) {
         saveText(q, textMap[lid], parent, lid);
     }
 }
@@ -2877,7 +2877,7 @@ void cLangTexts::loadTexts(QSqlQuery& q)
     if (execSql(q, sql, parent->get(_sTextId), parent->tableName())) {
         do {
             bool ok;
-            qlonglong   lid   = q.value(0).toLongLong(&ok);
+            int   lid   = q.value(0).toInt(&ok);
             if (!ok) EXCEPTION(EDATA, 0, parent->identifying());
             QStringList texts = sqlToStringList(q.value(1));
             setTexts(lid, texts);
@@ -2900,7 +2900,6 @@ cRecord::cRecord() : QObject(), _fields(), _likeMask()
 cRecord::cRecord(const cRecord& o) : QObject(), _fields(), _likeMask()
 {
     EXCEPTION(ENOTSUPP, -1, o.identifying());
-    //__o.descr();  // Inaktív kód, csak hogy ne ugasson a fordító.
 }
 
 cRecord::~cRecord()
@@ -2999,9 +2998,10 @@ QStringList cRecord::defectiveFields() const
 
 cRecord& cRecord::set()
 {
-    return _set(descr());
+    _set(descr());
     clearToEnd();
     emit cleared();
+    return *this;
 }
 
 cRecord& cRecord::clear()
@@ -3663,12 +3663,12 @@ int cRecord::existId(QSqlQuery& q, qlonglong __id) const
 {
     QString sql = QString("SELECT COUNT(*) FROM %1 WHERE %2 = ?").arg(fullTableNameQ(), dQuoted(idName()));
     bool ok = execSql(q, sql, __id);
-    int  n;
+    int  n = 0;
     if (ok) n = q.value(0).toInt(&ok);
     return ok ? n : -1;
 }
 
-bool cRecord::existByNameKey(QSqlQuery& __q) const
+bool cRecord::existByNameKey(QSqlQuery& __q, eEx __ex) const
 {
     QBitArray m = nameKeyMask() & areNull();
     // kitöltetlen mező a kulcsban?
@@ -3681,7 +3681,7 @@ bool cRecord::existByNameKey(QSqlQuery& __q) const
     case 0: return false;
     case 1: return true;
     }
-    EXCEPTION(EDBDATA, row);
+    if (__ex != EX_IGNORE) EXCEPTION(EDBDATA, row);
     return false;
 }
 
@@ -4149,7 +4149,7 @@ QString cRecord::identifying(bool t) const
             id = id.arg(columnName(ix), quotedString(view(q, ix)));
         }
         record += QString(" %1 ; %2 .").arg(name, id);
-        foreach (const cColStaticDescr *pCd, (QList<cColStaticDescr *>&)descr().columnDescrs()) {
+        foreach (const cColStaticDescr *pCd, static_cast<const QList<cColStaticDescr *>&>(descr().columnDescrs())) {
             if (pCd->fKeyType == cColStaticDescr::FT_OWNER) {
                 const cRecStaticDescr *pRd = cRecStaticDescr::get(pCd->fKeyTable, pCd->fKeySchema, true);
                 record += trUtf8(" Tulajdonos : ");
@@ -4320,7 +4320,7 @@ cRecordAny::cRecordAny(const cRecStaticDescr *_p) : cRecord()
 
 cRecordAny::cRecordAny(const cRecordAny &__o)  : cRecord()
 {
-    *this = *(cRecord *)&__o;
+    *this = static_cast<const cRecord&>(__o);
 }
 
 cRecordAny::cRecordAny(const cRecord& __o) : cRecord()
@@ -4479,7 +4479,6 @@ cLanguage& cLanguage::setByLocale(QSqlQuery& _q, const QLocale &_l)
         break;
     default:
         EXCEPTION(EDATA);
-        break;
     }
     return setFromLocale(_l);
 }
@@ -4510,8 +4509,8 @@ QLocale cLanguage::locale(eEx __ex)
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, identifying(false));
         return QLocale();
     }
-    QLocale::Language language = (QLocale::Language)l;
-    QLocale::Country  country  = (QLocale::Country)c;
+    QLocale::Language language = QLocale::Language(l);
+    QLocale::Country  country  = QLocale::Country(c);
     return QLocale(language, country);
 }
 

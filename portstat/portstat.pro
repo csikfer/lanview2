@@ -9,7 +9,7 @@ QT       += core sql xml network
 
 QT       -= gui
 
-TARGET = portstat
+TARGET = pstat
 CONFIG += console
 CONFIG -= app_bundle
 

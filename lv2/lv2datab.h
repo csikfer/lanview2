@@ -248,9 +248,9 @@ public:
     /// Másoló operátor
     cColStaticDescr& operator=(const cColStaticDescr __o);
     /// A QString ős objektum referenciájával tér vissza, ami a mező neve
-    QString&        colName()       { return *(QString *)this; }
+    QString&        colName()       { return *static_cast<QString *>(this); }
     /// A QString ős objektum konstatns referenciájával tér vissza, ami a mező neve
-    const QString&  colName() const { return *(QString *)this; }
+    const QString&  colName() const { return *static_cast<const QString *>(this); }
     /// A mező név idézőjelek között
     QString colNameQ() const        { return dQuoted(colName()); }
     /// Kideríti a mező típusát a szöveges típus nevek alapján, vagyis meghatározza az eColType adattag értékét.
@@ -310,36 +310,36 @@ public:
     int         pos;
     /// A mező sorrendet jelző szám (ordinal_position), jó esetben azonos pos-al, de ha mező volt törölve, akkor nem folytonos
     int         ordPos;
+    /// character maximum lenght
+    int         chrMaxLenghr;
+    /// A mező (oszlop) típusa, lásd: eFieldType
+    int         eColType;
+    /// Ha a mező módosítható, akkor értéke igaz
+    bool        isUpdatable;
+    /// Ha igaz, akkor a mező felveheti a NULL értéket
+    bool        isNullable;
+    /// A távoli kulcs típusa
+    eFKeyType   fKeyType;
     /// A mező típusa. Az adatbázisból kiolvasott típus string (information_schema.columns.data_type)
     /// Ha a mező tömb, vagy felhasználó által definiált típus, akkor a
     /// colType értéke "ARRAY" ill. "USER-DEFINED"
     QString     colType;
     /// Szintén típus, tömb ill. USER DEFINED típus esetén ez tartalmazza a típus nevet.
     QString     udtName;
-    /// character maximum lenght
-    int         chrMaxLenghr;
     /// A mező alapértelmezett értéke (SQL szintaxis)
     QString     colDefault;
-    /// Ha igaz, akkor a mező felveheti a NULL értéket
-    bool        isNullable;
     /// Enumerációs ill. set típus esetén a leíró pointere, vagy NULL pointer
     const cColEnumType *pEnumType;
     /// Enumerációs ill. set típus leíró referenciája, ha nincs dob egy kizárást.
     const cColEnumType& enumType() const { if (pEnumType == nullptr) EXCEPTION(EDATA); return *pEnumType; }
     /// Enumerációs ill. set típus leíró pointere, vagy NULL
     const cColEnumType *getPEnumType() const { return pEnumType; }
-    /// A mező (oszlop) típusa, lásd: eFieldType
-    int         eColType;
-    /// Ha a mező módosítható, akkor értéke igaz
-    bool        isUpdatable;
     /// Ha a mező egy távoli kulcs, akkor a tábla séma neve, ahol távoli kulcs
     QString     fKeySchema;
     /// Ha a mező egy távoli kulcs, akkor a tábla neve, ahol távoli kulcs
     QString     fKeyTable;
     /// Ha a mező egy távoli kulcs, akkor a kulcsmező neve, a távoli táblában
     QString     fKeyField;
-    /// A távoli kulcs típusa
-    eFKeyType   fKeyType;
     /// Ha a mező egy távoli kulcs, akkor a táblák nevei, ahol távoli kulcs, ha egy öröklési láncról van szó
     QStringList fKeyTables;
     /// Egy opcionális függvény név, ami ID-k esetén elvégzi a stringgé (névvé) konvertálást
@@ -680,7 +680,7 @@ public:
     }
     /// A megadott indexű mező nevével tér vissza.
     /// @exception cError * Ha i értéke nem lehet index. és __ex nem EX_IGNORE (alapértelmezett), akkor dob egy kizárást.
-    const QString&  columnName(int i, enum eEx __ex = EX_ERROR) const  { return chkIndex(i, __ex) < 0 ? _sNul : (const QString&)_columnDescrs[i]; }
+    const QString&  columnName(int i, enum eEx __ex = EX_ERROR) const  { return chkIndex(i, __ex) < 0 ? _sNul : static_cast<const QString&>(_columnDescrs[i]); }
     /// A megadott indexű mező nevével tér vissza. Hasonló a _columnName() metódushoz, de a visszaadott nevet kettős idézőjelek közé teszi
     QString columnNameQ(int i) const                 { return dQuoted(columnName(i)); }
     /// Megkeresi a megadott nevű mezőt a mező leíró listában
@@ -690,7 +690,7 @@ public:
     /// @param __n A keresett mező neve
     /// @param __ex Ha értéke nem EX_IGNORE, és nem találja a keresett mezőt, akkor dob egy kizárást.
     /// @return A mező indexe, vagy ha nem talált ilyen nevű mezőt, és __ex értéke nem EX_IGNORE, akkor NULL_IX (negatív).
-    int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const { return _columnDescrs.toIndex(__n, __ex); };
+    int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const { return _columnDescrs.toIndex(__n, __ex); }
     /// A séma nevet adja vissza
     const QString&  schemaName() const              { return _schemaName; }
     /// A tábla nevet adja vissza
@@ -902,8 +902,8 @@ public:
     void saveTexts(QSqlQuery& q);
     void loadTexts(QSqlQuery& q);
 protected:
-    cRecord *                       parent;
-    QMap<qlonglong, QStringList>    textMap;
+    cRecord *               parent;
+    QMap<int, QStringList>  textMap;    ///< language_id ==> texts
 };
 /* ******************************************************************************************************
    *                                              cRecord                                               *
@@ -1853,7 +1853,7 @@ public:
     /// Ha olyan mező alapján kell keresni, amely nincs kitöltve (NULL) azt kitölti az alapértelmezése szerint.
     /// Hívja a nemeKeyMask() metódust, ha egy a maszkban szereplő mező értéke NULL, és nincs alapértelmezett
     /// értéke, akkor is kizárást dob. Ha a lekérdezés szerint egynél több rekordot talál az is kizárást eredményez.
-    bool existByNameKey(QSqlQuery& __q) const;
+    bool existByNameKey(QSqlQuery& __q, eEx __ex = EX_ERROR) const;
     /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus
     int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
     /// Az objektum típusnak megfelelő tableoid-vel tér vissza.
@@ -2033,7 +2033,7 @@ public:
     template <class T> const T * creconvert() const { chkObjType<T>(); return dynamic_cast<const T *>(this); }
     /// Megvizsgálja, rendeben van-e a kitöltött objektum, és nem üres-e.
     /// @return Ha az objektum üres, vagy a státusz változó szerint nincs rendben, akkor true-val tér vissza
-    bool operator !() { return _stat <= ES_EMPTY || ((_stat & (ES_INCOMPLETE || ES_DEFECTIVE)) != 0); }
+    bool operator !() { return _stat <= ES_EMPTY || ((_stat & (ES_INCOMPLETE | ES_DEFECTIVE)) != 0); }
     /// Ha az objektum nem tartalmaz egyetlen nem null mezőt sem, akkor true-val tér vissza.
     /// Nem a _stat adattag alapján tér vissza, ill. azt beállítja ha a visszaadott érték true.
     /// Konstans objektum esetén használjuk az isEmpty_() metódust, az a _stat értéke alapján tér vissza.
@@ -2662,7 +2662,7 @@ public:
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
     cRecordAny& operator=(const cRecord& __o);
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
-    cRecordAny& operator=(const cRecordAny& __o) { return *this = (const cRecord&)__o; }
+    cRecordAny& operator=(const cRecordAny& __o) { return *this = static_cast<const cRecord&>(__o); }
     ///
     static int updateFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList& _nl, const QString& _fn, const QVariant& _v);
     static int updateFieldByIds(QSqlQuery& q, const cRecStaticDescr * _p, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v);

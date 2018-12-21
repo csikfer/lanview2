@@ -43,7 +43,7 @@ A cdebug.h tartalmaz néhány függvényt, ami hasznos lehet egy adat megjelení
 
 @section others Az API saját egyéb adat típusai.
 Lásd a lv2types.h .
-- eTriState Három állapotú kapcsoló.
+- eTristate Három állapotú kapcsoló.
 - cMac  Ethernet cím (MAC)
 - netAddress Hálózati címtartomány (IP/mask)
 - netAddressList    Hálózati címtartományok konténere

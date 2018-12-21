@@ -750,17 +750,26 @@ int cSnmp::getTable(const cOId& baseId, const QStringList& columns, cTable& resu
     }
     return getTable(ov, columns, result);
 }
-int cSnmp::getTable(const QString& baseId, const QStringList& columns, cTable& result)
+
+int cSnmp::columns2oids(const QString& baseId, const QStringList& columns, cOIdVector&  ov)
 {
-    cOIdVector  ov(columns.size());
+    ov.resize(columns.size());
     QString s, sb = baseId;
-    if (sb.right(1) != QString(":")) sb += ".";
+    if (!sb.endsWith(QChar(':'))) sb += QChar('.');
     int i = 0;
     foreach (s, columns) {
-        ov[i].set(sb + s);
-        if (!checkOId(ov[i])) return status;
+        cOId& o = ov[i];
         i++;
+        o.set(sb + s);
+        if (!checkOId(o)) return status;
     }
+    return 0;   // OK
+}
+
+int cSnmp::getTable(const QString& baseId, const QStringList& columns, cTable& result)
+{
+    cOIdVector  ov;
+    columns2oids(baseId, columns, ov);
     return getTable(ov, columns, result);
 }
 
@@ -774,17 +783,18 @@ int cSnmp::checkTableColumns(const cOIdVector& Ids, QBitArray& result)
         const cOId&     oib = Ids[i];       // Column base OID
         const cOId      oia = name();       // Cell OID
         result[i] = (oib < oia);            // Overrun? (if no)
+        next();
     }
     return 0;   // OK
 }
 
-int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& result)
+int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& result, oid _maxRowIndex)
 {
     int ncol = columns.size();      // Table column number
     if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);
     if (getNext(Ids)) return 1;
-    int over = 0;                   // Overruns counter
-    unsigned int row = 0;           // Row SNMP index
+    int over = 0;               // Overruns counter
+    oid row = 0;                // Row SNMP index
     result.clear();
     first();
     while (true) {                          // ROWS
@@ -798,6 +808,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
             if (oib < oia) {                    // Overrun? (if no)
                 if (i == 0) {                   // First column
                     row = oia.last();           // Row SNMP index
+                    if (row > _maxRowIndex) return 0;
                 }
                 else if (row != oia.last()) {   // Check SNMP index
                     emsg = "Confused indexes : " + oia.toNumString() + " / " + QString::number(row);
@@ -818,7 +829,6 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
         if (actVar != nullptr) EXCEPTION(EPROGFAIL);
         if (getNext()) return 1;
     }
-    return 1;
 }
 
 int cSnmp::getXIndex(const cOId& xoid, QMap<int, int>& xix, bool reverse)

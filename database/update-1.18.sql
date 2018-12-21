@@ -1,7 +1,19 @@
 -- Service var can be disable
 
-ALTER TABLE service_vars ADD  COLUMN disabled boolean NOT NULL DEFAULT false;
-DROP VIEW portvars;
+CREATE TABLE IF NOT EXISTS rrd_files (
+    rrd_file_id     bigserial   PRIMARY KEY,
+    rrd_file_name   text        NOT NULL UNIQUE,
+    rrd_file_note   text        DEFAULT NULL,
+    rrd_beat_id     bigint      NOT NULL
+         REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT
+);
+
+ALTER TABLE service_vars ADD  COLUMN IF NOT EXISTS disabled boolean NOT NULL DEFAULT false;
+ALTER TABLE service_vars ADD  COLUMN IF NOT EXISTS rrd_file_id bigint DEFAULT NULL
+    REFERENCES rrd_files(rrd_file_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT;
+ALTER TABLE service_vars ADD COLUMN IF NOT EXISTS flag boolean NOT NULL DEFAULT false;
+    
+DROP VIEW IF EXISTS portvars;
 CREATE VIEW portvars AS 
  SELECT
     sv.service_var_id AS portvar_id,
@@ -18,15 +30,23 @@ CREATE VIEW portvars AS
     sv.raw_value,
     sv.delegate_service_state,
     sv.state_msg,
-    sv.disabled
+    sv.disabled,
+    sv.rrd_file_id,
+    sv.flag
    FROM service_vars AS sv
      JOIN host_services AS hs USING (host_service_id)
-   WHERE NOT sv.deleted AND NOT hs.deleted AND hs.port_id IS NOT NULL;
+   WHERE NOT sv.deleted
+     AND NOT hs.deleted
+     AND hs.port_id IS NOT NULL;
+
 ALTER TABLE service_vars DROP COLUMN IF EXISTS rrd_beat_id;
+
+ALTER TABLE interfaces RENAME COLUMN stat_last_modify TO last_changed;
+ALTER TABLE interfaces ADD COLUMN last_touched timestamp;
 
 -- --------------------------------------------------------
 
--- Feleslegesen lassítások törlése ...
+-- Feleslegesen lassítások ...
 
 CREATE OR REPLACE FUNCTION check_shared(portshare, portshare) RETURNS boolean AS $$
 BEGIN
@@ -114,6 +134,5 @@ END
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 
-- ------------------------------------------------------------------------------------------------
--- Under construction !!!
--- SELECT set_db_version(1, 17);
+-- ------------------------------------------------------------------------------------------------
+SELECT set_db_version(1, 18);

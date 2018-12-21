@@ -9,11 +9,12 @@
 #include "lv2service.h"
 #include "lv2link.h"
 
-#define APPNAME "portstat"
+#define APPNAME "pstat"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  APP
 
 class lv2portStat;
+class cPortStat;
 
 /// @class cDevicePSt
 /// Az egy lekérdezendő eszközt reprezentál
@@ -25,27 +26,50 @@ public:
     ~cDevPortStat();
     ///
     virtual void postInit(QSqlQuery &_q, const QString &qs = QString());
-    void varsInit(QSqlQuery &_q, cInterface *pInterface);
-    /// A lekérdezést végző virtuális metódus.
-    /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
+    int  queryInit(QSqlQuery &_q, QString& msg);
+    int checkAvailableVars(QSqlQuery &q);
+    /// Mthode of query.
+    /// @par q SQL query object
     virtual int run(QSqlQuery& q, QString& runMsg);
-    /// MAP az al rlinkstat szolgáltatások, port(ID) szerinti kereséséhez
-    QMap<qlonglong, cInspector *>  rlinkMap;
-    /// MAP az al portvars szolgáltatások, port(ID) szerinti kereséséhez
-    QMap<qlonglong, cInspector *>  pVarsMap;
-    /// SNMP objektum a lekérdezéshez
+    /// first state (query exists variables)
+    bool    first;
+    /// MAP port (interface) ID -> cPortStat object
+    QMap<qlonglong, cPortStat *>  ifMap;
+    /// SNMP object for query
     cSnmp           snmp;
-    ///
-    // void setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, QSqlQuery &q);
-    /// Az "rlinkstat" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
+    /// Maximum index for the interfaces to be query
+    int             maxPortIndex;
+    /// Available variable names.
+    QStringList     vnames;
+    /// Available variable default típes
+    QList<qlonglong> vTypes;
+    cOIdVector      snmpTabOIds;
+    QStringList     snmpTabColumns;
+    /// Az "rlinkstat" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pRLinkStat;
+    /// Az "portvars" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pPortVars;
-    /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
+    /// Az "snmp" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
+    static int ixPortIndex;
+    static int ixIfTypeId;
+    static int ixPortStat;
     static int ixPortOStat;
     static int ixPortAStat;
     static int ixIfdescr;
-    static int ixStatLastModify;
+    static int ixLastChanged;
+    static int ixLastTouched;
+    static int ixDelegatePortState;
+};
+
+class cPortStat {
+public:
+    cPortStat(cInterface *pIf, cDevPortStat *par);
+    bool postInit(QSqlQuery &q);
+    cDevPortStat *  parent;
+    cInterface *    pInterface;
+    cInspector *    pRlinkStat;
+    cInspector *    pPortVars;
 };
 
 

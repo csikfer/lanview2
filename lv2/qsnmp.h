@@ -314,6 +314,8 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// Az előző sikeres lekérdezésnél használt objektum(ok) utáni objektumo(ka)t kérdezi le.
     /// @exception Ha nem egy sikeres lekérdezés után hívtuk.
     int getNext(void);
+    ///
+    int columns2oids(const QString& baseId, const QStringList& columns, cOIdVector&  ov);
     /// Egy táblázat lekérdezéséhez ellenörzi, hogy minden oszlop lekérdezhető-e,
     int checkTableColumns(const cOIdVector& Ids, QBitArray& result);
     /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról.
@@ -330,7 +332,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
     ///         Hiba esetén az első hibás lejérdezés státusa.
     int getTable(const QString& baseId, const QStringList& columns, cTable& result);
-    int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result);
+    int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result, oid _maxRowIndex = INT_MAX);
     /// Egy kereszt index tábla lekérdezése
     /// @param xoid Az OID, ami a keresztindexet tartalmazza: <xoid>.<új index>: <eredeti index>
     /// @param xix Kereszt indexek, ahhol a kulcs az új index, érték az eredeti.

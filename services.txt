@@ -1,22 +1,194 @@
-// Update #634
-
-
+SERVICE "arp" "ARP tábla lekérdezése" {
+    SUPERIOR SERVICE MASK "^arpd$";
+    FEATURES ":timing=timed:";
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 1800;
+    RETRY CHECK INTERVAL 60;
+}
+SERVICE "arpd" "Arp daemon" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    COMMAND "arpd $S  -R $host_service_id";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:method=inspector:";
+    NORMAL CHECK INTERVAL 600;
+    HEARTBEAT TIME 1800;
+}
+SERVICE "arp.proc" "ARP fájl a proc-ban, local vagy ssh-n keresztül" {
+    FEATURES ":file=/proc/net/arp:";
+}
+SERVICE "attached" "IndAlarm Contact védett eszköz" {
+    SUPERIOR SERVICE MASK "^indalarmif";
+    FEATURES ":timing=passive:iftype=attach:";
+    MAX CHECK ATTEMPTS 1;
+    NORMAL CHECK INTERVAL 0;
+    HEARTBEAT TIME 60;
+    RETRY CHECK INTERVAL 0;
+    TYPE "life_sign";
+    ON LINE GROUPS "dispatcher", "admin";
+}
+SERVICE "check_ups" "UPS check by NUT" {
+    SUPERIOR SERVICE MASK "^nut$";
+    COMMAND "/usr/lib/nagios/plugins/check_ups -H localhost -u $UPS";
+    FEATURES ":method=nagios:timing=timed:";
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    ON LINE GROUPS "admin";
+    OFF LINE GROUPS "admin";
+}
+SERVICE "DHCP" "DHCP monitorozás" {
+    COMMAND "dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw";
+    FEATURES ":method=nagios:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 600;
+    HEARTBEAT TIME 1800;
+    RETRY CHECK INTERVAL 120;
+    FLAPPING INTERVAL 14400;
+    FLAPPING MAX CHANGE 8;
+    TYPE "check_service";
+    ON LINE GROUPS "admin";
+    OFF LINE GROUPS "admin";
+}
+SERVICE "dhcp.conf" "DHCP config fájl, local vagy ssh-n keresztül" {
+    FEATURES ":file=/etc/dhcp/dhcpd.conf:";
+}
+SERVICE "group" "Dummy service for grouping services." {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    NORMAL CHECK INTERVAL 300;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 5;
+}
+SERVICE "http" "Check http server" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    PORT 80;
+    COMMAND "/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri";
+    FEATURES ":timing=timed:method=nagios:uri=/:stopTimeOut=15000:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
+    ON LINE GROUPS "operator", "admin";
+    OFF LINE GROUPS "admin", "operator";
+}
+SERVICE "http.proxy" "Check http proxy server" {
+    SUPERIOR SERVICE MASK "^http$";
+    PORT 3128;
+    COMMAND "check_http_proxy --proxy=$address:$port --url=http://$parent.address:$parent.port$parent.uri";
+    FEATURES ":timing=timed:method=nagios:uri=/:stopTimeOut15000:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 120;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
+    ON LINE GROUPS "admin", "operator";
+    OFF LINE GROUPS "admin", "operator";
+}
+SERVICE "icontsrv" "icontsrv daemon" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    COMMAND "icontsrv $S";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,4:method=inspector:";
+    NORMAL CHECK INTERVAL 60;
+    RETRY CHECK INTERVAL 60;
+}
+SERVICE "import" "import daemon" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    COMMAND "import $S -D";
+    FEATURES ":process=respawn:timing=custom:";
+    NORMAL CHECK INTERVAL 300;
+}
+SERVICE "indalarmif1ma" "IndAlarm Contact V1 Master" {
+    SUPERIOR SERVICE MASK "^rs485$";
+    FEATURES ":iftype=rs485:timing=timed:timeout=1000:";
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL 10;
+    TYPE "life_contr";
+    ON LINE GROUPS "admin", "dispatcher";
+    OFF LINE GROUPS "admin";
+}
+SERVICE "indalarmif1sl" "IndAlarm Contact V1 Slave" {
+    SUPERIOR SERVICE MASK "^indalarmif1ma$";
+    FEATURES ":iftype=iic:timing=timed:superior:timeout=1000:";
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL 10;
+    TYPE "life_contr";
+    ON LINE GROUPS "dispatcher", "admin";
+    OFF LINE GROUPS "admin";
+}
+SERVICE "indalarmif2" "IndAlarm Contact V2" {
+    SUPERIOR SERVICE MASK "^rs485$";
+    FEATURES ":iftype=rs485:timing=timed:timeout=1000:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL 10;
+    TYPE "life_contr";
+    ON LINE GROUPS "admin", "dispatcher";
+}
+SERVICE "local" "local service" ;
+SERVICE "lv2d" "Lanview2 super server" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":superior:timing=passive:logrot=500M,8:";
+    NORMAL CHECK INTERVAL 300;
+}
+SERVICE "nil-1" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 0;
+    DISABLE;
+}
+SERVICE "nil-2" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 0;
+    DISABLE;
+}
+SERVICE "nil-3" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 0;
+    DISABLE;
+}
+SERVICE "nut" "Network Ups Tools" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    FEATURES ":timing=passive:superior:";
+    NORMAL CHECK INTERVAL 300;
+}
 SERVICE "parser" "Query Parser (pure)" {
     SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":timing=passive:method=parser:superior:";
     NORMAL CHECK INTERVAL 300;
     OFF LINE GROUPS "admin";
 }
-SERVICE "owfs" "Temp by OWFS" {
-    SUPERIOR SERVICE MASK "^parser$";
-    COMMAND "owget /$id/temperature";
-    FEATURES ":method=qparse,carried:timing=timed:";
+SERVICE "ping" "Ping check" {
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
+    PORT 80;
+    COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
+    FEATURES ":timing=timed:method=nagios:warning=10,9%:critical=20,19%:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
+    ON LINE GROUPS "operator", "admin";
+    OFF LINE GROUPS "admin", "operator";
+}
+SERVICE "pmac" "Query port address table by <protocol>" {
+    SUPERIOR SERVICE MASK "^portmac$";
+    FEATURES ":timing=timed:superior:";
     MAX CHECK ATTEMPTS 2;
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL 60;
-    OFF LINE GROUPS "admin";
 }
-
+SERVICE "portmac" "Device port address table query daemon" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    COMMAND "portmac $S -R $host_service_id";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:method=inspector:";
+    NORMAL CHECK INTERVAL 300;
+}
 SERVICE "portstat" "Device port status query daemon" {
     SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":timing=passive:superior:";
@@ -28,16 +200,6 @@ SERVICE "portvars" "Port változók" {
     MAX CHECK ATTEMPTS 2;
     HEARTBEAT TIME 60;
 }
-SERVICE "pstat" "Query port status by <protocol>" {
-    SUPERIOR SERVICE MASK "^portstat$";
-    COMMAND "portstat $S  -R $host_service_id";
-    FEATURES ":process=continue:timing=timed:logrot=500M,8:method=inspector:";
-    MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 30;
-    RETRY CHECK INTERVAL 10;
-    FLAPPING INTERVAL 30;
-}
-
 SERVICE "portvlan" {
     SUPERIOR SERVICE MASK "^lv2d$";
     COMMAND "portvlan $S -R $host_service_id";
@@ -45,6 +207,15 @@ SERVICE "portvlan" {
     MAX CHECK ATTEMPTS 1;
     NORMAL CHECK INTERVAL 300;
     FLAPPING MAX CHANGE 5;
+}
+SERVICE "pstat" "Query port status by <protocol>" {
+    SUPERIOR SERVICE MASK "^portstat$";
+    COMMAND "pstat $S  -R $host_service_id";
+    FEATURES ":process=continue:timing=timed:logrot=500M,8:method=inspector:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 30;
+    RETRY CHECK INTERVAL 10;
+    FLAPPING INTERVAL 30;
 }
 SERVICE "pvlan" {
     SUPERIOR SERVICE MASK "^portvlan$";
@@ -55,7 +226,35 @@ SERVICE "pvlan" {
     FLAPPING INTERVAL 10800;
     FLAPPING MAX CHANGE 4;
 }
-
+SERVICE "rightmac" "MAC cím fehér lista" {
+    SUPERIOR SERVICE MASK "^pmac$";
+    FEATURES ":timing=passíve:";
+    MAX CHECK ATTEMPTS 2;
+    FLAPPING INTERVAL 3600;
+    OFF LINE GROUPS "admin";
+}
+SERVICE "rlinkstat" "Jelenlét, a switch port állapota alapján" {
+    SUPERIOR SERVICE MASK "^pstat$";
+    FEATURES ":timing=passive:iftype=ethernet:";
+    MAX CHECK ATTEMPTS 2;
+    HEARTBEAT TIME 600;
+    TYPE "life_sign";
+    ON LINE GROUPS "dispatcher", "admin";
+}
+SERVICE "rs485" "RS485 BUS interface or gateway" {
+    SUPERIOR SERVICE MASK "^icontsrv$";
+    FEATURES ":timing=thread,passive:superior:timeout=60000:";
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 1800;
+    RETRY CHECK INTERVAL 300;
+    TYPE "life_contr";
+}
+SERVICE "snmp" "SNMP" {
+    PORT 161;
+}
+SERVICE "ssh" "ssh" {
+    PORT 22;
+}
 SERVICE "syscron" "System cron" {
     SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":timing=timed,thread:delay=600000:";
@@ -64,4 +263,36 @@ SERVICE "syscron" "System cron" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
 }
-
+SERVICE "tcp.rs" "TCP serial port gateway" {
+    PORT 4001;
+}
+SERVICE "temp.owget" "Temp by OWFS" {
+    SUPERIOR SERVICE MASK "^parser$";
+    COMMAND "owget /$id/temperature";
+    FEATURES ":method=qparse,carried:timing=timed:varname=temp:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 120;
+    RETRY CHECK INTERVAL 30;
+    OFF LINE GROUPS "admin";
+}
+SERVICE "temp.raspb" "Temp by raspbian" {
+    SUPERIOR SERVICE MASK "^parser$";
+    COMMAND "sh -c 'echo \\$((`cat /sys/class/thermal/thermal_zone0/temp`/1000))'";
+    FEATURES ":method=qparse,carried:timing=timed:varname=temp:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 120;
+    RETRY CHECK INTERVAL 30;
+    OFF LINE GROUPS "admin";
+}
+SERVICE "updt_oui" "Update OUI" {
+    SUPERIOR SERVICE MASK "~.";
+}
+SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
+    SUPERIOR SERVICE MASK "parser";
+    COMMAND "netsh dhcp server \\\\$node dump all";
+    FEATURES ":timing=polling:method=qparse:comment=#:";
+}
+SERVICE "win.dhcp.conf.parser" "Query Parser (inferior)" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    FEATURES ":timing=polling:method=parser:";
+}

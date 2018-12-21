@@ -431,7 +431,8 @@ STRDEF(Interfaces,"interfaces")
  STRDEF(PortStapleId,"port_staple_id")
  STRDEF(DualFaceType, "dualface_type")
  dnl --- states --- !!!! lower/upper !!!!
- STRDEF(StatLastModify, "stat_last_modify")
+ STRDEF(PortStat, "port_stat")
+ dnl last_changed, last_touched
  
 STRDEF(IpAddresses, "ip_addresses")
  STRDEF(IpAddressId, "ip_address_ip")
@@ -630,6 +631,7 @@ STRDEF(ServiceVars, "service_vars")
  STRDEF(VarState, "var_state")
  STRDEF(DelegateServiceState, "delegate_service_state")
  STRDEF(RawValue, "raw_value")
+ STRDEF(DelegatePortState, "delegate_port_state")
  dnl service_var_types host_service_id features deleted
 STRDEF(Graphs, "graphs")
  STRDEF(GraphId, "graph_id")

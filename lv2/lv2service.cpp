@@ -565,14 +565,14 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     if (pSubordinates    != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pInspectorThread != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
     if (pVars            != nullptr) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
-    qlonglong tpid = (qlonglong)get(_sTimePeriodId);
+    qlonglong tpid = qlonglong(get(_sTimePeriodId));
     switch (tpid) {
     case NULL_ID:               // Not Specified
     case ALWAYS_TIMEPERIOD_ID:  // The "always", no exclusion, not read.
         break;
     case NEVER_TIMEPERIOD_ID:   // Never run
         EXCEPTION(NOTODO);
-        break;
+//      break;
     default:
         timeperiod.setById(q);
         break;
@@ -685,7 +685,7 @@ tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
 cRecordFieldConstRef cInspector::get(const QString& __n) const
 {
     cRecordFieldConstRef r = hostService[__n];
-    if (r.isNull())                          r = (*service())    [__n];
+    if (r.isNull())                             r = (*service())    [__n];
     if (r.isNull() && pPrimeService != nullptr) r = (*pPrimeService)[__n];
     if (r.isNull() && pProtoService != nullptr) r = (*pProtoService)[__n];
     return r;
