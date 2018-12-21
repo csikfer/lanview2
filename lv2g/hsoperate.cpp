@@ -126,7 +126,7 @@ QToolButton* cHSORow::getButtonReset()
     static QStringList srvList;
     if (srvList.isEmpty()) {    // újraindítható szolgáltatások/lekérdezések nevei
         QSqlQuery q = getQuery();
-        QString s = cSysParam::getTextSysParam(q, "restartable_services", "lv2d,portmac,portstat,arpd,icontsrv,portvlan");
+        QString s = cSysParam::getTextSysParam(q, "restartable_services", "lv2d,portmac,pstat,arpd,icontsrv,portvlan");
         QRegExp sep("\\s*,\\s*");
         srvList << s.split(sep);
     }

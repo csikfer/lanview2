@@ -196,7 +196,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, QString *pMsg)
         break;
     case SVT_COUNTER:
     case SVT_DCOUNTER:
-        r = setCounter(q, (qulonglong)(val + 0.5), (int)svt, state);
+        r = setCounter(q, qulonglong(val + 0.5), int(svt), state);
         break;
     case SVT_DERIVE:
     case SVT_DDERIVE:
@@ -207,7 +207,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, QString *pMsg)
         EXCEPTION(EDATA, svt, identifying(false));
     }
     QString m = getName(_ixStateMsg);
-    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName().arg(view(q, _ixVarState))) + m);
+    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
     return r;
 }
 
@@ -226,14 +226,14 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, QString *pMs
     case SVT_DCOUNTER:
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         r = setCounter(q, val, (int)svt, state);
+         r = setCounter(q, val, int(svt), state);
         break;
     case SVT_COMPUTE:
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
     QString m = getName(_ixStateMsg);
-    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName().arg(view(q, _ixVarState))) + m);
+    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
     return r;
 }
 
@@ -309,9 +309,9 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state)
         break;
     }
     lastCount = val;
-    qulonglong dt = lastTime.secsTo(now);
+    qlonglong dt = lastTime.secsTo(now);
     lastTime = now;
-    double dVal = (double)delta / (double)dt;
+    double dVal = double(delta) / double(dt);
     return updateVar(q, dVal, state);
 }
 
@@ -326,9 +326,9 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
     }
     double delta = val - lastValue;
     lastValue = val;
-    qulonglong dt = lastTime.secsTo(now);
+    qlonglong dt = lastTime.secsTo(now);
     lastTime = now;
-    double dVal = delta / (double)dt;
+    double dVal = delta / double(dt);
     return updateVar(q, dVal, state);
 
 }
@@ -418,7 +418,7 @@ eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVarian
     return _inverse ? inverse(r) : r;
 }
 
-eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse)
+eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse)
 {
     if (ft == NULL_ID) return TS_NULL;
     bool ok1, ok2;
@@ -427,7 +427,7 @@ eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVaria
     double p2 = _p2.toDouble(&ok2);
     switch (ft) {
     case FT_EQUAL:
-        r = !ok1 ? TS_NULL : (val = p1) ? TS_TRUE : TS_FALSE;
+        r = !ok1 ? TS_NULL : (val == p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
         r = !ok1 ? TS_NULL : (val < p1) ? TS_TRUE : TS_FALSE;

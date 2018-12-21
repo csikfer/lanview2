@@ -100,7 +100,7 @@ protected:
     /// @param _inverse Az eredményt invertálni kell, ha igaz.
     /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
     /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható számmá.
-    eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse);
+    eTristate checkRealValue(double val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse);
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);
         if (!msg.isEmpty()) msg += "\n";
