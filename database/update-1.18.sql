@@ -136,3 +136,26 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ------------------------------------------------------------------------------------------------
 SELECT set_db_version(1, 18);
+
+
+-- Hibajavítás : 2018.12.21.
+
+CREATE OR REPLACE FUNCTION check_before_service_value() RETURNS TRIGGER AS $$
+DECLARE
+    tids record;
+    pt  paramtype;
+    pid bigint;
+BEGIN
+    SELECT param_type_id, raw_param_type_id INTO tids FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+    IF NEW.service_var_value IS NOT NULL THEN
+        SELECT param_type_type INTO pt FROM param_types WHERE param_type_id = tids.param_type_id;
+        NEW.service_var_value := check_paramtype(NEW.service_var_value, pt);
+    END IF;
+    IF NEW.raw_value IS NOT NULL THEN
+        SELECT param_type_type INTO pt FROM param_types WHERE param_type_id = tids.raw_param_type_id;
+        NEW.raw_value         := check_paramtype(NEW.raw_value, pt);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
