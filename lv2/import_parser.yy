@@ -1524,7 +1524,8 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
             QString sTableName = sl.first();
             QString sFieldName = sl.at(1);
             cRecordAny rec(sTableName);
-            if (rec.colDescr(sFieldName).eColType == FT_BOOLEAN) {
+            int t = rec.colDescr(sFieldName).eColType;
+            if (t == FT_BOOLEAN) {
                 if (_pval == nullptr) {
                     pActEnum = new cEnumVal(actEnumType);
                     return;

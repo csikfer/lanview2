@@ -374,7 +374,10 @@ class LV2SHARED_EXPORT cColStaticDescrBool : public cColStaticDescr {
     friend class cRecStaticDescr;
 public:
     /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
-    cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
+    cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o)
+    {
+        init();
+    }
     enum cColStaticDescr::eValueCheck  check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;

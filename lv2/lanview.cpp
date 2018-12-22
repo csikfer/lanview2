@@ -705,28 +705,25 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         }
         cDebug::cout() << HEAD() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
     }
-    if (pSelfHostService == nullptr) return;
     QString sPayload = payload.toString();
     if (sPayload.isNull()) return;
-    QStringList hsids = sPayload.split(_sSpace);
+    QStringList hsids = sPayload.split(QRegExp("[\\s\\(\\),;/]+"));
     QString     cmd = hsids.takeFirst();
-    if (0 == pSelfHostService->getName().compare(name, Qt::CaseInsensitive)
-     && 0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
-        bool reset = hsids.isEmpty(); // No specified any host_service_id
-        if (!reset) {
-            foreach (QString shsid, hsids) {
-                bool ok;
-                qlonglong hsid = shsid.toInt(&ok);
-                if (ok && selfHostServiceId == hsid) {
-                    reset = true;
-                    break;
-                }
+    bool        f = hsids.isEmpty(); // No specified any host_service_id
+    if (!f) {
+        foreach (QString shsid, hsids) {
+            bool ok;
+            qlonglong hsid = shsid.toInt(&ok);
+            if (ok && selfHostServiceId == hsid) {
+                f = true;
+                break;
             }
         }
-        if (reset) {
-            PDEB(INFO) << trUtf8("Esemény : NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
-            reSet();
-        }
+    }
+    if (!f) return;
+    if (0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
+        PDEB(WARNING) << trUtf8("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
+        reSet();
     }
 }
 
