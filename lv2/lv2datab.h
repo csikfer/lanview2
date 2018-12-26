@@ -467,22 +467,7 @@ CSD_INHERITOR(cColStaticDescrInterval)
 
 /// Egy adatbázisból beolvasott bool értéket kovertál stringgé
 inline static const QString& boolFromSql(const QVariant& __f) { return __f.isNull() ? _sNul : str2bool(__f.toString(), EX_IGNORE) ? _sTrue : _sFalse; }
-/// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává
-inline static QStringList stringArrayFromSql(const QVariant& __f)
-{
-    cColStaticDescr csd(nullptr, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY);
-    return cColStaticDescrArray(csd).fromSql(__f).toStringList();
-}
-/// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává, majd a join()-al egy stringgé.
-/// @param __f Akonvertálandó, adatbázisból kiolvasott nyers adat.
-/// @param __s Szeparátor a joint() híváshoz.
-inline static QString stringArrayFromSql(const QVariant& __f, const QString& __s)   { return stringArrayFromSql(__f).join(__s); }
-/// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává, majd a join()-al egy stringgé.
-/// @param __f Akonvertálandó, adatbázisból kiolvasott nyers adat.
-/// @param __s Szeparátor a joint() híváshoz.
-inline static QString stringArrayFromSql(const QVariant& __f, const QChar& __s)     { return stringArrayFromSql(__f).join(__s); }
 
-qlonglong parseTimeInterval(const QString& s, bool *pOk);
 QString intervalToStr(qlonglong i);
 
 /* ******************************************************************************************************
@@ -2693,7 +2678,7 @@ template <class R> bool _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
         o._pFeatures->clear();
     }
     QString fv = o.getName(R::ixFeatures());
-    bool r = o._pFeatures->split(fv, EX_IGNORE);
+    bool r = o._pFeatures->split(fv, false, EX_IGNORE);
     if (!r) {
         QString msg = QObject::trUtf8(
                     "feature mezőjének a formátuma nem megfelelő."

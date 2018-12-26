@@ -15,31 +15,55 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     if (sIrrevocable.isEmpty()) {
         sIrrevocable = QObject::trUtf8("A művelet nem visszavonható.");
     }
-    lineBgColorEnumIx = NULL_IX;  // Nincs teljes sor háttérszinezés
-    QString fn = tableShape.feature(_sBgColor);
-    if (!fn.isEmpty()) {    // Teljes sor háttérszíne a megadott mező (enum!) szerint
-        lineBgColorEnumIx = recDescr.toIndex(fn, EX_IGNORE);
-        if (lineBgColorEnumIx >= 0) {
-            if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_ENUM) {        // Enum ?
-                lineBgColorEnumType = recDescr.colDescr(lineBgColorEnumIx).enumType();
+    lineBgColorEnum2Ix = lineBgColorEnumIx = NULL_IX;  // Nincs teljes sor háttérszinezés
+    QString colorFildName = tableShape.feature(_sBgColor);
+    if (!colorFildName.isEmpty()) {
+        QStringList sl = colorFildName.split(QChar(','));
+        colorFildName = sl.takeFirst();
+        if (!colorFildName.isEmpty()) {    // Teljes sor háttérszíne a megadott mező (enum!) szerint
+            lineBgColorEnumIx = recDescr.toIndex(colorFildName, EX_IGNORE);
+            if (lineBgColorEnumIx >= 0) {
+                if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_ENUM) {        // Enum ?
+                    lineBgColorEnumType = recDescr.colDescr(lineBgColorEnumIx).enumType();
+                }
+                else if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_BOOLEAN) {// Boolean ?
+                    lineBgColorEnumType = mCat(recDescr.tableName(), recDescr.columnName(lineBgColorEnumIx));
+                }
+                else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
+                    lineBgColorEnumIx = NULL_IX;
+                    DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
+                }
+                // Fellülbíráló szín, egy másik mező kitüntetett értékére
+                if (lineBgColorEnumIx >= 0 && !sl.isEmpty()) {
+                    lineBgColorEnum2Ix = recDescr.toIndex(sl.first(), EX_IGNORE);
+                    if (lineBgColorEnum2Ix >= 0) {
+                        if (recDescr.colDescr(lineBgColorEnum2Ix).eColType == cColStaticDescr::FT_ENUM) {        // Enum ?
+                            lineBgColorEnum2Type = recDescr.colDescr(lineBgColorEnum2Ix).enumType();
+                            if (sl.size() > 2) lineBgColorEnum2Val = cColEnumType::get(lineBgColorEnum2Type).str2enum(sl.at(1));
+                            else               lineBgColorEnum2Val = 0;
+                        }
+                        else if (recDescr.colDescr(lineBgColorEnum2Ix).eColType == cColStaticDescr::FT_BOOLEAN) {// Boolean ?
+                            lineBgColorEnum2Type = mCat(recDescr.tableName(), recDescr.columnName(lineBgColorEnum2Ix));
+                            if (sl.size() > 2) lineBgColorEnum2Val = str2bool(sl.at(1), EX_IGNORE) ? 1 : 0;
+                            else               lineBgColorEnum2Val = 1;
+                        }
+                        else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
+                            lineBgColorEnum2Ix = NULL_IX;
+                            DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + sl.first(), tableShape.identifying()) << endl;
+                        }
+                    }
+                }
             }
-            else if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_BOOLEAN) {// Boolean ?
-                lineBgColorEnumType = mCat(recDescr.tableName(), recDescr.columnName(lineBgColorEnumIx));
+            else {
+                DWAR() << QObject::trUtf8("Invalid field name (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
             }
-            else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
-                lineBgColorEnumIx = NULL_IX;
-                DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + fn, tableShape.identifying()) << endl;
-            }
-        }
-        else {
-            DWAR() << QObject::trUtf8("Invalid field name (%1), Shape : %2").arg(_sBgColor + "=" + fn, tableShape.identifying()) << endl;
         }
     }
     _viewRowNumbers = true;
     _viewHeader     = true;
     _firstRowNumber =   0;
     pq = newQuery();
-    _maxRows = (int)tableShape.feature(lv2g::sMaxRows, (qlonglong)lv2g::getInstance()->maxRows);
+    _maxRows = int(tableShape.feature(lv2g::sMaxRows, lv2g::getInstance()->maxRows));
 
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
@@ -70,7 +94,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
             image.setById(*pq, id);
             if (pixmap(image, pix)) return QVariant(pix);
             return QVariant();
-        }   break;
+        }
         case Qt::TextColorRole:
         case Qt::BackgroundRole:
         case Qt::DisplayRole:
@@ -84,7 +108,13 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     qlonglong& ff = column.fieldFlags;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
-        const QColor& c = bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
+        QColor c;
+        if (0 <= lineBgColorEnum2Ix && lineBgColorEnum2Val == pr->getId(lineBgColorEnum2Ix)) {
+            c = bgColorByEnum(lineBgColorEnum2Type, lineBgColorEnum2Val);
+        }
+        else {
+            c = bgColorByEnum(lineBgColorEnumType, int(pr->getId(lineBgColorEnumIx)));
+        }
         return QVariant(c);
     }
     if (fix < 0) {          // A mező nem létezik, vagy text_id

@@ -138,6 +138,7 @@ static inline QStringList sqlToStringList(const QString& _s)
 /// @param v A kiolvasott QVariant típusú érték
 static inline QStringList sqlToStringList(const QVariant& v)
 {
+    if (v.isNull()) return QStringList();
     QString s = v.toString();
     return sqlToStringList(s);
 }
@@ -145,6 +146,11 @@ static inline QStringList sqlToStringList(const QVariant& v)
 EXT_ QString stringListToSql(const QStringList& sl);
 EXT_ QString integerListToSql(const QVariantList& vl);
 EXT_ QString doubleListToSql(const QVariantList& vl);
+
+EXT_ qlonglong parseTime(const QString& _s, bool *pOk);
+EXT_ qlonglong _parseTimeIntervalISO8601(const QString& _s, bool *pOk);
+EXT_ qlonglong _parseTimeIntervalSQL(const QString& _s, bool& ago, bool *pOk);
+EXT_ qlonglong parseTimeInterval(const QString& _s, bool *pOk);
 
 /*!
 Összefűzi a két stringet, a két érték közé beszúrva egy '.' karaktert.

@@ -164,6 +164,7 @@ void cRecordTree::initSimple(QWidget *pW)
 
 bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
 {
+    _DBGFN() << "pData : " << (pn->pData == nullptr ? "NULL" : pn->pData->identifying()) << endl;
     QString sql;
 
     if (viewName.isEmpty()) sql = "SELECT NULL,* FROM " + pTableShape->getName(_sTableName);
@@ -199,7 +200,9 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
     int i = 0;
     foreach (QVariant v, qParams) q.bindValue(i++, v);
     if (!q.exec()) SQLQUERYERR(q);
-    return q.first();
+    bool r = q.first();
+    _DBGFNL() << langBool(r) << " SQL :\n" << quotedString(sql) << "Bind :\n" << debVariantToString(qParams) << endl;
+    return r;
 }
 
 QModelIndexList cRecordTree::selectedRows()

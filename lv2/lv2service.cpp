@@ -83,7 +83,6 @@ void cInspectorThread::run()
         case IS_DOWN:   doDown();   break;
         default:
             EXCEPTION(EPROGFAIL, inspector.internalStat, internalStatName(inspector.internalStat));
-            return;
         }
     } CATCHS(pLastError)
     if (pLastError) {
@@ -109,7 +108,7 @@ void cInspectorThread::doRun()
 {
     _DBGFN() << inspector.name() << endl;
     if (inspector.isTimed()) {
-        qlonglong t = inspector.firstDelay();
+        int t = inspector.firstDelay();
         PDEB(VERBOSE) << "Start timer " << inspector.interval << QChar('/') << t << "ms in new thread " << inspector.name() << endl;
         timer(t, TS_FIRST);
         inspector.timerStat = TS_FIRST;
@@ -167,7 +166,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
     else ok = false;
     if (!ok) {
-        reStartMax = cSysParam::getIntegerSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX);
+        reStartMax = int(cSysParam::getIntegerSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX));
     }
 
     errCntClearTime = inspector.interval * 5;
@@ -696,12 +695,12 @@ cFeatures& cInspector::splitFeature(eEx __ex)
     int ixFeatures = cService::_descr_cService().toIndex(_sFeatures);
 
     if (_pFeatures  == nullptr) _pFeatures = new cFeatures();
-    else                     _pFeatures->clear();
+    else                        _pFeatures->clear();
 
-    if (pProtoService != nullptr) _pFeatures->split(pProtoService->getName(ixFeatures), __ex);
-    if (pPrimeService != nullptr) _pFeatures->split(pPrimeService->getName(ixFeatures), __ex);
-    _pFeatures->split(service()-> getName(ixFeatures), __ex);
-    _pFeatures->split(hostService.getName(_sFeatures), __ex);
+    if (pProtoService != nullptr) _pFeatures->split(pProtoService->getName(ixFeatures), true, __ex);
+    if (pPrimeService != nullptr) _pFeatures->split(pPrimeService->getName(ixFeatures), true, __ex);
+    _pFeatures->split(service()-> getName(ixFeatures), true, __ex);
+    _pFeatures->split(hostService.getName(_sFeatures), true, __ex);
     PDEB(VVERBOSE) << name() << " features : " << _pFeatures->join() << endl;
     return *_pFeatures;
 }
@@ -1369,21 +1368,21 @@ void cInspector::start()
     return;
 }
 
-qlonglong cInspector::firstDelay()
+int cInspector::firstDelay()
 {
-    qlonglong t;
+    int t;
     QDateTime last;
     bool ok;
-    t = feature("delay").toLongLong(&ok);
+    t = feature("delay").toInt(&ok);
     if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
         if (!hostService.isNull(_sLastTouched)) {
             last = hostService.get(_sLastTouched).toDateTime();
-            qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
+            int ms = int(last.msecsTo(QDateTime::currentDateTime()));
             if (ms < interval) t = interval - ms;
-            else               t = rnd(retryInt);
+            else               t = int(rnd(retryInt));
         }
         else {
-            t = rnd(interval);
+            t = int(rnd(interval));
         }
     }
     if (t < 1000) t = 1000;    // min 1 sec

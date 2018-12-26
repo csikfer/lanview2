@@ -209,7 +209,7 @@ public:
     virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
     /// Futás időzítés indítása
     virtual void start();
-    qlonglong firstDelay();
+    int firstDelay();
     /// Futás/időzítés leállítása, ha időzített, de nem volt időzítés, és __ex = EX_ERROR, akkor dob egy kizárást.
     /// Csak az aktuális objektumot stoppolja le, a sub objektumokat törli: dropSubs() -al.
     virtual void drop(enum eEx __ex = EX_ERROR);
@@ -299,13 +299,13 @@ public:
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
     cFeatures        *_pFeatures;
     /// Két lekérdezés közötti idő intervallum ezred másodpercben normal_check_interval
-    qint64              interval;
+    int                 interval;
     /// Hiba esetén az időzítés
-    qint64              retryInt;
+    int                 retryInt;
     /// Start TimeOut
-    quint64             startTimeOut;
+    int                 startTimeOut;
     /// Stop TimeOut
-    quint64             stopTimeOut;
+    int                 stopTimeOut;
     /// Az időzítő QTimer azonosítója
     int                 timerId;
     /// Timeperiod

@@ -84,7 +84,7 @@ cFeatures::cFeatures()
     ;
 }
 
-bool cFeatures::split(const QString& __ms, eEx __ex)
+bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 {
     QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
     if (__ms.isEmpty()) return true;
@@ -105,7 +105,7 @@ bool cFeatures::split(const QString& __ms, eEx __ex)
         }
         QString key = pv[0].toLower();
         QString val = pv.count() >= 2 ? pv[1] : _sNul;
-        if (val == "!") remove(key);        // Törli (ha van)
+        if (merge && val == "!") remove(key);        // Törli (ha van)
         else            (*this)[key] = val;
     }
     return true;
@@ -269,12 +269,12 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
     else if (_fr.descr().fKeyType == cColStaticDescr::FT_TEXT_ID) {
         ;   // talán majd késöbb ...
     }
-    else if (_fr.descr().colType == cColStaticDescr::FT_SET) {
+    else if (_fr.descr().eColType == cColStaticDescr::FT_SET) {
         QStringList sl = value2list(val);
         QVariant fr = _fr;
         QStringList set = fr.toStringList();
         foreach (QString ev, sl) {
-            if (ev.startsWith(QChar('!'))) {
+            if (ev.startsWith(QChar('!')) || ev.startsWith(QChar('-'))) {
                 ev = ev.mid(1);
                 set.removeAll(ev);
             }
@@ -286,7 +286,7 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
     }
 }
 
-cFeatures cFeatures::noSimle() const
+cFeatures cFeatures::noSimple() const
 {
     cFeatures r;
     foreach (QString key, keys()) {

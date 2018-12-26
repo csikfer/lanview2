@@ -290,6 +290,10 @@ cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea, const cFea
     pTableShape->setParent(this);
     pTableShape->setByName(shape);
     pTableShape->features().merge(_f, _sShape);
+    pTableShape->modifyByFeature(_sTableShapeType);
+    pTableShape->modifyByFeature(_sRefine);
+    pTableShape->modifyByFeature(_sStyleSheet);
+    pTableShape->modifyByFeature(_sAutoRefresh);
     pRecordsView = cRecordsViewBase::newRecordView(pTableShape, nullptr, this);
     QHBoxLayout *pHBL = new QHBoxLayout;
     pWidget()->setLayout(pHBL);

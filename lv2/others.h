@@ -161,7 +161,7 @@ public:
     /// @param __ms A feldolgozandó paraméter string
     /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
     /// @return true, ha nincs hiba. Hiba esetén (ha __ex = EX_IGNORE) false.
-    bool split(const QString& __ms, enum eEx __ex = EX_ERROR);
+    bool split(const QString& __ms, bool merge = false, enum eEx __ex = EX_ERROR);
     /// Kiemeli a megadott nevű paraméter ártéket.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
@@ -200,7 +200,7 @@ public:
     /// akkor az ez alatti érték törődik az objektumban.
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
     void modifyField(cRecordFieldRef& _fr);
-    cFeatures noSimle() const;
+    cFeatures noSimple() const;
 };
 
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).

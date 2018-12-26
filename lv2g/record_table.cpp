@@ -66,6 +66,38 @@ qlonglong cRecordTableFilter::type2filter()
     return m;
 }
 
+QVariant cRecordTableFilter::paramValue(QStringList& sl, bool &ok)
+{
+    ok = false;
+    QVariant v;
+    if (sl.isEmpty()) return v;
+    QString s = sl.takeFirst();
+    int dType = fieldType();
+    qlonglong st = 0;
+    if (dType == cColStaticDescr::FT_DATE_TIME) {
+        if (s.startsWith(QChar('-')) || s.startsWith(QChar('+'))) { // -/+<interval>
+            qlonglong mSec = parseTimeInterval(s, &ok);
+            if (ok) v = QDateTime::currentDateTime().addMSecs(mSec);
+        }
+        else {
+            v = field.pColDescr->set(s, st);
+            ok = !st;
+        }
+        return v;
+    }
+    if (dType & cColStaticDescr::FT_ARRAY) {
+        switch (dType & 0xff) {
+        case cColStaticDescr::FT_INTEGER:   v = s.toLongLong(&ok);  break;
+        case cColStaticDescr::FT_REAL:      v = s.toDouble(&ok);    break;
+        case cColStaticDescr::FT_TEXT:      v = s; ok = true;       break;
+        }
+        return v;
+    }
+    v = field.pColDescr->set(s, st);
+    ok = !st;
+    return v;
+}
+
 cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableColumn& _rtc)
     : QObject(&_par)
     , field(_rtc)
@@ -97,6 +129,80 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
         }
     }
     iFilter = 0;   // No selected filter
+    // Feature ?
+    QString sFeature = field.shapeField.feature("filter");
+    if (!sFeature.isEmpty()) {
+        QStringList slFeatures = sFeature.split(QChar(','));
+        for (i = 1; i < filterTypeList.size(); ++i) {
+            const cEnumVal *pFiltType = filterTypeList.at(i);
+            if (0 == pFiltType->getName().compare(slFeatures.first(), Qt::CaseInsensitive)) {
+                bool ok  = false;
+                inverse = false;
+                slFeatures.pop_front();
+                if (slFeatures.size() > 0 && slFeatures.first() == "!") {
+                    inverse = true;
+                    slFeatures.pop_front();
+                }
+                int fType = pFiltType->toInt();         // Filter type
+                switch (fType) {
+                case FT_NO:
+                    break;
+                case FT_BEGIN:
+                case FT_LIKE:
+                case FT_SIMILAR:
+                case FT_REGEXP:
+                case FT_SQL_WHERE:
+                case FT_ENUM:
+                    if (slFeatures.isEmpty()) break;
+                    param1 = slFeatures.takeFirst();
+                    ok = true;
+                    break;
+                case FT_EQUAL:
+                case FT_LITLE:
+                case FT_BIG:
+                    param1 = paramValue(slFeatures, ok);
+                    break;
+                case FT_INTERVAL:
+                    param1 = paramValue(slFeatures, ok);
+                    if (!ok) break;
+                    param2 = paramValue(slFeatures, ok);
+                    break;
+                case FT_BOOLEAN:
+                case FT_NULL:
+                    ok = true;
+                    break;
+                case FT_SET:
+                    if (!slFeatures.isEmpty()) {
+                        ok = true;
+                        setOn = setOff = 0;
+                        while (!slFeatures.isEmpty()) {
+                            QString s = slFeatures.takeFirst();
+                            bool off = false;
+                            if (s.startsWith(QChar('-'))) {
+                                off = true;
+                                s = s.mid(1);
+                            }
+                            else if (s.startsWith(QChar('+'))) {
+                                s = s.mid(1);
+                            }
+                            int e = field.pColDescr->enumType().str2enum(s, EX_IGNORE);
+                            if (e == ENUM_INVALID) {
+                                ok = false;
+                                break;
+                            }
+                            if (off) setOff |= enum2set(e);
+                            else     setOn  |= enum2set(e);
+                        }
+                    }
+                    break;
+                }
+                if (ok) {
+                    iFilter = i;
+                }
+                break;
+            }
+        }
+    }
 }
 
 cRecordTableFilter::~cRecordTableFilter()
@@ -1046,7 +1152,6 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
                 isImage = true;
             }
         }
-
     }
 }
 
@@ -1632,9 +1737,6 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     if ((pTableShape->containerValid & CV_LL_TEXT) == 0) {
         pTableShape->fetchText(*pq);
     }
-    pTableShape->modifyByFeature(_sTableShapeType);
-    pTableShape->modifyByFeature(_sRefine);
-    pTableShape->modifyByFeature(_sStyleSheet);
 
     pTableShape->setParent(this);
 

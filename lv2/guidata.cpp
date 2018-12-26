@@ -594,7 +594,7 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex
     for (i = shapeFields.begin(); e != i; ++i) {
         cTableShapeField& f = **i;
         if (!f.isNull(ixOrdInitSequenceNumber)) {
-            int _seq = f.getId(ixOrdInitSequenceNumber);
+            int _seq = int(f.getId(ixOrdInitSequenceNumber));
             if (_seq > seq) seq = _seq;
         }
     }

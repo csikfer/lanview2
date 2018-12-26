@@ -143,6 +143,236 @@ QString doubleListToSql(const QVariantList& vl)
     return r;
 }
 
+
+/// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
+/// Konvertál egy ISO 8601 idő intervallum stringet mSec-re.
+/// Az előjel megadását nem támogatja.
+/// A bevezető 'P' jelenlétét nem ellenörzi, feltételezi, hogy az első karakter egy 'P'
+/// A space és tab karaktereket konverzió elött eltávolítja.
+/// @param _s A konvertálandó string
+/// @param pOk egy bool pointer, ha nem NULL, és az s sem üres, akkor ha sikerült a konverzió a mutatott változót true-ba írja.
+///            ha pOk nem NULL. és az s üres, vagy a konverzió nem sikerült, akkor mutatott változót false-ba írja.
+/// @return A konvertált érték, vagy NULL_ID ha nem sikerült a kovverzió.
+qlonglong _parseTimeIntervalISO8601(const QString& _s, bool *pOk)
+{
+    qlonglong   r = 0;
+    bool ok = true;
+    int n = 0;
+    bool alternate = false;
+    QString s = _s;
+    s.remove(QChar(' '));
+    s.remove(QChar('\t'));
+    s = s.mid(1);   // Dropp 'P'
+    for (int i = 1; ok == true && i < s.size(); ++i) {
+        QChar c = s[i].toUpper();
+        bool day = true;
+        switch (c.toLatin1()) {
+        case '-':
+            ok = false;         // exit for
+            alternate = true;   // Alternate format ?
+            break;
+         case 'Y':
+            if (!day) {
+                ok = false;
+                r = NULL_ID;
+            }
+            else {  // Year
+                r += n * (1000LL * 3600 * 24 * 365);  // ?
+                n = 0;
+            }
+            break;
+        case 'M':
+            if (day) {  // day
+                r += n * (1000LL * 3600 * 24 * 30);
+                n = 0;
+            }
+            else {      // min
+                r += n * (1000LL * 60);
+                n = 0;
+            }
+            break;
+        case 'W':
+            if (!day) {
+                ok = false;
+                r = NULL_ID;
+            }
+            else {  // Week
+                r += n * (1000LL * 3600 * 24 * 7);
+                n = 0;
+            }
+            break;
+        case 'D':
+            if (!day) {
+                ok = false;
+                r = NULL_ID;
+            }
+            else {  // Day
+                r += n * (1000LL * 3600 * 24);
+                n = 0;
+            }
+            break;
+        case 'T':
+            day = false;
+            break;
+        case 'H':
+            if (day) {
+                ok = false;
+                r = NULL_ID;
+            }
+            else {  // Hour
+                r += n * (1000LL * 3600);
+                n = 0;
+            }
+            break;
+        case 'S':
+            if (day) {
+                ok = false;
+                r = NULL_ID;
+            }
+            else {  // Hour
+                r += n * 1000LL;
+                n = 0;
+            }
+            break;
+        default:
+            if (c.isNumber()) {
+                n = c.toLatin1() - '0' + (n * 10);
+            }
+            else {
+                ok = false;
+                r = NULL_ID;
+            }
+        }
+    }
+    if (alternate) {
+        QRegExp pattern("(\\d*)-(\\d*)-(\\d*)T(\\d*):(\\d*):(\\d*)");
+        ok = pattern.exactMatch(s);
+        if (ok) {
+            r  = pattern.cap(1).toInt() * (1000LL * 3600 * 24 * 365);  // ?
+            r += pattern.cap(2).toInt() * (1000LL * 3600 * 24 * 30);
+            r += pattern.cap(3).toInt() * (1000LL * 3600 * 24);
+            r += pattern.cap(4).toInt() * (1000LL * 3600);
+            r += pattern.cap(5).toInt() * (1000LL *   60);
+            r += pattern.cap(6).toInt() *  1000LL;
+        }
+    }
+    if (pOk != nullptr) *pOk = ok;
+    return ok ? r : NULL_ID;
+}
+
+static qlonglong dim2msec(const QString& dim)
+{
+    if (dim.isEmpty() || 0 == dim.compare("day", Qt::CaseInsensitive) || 0 == dim.compare("days", Qt::CaseInsensitive)) {
+        return 1000LL * 3600 * 24;
+    }
+    if (0 == dim.compare("hour",   Qt::CaseInsensitive) || 0 == dim.compare("hours",   Qt::CaseInsensitive)) {
+        return 1000LL * 3600;
+    }
+    if (0 == dim.compare("minute", Qt::CaseInsensitive) || 0 == dim.compare("minutes", Qt::CaseInsensitive)) {
+        return 1000LL * 60;
+    }
+    if (0 == dim.compare("second", Qt::CaseInsensitive) || 0 == dim.compare("seconds", Qt::CaseInsensitive)) {
+        return 1000LL;
+    }
+    if (0 == dim.compare("mount",  Qt::CaseInsensitive) || 0 == dim.compare("mounts",  Qt::CaseInsensitive)) {
+        return 1000LL * 3600 * 24 * 30;
+    }
+    if (0 == dim.compare("year",   Qt::CaseInsensitive) || 0 == dim.compare("years",   Qt::CaseInsensitive)) {
+        return 1000LL * 3600 * 24 * 365;
+    }
+    return -1;
+}
+
+qlonglong parseTime(const QString& _s, bool *pOk)
+{
+    bool ok;
+    qlonglong r = NULL_ID;
+    QRegExp pat("(\\d+):(\\d+):(\\d+\\.?\\d*)");    // hh:mm:ss.ss
+    ok = pat.exactMatch(_s);
+    if (ok) {
+        r  = pat.cap(1).toInt() * 1000LL * 3600;                // Hour(s)
+        r += pat.cap(2).toInt() * 1000LL *   60;                // minute(s)
+        r += qlonglong(pat.cap(3).toDouble() * 1000LL + 0.5);   // second(s)
+    }
+    if (pOk != nullptr) *pOk = ok;
+    return r;
+}
+
+qlonglong _parseTimeIntervalSQL(const QString& _s, bool& ago, bool *pOk)
+{
+    qlonglong r = 0;
+    bool ok = true;
+    QStringList sl = _s.split(QRegExp("\\s+"));
+    if (0 == sl.last().compare("ago", Qt::CaseInsensitive)) {
+        sl.pop_back();
+        if (ago == true || sl.isEmpty()) {
+            ok = false;
+        }
+        else {
+            ago = true;
+        }
+    }
+    while (ok && !sl.isEmpty()) {
+        QString s = sl.takeFirst();
+        double n = s.toDouble(&ok);    // number ?
+        if (ok) {
+            s = sl.isEmpty() ? _sNul : sl.takeFirst();  // dim.
+            qlonglong m = dim2msec(s);
+            if (m > 0) {
+                r += qlonglong((n * m) + 0.5);
+            }
+            else {
+                if (!sl.isEmpty()) { // Last field ?
+                    ok = false;
+                    break;
+                }
+                r  = qlonglong((n * 1000LL * 3600 * 24) + 0.5);  // Day(s)   (no dim)
+                r += parseTime(s, &ok);
+                break;
+            }
+        }
+        else {
+            if (sl.isEmpty()) r = parseTime(s, &ok);
+            else              ok = false;
+            break;
+        }
+    }
+    if (pOk != nullptr) *pOk = ok;
+    return ok ? r : NULL_ID;
+}
+
+/// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
+/// Konvertál egy intervallum stringet mSec-re.
+/// @param s A konvertálandó string
+/// @param pOk egy bool pointer, ha nem NULL, és az s sem üres, akkor ha sikerült a konverzió a mutatott változót true-ba írja.
+///            ha pOk nem NULL. és az s üres, vagy a konverzió nem sikerült, akkor mutatott változót false-ba írja.
+/// @return A konvertált érték, vagy NULL_ID ha üres stringet adtunk meg, vagy nem sikerült a kovverzió.
+qlonglong parseTimeInterval(const QString& _s, bool *pOk)
+{
+    if (_s.isEmpty()) {
+        if (pOk != nullptr) *pOk = false;
+        return NULL_ID;
+    }
+    QString s = _s;
+    qlonglong   r = 0;
+    bool negativ = false;
+    if (s.startsWith(QChar('+'))) s = s.mid(1);
+    else if (s.startsWith(QChar('-'))) {
+        s = s.mid(1);
+        negativ = true;
+    }
+    bool ok = true;
+    if (s.startsWith(QChar('P'))) { // ISO 8601
+        r = _parseTimeIntervalISO8601(s, &ok);
+    }
+    else {
+        r = _parseTimeIntervalSQL(s, negativ, &ok);
+    }
+    if (pOk != nullptr) *pOk = ok;
+    if (!ok) return NULL_ID;
+    return negativ ? -r : r;
+}
+
 QSqlDatabase *  getSqlDb(void)
 {
     if (lanView::instance == nullptr) EXCEPTION(EPROGFAIL, -1, "lanView::instance is NULL.");

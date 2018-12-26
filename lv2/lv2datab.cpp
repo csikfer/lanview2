@@ -547,7 +547,6 @@ QVariant cColStaticDescr::set(const QVariant& _f, qlonglong &str) const
         break;
     default:
         EXCEPTION(EPROGFAIL, eColType);
-        break;
     }
     if (!ok) str |= ES_DEFECTIVE;
     return r;
@@ -1051,7 +1050,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v, cCol
     else {
         int t = v.userType();
         if (metaIsInteger(t)) {
-            if (enumType().checkEnum(v.toLongLong())) return VC_OK;
+            if (enumType().checkEnum(v.toInt())) return VC_OK;
             r = VC_INVALID;
         }
         else if (v.canConvert(QMetaType::QString) && enumType().check(v.toString())) {
@@ -1282,7 +1281,7 @@ QVariant  cColStaticDescrPoint::toSql(const QVariant& _f) const
         EXCEPTION(EDATA, t, debVariantToString(_f));
     }
     QPointF    pnt = _f.value<QPointF>();
-    QString     s = QString("(%2,%2)").arg(pnt.x(), pnt.y());
+    QString     s = QString("(%2,%2)").arg(pnt.x()).arg(pnt.y());
     return QVariant(s);
 }
 
@@ -1781,43 +1780,6 @@ CDDUPDEF(cColStaticDescrDateTime)
 
 /* ....................................................................................................... */
 
-/// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
-/// Konvertál egy intervallum stringet mSec-re.
-/// Negatív tartomány nincs értelmezve, és az óra:perc:másodperc formán túl csak a napok megadása támogatott.
-/// @param s A konvertálandó string
-/// @param pOk egy bool pointer, ha nem NULL, és az s sem üres, akkor ha sikerült a konverzió a mutatott változót true-ba írja.
-///            ha pOk nem NULL. és az s üres, vagy a konverzió nem sikerült, akkor mutatott változót false-ba írja.
-/// @return A konvertált érték, vagy NULL_ID ha üres stringet adtunk meg, vagy nem sikerült a kovverzió.
-qlonglong parseTimeInterval(const QString& s, bool *pOk)
-{
-    if (s.isEmpty()) {
-        if (pOk != nullptr) *pOk = false;
-        return NULL_ID;
-    }
-    QStringList sl = s.split(QChar(' '));
-    qlonglong   r = 0;
-    bool ok = false;
-    if (sl.size() == 3 ) {
-        if (sl.first().startsWith("DAY")) r = (24 * 3600 * 1000) * sl[1].toLongLong(&ok);
-    }
-    else if (sl.size() == 1) {
-        ok = true;
-    }
-    if (ok) {
-        sl = sl.last().split(QChar(':'));
-        if (sl.size() != 3) ok = false;
-        else {
-            bool ok2, ok3;
-            r += sl[0].toLongLong(&ok) * 3600 * 1000;
-            r += sl[1].toLongLong(&ok2) * 60 * 1000;
-            r += (qlonglong)(sl[2].toDouble(&ok3) * 1000 + 0.5);
-            ok = ok && ok2 && ok3;
-        }
-    }
-    if (pOk != nullptr) *pOk = ok;
-    return ok ? r : NULL_ID;
-}
-
 inline static qlonglong __tconvs(qlonglong i, QString& s, int div)
 {
     qlonglong j = i % div;
@@ -2264,7 +2226,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                     columnDescr.fKeySchema = pq2->value(0).toString();
                     columnDescr.fKeyTable  = pq2->value(1).toString();
                     columnDescr.fKeyField  = pq2->value(2).toString();
-                    columnDescr.fKeyTables = stringArrayFromSql(pq2->value(4));
+                    columnDescr.fKeyTables = sqlToStringList(pq2->value(4));
                     QString t = pq2->value(3).toString();
                     if      (!t.compare(_sProperty, Qt::CaseInsensitive)) {
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;

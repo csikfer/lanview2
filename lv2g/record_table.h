@@ -39,6 +39,7 @@ class LV2GSHARED_EXPORT cRecordTableFilter : public QObject {
 public:
     cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableColumn &_rtc);
     ~cRecordTableFilter();
+    QVariant paramValue(QStringList &sl, bool &ok);
     QString             where(QVariantList &qparams);
     void setFilter(int i);
     int fieldType();                ///< A mező (oszlop) típusa
@@ -281,8 +282,6 @@ public:
     bool            isNoDelete;
     /// Ha a táblázatba nincs joga rekordot beszúrni
     bool            isNoInsert;
-//    /// Ha bem engedélyezett a szűrők használata (tree esetén nem müködnek a szűrők, mert nem bejárható a fa)
-//    bool            disableFilters;
     /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
     QSqlQuery      *pq;
     QSqlQuery      *pTabQuery;
