@@ -8,6 +8,7 @@ cTreeNode::cTreeNode(cRecord *__po, cTreeNode * _parentNode)
 {
     parent   = _parentNode;
     pChildrens = nullptr;
+    childNumber = NULL_IX;
 }
 
 cTreeNode::cTreeNode(const cTreeNode&)
@@ -125,11 +126,12 @@ int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
     }
 //    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : " << parentNode->childrens.count()
 //                   << " (parant : "<< parentNode->name() << ")" << endl;
-    if (parentNode->pChildrens == nullptr) {
+/*    if (parentNode->pChildrens == nullptr) {
         // Csak így mőködik, de akkor minek a canFetchMore() és fetchMore(); ?? (talán előre kéne tudni a sorok számát?)
         const_cast<cRecordTreeModel *>(this)->readChilds(parentNode);
     }
-    return parentNode->pChildrens->count();
+    return parentNode->pChildrens->count();*/
+    return parentNode->childNumber;
 }
 
 int         cRecordTreeModel::columnCount(const QModelIndex & parent) const
@@ -227,9 +229,13 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
         return;
     }
     pNode->pChildrens = new QList<cTreeNode *>;
+    pNode->childNumber = 0;
     if (((cRecordTree&)recordView).queryNodeChildrens(*pq, pNode)) {
         do {
-            pNode->addChild(new cTreeNode(qGetRecord(*pq), pNode));
+            cTreeNode *pChild = new cTreeNode(qGetRecord(*pq), pNode);
+            pChild->childNumber = pq->value("child_number").toInt();
+            pNode->addChild(pChild);
+            pNode->childNumber++;
         } while (pq->next());
     }
 }

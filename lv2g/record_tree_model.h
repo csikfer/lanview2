@@ -18,6 +18,7 @@ public:
     cTreeNode          *parent;
     cRecord            *pData;
     QList<cTreeNode *> *pChildrens;
+    int                 childNumber;
 
     QString name() { return (pData == nullptr) ? "//" : pData->getName(); }
     void addChild(cTreeNode *pn);

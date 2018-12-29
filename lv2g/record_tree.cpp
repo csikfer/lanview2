@@ -176,21 +176,23 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
         return false;
     }
     int tfix = recDescr().ixToParent();
+    const QString idname  = dQuoted(recDescr().idName());
+    const QString pidname = recDescr().columnNameQ(tfix);
+    if (!wl.isEmpty()) sql += " WHERE " + wl.join(" AND ");
+    // Két lépésben kérdezünk le:
+    // A szűrés miatt nem jó a parent_id IS NULL-ra vizsgálni, a gyökér/gyökerek-nél.
+    // Kell a gyerek rkordok száma is.
+    // 'r' lessz a teljes szűrt rekord készlet. Ebből válogatjuk le a rész fák gyökereit.
+    sql  = "WITH r AS (" + sql + ") ";
+    sql += "SELECT *, (SELECT COUNT(*) FROM r AS c WHERE r." + idname + " = c." + pidname + ") AS child_number ";
+    sql += "FROM r WHERE ";
     if (pn->pData == nullptr || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
-        // A szűrés miatt nem jó a parent_id IS NULL-ra vizsgálni.
-        if (!wl.isEmpty()) sql += " WHERE " + wl.join(" AND ");
-        // 'r' lessz a teljes szűrt rekord készlet. Ebből válogatjuk le a rész fák gyökereit.
-        sql  =  "WITH r AS (" + sql + ")";
-        // A parent_id vagy NULL
-        sql += " SELECT * FROM r WHERE " + recDescr().columnName(tfix) + " IS NULL"
-        // vagy a parent nincs a szűrt rekordkészletben (r)
-            +   " OR NOT " + recDescr().columnName(tfix) + " = ANY ("
-            +       " SELECT " + recDescr().idName() + " FROM r)";
+        sql += pidname + " IS NULL OR ";
+        sql += "0 = (SELECT COUNT(*) FROM r AS p WHERE r." + pidname + " = p." + idname + ")";
     }
     else {
         qlonglong parId = pn->pData->getId();
-        wl << (recDescr().columnName(tfix) + " = " + QString::number(parId));
-        sql += " WHERE " + wl.join(" AND ");
+        sql += pidname + " = " + QString::number(parId);
     }
     if (pFODialog != nullptr) {
         QString ord = pFODialog->ord();
