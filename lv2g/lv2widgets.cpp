@@ -1180,6 +1180,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     else if (!_readOnly && _fieldShape.isFeature(sSetOfValue)) {
         _wType = FEW_COMBO_BOX;  // Widget type
         pEditWidget = pComboBox = new QComboBox;
+        pComboBox->setEditable(true);
         pLayout->addWidget(pComboBox);
         pModel = new cRecFieldSetOfValueModel(_fr, _fieldShape.feature(sSetOfValue));
         pModel->joinWith(pComboBox);
