@@ -488,8 +488,9 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
         for (i = 0; i < n; i++) {   // Nekifutunk mégegyszer a táblázatnak
             int             type = tab[_sIfType][i].toInt(&ok);
             const cIfType  *pIfType = cIfType::fromIana(type);
-            if (pIfType == nullptr) {  // Azokat keressük, amit az elöbb kihagytunk
+            if (pIfType == nullptr) {  // Unknown types
                 QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
+                if (addr.isNull()) continue;    // no address
                 pIfType = &cIfType::ifType(_sVEth);  // "Kinevezzük" virtuális ethernet-nek (nem kezelt típus, mert az elöbb eldobtuk)
                 QString         name = tab[_sIfDescr][i].toString();
                 name.prepend(pIfType->getName(_sIfNamePrefix));       // Esetleges előtag, a név ütközések elkerülésére
