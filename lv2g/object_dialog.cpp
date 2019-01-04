@@ -67,7 +67,7 @@ cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     pUi->setupUi(this);
     // nem ciffrázzuk ro-nal le ven titva az ok gomb
     if (ro) pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
-    pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, NULL, NULL, this);
+    pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, nullptr, nullptr, this);
     pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     cIntValidator *intValidator = new cIntValidator(false);
     pUi->tableWidgetPorts->setItemDelegateForColumn(CPP_INDEX, new cItemDelegateValidator(intValidator));
@@ -113,13 +113,13 @@ cPatch * cPatchDialog::getPatch()
         pp->setId(_sSharedCable, sh);
         p->ports << pp;
     }
-    for (i = 0; i < n && p != NULL; i++) {
+    for (i = 0; i < n && p != nullptr; i++) {
         int sh = (int)p->ports[i]->getId(_sSharedCable);
         if (!(sh == ES_A || sh == ES_AA)) continue;
         int a = i, b = -1, ab = -1, bb  = -1;
         bool cd = false;
         bool ok = true;
-        for (int j = 0; ok && j < n && p != NULL; j++) {
+        for (int j = 0; ok && j < n && p != nullptr; j++) {
             if (rowsData.at(j)->sharedPortRow == i) {
                 sh = (int)p->ports[j]->getId(_sSharedCable);
                 switch (sh) {
@@ -570,15 +570,15 @@ void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection
 cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {
     cPatchDialog dialog(pPar, false);
-    if (pSample != NULL) {
+    if (pSample != nullptr) {
         dialog.setPatch(pSample);
     }
     cPatch *p;
     while (true) {
         int r = dialog.exec();
-        if (r != QDialog::Accepted) return NULL;
+        if (r != QDialog::Accepted) return nullptr;
         p = dialog.getPatch();
-        if (p == NULL) continue;
+        if (p == nullptr) continue;
         if (!cErrorMessageBox::condMsgBox(p->tryInsert(q))) {
             delete p;
             continue;
@@ -591,16 +591,16 @@ cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
 {
     cPatchDialog dialog(pPar, ro);
-    if (pSample == NULL) EXCEPTION(EPROGFAIL);
+    if (pSample == nullptr) EXCEPTION(EPROGFAIL);
     dialog.setPatch(pSample);
     qlonglong id = pSample->getId();
     if (id == NULL_ID) EXCEPTION(EDATA);
-    cPatch *p = NULL;
+    cPatch *p = nullptr;
     while (true) {
         int r = dialog.exec();
-        if (r != QDialog::Accepted) return NULL;
+        if (r != QDialog::Accepted) return nullptr;
         p = dialog.getPatch();
-        if (p == NULL) continue;
+        if (p == nullptr) continue;
         p->setContainerValid(CV_PORTS | CV_PATCH_BACK_SHARE);
         if (!cErrorMessageBox::condMsgBox(p->setId(id).tryRewriteById(q))) {
             pDelete(p);
@@ -806,13 +806,13 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     setTableItemText(t, pTableWidget, row, CEV_SHORT);
     t = rec.getText(cEnumVal::LTX_VIEW_LONG, _val);
     setTableItemText(t,  pTableWidget, row, CEV_LONG);
-    pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[_sBgColor], false, NULL);
+    pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[_sBgColor], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget);
-    pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[_sFgColor], false, NULL);
+    pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[_sFgColor], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget);
-    pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], NULL);
+    pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget);
-    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], false, NULL);
+    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget);
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
     t = rec.getText(cEnumVal::LTX_TOOL_TIP);
@@ -838,8 +838,8 @@ void cEnumValRow::save(QSqlQuery& q)
 cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     : QWidget(parent)
 {
-    pEnumTypeType = NULL;
-    pEnumValType  = NULL;
+    pEnumTypeType = nullptr;
+    pEnumValType  = nullptr;
     pq = newQuery();
     pUi = new Ui::enumValsWidget;
     pUi->setupUi(this);
@@ -874,19 +874,19 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pShape->fetchFields(*pq);
 
     // VAL
-    pWidgetValBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), val[_sBgColor], false, NULL);
+    pWidgetValBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), val[_sBgColor], false, nullptr);
     pWidgetValBgColor->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValBgColor, pWidgetValBgColor);
 
-    pWidgetValFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), val[_sFgColor], false, NULL);
+    pWidgetValFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), val[_sFgColor], false, nullptr);
     pWidgetValFgColor->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFgColor, pWidgetValFgColor);
 
-    pWidgetValFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), val[_sFontFamily], NULL);
+    pWidgetValFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), val[_sFontFamily], nullptr);
     pWidgetValFntFam->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFontFamily, pWidgetValFntFam);
 
-    pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], false, NULL);
+    pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], false, nullptr);
     pWidgetValFntAtt->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt);
 
@@ -900,35 +900,35 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
 
     // Boolean
         // true
-    pWidgetTrueBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolTrue[_sBgColor], false, NULL);
+    pWidgetTrueBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolTrue[_sBgColor], false, nullptr);
     pWidgetTrueBgColor->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueBgColor, pWidgetTrueBgColor);
 
-    pWidgetTrueFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolTrue[_sFgColor], false, NULL);
+    pWidgetTrueFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolTrue[_sFgColor], false, nullptr);
     pWidgetTrueFgColor->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFgColor, pWidgetTrueFgColor);
 
-    pWidgetTrueFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolTrue[_sFontFamily], NULL);
+    pWidgetTrueFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolTrue[_sFontFamily], nullptr);
     pWidgetTrueFntFam->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFontFam, pWidgetTrueFntFam);
 
-    pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], false, NULL);
+    pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], false, nullptr);
     pWidgetTrueFntAtt->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt);
         // false
-    pWidgetFalseBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolFalse[_sBgColor], false, NULL);
+    pWidgetFalseBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolFalse[_sBgColor], false, nullptr);
     pWidgetFalseBgColor->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseBgColor, pWidgetFalseBgColor);
 
-    pWidgetFalseFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolFalse[_sFgColor], false, NULL);
+    pWidgetFalseFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolFalse[_sFgColor], false, nullptr);
     pWidgetFalseFgColor->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFgColor, pWidgetFalseFgColor);
 
-    pWidgetFalseFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolFalse[_sFontFamily], NULL);
+    pWidgetFalseFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolFalse[_sFontFamily], nullptr);
     pWidgetFalseFntFam->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFntFam, pWidgetFalseFntFam);
 
-    pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], false, NULL);
+    pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], false, nullptr);
     pWidgetFalseFntAtt->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt);
 
@@ -975,7 +975,7 @@ bool cEnumValsEditWidget::saveType()
     type.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditTypeLong->text());
     type.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTypeTypeToolTip->toPlainText());
 
-    cError *pe = NULL;
+    cError *pe = nullptr;
     static const QString tn = "cEnumValsEdit";
     sqlBegin(*pq, tn);
     try {
@@ -987,7 +987,7 @@ bool cEnumValsEditWidget::saveType()
         sqlCommit(*pq, tn);
     }
     CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         sqlRollback(*pq, tn);
         cErrorMessageBox::messageBox(pe, this);
         delete pe;
@@ -1029,7 +1029,7 @@ bool cEnumValsEditWidget::saveBoolean()
     boolFalse[_sFontFamily]  = pWidgetFalseFntFam->get();
     boolFalse[_sFontAttr]    = pWidgetFalseFntAtt->get();
 
-    cError *pe = NULL;
+    cError *pe = nullptr;
     static const QString tn = "cEnumValsEdit";
     sqlBegin(*pq, tn);
     try {
@@ -1042,7 +1042,7 @@ bool cEnumValsEditWidget::saveBoolean()
         sqlCommit(*pq, tn);
     }
     CATCHS(pe);
-    if (pe != NULL) {
+    if (pe != nullptr) {
         sqlRollback(*pq, tn);
         cErrorMessageBox::messageBox(pe, this);
         delete pe;
@@ -1078,7 +1078,7 @@ void cEnumValsEditWidget::setEnumValType(const QString& etn)
 
 void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
 {
-    if (pEnumValType  == NULL || enumValTypeName.isEmpty()) return;
+    if (pEnumValType  == nullptr || enumValTypeName.isEmpty()) return;
     val.clear();
     QString ev = _ev;
     if (ev.isNull()) ev = QString("");  // Üres lehet, de NULL nem!

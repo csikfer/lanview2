@@ -70,7 +70,7 @@ cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QLabel * _pFlag, bool _n
 
 void cSelectLanguage::_languageChanged(int ix)
 {
-    languageIdChanged(pModel->atId(ix));
+    languageIdChanged(int(pModel->atId(ix)));
     if (pFlag != nullptr) {
         QSqlQuery q = getQuery();
         cLanguage language;
@@ -151,7 +151,7 @@ void cLineWidget::on_LineEdit_textChanged(const QString& s)
 
 cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& sqlWhere, bool _horizontal, QWidget *par)
     : QWidget(par)
-    , pLayout(_horizontal ? (QLayout *)new QHBoxLayout : (QLayout *)new QVBoxLayout)
+    , pLayout(_horizontal ? static_cast<QLayout *>(new QHBoxLayout) : static_cast<QLayout *>(new QVBoxLayout))
     , pComboBox(new QComboBox)
     , pNullButton(new QToolButton)
     , pModel(new cRecFieldSetOfValueModel(_cfr, sqlWhere))
@@ -213,7 +213,7 @@ cImageWidget::cImageWidget(QWidget *__par)
 {
     scaleStep = 0.50;
     scale = 0;
-    pLabel = NULL;
+    pLabel = nullptr;
 }
 
 cImageWidget::~cImageWidget()
@@ -440,7 +440,7 @@ inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf,
 }
 
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
-    : QWidget(_par == NULL ? NULL : _par->pWidget())
+    : QWidget(_par == nullptr ? nullptr : _par->pWidget())
     , _pParentDialog(_par)
     , _colDescr(_fr.descr())
     , _tableShape(_tm)
@@ -449,9 +449,9 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
     , iconSize(20,20)
 {
-    pLayout     = NULL;
-    pNullButton = NULL;
-    pEditWidget = NULL;
+    pLayout     = nullptr;
+    pNullButton = nullptr;
+    pEditWidget = nullptr;
     _wType      = FEW_UNKNOWN;
     _readOnly   = (0 == (_fl & FEB_YET_EDIT)) && ((_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr));
     _value      = _fr;
@@ -479,7 +479,7 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
 
 cFieldEditBase::~cFieldEditBase()
 {
-    if (pq != NULL) delete pq;
+    if (pq != nullptr) delete pq;
 }
 
 QVariant cFieldEditBase::get() const
@@ -507,7 +507,7 @@ int cFieldEditBase::set(const QVariant& _v)
     if (v == _value) return 0;
     _value = v;
     _actValueIsNULL = v.isNull();
-    if (pNullButton != NULL) {
+    if (pNullButton != nullptr) {
         pNullButton->setChecked(_actValueIsNULL);
         disableEditWidget(_actValueIsNULL);
     }
@@ -538,7 +538,7 @@ void cFieldEditBase::setFromWidget(QVariant v)
 void cFieldEditBase::disableEditWidget(eTristate tsf)
 {
     setBool(_actValueIsNULL, tsf);
-    if (pEditWidget != NULL) {
+    if (pEditWidget != nullptr) {
         pEditWidget->setDisabled(_actValueIsNULL);
     }
 }
@@ -546,16 +546,16 @@ void cFieldEditBase::disableEditWidget(eTristate tsf)
 QWidget *cFieldEditBase::setupNullButton(bool isNull, QAbstractButton * p)
 {
     if (_readOnly) {
-        if (p != NULL) delete p;    // nem kell, mert csak egy cimke lessz
+        if (p != nullptr) delete p;    // nem kell, mert csak egy cimke lessz
         pNullButton = new cROToolButton;
     }
     else {
-        pNullButton = p == NULL ? new QToolButton : p;
+        pNullButton = p == nullptr ? new QToolButton : p;
     }
     pNullButton->setIcon(actNullIcon);
     pNullButton->setCheckable(true);
     pNullButton->setChecked(isNull);
-    if (p == NULL) {
+    if (p == nullptr) {
         pLayout->addWidget(pNullButton);
     }
     if (!_readOnly) {
@@ -566,15 +566,15 @@ QWidget *cFieldEditBase::setupNullButton(bool isNull, QAbstractButton * p)
 
 cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
 {
-    if (_pParentDialog == NULL) {
+    if (_pParentDialog == nullptr) {
         QString se = trUtf8("A keresett %1 nevű mező szerkesztő objektum, nem található, nincs parent dialugus.\nMező Leiró : %2")
                 .arg(__fn, _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
         DERR() << se << endl;
-        return NULL;
+        return nullptr;
     }
     cFieldEditBase *p = (*_pParentDialog)[__fn];
-    if (p == NULL) {
+    if (p == nullptr) {
         QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.\nMező Leiró : %2")
                 .arg(__fn, _pParentDialog->name, _colDescr.colName(), _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
@@ -657,7 +657,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFieldSpinBoxWidget/double" << endl;
             return p;
         }
-        // Continue
+    [[clang::fallthrough]];
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
@@ -673,7 +673,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cEnumRadioWidget" << endl;
             return p;
         }
-        else {                                                      // Enumeráció : alapértelmezetten comb-box
+        else {                                                      // Enumeráció : alapértelmezetten comboBox
             cEnumComboWidget *p = new cEnumComboWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cEnumComboWidget" << endl;
             return p;
@@ -703,7 +703,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFKeyArrayWidget" << endl;
             return p;
         }
-        // Contnue
+    [[clang::fallthrough]];
     case cColStaticDescr::FT_REAL_ARRAY:
     case cColStaticDescr::FT_TEXT_ARRAY: {
          cArrayWidget *p = new cArrayWidget(_tm, _tf, _fr, ro, _par);
@@ -737,7 +737,6 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     }
     default:
         EXCEPTION(EDATA, et);
-        return NULL;
     }
 }
 
@@ -751,19 +750,19 @@ void cFieldEditBase::togleNull(bool f)
 void cFieldEditBase::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ; // NULL/Default
     }
     else {
-        if (pEditWidget == NULL) EXCEPTION(EPROGFAIL);
+        if (pEditWidget == nullptr) EXCEPTION(EPROGFAIL);
         QString s;
         QLineEdit *pLineEdit = qobject_cast<QLineEdit *>(pEditWidget);
-        if (pLineEdit != NULL) {
+        if (pLineEdit != nullptr) {
             s = pLineEdit->text();
         }
         else {
             QPlainTextEdit *pPlainTextEdit = qobject_cast<QPlainTextEdit *>(pEditWidget);
-            if (pPlainTextEdit == NULL) EXCEPTION(EPROGFAIL);
+            if (pPlainTextEdit == nullptr) EXCEPTION(EPROGFAIL);
             s = pPlainTextEdit->toPlainText();
         }
         v = s;
@@ -805,7 +804,7 @@ bool setWidgetAutoset(qlonglong& on, const QMap<int, qlonglong> autosets)
 
 void nextColLayout(QHBoxLayout *pHLayout, QVBoxLayout *& pVLayout, int rows, int n)
 {
-    if (pHLayout != NULL && n != 0 && (n % rows) == 0) {
+    if (pHLayout != nullptr && n != 0 && (n % rows) == 0) {
         pVLayout   = new QVBoxLayout;
         pHLayout->addLayout(pVLayout);
     }
@@ -836,14 +835,14 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
     }
     _nId = _colDescr.enumType().enumValues.size();
     int cols, rows;
-    cols = _fieldShape.feature(_sColumn, 1);
+    cols = int(_fieldShape.feature(_sColumn, 1));
     rows = _nId - onCount(_hiddens);
     if (_dcNull != DC_INVALID) ++rows;
     rows = (rows + cols -1) / cols;
     _height = rows;
     pButtons  = new QButtonGroup(this);
     QVBoxLayout *pVLayout   = new QVBoxLayout;
-    QHBoxLayout *pHLayout   = NULL;
+    QHBoxLayout *pHLayout   = nullptr;
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     if (cols > 1) {
         pLayout = pHLayout = new QHBoxLayout;
@@ -899,12 +898,12 @@ void cSetWidget::setChecked()
     int id;
     for (id = 0; id < _nId ; id++) {
         pAbstractButton = pButtons->button(id);
-        if (NULL != pAbstractButton) {
+        if (nullptr != pAbstractButton) {
             pAbstractButton->setChecked(enum2set(id) & _bits);
         }
     }
     pAbstractButton = pButtons->button(id);
-    if (NULL != pAbstractButton) {
+    if (nullptr != pAbstractButton) {
         pAbstractButton->setChecked(_isNull);
     }
 }
@@ -926,7 +925,7 @@ void cSetWidget::setFromEdit(int id)
     _DBGFNL() << id << endl;
 
     QAbstractButton *pButton =  pButtons->button(id);
-    if (pButton == NULL) EXCEPTION(EPROGFAIL, id);
+    if (pButton == nullptr) EXCEPTION(EPROGFAIL, id);
     if (id == _nId) { // NULL
         _isNull = pButton->isChecked();
         setChecked();
@@ -964,7 +963,7 @@ void cSetWidget::setFromEdit(int id)
         }
         else {
             pButton = pButtons->button(_nId);
-            if (pButton != NULL) pButton->setChecked(_isNull);
+            if (pButton != nullptr) pButton->setChecked(_isNull);
         }
     }
     setChecked();
@@ -1023,10 +1022,10 @@ int cEnumRadioWidget::set(const QVariant& v)
     if (1 == r) {
         pButtons->button(pButtons->checkedId())->setChecked(false);
         eval = _colDescr.toId(v);
-        if (eval >= 0) pButtons->button(eval)->setChecked(true);
+        if (eval >= 0) pButtons->button(int(eval))->setChecked(true);
         else {
             QAbstractButton *pRB = pButtons->button(_colDescr.enumType().enumValues.size());
-            if (pRB != NULL) pRB->setChecked(true);
+            if (pRB != nullptr) pRB->setChecked(true);
         }
     }
     return r;
@@ -1057,26 +1056,29 @@ void cEnumRadioWidget::setFromEdit(int id)
 cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
+    if (_readOnly && _par != nullptr) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     eval = getId();
     _wType = FEW_ENUM_COMBO;
     pEditWidget = pComboBox = new QComboBox;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
-    bool isNull = false;
+    bool isNull = eval == NULL_ID;
+    if (_hasDefault) {
+        evalDef = _colDescr.enumType().str2enum(_colDescr.colDefault);
+        if (isNull) {
+            eval = evalDef;
+            isNull = false;
+        }
+    }
     if (_nullable || _hasDefault) {
-        isNull = eval == NULL_ID;
-        setupNullButton(isNull);
+        setupNullButton(isNull || eval == evalDef);
         cFieldEditBase::disableEditWidget(isNull);
     }
     evalDef = ENUM_INVALID;
-    if (_hasDefault) {
-        evalDef = _colDescr.enumType().str2enum(_colDescr.colDefault);
-    }
     pModel = new cEnumListModel(&_colDescr.enumType());
     pModel->joinWith(pComboBox);
-    pComboBox->setEditable(false);                  // Nem editálható, választás csak a listából
+    pComboBox->setEditable(false);
     setWidget();
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
     if (!isNull) setFromEdit(pComboBox->currentIndex());
@@ -1090,14 +1092,14 @@ cEnumComboWidget::~cEnumComboWidget()
 void cEnumComboWidget::setWidget()
 {
     if (eval < 0 && evalDef >= 0) eval = evalDef;
-    if (eval < 0 && pNullButton != NULL) {
+    if (eval < 0 && pNullButton != nullptr) {
         pNullButton->setChecked(true);
     }
     else {
-        if (pNullButton != NULL) {
+        if (pNullButton != nullptr) {
             pNullButton->setChecked(eval == evalDef);
         }
-        int ix = pModel->indexOf(eval);
+        int ix = pModel->indexOf(int(eval));
         if (ix < 0) ix = 0;
         pComboBox->setCurrentIndex(ix);
     }
@@ -1108,7 +1110,7 @@ void cEnumComboWidget::togleNull(bool f)
     // _DBGFN() << _colDescr << VDEB(f) << endl;
     if (evalDef > ENUM_INVALID) {
         if (f) {
-            int ix = pModel->indexOf(evalDef);
+            int ix = pModel->indexOf(int(evalDef));
             pComboBox->setCurrentIndex(ix);
             // PDEB(INFO) << VDEB(eval) << VDEB(evalDef) << endl;
         }
@@ -1149,7 +1151,7 @@ void cEnumComboWidget::setFromEdit(int index)
     }
     //PDEB(INFO) << VDEB(eval) << " := " << newEval << endl;
     eval = newEval;
-    if (pNullButton != NULL && evalDef > ENUM_INVALID) pNullButton->setChecked(eval == evalDef);
+    if (pNullButton != nullptr && evalDef > ENUM_INVALID) pNullButton->setChecked(eval == evalDef);
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
@@ -1160,10 +1162,10 @@ void cEnumComboWidget::setFromEdit(int index)
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
-    pLineEdit      = NULL;
-    pPlainTextEdit = NULL;
-    pComboBox      = NULL;
-    pModel         = NULL;
+    pLineEdit      = nullptr;
+    pPlainTextEdit = nullptr;
+    pComboBox      = nullptr;
+    pModel         = nullptr;
     isPwd          = false;
     const QString sSetOfValue = "setOfValue";
     pLayout = new QHBoxLayout;
@@ -1234,7 +1236,6 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             break;
         default:
             EXCEPTION(EPROGFAIL);
-            break;
         }
     }
     else {
@@ -1284,7 +1285,7 @@ int cFieldLineWidget::set(const QVariant& v)
         case FEW_LINE:      pLineEdit->setText(txt);            break;
         case FEW_LINES:     pPlainTextEdit->setPlainText(txt);  break;
         case FEW_COMBO_BOX: pModel->setCurrent(txt);            break;
-        default:            EXCEPTION(EPROGFAIL, _wType)        break;
+        default:            EXCEPTION(EPROGFAIL, _wType)
         }
     }
     return r;
@@ -1292,7 +1293,7 @@ int cFieldLineWidget::set(const QVariant& v)
 
 void cFieldLineWidget::setFromEdit()
 {
-    if ((pNullButton != NULL && pNullButton->isChecked()) || _wType != FEW_COMBO_BOX) {
+    if ((pNullButton != nullptr && pNullButton->isChecked()) || _wType != FEW_COMBO_BOX) {
         cFieldEditBase::setFromEdit();
     }
     else {
@@ -1308,8 +1309,8 @@ cFieldSpinBoxWidget::cFieldSpinBoxWidget(const cTableShape &_tm, const cTableSha
 : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
     _wType = FEW_SPIN_BOX;
-    pSpinBox = NULL;
-    pDoubleSpinBox = NULL;
+    pSpinBox = nullptr;
+    pDoubleSpinBox = nullptr;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     QStringList minmax = _tf.features().slValue(_sSpinBox);
@@ -1362,7 +1363,7 @@ cFieldSpinBoxWidget::cFieldSpinBoxWidget(const cTableShape &_tm, const cTableSha
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    if (pSpinBox != NULL) connect(pSpinBox, SIGNAL(valueChanged(int)),    this, SLOT(setFromEdit(int)));
+    if (pSpinBox != nullptr) connect(pSpinBox, SIGNAL(valueChanged(int)),    this, SLOT(setFromEdit(int)));
     else            connect(pDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setFromEdit(double)));
 }
 
@@ -1376,7 +1377,7 @@ int cFieldSpinBoxWidget::set(const QVariant& v)
     bool r = cFieldEditBase::set(v);
     if (r == 1 && !_actValueIsNULL) {
         bool ok = false;
-        if (pSpinBox != NULL) pSpinBox->setValue(_value.toInt(&ok));
+        if (pSpinBox != nullptr) pSpinBox->setValue(_value.toInt(&ok));
         else            pDoubleSpinBox->setValue(_value.toDouble(&ok));
         if (!ok) return -1;
     }
@@ -1386,11 +1387,11 @@ int cFieldSpinBoxWidget::set(const QVariant& v)
 void cFieldSpinBoxWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ;
     }
     else {
-        if (pSpinBox != NULL) v = pSpinBox->value();
+        if (pSpinBox != nullptr) v = pSpinBox->value();
         else            v = pDoubleSpinBox->value();
     }
     setFromWidget(v);
@@ -1496,7 +1497,7 @@ void cArrayWidget::disableEditWidget(eTristate tsf)
 void cArrayWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ; // NULL/Default
     }
     else {
@@ -1627,8 +1628,8 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     _wType = FEW_POLYGON;
     _height = 5;
 
-    pMapWin = NULL;
-    pCImage = NULL;
+    pMapWin = nullptr;
+    pCImage = nullptr;
     epic = NO_ANY_PIC;
     parentOrPlace_id = NULL_ID;
     selectedRowNum = 0;
@@ -1717,7 +1718,7 @@ int cPolygonWidget::set(const QVariant& v)
 bool cPolygonWidget::getImage(bool refresh)
 {
     if (epic == NO_ANY_PIC) return false;
-    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
+    if (pCImage == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong iid = NULL_ID;
     switch (epic) {
     case IS_PLACE_REC:
@@ -1747,7 +1748,7 @@ bool cPolygonWidget::getImage(bool refresh)
             pUi->pushButtonPic->setEnabled(true);
         }
         if (pCImage->dataIsPic()) {
-            if (pMapWin != NULL) pMapWin->setImage(*pCImage);
+            if (pMapWin != nullptr) pMapWin->setImage(*pCImage);
             return true;
         }
         else {
@@ -1765,7 +1766,7 @@ bool cPolygonWidget::getImage(bool refresh)
 
 void cPolygonWidget::drawPolygon()
 {
-    if (pMapWin == NULL) return;
+    if (pMapWin == nullptr) return;
     if (polygon.size() < 3)
         pMapWin->clearPolygon();
     else
@@ -1800,7 +1801,7 @@ void cPolygonWidget::setButtons()
     pUi->pushButtonClr ->setEnabled(               ne && !_readOnly);
 
     pUi->pushButtonPic->setEnabled(pCImage->dataIsPic());
-    pUi->doubleSpinBoxZoom->setEnabled(pMapWin != NULL);
+    pUi->doubleSpinBoxZoom->setEnabled(pMapWin != nullptr);
 }
 
 QModelIndex cPolygonWidget::actIndex(eEx __ex)
@@ -1944,12 +1945,12 @@ void cPolygonWidget::clearRows()
 
 void cPolygonWidget::imageOpen()
 {
-    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
-    if (pMapWin != NULL) {
+    if (pCImage == nullptr) EXCEPTION(EPROGFAIL);
+    if (pMapWin != nullptr) {
         pMapWin->show();
         return;
     }
-    pMapWin = new cImagePolygonWidget(!isReadOnly(), _pParentDialog == NULL ? NULL : _pParentDialog->pWidget());
+    pMapWin = new cImagePolygonWidget(!isReadOnly(), _pParentDialog == nullptr ? nullptr : _pParentDialog->pWidget());
     pMapWin->setWindowFlags(Qt::Window);
     pMapWin->setImage(*pCImage);
     pMapWin->show();
@@ -1968,14 +1969,14 @@ qreal cPolygonWidget::stZoom = 1.0;
 void cPolygonWidget::zoom(double z)
 {
     stZoom = z;
-    if (pMapWin == NULL) EXCEPTION(EPROGFAIL);
+    if (pMapWin == nullptr) EXCEPTION(EPROGFAIL);
     pMapWin->setScale(z);
 }
 
 void cPolygonWidget::destroyedImage(QObject *p)
 {
     (void)p;
-    pMapWin = NULL;
+    pMapWin = nullptr;
     pUi->doubleSpinBoxZoom->setDisabled(true);
 }
 
@@ -2001,19 +2002,19 @@ void cPolygonWidget::setted(QPolygonF pol)
 cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
+    if (_readOnly && _par != nullptr) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FKEY;
     _filter = F_NO;
     _height = 1;
-    pUi       = NULL;
-    pUiPlace  = NULL;
-    pUiRPlace = NULL;
-    pUiPort   = NULL;
-    pModel    = NULL;
-    pRDescr   = NULL;
-    pSelectPlace= NULL;
-    pSelectNode=NULL;
-    pTableShape = NULL;
+    pUi       = nullptr;
+    pUiPlace  = nullptr;
+    pUiRPlace = nullptr;
+    pUiPort   = nullptr;
+    pModel    = nullptr;
+    pRDescr   = nullptr;
+    pSelectPlace= nullptr;
+    pSelectNode=nullptr;
+    pTableShape = nullptr;
     owner_ix = NULL_IX;
     ownerId  = NULL_ID;
     ixRPlaceId= NULL_IX;
@@ -2159,7 +2160,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     if (!owner.isEmpty()) {
         if (_filter != F_NO) EXCEPTION(EDATA, 0, trUtf8("A filter és az owner feature együttes használata nem támogatott : %1").arg(_tf.identifying(false)));
         if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {  // TREE
-            if (_pParentDialog == NULL) {
+            if (_pParentDialog == nullptr) {
                 QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
             owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE); // ??????!!!!!
@@ -2167,10 +2168,10 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
                 QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
             ownerId = NULL_ID;
-            if (_pParentDialog->_pOwnerTable != NULL) {
+            if (_pParentDialog->_pOwnerTable != nullptr) {
                 ownerId = _pParentDialog->_pOwnerTable->owner_id;
             }
-            else if (_pParentDialog->_pOwnerDialog != NULL) {
+            else if (_pParentDialog->_pOwnerDialog != nullptr) {
                 EXCEPTION(ENOTSUPP);
             }
             if (ownerId == NULL_ID) {
@@ -2180,9 +2181,9 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         }
         else {
             // Ha nincs parent dialog, akkor ez nem fog menni
-            if (_pParentDialog == NULL) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
+            if (_pParentDialog == nullptr) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
             cRecordDialog *pDialog = dynamic_cast<cRecordDialog *>(_pParentDialog);
-            if (pDialog == NULL) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
+            if (pDialog == nullptr) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
             QList<cFieldEditBase *>::iterator it = pDialog->fields.begin(); // A hivatkozott mező a jelenlegi elött!!
             for (;it < pDialog->fields.end(); ++it) {
                 if (0 == (*it)->_fieldShape.getName().compare(owner, Qt::CaseInsensitive)) {
@@ -2202,7 +2203,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         }
     }
 
-    actId = (qlonglong)__fr;
+    actId = qlonglong(__fr);
     if (_nullable || _hasDefault) {
         bool isNull = __fr.isNull();
         setupNullButton(isNull);
@@ -2250,9 +2251,9 @@ cFKeyWidget::~cFKeyWidget()
 bool cFKeyWidget::setWidget()
 {
     setButtons();
-    if (pNullButton != NULL) pNullButton->setChecked(_actValueIsNULL);
+    if (pNullButton != nullptr) pNullButton->setChecked(_actValueIsNULL);
     if (!_actValueIsNULL) {
-        if (pModel != NULL) {
+        if (pModel != nullptr) {
             int ix;
             if (_filter == F_PORT) {
                 QSqlQuery q = getQuery();
@@ -2266,7 +2267,7 @@ bool cFKeyWidget::setWidget()
             else {
                 ix = pModel->indexOf(actId);
                 if (ix < 0) {
-                    if (pSelectPlace != NULL) {
+                    if (pSelectPlace != nullptr) {
                         pSelectPlace->setCurrentZone(ALL_PLACE_GROUP_ID);
                         pSelectPlace->setCurrentZone(NULL_ID);
                     }
@@ -2282,7 +2283,7 @@ bool cFKeyWidget::setWidget()
             if (ix < 0) return false;
             pComboBox->setCurrentIndex(ix);
         }
-        else if (pSelectPlace != NULL) {
+        else if (pSelectPlace != nullptr) {
             pSelectPlace->setCurrentPlace(actId);
         }
         else {
@@ -2298,7 +2299,7 @@ int cFKeyWidget::set(const QVariant& v)
     if (1 == r) {
         // ? _refresh();
         actId = _colDescr.toId(_value);
-        if (pSelectPlace != NULL) {
+        if (pSelectPlace != nullptr) {
             pSelectPlace->refresh();
         }
         if (!setWidget()) r = -1;
@@ -2308,19 +2309,18 @@ int cFKeyWidget::set(const QVariant& v)
 
 QString cFKeyWidget::getName()
 {
-    if (pModel != NULL) {
+    if (pModel != nullptr) {
         return pModel->currendName();
     }
-    if (pSelectPlace != NULL) {
+    if (pSelectPlace != nullptr) {
         return pSelectPlace->currentPlaceName();
     }
     EXCEPTION(EPROGFAIL);
-    return _sNul;
 }
 
 void cFKeyWidget::setFromEdit(int i)
 {
-    if (pModel == NULL) EXCEPTION(EPROGFAIL);
+    if (pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id = pModel->atId(i);
     setFromWidget(id);
     // pUi->comboBox()->setCurrentIndex(i);
@@ -2337,7 +2337,7 @@ void cFKeyWidget::setButtons()
     switch (_filter) {
     case F_NO:
     case F_SIMPLE:
-        disa = disa || pTableShape == NULL;
+        disa = disa || pTableShape == nullptr;
         pUi->toolButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
         pUi->toolButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
         break;
@@ -2370,16 +2370,16 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
         pUi->lineEditFilter->setDisabled(_actValueIsNULL);
         break;
     case F_PLACE:
-        if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
+        if (pSelectPlace == nullptr) EXCEPTION(EPROGFAIL);
         pSelectPlace->setDisabled(_actValueIsNULL);
         break;
     case F_RPLACE:
-        if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
+        if (pSelectPlace == nullptr) EXCEPTION(EPROGFAIL);
         pSelectPlace->setDisabled(_actValueIsNULL);
         pUiRPlace->lineEditPattern->setDisabled(_actValueIsNULL);
         break;
     case F_PORT:
-        if (pSelectNode == NULL) EXCEPTION(EPROGFAIL);
+        if (pSelectNode == nullptr) EXCEPTION(EPROGFAIL);
         pSelectNode->setDisabled(_actValueIsNULL);
         pUiPort->lineEditPattern->setDisabled(_actValueIsNULL);
         break;
@@ -2391,7 +2391,7 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
 
 bool cFKeyWidget::setConstFilter()
 {
-    if (_pParentDialog != NULL) {
+    if (_pParentDialog != nullptr) {
         QStringList constFilter = _fieldShape.features().slValue(_sRefine);
         if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
             const cRecord *pr = _pParentDialog->_pRecord;
@@ -2414,7 +2414,7 @@ bool cFKeyWidget::setConstFilter()
                 }
                 sql = sql.arg(s);
             }
-            if (pModel == NULL) EXCEPTION(EPROGFAIL);
+            if (pModel == nullptr) EXCEPTION(EPROGFAIL);
             pModel->setConstFilter(sql, FT_SQL_WHERE);
             return true;
         }
@@ -2425,15 +2425,15 @@ bool cFKeyWidget::setConstFilter()
 void cFKeyWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ; // NULL/Default
     }
     else {
-        if (pModel != NULL) {
+        if (pModel != nullptr) {
             int ix = pComboBox->currentIndex();
             v = pModel->atId(ix);
         }
-        else if (pSelectPlace != NULL) {
+        else if (pSelectPlace != nullptr) {
             v = pSelectPlace->currentPlaceId();
         }
         else {
@@ -2445,7 +2445,7 @@ void cFKeyWidget::setFromEdit()
 
 void cFKeyWidget::setFilter(const QString& _s)
 {
-    if(pModel == NULL) EXCEPTION(EPROGFAIL);
+    if(pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id;
     int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
@@ -2464,7 +2464,7 @@ void cFKeyWidget::setFilter(const QString& _s)
 
 void cFKeyWidget::setPlace(qlonglong _pid)
 {
-    if(pModel == NULL) EXCEPTION(EPROGFAIL);
+    if(pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id;
     int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
@@ -2476,7 +2476,7 @@ void cFKeyWidget::setPlace(qlonglong _pid)
 
 void cFKeyWidget::setNode(qlonglong _nid)
 {
-    if(pModel == NULL) EXCEPTION(EPROGFAIL);
+    if(pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id;
     int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
@@ -2490,7 +2490,7 @@ void cFKeyWidget::setNode(qlonglong _nid)
 /// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::insertF()
 {
-    if (pModel != NULL && pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
+    if (pModel != nullptr && pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         while (1) {
             int keyId = pDialog->exec(false);
@@ -2511,7 +2511,7 @@ void cFKeyWidget::insertF()
 
 void cFKeyWidget::modifyF()
 {
-    if (pModel != NULL && pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sViewRights))) {
+    if (pModel != nullptr && pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sViewRights))) {
         cRecordAny rec(pRDescr);
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         int cix = pComboBox->currentIndex();
@@ -2538,7 +2538,7 @@ void cFKeyWidget::modifyF()
 // Megváltozott az owner id
 void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 {
-    if (pModel == NULL) EXCEPTION(EPROGFAIL);
+    if (pModel == nullptr) EXCEPTION(EPROGFAIL);
     ownerId = pof->getId();
     pModel->setOwnerId(ownerId);
     pComboBox->setCurrentIndex(0);
@@ -2547,10 +2547,10 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 
 void cFKeyWidget::_refresh()
 {
-    if (_pParentDialog != NULL) {
+    if (_pParentDialog != nullptr) {
         QStringList constFilter = _fieldShape.features().slValue(_sRefine);
         if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
-            if (pUi == NULL) EXCEPTION(EPROGFAIL);
+            if (pUi == nullptr) EXCEPTION(EPROGFAIL);
             QString sql = constFilter.first();
             constFilter.pop_front();
             foreach (QString s, constFilter) {
@@ -2577,7 +2577,7 @@ void cFKeyWidget::_refresh()
                 }
                 sql = sql.arg(s);
             }
-            if (pModel == NULL) EXCEPTION(EPROGFAIL);
+            if (pModel == nullptr) EXCEPTION(EPROGFAIL);
             pModel->setConstFilter(sql, FT_SQL_WHERE);
         }
     }
@@ -2588,7 +2588,7 @@ void cFKeyWidget::_refresh()
 
 void cFKeyWidget::refresh()
 {
-    if (pModel == NULL) EXCEPTION(EPROGFAIL);
+    if (pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id = pModel->currendId();
     _refresh();
     int ix = pModel->indexOf(id);
@@ -2633,7 +2633,7 @@ int cDateWidget::set(const QVariant& v)
 void cDateWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ;
     }
     else {
@@ -2652,7 +2652,7 @@ void cDateWidget::setFromEdit(QDate d)
 cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr, false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
+    if (_readOnly && _par != nullptr) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
     _wType = FEW_TIME;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
@@ -2683,7 +2683,7 @@ int cTimeWidget::set(const QVariant& v)
 void cTimeWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ;
     }
     else {
@@ -2702,7 +2702,7 @@ void cTimeWidget::setFromEdit(QTime d)
 cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr,false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
+    if (_readOnly && _par != nullptr) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     _wType = FEW_DATE_TIME;
@@ -2733,7 +2733,7 @@ int cDateTimeWidget::set(const QVariant& v)
 void cDateTimeWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ;
     }
     else {
@@ -2764,7 +2764,7 @@ cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField&
     pLayout->addWidget(pTimeEdit);
     pTimeEdit->setDisplayFormat("HH:mm:ss.zzz");
     if (_readOnly) {
-        pValidatorDay = NULL;
+        pValidatorDay = nullptr;
         view();
         pLineEditDay->setReadOnly(true);
         pTimeEdit->setReadOnly(true);
@@ -2862,14 +2862,14 @@ cBinaryWidget::~cBinaryWidget()
 void cBinaryWidget::_init()
 {
     _wType = FEW_BINARY;
-    pLayout         = NULL;
-    pRadioButtonNULL    = NULL;
-    pLoadButton     = NULL;
-    pViewButton     = NULL;
-    pZoomInButton   = NULL;
-    pZoomOutButton  = NULL;
-    pImageWidget    = NULL;
-    pCImage         = NULL;
+    pLayout         = nullptr;
+    pRadioButtonNULL    = nullptr;
+    pLoadButton     = nullptr;
+    pViewButton     = nullptr;
+    pZoomInButton   = nullptr;
+    pZoomOutButton  = nullptr;
+    pImageWidget    = nullptr;
+    pCImage         = nullptr;
     const cRecStaticDescr& cidescr = cImage().descr();
     isCImage   = _recDescr == cidescr;     // éppen egy cImage objektumot szerkesztünk
 
@@ -2905,7 +2905,7 @@ bool cBinaryWidget::setCImage()
 {
     setNull();
     if (!isCImage) EXCEPTION(EPROGFAIL);            // Ha nem cImage a rekord, akkor hogy kerültünk ide ?!
-    if (pCImage == NULL) pCImage = new cImage;
+    if (pCImage == nullptr) pCImage = new cImage;
     pCImage->clear();
     if (data.size() > 0 && !pRadioButtonNULL->isChecked()) {
         QString type;
@@ -2929,7 +2929,7 @@ bool cBinaryWidget::setCImage()
 
 void cBinaryWidget::setViewButtons()
 {
-    if (pViewButton == NULL) return;
+    if (pViewButton == nullptr) return;
     bool z = data.isEmpty() || !setCImage();
     if (z) {
         pViewButton->setDisabled(true);
@@ -2989,7 +2989,7 @@ void cBinaryWidget::nullChecked(bool checked)
 
 void cBinaryWidget::closePic()
 {
-    if (pImageWidget == NULL) EXCEPTION(EPROGFAIL);
+    if (pImageWidget == nullptr) EXCEPTION(EPROGFAIL);
     pZoomInButton->setDisabled(true);
     pZoomOutButton->setDisabled(true);
     pImageWidget->close();
@@ -3010,11 +3010,11 @@ void cBinaryWidget::openPic()
 
 void cBinaryWidget::viewPic()
 {
-    if (pImageWidget != NULL) {
+    if (pImageWidget != nullptr) {
         pImageWidget->show();
         return;
     }
-    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
+    if (pCImage == nullptr) EXCEPTION(EPROGFAIL);
     if (pCImage->dataIsPic()) openPic();
 }
 
@@ -3027,7 +3027,7 @@ void cBinaryWidget::changedAnyField(cFieldEditBase *p)
 void cBinaryWidget::destroyedImage(QObject *p)
 {
     (void)p;
-    pImageWidget = NULL;
+    pImageWidget = nullptr;
 }
 
 /* **************************************** cFKeyArrayWidget ****************************************  */
@@ -3044,8 +3044,8 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     unique  = true;
     if (str2tristate(_tf.feature(_sUnique), EX_IGNORE) == TS_FALSE) unique = false;
 
-    pFRecModel  = NULL;
-    pTableShape = NULL;
+    pFRecModel  = nullptr;
+    pTableShape = nullptr;
     pUi         = new Ui_fKeyArrayEd;
     pUi->setupUi(this);
     pEditWidget = pUi->listView;
@@ -3145,8 +3145,8 @@ void cFKeyArrayWidget::setButtons()
     pUi->pushButtonDown->setEnabled(down);
     pUi->pushButtonDel ->setDisabled(disa || selectedNum == 0);
     pUi->pushButtonClr ->setDisabled(disa || ids.isEmpty());
-    pUi->pushButtonNew ->setDisabled(disa || pTableShape == NULL || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
-    pUi->pushButtonEdit->setDisabled(disa || pTableShape == NULL || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
+    pUi->pushButtonNew ->setDisabled(disa || pTableShape == nullptr || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
+    pUi->pushButtonEdit->setDisabled(disa || pTableShape == nullptr || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
 }
 
 void cFKeyArrayWidget::disableEditWidget(eTristate tsf)
@@ -3260,7 +3260,7 @@ void cFKeyArrayWidget::on_pushButtonClr_pressed()
 
 void cFKeyArrayWidget::on_pushButtonNew_pressed()
 {
-    if (pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
+    if (pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         while (1) {
             int keyId = pDialog->exec(false);
@@ -3278,7 +3278,7 @@ void cFKeyArrayWidget::on_pushButtonNew_pressed()
 
 void cFKeyArrayWidget::on_pushButtonEdit_pressed()
 {
-    if (pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
+    if (pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         cRecordAny rec(pRDescr);
         int cix = pUi->comboBox->currentIndex();
@@ -3393,7 +3393,7 @@ void cColorWidget::colorDialog()
 cFontFamilyWidget::cFontFamilyWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
+    if (_readOnly && _par != nullptr) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FONT_FAMILY;
     QHBoxLayout *pHBLayout = new QHBoxLayout;
     pLayout = pHBLayout;
@@ -3405,7 +3405,7 @@ cFontFamilyWidget::cFontFamilyWidget(const cTableShape& _tm, const cTableShapeFi
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    if (!isNull) pFontComboBox->setCurrentFont(QFont((QString)__fr));
+    if (!isNull) pFontComboBox->setCurrentFont(QFont(QString(__fr)));
     pHBLayout->addStretch(0);
     connect(pFontComboBox,   SIGNAL(currentFontChanged(QFont)), this, SLOT(changeFont(QFont)));
 }
@@ -3433,7 +3433,7 @@ void cFontFamilyWidget::changeFont(const QFont&)
 void cFontFamilyWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ; // NULL/Default
     }
     else {
@@ -3466,7 +3466,7 @@ cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField 
     }
     _wType = FEW_FONT_ATTR;
     bool isNull = __fr.isNull();
-    m = isNull ? 0 : (qlonglong)__fr;
+    m = isNull ? 0 : qlonglong(__fr);
     QHBoxLayout *pHBLayout = new QHBoxLayout;
     pLayout = pHBLayout;
     setLayout(pLayout);
@@ -3540,7 +3540,7 @@ void cFontAttrWidget::disableEditWidget(eTristate tsf)
 void cFontAttrWidget::setFromEdit()
 {
     QVariant v;
-    if (pNullButton != NULL && pNullButton->isChecked()) {
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
         ; // NULL/Default
     }
     else {
@@ -3557,7 +3557,7 @@ void cFontAttrWidget::setFromEdit()
 
 void cFontAttrWidget::togleBoold(bool f)
 {
-    if (f == ((bool)(m & ENUM2SET(FA_BOOLD)))) return;
+    if (f == (bool(m & ENUM2SET(FA_BOOLD)))) return;
     if (f) m |=  ENUM2SET(FA_BOOLD);
     else   m &= ~ENUM2SET(FA_BOOLD);
     setFromWidget(QVariant(m));
@@ -3565,7 +3565,7 @@ void cFontAttrWidget::togleBoold(bool f)
 
 void cFontAttrWidget::togleItalic(bool f)
 {
-    if (f == ((bool)(m & ENUM2SET(FA_ITALIC)))) return;
+    if (f == (bool(m & ENUM2SET(FA_ITALIC)))) return;
     if (f) m |=  ENUM2SET(FA_ITALIC);
     else   m &= ~ENUM2SET(FA_ITALIC);
     setFromWidget(QVariant(m));
@@ -3573,7 +3573,7 @@ void cFontAttrWidget::togleItalic(bool f)
 
 void cFontAttrWidget::togleUnderline(bool f)
 {
-    if (f == ((bool)(m & ENUM2SET(FA_UNDERLINE)))) return;
+    if (f == (bool(m & ENUM2SET(FA_UNDERLINE)))) return;
     if (f) m |=  ENUM2SET(FA_UNDERLINE);
     else   m &= ~ENUM2SET(FA_UNDERLINE);
     setFromWidget(QVariant(m));
@@ -3581,7 +3581,7 @@ void cFontAttrWidget::togleUnderline(bool f)
 
 void cFontAttrWidget::togleStrikeout(bool f)
 {
-    if (f == ((bool)(m & ENUM2SET(FA_STRIKEOUT)))) return;
+    if (f == (bool(m & ENUM2SET(FA_STRIKEOUT)))) return;
     if (f) m |=  ENUM2SET(FA_STRIKEOUT);
     else   m &= ~ENUM2SET(FA_STRIKEOUT);
     setFromWidget(QVariant(m));
@@ -3603,8 +3603,8 @@ cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, 
     _dcNull     = DC_INVALID;
 
 
-    pLineEdit = NULL;
-    pPlainTextEdit = NULL;
+    pLineEdit = nullptr;
+    pPlainTextEdit = nullptr;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     if (_fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
@@ -3664,8 +3664,8 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     , pLineEditPlaceFilt(_pFilt)
     , constFilterPlace(_constFilt)
 {
-    pButtonPlaceInsert = pButtonPlaceRefresh = pButtonPlaceInfo = pButtonPlaceEdit = NULL;
-    pSlave = NULL;
+    pButtonPlaceInsert = pButtonPlaceRefresh = pButtonPlaceInfo = pButtonPlaceEdit = nullptr;
+    pSlave = nullptr;
     pModelZone = new cZoneListModel(this);
     pModelZone->joinWith(pComboBoxZone);
     pModelPlace = new cPlacesInZoneModel(this);
@@ -3676,7 +3676,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     }
     connect(pComboBoxZone,  SIGNAL(currentIndexChanged(int)),   this, SLOT(on_comboBoxZone_currentIndexChanged(int)));
     connect(pComboBoxPLace, SIGNAL(currentIndexChanged(int)),   this, SLOT(on_comboBoxPlace_currentIndexChanged(int)));
-    if (pLineEditPlaceFilt != NULL) {
+    if (pLineEditPlaceFilt != nullptr) {
         connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(lineEditPlaceFilt_textChanged(QString)));
     }
 
@@ -3687,9 +3687,9 @@ void cSelectPlace::copyCurrents(const cSelectPlace &_o)
     bbPlace.begin();
     qlonglong pid = currentPlaceId();
     pComboBoxZone->setCurrentIndex(_o.pComboBoxZone->currentIndex());
-    if (pLineEditPlaceFilt != NULL) {
+    if (pLineEditPlaceFilt != nullptr) {
         QString pattern = _sNul;
-        if (_o.pLineEditPlaceFilt != NULL) {
+        if (_o.pLineEditPlaceFilt != nullptr) {
             pattern = _o.pLineEditPlaceFilt->text();
         }
         pLineEditPlaceFilt->setText(pattern);   // -> lineEditPlaceFilt_textChanged()
@@ -3701,12 +3701,12 @@ void cSelectPlace::copyCurrents(const cSelectPlace &_o)
 
 void cSelectPlace::setSlave(cSelectPlace *_pSlave, bool disabled)
 {
-    if (_pSlave == NULL) {
-        if (pSlave != NULL) pSlave->setDisableWidgets(false);
-        pSlave = NULL;
+    if (_pSlave == nullptr) {
+        if (pSlave != nullptr) pSlave->setDisableWidgets(false);
+        pSlave = nullptr;
     }
     else {
-        if (pSlave != NULL && pSlave != _pSlave) EXCEPTION(EPROGFAIL);
+        if (pSlave != nullptr && pSlave != _pSlave) EXCEPTION(EPROGFAIL);
         pSlave = _pSlave;
         pSlave->copyCurrents(*this);
         pSlave->cSelectPlace::setDisableWidgets(disabled);
@@ -3716,13 +3716,13 @@ void cSelectPlace::setSlave(cSelectPlace *_pSlave, bool disabled)
 void cSelectPlace::setDisableWidgets(bool f)
 {
     pComboBoxZone->setDisabled(f);
-    if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setDisabled(f);
+    if (pLineEditPlaceFilt != nullptr) pLineEditPlaceFilt->setDisabled(f);
     pComboBoxPLace->setDisabled(f);
-    if (pButtonPlaceInsert  != NULL) pButtonPlaceInsert->setDisabled(f);
-    if (pButtonPlaceRefresh != NULL) pButtonPlaceRefresh->setDisabled(f);
+    if (pButtonPlaceInsert  != nullptr) pButtonPlaceInsert->setDisabled(f);
+    if (pButtonPlaceRefresh != nullptr) pButtonPlaceRefresh->setDisabled(f);
     f = f || (currentPlaceId() == NULL_ID);
-    if (pButtonPlaceInfo    != NULL) pButtonPlaceInfo->setDisabled(f);
-    if (pButtonPlaceEdit    != NULL) pButtonPlaceEdit->setDisabled(f);
+    if (pButtonPlaceInfo    != nullptr) pButtonPlaceInfo->setDisabled(f);
+    if (pButtonPlaceEdit    != nullptr) pButtonPlaceEdit->setDisabled(f);
 }
 
 void cSelectPlace::setPlaceInsertButton(QAbstractButton * p)
@@ -3756,7 +3756,7 @@ bool cSelectPlace::emitChangePlace(bool f)
     if (f && bbPlace.test()) {
         placeNameChanged(currentPlaceName());
         placeIdChanged(currentPlaceId());
-        if (pButtonPlaceInfo != NULL) pButtonPlaceInfo->setDisabled(currentPlaceId() == NULL_ID);
+        if (pButtonPlaceInfo != nullptr) pButtonPlaceInfo->setDisabled(currentPlaceId() == NULL_ID);
         return true;
     }
     return false;
@@ -3794,11 +3794,11 @@ qlonglong cSelectPlace::insertPlace()
 {
     QSqlQuery q = getQuery();
     cRecord *p = recordDialog(q, _sPlaces, qobject_cast<QWidget *>(parent()));
-    if (p == NULL) return NULL_ID;
+    if (p == nullptr) return NULL_ID;
     qlonglong pid = p->getId();
     delete p;
     bbPlace.begin();
-    if (pSlave != NULL) {
+    if (pSlave != nullptr) {
         pSlave->bbPlace.begin();
     }
     pModelPlace->setFilter();
@@ -3826,7 +3826,7 @@ bool cSelectPlace::editPlace()
     shape.fetchFields(q);
     shape.shapeFields.get(_sPlaceName)->enum2setOn(_sFieldFlags, FF_READ_ONLY);   // Set name (place_name) is read only
     cRecord *p = recordDialog(q, shape, qobject_cast<QWidget *>(parent()), &place, pid <= ROOT_PLACE_ID, true);
-    if (p == NULL) return false;
+    if (p == nullptr) return false;
     // Név változást tiltottuk, ID nem változhat, nincs más dolgunk
     return true;
 }
@@ -3839,11 +3839,11 @@ qlonglong cSelectPlace::editCurrentPlace()
     cPlace place;
     place.setById(q, pid);
     cRecord *p = recordDialog(q, _sPlaces, qobject_cast<QWidget *>(parent()), &place, false, true);
-    if (p == NULL) return NULL_ID;
+    if (p == nullptr) return NULL_ID;
     pid = p->getId();
     delete p;
     bbPlace.begin();
-    if (pSlave != NULL) {
+    if (pSlave != nullptr) {
         pSlave->bbPlace.begin();
     }
     pModelPlace->setFilter();
@@ -3879,7 +3879,7 @@ void cSelectPlace::setCurrentZone(qlonglong _zid)
         if (f) pComboBoxPLace->setCurrentIndex(ix);
         bbPlace.end(!f);
     }
-    if (pSlave != NULL) {
+    if (pSlave != nullptr) {
         if (!bbPlace.test()) pSlave->bbPlace.begin();
         pSlave->setCurrentZone(_zid);
         if (!bbPlace.test()) pSlave->bbPlace.end(!f);
@@ -3901,7 +3901,7 @@ void cSelectPlace::setCurrentPlace(qlonglong _pid)
     else { // NOT NULL
         int ix = pModelPlace->indexOf(_pid);
         if (ix < 0) {
-            if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setText(_sNul);
+            if (pLineEditPlaceFilt != nullptr) pLineEditPlaceFilt->setText(_sNul);
             setCurrentZone(ALL_PLACE_GROUP_ID);
             ix = pModelPlace->indexOf(_pid);
             if (ix < 0) EXCEPTION(EDATA);
@@ -3917,7 +3917,7 @@ void cSelectPlace::placeReport()
     if (pid == NULL_ID) return;
     QSqlQuery q = getQuery();
     tStringPair r = htmlReportPlace(q, pid);
-    popupReportWindow((QWidget *)this->parent(), r.second, r.first);
+    popupReportWindow(static_cast<QWidget *>(this->parent()), r.second, r.first);
 }
 
 void cSelectPlace::on_comboBoxZone_currentIndexChanged(int ix)
@@ -3952,9 +3952,9 @@ void cSelectPlace::lineEditPlaceFilt_textChanged(const QString& s)
     }
     int pix = pModelPlace->indexOf(pid);
     if (pix < 0) pix = 0;
-    if (pSlave != NULL) {
+    if (pSlave != nullptr) {
         pSlave->bbPlace.begin();
-        if (pSlave->pLineEditPlaceFilt != NULL) pSlave->pLineEditPlaceFilt->setText(s);
+        if (pSlave->pLineEditPlaceFilt != nullptr) pSlave->pLineEditPlaceFilt->setText(s);
         pSlave->setCurrentPlace(pModelPlace->atId(pix));
         pSlave->bbPlace.end(pix == 0);
     }
@@ -3974,13 +3974,13 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
     , pLineEditNodeFilt(_pNodeFilt)
     , constFilterNode(_nodeConstFilt)
 {
-    pButtonPatchInsert = pButtonNodeRefresh = pButtonNodeInfo = NULL;
-    pModelNode = NULL;
+    pButtonPatchInsert = pButtonNodeRefresh = pButtonNodeInfo = nullptr;
+    pModelNode = nullptr;
     setNodeModel(new cRecordListModel(cPatch().descr(), this), TS_TRUE);
     connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlaceId(qlonglong)));
     // Ha a kiválasztott hely NULL, akkor kell a zóna változásra is reagálni.
     connect(pComboBoxZone, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxZone_currenstIndexChanged(int)));
-    if (pLineEditNodeFilt != NULL) {    // Ha van mintára szűrés
+    if (pLineEditNodeFilt != nullptr) {    // Ha van mintára szűrés
         connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)), this, SLOT(on_lineEditNodeFilt_textChanged(QString)));
     }
     connect(pComboBoxNode, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxNode_currenstIndexChanged(int)));
@@ -4058,11 +4058,11 @@ void cSelectNode::setNodeInfoButton(QAbstractButton * p)
 void cSelectNode::setDisableWidgets(bool f)
 {
     cSelectPlace::setDisableWidgets(f);
-    if (pLineEditNodeFilt != NULL) pLineEditNodeFilt->setDisabled(f);
+    if (pLineEditNodeFilt != nullptr) pLineEditNodeFilt->setDisabled(f);
     pComboBoxNode->setDisabled(f);
-    if (pButtonNodeRefresh != NULL) pButtonNodeRefresh->setDisabled(f);
-    if (pButtonPatchInsert != NULL) pButtonPatchInsert->setDisabled(f);
-    if (pButtonNodeInfo    != NULL) pButtonNodeInfo->setDisabled(f || currentNodeId() == NULL_ID);
+    if (pButtonNodeRefresh != nullptr) pButtonNodeRefresh->setDisabled(f);
+    if (pButtonPatchInsert != nullptr) pButtonPatchInsert->setDisabled(f);
+    if (pButtonNodeInfo    != nullptr) pButtonNodeInfo->setDisabled(f || currentNodeId() == NULL_ID);
 }
 
 void cSelectNode::refresh(bool f)
@@ -4079,7 +4079,7 @@ bool cSelectNode::emitChangeNode(bool f)
     if (f && bbNode.test()) {
         nodeIdChanged(currentNodeId());
         nodeNameChanged(currentNodeName());
-        if (pButtonNodeInfo != NULL) pButtonNodeInfo->setDisabled(currentNodeId() == NULL_ID);
+        if (pButtonNodeInfo != nullptr) pButtonNodeInfo->setDisabled(currentNodeId() == NULL_ID);
         return true;
     }
     return false;
@@ -4114,7 +4114,7 @@ void cSelectNode::nodeReport()
     qlonglong nid = currentNodeId();
     if (nid == NULL_ID) return;
     QSqlQuery q = getQuery();
-    popupReportNode((QWidget *)this->parent(), q, nid);
+    popupReportNode(static_cast<QWidget *>(this->parent()), q, nid);
 }
 
 void cSelectNode::setCurrentNode(qlonglong _nid)
@@ -4137,7 +4137,7 @@ qlonglong cSelectNode::insertPatch(cPatch *pSample)
 {
     QSqlQuery q = getQuery();
     cPatch *p = patchInsertDialog(q, qobject_cast<QWidget *>(parent()), pSample);
-    if (p == NULL) return NULL_ID;  // cancel
+    if (p == nullptr) return NULL_ID;  // cancel
     qlonglong pid = p->getId();
     delete p;
     pModelNode->setFilter();
@@ -4242,11 +4242,11 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
 
     ix = 0;     // Share value index (comboBox)
     if (_isPatch) {
-        ix = pModelShare->indexOf(_lnk.getId(_sPortShared));
+        ix = pModelShare->indexOf(int(_lnk.getId(_sPortShared)));
         if (ix < 0) EXCEPTION(EPROGFAIL);
     }
     lastShare = pModelShare->atInt(ix);
-    lastLinkType = (int)_lnk.getId(_sPhsLinkType2);
+    lastLinkType = int(_lnk.getId(_sPhsLinkType2));
     pComboBoxShare->setCurrentIndex(ix);
     if ((lastLinkType == LT_TERM) == _isPatch) {
         QString msg = trUtf8("Database or program error. Port %1:%2, link type is %3.").arg(pn->getName(), p.getName(), linkType(lastLinkType, EX_IGNORE));
@@ -4544,7 +4544,7 @@ void cSelectSubNet::setCurrentByAddress(QHostAddress& _a)
         return;
     }
     for (int i = 1; i < netList.size(); ++i) {
-        const QPair<QHostAddress, int>& n = (const QPair<QHostAddress, int>&)netList.at(i);
+        const QPair<QHostAddress, int>& n = static_cast<const QPair<QHostAddress, int>&>(netList.at(i));
         if (_a.isInSubnet(n)) {
             pComboBoxNet->setCurrentIndex(i);
             pComboBoxName->setCurrentIndex(i);
@@ -4589,7 +4589,7 @@ void cSelectSubNet::_changedName(int ix)
 cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
     : QObject(par), isDialog(_isDialog), map(_map)
 {
-    pButtons = NULL;
+    pButtons = nullptr;
     pTableWidget = new QTableWidget(par);
     if (isDialog) {
         _pWidget = new QDialog(par);
@@ -4636,7 +4636,7 @@ cStringMapEdit::~cStringMapEdit()
 QDialog& cStringMapEdit::dialog()
 {
     if (!isDialog) EXCEPTION(EPROGFAIL);
-    return *(QDialog *)_pWidget;
+    return *static_cast<QDialog *>(_pWidget);
 }
 
 void cStringMapEdit::clicked(int id)

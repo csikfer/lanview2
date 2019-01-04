@@ -113,7 +113,13 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
             c = bgColorByEnum(lineBgColorEnum2Type, lineBgColorEnum2Val);
         }
         else {
-            c = bgColorByEnum(lineBgColorEnumType, int(pr->getId(lineBgColorEnumIx)));
+            qlonglong e = pr->getId(lineBgColorEnumIx);
+            if (e == NULL_ID) {
+                c = dcBgColor(DC_NULL);
+            }
+            else {
+                c = bgColorByEnum(lineBgColorEnumType, int(e));
+            }
         }
         return QVariant(c);
     }

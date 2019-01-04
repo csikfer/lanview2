@@ -318,7 +318,7 @@ egy QHostAddress objektum, és egy int, ami a hálózati maszkot reprezentálja.
 Jelentése, a hálózati maszk hány db 1-es bitaet tartalmaz. Értéke 0-32, ill.
 IPV6 cím esetén 0-128.
  */
-class LV2SHARED_EXPORT netAddress : protected QPair<QHostAddress, int>
+class LV2SHARED_EXPORT netAddress : public QPair<QHostAddress, int>
 {
     friend class netAddressList;
 protected:
@@ -330,10 +330,6 @@ protected:
     Egy referenciát ad vissza az objektum maszk részére.
      */
     int&          mask()    { return second; }
-    /*!
-    Egy referenciát ad vissza az objektum adat tartalmára
-     */
-    operator QPair<QHostAddress, int>&() { return *((QPair<QHostAddress, int> *)this); }
 public:
     /*!
     Konstruktor.

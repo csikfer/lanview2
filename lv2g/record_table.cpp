@@ -2100,7 +2100,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     // Addicionális együtt kezelendő mezők
     QString ff = tsf.feature("batch_edit_fields");
     if (!ff.isEmpty()) {
-        QStringList fl = ff.split(QRegExp(",\\s*"));
+        QStringList fl = ff.split(QRegExp("[,;\\s]+"));
         foreach (QString f, fl) {
             int fix = rec.toIndex(f);
             int mix = pTableShape->shapeFields.indexOf(f);

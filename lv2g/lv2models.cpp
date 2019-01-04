@@ -643,14 +643,14 @@ void cRecordListModel::joinWith(QComboBox *_pComboBox)
 
 qlonglong cRecordListModel::currendId()
 {
-    if (pComboBox == NULL) EXCEPTION(EPROGFAIL);
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
     int ix = pComboBox->currentIndex();
     return atId(ix);
 }
 
 QString cRecordListModel::currendName()
 {
-    if (pComboBox == NULL) EXCEPTION(EPROGFAIL);
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
     int ix = pComboBox->currentIndex();
     return at(ix);
 }
@@ -795,18 +795,18 @@ void cPlacesInZoneModel::setZone(qlonglong id)
 cEnumListModel::cEnumListModel(const QString& __t, eNullType _nullable, const tIntVector &_eList, QObject * __par)
     : QAbstractListModel(__par)
 {
-    pType     = NULL;
-    pq        = NULL;
-    pComboBox = NULL;
+    pType     = nullptr;
+    pq        = nullptr;
+    pComboBox = nullptr;
     setEnum(__t, _nullable, _eList);
 }
 
 cEnumListModel::cEnumListModel(const cColEnumType *_pType, eNullType _nullable, const tIntVector& _eList, QObject * __par)
     : QAbstractListModel(__par)
 {
-    pType     = NULL;
-    pq        = NULL;
-    pComboBox = NULL;
+    pType     = nullptr;
+    pq        = nullptr;
+    pComboBox = nullptr;
     setEnum(_pType, _nullable, _eList);
 }
 
@@ -817,7 +817,7 @@ cEnumListModel::~cEnumListModel()
 
 int cEnumListModel::setEnum(const QString& __t, eNullType _nullable, const tIntVector& _eList, eEx __ex)
 {
-    if (pq == NULL) pq = newQuery();
+    if (pq == nullptr) pq = newQuery();
     return setEnum(cColEnumType::fetchOrGet(*pq, __t, __ex), _nullable, _eList, __ex);
 }
 
@@ -826,7 +826,7 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, con
     beginResetModel();
     enumVals.clear();
     pType = _pType;
-    if (pType == NULL) {
+    if (pType == nullptr) {
         if (__ex != EX_IGNORE) EXCEPTION(ENONAME);
         endResetModel();
         return 0;
@@ -869,7 +869,7 @@ void cEnumListModel::clear()
 {
     beginResetModel();
     nullType = NT_NOT_NULL;
-    pType = NULL;
+    pType = nullptr;
     enumVals.clear();
     endResetModel();
 }
@@ -902,7 +902,7 @@ int cEnumListModel::atInt(int ix) const
 
 const cEnumVal * cEnumListModel::atEnumVal(int ix, eEx __ex) const
 {
-    const cEnumVal *r = NULL;
+    const cEnumVal *r = nullptr;
     if (isContIx(enumVals, ix)) {
         r = enumVals.at(ix);
     }
