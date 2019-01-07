@@ -191,3 +191,38 @@ ALTER TABLE host_services ADD CONSTRAINT host_services_last_alarm_log_id_fkey FO
       REFERENCES public.alarms (alarm_id) MATCH SIMPLE
       ON UPDATE RESTRICT ON DELETE SET NULL;
 
+-- Bugfix 2019.01.04.
+
+CREATE UNIQUE INDEX alarm_messages_text_id_key ON alarm_messages(text_id);
+CREATE UNIQUE INDEX errors_text_id_key         ON errors(text_id);
+CREATE UNIQUE INDEX enum_vals_text_id_key      ON enum_vals(text_id);
+CREATE UNIQUE INDEX menu_items_text_id_key     ON menu_items(text_id);
+CREATE UNIQUE INDEX table_shapes_text_id_key   ON table_shapes(text_id);
+CREATE UNIQUE INDEX table_shape_fields_text_id_key ON table_shape_fields(text_id);
+
+CREATE OR REPLACE FUNCTION check_after_localization_text() RETURNS TRIGGER AS $$
+DECLARE
+    n integer;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.text_id <> OLD.text_id THEN
+            PERFORM error('Constant', OLD.text_id, 'text_id := ' || NEW.text_id::text, 'check_after_localization_text()', TG_TABLE_NAME, TG_OP);
+        END IF;
+        IF NEW.table_for_text <> OLD.table_for_text THEN
+            PERFORM error('Constant', NEW.text_id, OLD.table_for_text || ' - ' || NEW.table_for_text, 'check_after_localization_text()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    EXECUTE 'SELECT count(*) FROM ' || NEW.table_for_text || ' WHERE text_id = $1'
+        INTO n
+        USING NEW.text_id;
+    IF n <> 1  THEN
+        IF n > 1 THEN
+            PERFORM error('IdNotUni', NEW.text_id, NEW.table_for_text::text || ' #' || n, 'table_for_text', TG_TABLE_NAME, TG_OP);
+        ELSE
+            PERFORM error('IdNotFound', NEW.text_id, NEW.table_for_text::text, 'table_for_text', TG_TABLE_NAME, TG_OP);
+        END IF;
+        RETURN NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

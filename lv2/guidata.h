@@ -358,10 +358,10 @@ public:
         { return enumVal(_tn, e).getText(LTX_VIEW_LONG, _d); }
     static QString toolTip(const QString& _tn, int e)
         { return enumVal(_tn, e).getText(LTX_TOOL_TIP); }
-    QString typeName() const { return getName(ixTypeName()); }
+    QString typeName() const { return getName(ixEnumTypeName()); }
 
-    STATICIX(cEnumVal, TypeName)
-    STATICIX(cEnumVal, ValName)
+    STATICIX(cEnumVal, EnumTypeName)
+    STATICIX(cEnumVal, EnumValName)
     STATICIX(cEnumVal, BgColor)
     STATICIX(cEnumVal, FgColor)
     STATICIX(cEnumVal, FontFamily)

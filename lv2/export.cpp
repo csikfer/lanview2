@@ -516,18 +516,18 @@ QString cExport::enumVals(eEx __ex)
     QString r;
     QSqlQuery q = getQuery();
     r  = langComment();
-    return r + sympleExport(o, o.ixTypeName(), __ex, o.mask(o.ixValName()));
+    return r + sympleExport(o, o.ixEnumTypeName(), __ex, o.mask(o.ixEnumValName()));
 }
 
 QString cExport::_export(QSqlQuery &q, cEnumVal &o)
 {
     QString r;
-    bool isType = o.isNull(o.ixValName());
+    bool isType = o.isNull(o.ixEnumValName());
     if (isType) {
-        r = "ENUM" + str(o[o.ixTypeName()]) + str_z(o[_sEnumValNote]);
+        r = "ENUM" + str(o[o.ixEnumTypeName()]) + str_z(o[_sEnumValNote]);
     }
     else {
-        r = str(o[o.ixValName()]) + str_z(o[_sEnumValNote]);
+        r = str(o[o.ixEnumValName()]) + str_z(o[_sEnumValNote]);
     }
     o.fetchText(q);
     r = lineBeginBlock(r);
@@ -543,8 +543,8 @@ QString cExport::_export(QSqlQuery &q, cEnumVal &o)
             static tIntVector ord;
             static QBitArray  fm;
             if (ord.isEmpty()) {
-                ord << o.ixValName();
-                fm = o.mask(o.ixTypeName());
+                ord << o.ixEnumValName();
+                fm = o.mask(o.ixEnumTypeName());
             }
             static const QString where = "enum_val_name IS NOT NULL AND enum_type_name = ?";
             b += exportWhere(o, ord, where, EX_ERROR, fm);

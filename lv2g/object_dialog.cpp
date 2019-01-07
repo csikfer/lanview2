@@ -785,8 +785,8 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
 {
     parent = par;
     pTableWidget = par->pUi->tableWidgetType;
-    rec.setName(_sEnumTypeName, parent->enumTypeTypeName);
-    rec.setName(_sEnumValName, _val);
+    rec.setName(cEnumVal::ixEnumTypeName(), parent->enumTypeTypeName);
+    rec.setName(cEnumVal::ixEnumValName(), _val);
     int r = rec.completion(q);
     QString t;
     switch (r) {
@@ -794,8 +794,8 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
         rec.fetchText(q);
         break;
     case 0:     // Még nincs az adatbázisban  Set default
-        rec.setName(_sEnumTypeName, parent->enumTypeTypeName);
-        rec.setName(_sEnumValName, _val);
+        rec.setName(cEnumVal::ixEnumTypeName(), parent->enumTypeTypeName);
+        rec.setName(cEnumVal::ixEnumValName(), _val);
         break;
     default:
         EXCEPTION(AMBIGUOUS, r, mCat(parent->enumTypeTypeName, _val));
@@ -826,10 +826,10 @@ void cEnumValRow::save(QSqlQuery& q)
     rec.setText(cEnumVal::LTX_VIEW_SHORT, getTableItemText(pTableWidget, row, CEV_SHORT));
     rec.setText(cEnumVal::LTX_VIEW_LONG,  getTableItemText(pTableWidget, row, CEV_LONG));
     rec.setText(cEnumVal::LTX_TOOL_TIP,   getTableItemText(pTableWidget, row, CEV_TOOL_TIP));
-    rec[_sBgColor]     = pBgColorWidget->get();
-    rec[_sFgColor]     = pFgColorWidget->get();
-    rec[_sFontFamily]  = pFntFamWidget->get();
-    rec[_sFontAttr]    = pFntAttWidget->get();
+    rec[cEnumVal::ixBgColor()]     = pBgColorWidget->get();
+    rec[cEnumVal::ixFgColor()]     = pFgColorWidget->get();
+    rec[cEnumVal::ixFontFamily()]  = pFntFamWidget->get();
+    rec[cEnumVal::ixFontAttr()]    = pFntAttWidget->get();
     rec[_sEnumValNote] = getTableItemText(pTableWidget, row, CEV_NOTE);
     rec.replace(q);
     rec.saveText(q);
@@ -956,13 +956,13 @@ bool cEnumValsEditWidget::saveValue()
 {
     val.clearId();
     val[_sEnumValNote]  = pUi->lineEditValValNote->text();
-    val[_sBgColor]      = pWidgetValBgColor->get();
-    val[_sFgColor]      = pWidgetValFgColor->get();
+    val[cEnumVal::ixBgColor()]      = pWidgetValBgColor->get();
+    val[cEnumVal::ixFgColor()]      = pWidgetValFgColor->get();
     val.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditValShort->text());
     val.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditValLong->text());
     val.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditValValTolTip->toPlainText());
-    val[_sFontFamily]   = pWidgetValFntFam->get();
-    val[_sFontAttr]     = pWidgetValFntAtt->get();
+    val[cEnumVal::ixFontFamily()]   = pWidgetValFntFam->get();
+    val[cEnumVal::ixFontAttr()]     = pWidgetValFntAtt->get();
 
     return cErrorMessageBox::condMsgBox(val.tryReplace(*pq, TS_NULL, true));
 }
@@ -1000,34 +1000,34 @@ bool cEnumValsEditWidget::saveBoolean()
 {
     QString type = mCat(pUi->comboBoxBoolTable->currentText(), pUi->comboBoxBoolField->currentText());
 
-    boolType.clear(_sEnumValName);
+    boolType.clear(cEnumVal::ixEnumValName());
     boolType[_sEnumValNote]  = pUi->lineEditBoolTypeNote->text();
-    boolType[_sEnumTypeName] = type;
+    boolType[cEnumVal::ixEnumTypeName()] = type;
     boolType.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditBoolTypeShort->text());
     boolType.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditBoolTypeLong->text());
     boolType.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditBoolToolTip->toPlainText());
 
-    boolTrue[_sEnumValName]  = _sTrue;
+    boolTrue[cEnumVal::ixEnumValName()]  = _sTrue;
     boolTrue[_sEnumValNote]  = pUi->lineEditTrueNote->text();
-    boolTrue[_sEnumTypeName] = type;
-    boolTrue[_sBgColor]      = pWidgetTrueBgColor->get();
-    boolTrue[_sFgColor]      = pWidgetTrueFgColor->get();
+    boolTrue[cEnumVal::ixEnumTypeName()] = type;
+    boolTrue[cEnumVal::ixBgColor()]      = pWidgetTrueBgColor->get();
+    boolTrue[cEnumVal::ixFgColor()]      = pWidgetTrueFgColor->get();
     boolTrue.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditTrueShort->text());
     boolTrue.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditTrueLong->text());
     boolTrue.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTrueToolTip->toPlainText());
-    boolTrue[_sFontFamily]   = pWidgetTrueFntFam->get();
-    boolTrue[_sFontAttr]     = pWidgetTrueFntAtt->get();
+    boolTrue[cEnumVal::ixFontFamily()]   = pWidgetTrueFntFam->get();
+    boolTrue[cEnumVal::ixFontAttr()]     = pWidgetTrueFntAtt->get();
 
-    boolFalse[_sEnumValName] = _sFalse;
+    boolFalse[cEnumVal::ixEnumValName()] = _sFalse;
     boolFalse[_sEnumValNote] = pUi->lineEditFalseNote->text();
-    boolFalse[_sEnumTypeName]= type;
-    boolFalse[_sBgColor]     = pWidgetFalseBgColor->get();
-    boolFalse[_sFgColor]     = pWidgetFalseFgColor->get();
+    boolFalse[cEnumVal::ixEnumTypeName()]= type;
+    boolFalse[cEnumVal::ixBgColor()]     = pWidgetFalseBgColor->get();
+    boolFalse[cEnumVal::ixFgColor()]     = pWidgetFalseFgColor->get();
     boolFalse.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditFalseShort->text());
     boolFalse.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditFalseLong->text());
     boolFalse.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditFalseToolTip->toPlainText());
-    boolFalse[_sFontFamily]  = pWidgetFalseFntFam->get();
-    boolFalse[_sFontAttr]    = pWidgetFalseFntAtt->get();
+    boolFalse[cEnumVal::ixFontFamily()]  = pWidgetFalseFntFam->get();
+    boolFalse[cEnumVal::ixFontAttr()]    = pWidgetFalseFntAtt->get();
 
     cError *pe = nullptr;
     static const QString tn = "cEnumValsEdit";
@@ -1082,23 +1082,23 @@ void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
     val.clear();
     QString ev = _ev;
     if (ev.isNull()) ev = QString("");  // Üres lehet, de NULL nem!
-    val[_sEnumValName]  = ev;
-    val[_sEnumTypeName] = enumValTypeName;
+    val[cEnumVal::ixEnumValName()]  = ev;
+    val[cEnumVal::ixEnumTypeName()] = enumValTypeName;
     int n = val.completion(*pq);
     QString t;
     switch (n) {
     case 1:     // Beolvasva
         break;
     case 0:     // Not found (az enumVal-t törölte a completion() metódus)
-        val[_sEnumValName]  = ev;
-        val[_sEnumTypeName] = enumValTypeName;
+        val[cEnumVal::ixEnumValName()]  = ev;
+        val[cEnumVal::ixEnumTypeName()] = enumValTypeName;
         val.setText(cEnumVal::LTX_VIEW_SHORT, ev);
         val.setText(cEnumVal::LTX_VIEW_LONG,  ev);
         break;
     default:    EXCEPTION(AMBIGUOUS, n, val.identifying());
     }
-    pWidgetValBgColor->set(val[_sBgColor]);
-    pWidgetValFgColor->set(val[_sFgColor]);
+    pWidgetValBgColor->set(val[cEnumVal::ixBgColor()]);
+    pWidgetValFgColor->set(val[cEnumVal::ixFgColor()]);
     t = val.getText(cEnumVal::LTX_VIEW_SHORT, ev);
     pUi->lineEditValShort->setText(t);
     t = val.getText(cEnumVal::LTX_VIEW_LONG, ev);
@@ -1106,8 +1106,8 @@ void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
     pUi->lineEditValValNote->setText(val.getNote());
     t = val.getText(cEnumVal::LTX_TOOL_TIP, ev);
     pUi->textEditValValTolTip->setText(t);
-    pWidgetValFntFam->set(val[_sFontFamily]);
-    pWidgetValFntAtt->set(val[_sFontAttr]);
+    pWidgetValFntFam->set(val[cEnumVal::ixFontFamily()]);
+    pWidgetValFntAtt->set(val[cEnumVal::ixFontAttr()]);
 }
 
 
@@ -1119,15 +1119,15 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
     pEnumTypeType = cColEnumType::fetchOrGet(*pq, enumTypeTypeName);
 
     type.clear();
-    type[_sEnumTypeName] = enumTypeTypeName;
-    type.fetch(*pq, false, type.mask(type.ixTypeName(), type.ixValName()));
+    type[cEnumVal::ixEnumTypeName()] = enumTypeTypeName;
+    type.fetch(*pq, false, type.mask(type.ixEnumTypeName(), type.ixEnumValName()));
     int n = pq->size();
     QString t;
     switch (n) {
     case 1:     // Readed one record
         break;
     case 0:     // Not found, init defaults
-        type[_sEnumTypeName] = enumTypeTypeName;
+        type[cEnumVal::ixEnumTypeName()] = enumTypeTypeName;
         type.setText(cEnumVal::LTX_VIEW_SHORT, enumTypeTypeName);
         type.setText(cEnumVal::LTX_VIEW_LONG,  enumTypeTypeName);
         break;
@@ -1171,15 +1171,18 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     QString typeName = mCat(pUi->comboBoxBoolTable->currentText(), fn);
 
     boolType.clear();
-    boolType.setName(_sEnumTypeName, typeName);
-    boolType.clear(_sEnumValName);
+    boolType.setName(cEnumVal::ixEnumTypeName(), typeName);
+    boolType.clear(cEnumVal::ixEnumValName());
     QString t;
-    int n = boolType.completion(*pq);
+    int n = boolType.fetch(*pq, false, boolType.mask(cEnumVal::ixEnumValName(), cEnumVal::ixEnumTypeName()));
     switch (n) {
     case 1:     // beolvasva
         break;
     case 0:     // not found
-        boolType.setName(_sEnumTypeName, typeName);
+        boolType.setName(cEnumVal::ixEnumTypeName(), typeName);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL, n);
     }
     t = boolType.getText(cEnumVal::LTX_VIEW_SHORT);
     pUi->lineEditBoolTypeShort->setText(t);
@@ -1190,17 +1193,20 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pUi->textEditBoolToolTip->setText(t);
 
     boolTrue.clear();
-    boolTrue.setName(_sEnumTypeName, typeName);
-    boolTrue.setName(_sEnumValName,  _sTrue);
+    boolTrue.setName(cEnumVal::ixEnumTypeName(), typeName);
+    boolTrue.setName(cEnumVal::ixEnumValName(),  _sTrue);
     n = boolTrue.completion(*pq);
     switch (n) {
     case 1:     // beolvasva
         break;
     case 0:     // not found
-        boolTrue.setName(_sEnumTypeName, typeName);
-        boolTrue.setName(_sEnumValName,  _sTrue);
+        boolTrue.setName(cEnumVal::ixEnumTypeName(), typeName);
+        boolTrue.setName(cEnumVal::ixEnumValName(),  _sTrue);
         boolTrue.setText(cEnumVal::LTX_VIEW_SHORT, langBool(true));
         boolTrue.setText(cEnumVal::LTX_VIEW_LONG,  langBool(true));
+        break;
+    default:
+        EXCEPTION(EPROGFAIL, n);
     }
     t = boolTrue.getText(cEnumVal::LTX_VIEW_SHORT, _sTrue);
     pUi->lineEditTrueShort->setText(t);
@@ -1209,23 +1215,26 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pUi->lineEditTrueNote->setText(boolTrue.getNote());
     t = boolTrue.getText(cEnumVal::LTX_TOOL_TIP);
     pUi->textEditBoolToolTip->setText(t);
-    pWidgetTrueBgColor->set(boolTrue[_sBgColor]);
-    pWidgetTrueFgColor->set(boolTrue[_sFgColor]);
-    pWidgetTrueFntFam->set(boolTrue[_sFontFamily]);
-    pWidgetTrueFntAtt->set(boolTrue[_sFontAttr]);
+    pWidgetTrueBgColor->set(boolTrue[cEnumVal::ixBgColor()]);
+    pWidgetTrueFgColor->set(boolTrue[cEnumVal::ixFgColor()]);
+    pWidgetTrueFntFam->set(boolTrue[cEnumVal::ixFontFamily()]);
+    pWidgetTrueFntAtt->set(boolTrue[cEnumVal::ixFontAttr()]);
 
     boolFalse.clear();
-    boolFalse.setName(_sEnumTypeName, typeName);
-    boolFalse.setName(_sEnumValName,  _sFalse);
+    boolFalse.setName(cEnumVal::ixEnumTypeName(), typeName);
+    boolFalse.setName(cEnumVal::ixEnumValName(),  _sFalse);
     n = boolFalse.completion(*pq);
     switch (n) {
     case 1:     // beolvasva
         break;
     case 0:     // not found
-        boolFalse.setName(_sEnumTypeName, typeName);
-        boolFalse.setName(_sEnumValName,  _sFalse);
+        boolFalse.setName(cEnumVal::ixEnumTypeName(), typeName);
+        boolFalse.setName(cEnumVal::ixEnumValName(),  _sFalse);
         boolFalse.setText(cEnumVal::LTX_VIEW_SHORT, langBool(false));
         boolFalse.setText(cEnumVal::LTX_VIEW_LONG,  langBool(false));
+        break;
+    default:
+        EXCEPTION(EPROGFAIL, n);
     }
     t = boolFalse.getText(cEnumVal::LTX_VIEW_SHORT, _sFalse);
     pUi->lineEditFalseShort->setText(t);
@@ -1234,10 +1243,10 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pUi->lineEditFalseNote->setText(boolFalse.getNote());
     t = boolFalse.getText(cEnumVal::LTX_TOOL_TIP, _sFalse);
     pUi->textEditBoolToolTip->setText(t);
-    pWidgetFalseBgColor->set(boolFalse[_sBgColor]);
-    pWidgetFalseFgColor->set(boolFalse[_sFgColor]);
-    pWidgetFalseFntFam->set(boolFalse[_sFontFamily]);
-    pWidgetFalseFntAtt->set(boolFalse[_sFontAttr]);
+    pWidgetFalseBgColor->set(boolFalse[cEnumVal::ixBgColor()]);
+    pWidgetFalseFgColor->set(boolFalse[cEnumVal::ixFgColor()]);
+    pWidgetFalseFntFam->set(boolFalse[cEnumVal::ixFontFamily()]);
+    pWidgetFalseFntAtt->set(boolFalse[cEnumVal::ixFontAttr()]);
 }
 
 const enum ePrivilegeLevel cEnumValsEdit::rights = PL_ADMIN;

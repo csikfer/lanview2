@@ -2788,7 +2788,7 @@ QString cLangTexts::tableName2textTypeName(const QString& _tn)
 }
 */
 
-void cLangTexts::saveText(QSqlQuery& _q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, int _lid, QStringList texts)
+void cLangTexts::saveText(QSqlQuery& _q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, int _lid, const QStringList& texts)
 {
     int n = pEnumType->enumValues.size();
     QString qs;

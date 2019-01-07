@@ -63,7 +63,7 @@ QVariant cStringListModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return QVariant();
     int row = index.row();
-    if (row >= (int)_stringList.size()) return QVariant();
+    if (row >= _stringList.size()) return QVariant();
     switch (role) {
     case Qt::TextAlignmentRole:
         return int(Qt::AlignLeft | Qt::AlignVCenter);
@@ -228,7 +228,7 @@ QVariant cPolygonTableModel::data(const QModelIndex &index, int role) const
     if (!index.isValid()) return QVariant();
     int row = index.row();
     int col = index.column();
-    if (row >= (int)_polygon.size()) return QVariant();
+    if (row >= _polygon.size()) return QVariant();
     switch (role) {
     case Qt::TextAlignmentRole:
         return int(Qt::AlignRight | Qt::AlignVCenter);
@@ -839,14 +839,14 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, con
     int i;
     if (eList.isEmpty()) for (i = 0; i < pType->enumValues.size(); ++i) eList << i;
     foreach (i, eList) {
-        const QString& typeName = *(const QString *)pType;
+        const QString& typeName = *static_cast<const QString *>(pType);
         const cEnumVal& ee = cEnumVal::enumVal(typeName, i, __ex);
         if (ee.isEmpty_()) {
             cEnumVal *p = new cEnumVal;
             p->setParent(this);
             const QString& s = pType->enumValues.at(i);
-            p->setName(cEnumVal::ixTypeName(),  typeName);
-            p->setName(cEnumVal::ixValName(),   s);
+            p->setName(cEnumVal::ixEnumTypeName(),  typeName);
+            p->setName(cEnumVal::ixEnumValName(),   s);
             enumVals << p;
         }
         else {
@@ -941,7 +941,7 @@ void cEnumListModel::currentIndex(int i)
     QPalette pal = palette;
     if (!isContIx(enumVals, i)) return ;
     const cEnumVal& ev = *enumVals[i];
-    QString type = ev.getName(cEnumVal::ixTypeName());
+    QString type = ev.getName(cEnumVal::ixEnumTypeName());
     int     eval = ev.toInt();
     if (!ev.isNull(cEnumVal::ixBgColor())) pal.setColor(QPalette::Button,     bgColorByEnum(type, eval));
     if (!ev.isNull(cEnumVal::ixFgColor())) pal.setColor(QPalette::ButtonText, fgColorByEnum(type, eval));

@@ -894,8 +894,8 @@ CRECCNTR(cEnumVal) CRECDEFD(cEnumVal)
 
 int cEnumVal::_ixBgColor  = NULL_IX;
 int cEnumVal::_ixFgColor  = NULL_IX;
-int cEnumVal::_ixTypeName = NULL_IX;
-int cEnumVal::_ixValName  = NULL_IX;
+int cEnumVal::_ixEnumTypeName = NULL_IX;
+int cEnumVal::_ixEnumValName  = NULL_IX;
 int cEnumVal::_ixFontFamily=NULL_IX;
 int cEnumVal::_ixFontAttr = NULL_IX;
 QList<cEnumVal *> cEnumVal::enumVals;
@@ -906,12 +906,12 @@ QStringList     cEnumVal::forcedList;
 const cRecStaticDescr&  cEnumVal::descr() const
 {
     if (initPDescr<cEnumVal>(_sEnumVals, _sPublic)) {
-        _ixTypeName = _descr_cEnumVal().toIndex(_sEnumTypeName);
-        _ixValName  = _descr_cEnumVal().toIndex(_sEnumValName);
-        _ixBgColor  = _descr_cEnumVal().toIndex(_sBgColor);
-        _ixFgColor  = _descr_cEnumVal().toIndex(_sFgColor);
-        _ixFontFamily=_descr_cEnumVal().toIndex(_sFontFamily);
-        _ixFontAttr = _descr_cEnumVal().toIndex(_sFontAttr);
+        STFIELDIX(cEnumVal, EnumTypeName);
+        STFIELDIX(cEnumVal, EnumValName);
+        STFIELDIX(cEnumVal, BgColor);
+        STFIELDIX(cEnumVal, FgColor);
+        STFIELDIX(cEnumVal, FontFamily);
+        STFIELDIX(cEnumVal, FontAttr);
         QSqlQuery q = getQuery();
         textName2ix(q, _sNul);
     }
@@ -922,7 +922,7 @@ cEnumVal::cEnumVal(const QString _tn)
     : cRecord()
 {
     _set(cEnumVal::descr());
-    _fields[_ixTypeName] = _tn;
+    _fields[_ixEnumTypeName] = _tn;
     pTextList = new QStringList();
     *pTextList << _tn << _tn;   // LTX_VIEW_LONG, LTX_VIEW_SHORT
 }
@@ -931,16 +931,19 @@ cEnumVal::cEnumVal(const QString _tn, const QString _en)
     : cRecord()
 {
     _set(cEnumVal::descr());
-    _fields[_ixTypeName] = _tn;
-    _fields[_ixValName]  = _en;
+    _fields[_ixEnumTypeName] = _tn;
+    _fields[_ixEnumValName]  = _en;
     pTextList = new QStringList();
     *pTextList << _en << _en;   // LTX_VIEW_LONG, LTX_VIEW_SHORT
 }
 
 int cEnumVal::replace(QSqlQuery &__q, eEx __ex)
 {
-    static QBitArray where;
-    if (where.isEmpty()) where = mask(_ixTypeName, _ixValName);
+    static QBitArray where, sets;
+    if (where.isEmpty()) {
+        where = mask(_ixEnumTypeName, _ixEnumValName);
+        sets  = ~(where | mask(idIndex()));
+    }
     int count = rows(false, where);
     int r = R_ERROR;
     bool isExist;
@@ -949,10 +952,10 @@ int cEnumVal::replace(QSqlQuery &__q, eEx __ex)
     case 1: isExist = true;   break;
     default:
         EXCEPTION(EDATA, count, QObject::trUtf8("Database data error multiple enum record: %1::%2")
-                  .arg(quotedString(getName(_ixValName)), getName(_ixTypeName)) );
+                  .arg(quotedString(getName(_ixEnumValName)), getName(_ixEnumTypeName)) );
     }
     if (isExist) {
-        count = update(__q, false, ~where, where, __ex);
+        count = update(__q, false, sets, where, __ex);
         switch (count) {
         case 0:
             if (__ex != EX_IGNORE) EXCEPTION(EQUERY, 0, identifying());
@@ -990,18 +993,18 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 
 int cEnumVal::toInt(eEx __ex) const
 {
-    if (isNull(_ixTypeName)) {
+    if (isNull(_ixEnumTypeName)) {
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, trUtf8("Type name is NULL"));
         return ENUM_INVALID;
     }
     QSqlQuery q = getQuery();
-    const cColEnumType *t = cColEnumType::fetchOrGet(q, getName(_ixTypeName), __ex);
+    const cColEnumType *t = cColEnumType::fetchOrGet(q, getName(_ixEnumTypeName), __ex);
     if (t == nullptr) return ENUM_INVALID;
-    if (isNull(_ixValName)) {
+    if (isNull(_ixEnumValName)) {
         if (__ex > EX_ERROR) EXCEPTION(EDATA, 0, trUtf8("Object is type descriptor"));
         return ENUM_INVALID;
     }
-    return (int)t->str2enum(getName(_ixValName));
+    return (int)t->str2enum(getName(_ixEnumValName));
 }
 
 void cEnumVal::setView(const QStringList& _tt)
@@ -1070,9 +1073,9 @@ void cEnumVal::fetchEnumVals()
     QSqlQuery q2 = getQuery();
     // All enum records, sorted by type name
     if (ev.fetch(q, false, ba, ev.iTab(_sEnumTypeName))) do {
-        QString typeName = ev.getName(ev.ixTypeName());     // type name
-        QString val      = ev.getName(ev.ixValName());      // value name
-        bool    isType   = ev.isNull(ev.ixValName());       // Not value, is type
+        QString typeName = ev.getName(ev.ixEnumTypeName());     // type name
+        QString val      = ev.getName(ev.ixEnumValName());      // value name
+        bool    isType   = ev.isNull(ev.ixEnumValName());       // Not value, is type
         if (currentTypeName != typeName) {  // This record belongs to another type
             if (!currentTypeName.isEmpty()) {   // Old type, closure
                 QVector<cEnumVal *>& v = mapValues[currentTypeName];
