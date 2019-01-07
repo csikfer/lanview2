@@ -137,7 +137,15 @@ enum eImageType {
     IT_PPM,
     IT_XBM,
     IT_XPM,
-    IT_BIN              ///< Other binary
+    IT_BIN,             ///< Other binary
+    IT_ICON
+};
+
+/// Image useability
+enum eUsability {
+    US_MAP,     ///< image is map
+    US_FLAG,    ///< image is flag
+    US_ICON     ///< image is icon
 };
 
 /// kép típus névvel tér vissza, a megadott konstans alapján.
@@ -155,6 +163,9 @@ EXT_ const QString&   imageType(int __e, enum eEx __ex = EX_ERROR);
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, enum eEx __ex = EX_ERROR);
+
+EXT_ int usability(const QString& __n, eEx __ex);
+EXT_ const QString&  usability(int __e, eEx __ex);
 
 /// @enum eNodeType
 /// Hálózati elemek típus azonosítók (set)
@@ -417,7 +428,12 @@ public:
     /// Ha az objektum tartalmaz bináris adatot, és típusa valamilyen kép (nem BIN, vagy NULL), akkor true értékkel tár vissza
     bool dataIsPic() const {
         if (isNull(_ixImageType)) return false;
-        if (getId(_ixImageType) == IT_BIN) return false;
+        if (getId(_ixImageType) >= IT_BIN) return false;
+        if (isNull(_ixImageData)) return false;
+        return true;
+    }
+    bool dataIsIcon() const {
+        if (getId(_ixImageType) == IT_ICON) return false;
         if (isNull(_ixImageData)) return false;
         return true;
     }

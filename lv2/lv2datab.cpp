@@ -523,9 +523,11 @@ QVariant cColStaticDescr::set(const QVariant& _f, qlonglong &str) const
 {
     QVariant r =_f;
     bool ok = true;
-    if ((eColType != FT_TEXT && variantIsString(_f) && _f.toString().isEmpty())
-     || isNumNull(_f)) {
-        r.clear();
+    if (eColType != FT_BINARY) {
+        if ((eColType != FT_TEXT && variantIsString(_f) && _f.toString().isEmpty())
+         || isNumNull(_f)) {
+            r.clear();
+        }
     }
     if (r.isNull()) {
         ok = isNullable || !colDefault.isEmpty();

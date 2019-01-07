@@ -386,7 +386,6 @@ static const QString _sHide         = "hide";
 static const QString _sAutoset      = "autoset";
 static const QString _sCollision    = "collision";
 static const QString _sColumn       = "column";
-static const QString _sMap          = "map";
 static const QString _sFilter       = "filter";
 // _sRefine
 

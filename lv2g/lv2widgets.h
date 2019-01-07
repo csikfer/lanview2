@@ -980,7 +980,7 @@ private slots:
     void togleStrikeout(bool f);
 };
 
-/// @class cTextWidget
+/// @class cLTextWidget
 /// Egy text megjelenítése és módosítása
 /// Megjelenítés egy QLineEdit -el
 class LV2GSHARED_EXPORT cLTextWidget : public cFieldEditBase {

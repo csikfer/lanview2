@@ -420,6 +420,7 @@ const cRecStaticDescr&  cImage::descr() const
         STFIELDIX(cImage, ImageData);
         STFIELDIX(cImage, ImageHash);
         CHKENUM(_ixImageType, imageType);
+        CHKENUM(_sUsabilityes, usability);
     }
     return *_pRecordDescr;
 }
@@ -468,6 +469,7 @@ int imageType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sXBM, Qt::CaseInsensitive)) return IT_XBM;
     if (0 == __n.compare(_sXPM, Qt::CaseInsensitive)) return IT_XPM;
     if (0 == __n.compare(_sBIN, Qt::CaseInsensitive)) return IT_BIN;
+    if (0 == __n.compare(_sIcon,Qt::CaseInsensitive)) return IT_ICON;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -486,6 +488,7 @@ const QString&  imageType(int __e, eEx __ex)
     case IT_XBM:        return _sXBM;
     case IT_XPM:        return _sXPM;
     case IT_BIN:        return _sBIN;
+    case IT_ICON:       return _sIcon;
     default:
         if (__ex) EXCEPTION(EDATA, __e);
     }
@@ -509,6 +512,27 @@ const char *   _imageType(int __e, eEx __ex)
         if (__ex) EXCEPTION(EDATA, __e);
     }
     return __sNul;
+}
+
+int usability(const QString& __n, eEx __ex)
+{
+    if (0 == __n.compare(_sMap,  Qt::CaseInsensitive)) return US_MAP;
+    if (0 == __n.compare(_sFlag, Qt::CaseInsensitive)) return US_FLAG;
+    if (0 == __n.compare(_sIcon, Qt::CaseInsensitive)) return US_ICON;
+    if (__ex) EXCEPTION(EDATA, -1, __n);
+    return ENUM_INVALID;
+}
+
+const QString&  usability(int __e, eEx __ex)
+{
+    switch (__e) {
+    case US_MAP:    return _sMap;
+    case US_FLAG:   return _sFlag;
+    case US_ICON:   return _sIcon;
+    default:
+        if (__ex) EXCEPTION(EDATA, __e);
+    }
+    return _sNul;
 }
 
 /* ------------------------------ places ------------------------------ */

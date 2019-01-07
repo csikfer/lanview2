@@ -806,13 +806,13 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     setTableItemText(t, pTableWidget, row, CEV_SHORT);
     t = rec.getText(cEnumVal::LTX_VIEW_LONG, _val);
     setTableItemText(t,  pTableWidget, row, CEV_LONG);
-    pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[_sBgColor], false, nullptr);
+    pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[cEnumVal::ixBgColor()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget);
-    pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[_sFgColor], false, nullptr);
+    pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[cEnumVal::ixFgColor()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget);
-    pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], nullptr);
+    pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[cEnumVal::ixFontFamily()], nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget);
-    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], false, nullptr);
+    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[cEnumVal::ixFontAttr()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget);
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
     t = rec.getText(cEnumVal::LTX_TOOL_TIP);

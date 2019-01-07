@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1019</width>
-    <height>893</height>
+    <width>1458</width>
+    <height>950</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,7 +58,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabEnumValue">
       <attribute name="title">
@@ -185,6 +185,20 @@
          </item>
          <item row="12" column="1">
           <widget class="QTextEdit" name="textEditValValTolTip"/>
+         </item>
+         <item row="13" column="0">
+          <widget class="QLabel" name="labelValiIconLabel">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="1">
+          <widget class="QLabel" name="labelValIcon">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -337,6 +351,11 @@
          <column>
           <property name="text">
            <string>Betű hatás</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Ikon</string>
           </property>
          </column>
          <column>
@@ -522,6 +541,20 @@
                </property>
               </widget>
              </item>
+             <item row="8" column="1">
+              <widget class="QLabel" name="labelTruesIcon">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="labelTrueIconLabel">
+               <property name="text">
+                <string>Ikon :</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
           </layout>
@@ -529,7 +562,7 @@
          <widget class="QWidget" name="layoutWidget">
           <layout class="QVBoxLayout" name="verticalLayoutFalse">
            <item>
-            <widget class="QLabel" name="label_17">
+            <widget class="QLabel" name="labelFalse">
              <property name="font">
               <font>
                <weight>75</weight>
@@ -608,6 +641,20 @@
               <widget class="QLabel" name="labelFalseFntAtt">
                <property name="text">
                 <string>Karakter attibutum(ok) :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QLabel" name="labelFalseIcon">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="labelFalseIconLabel">
+               <property name="text">
+                <string>Ikon :</string>
                </property>
               </widget>
              </item>
