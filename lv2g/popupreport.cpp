@@ -109,9 +109,15 @@ cMsgBox::cMsgBox(eDataCharacter _dc, QWidget *par)
     }
     else {
         setWindowTitle(dcViewLong(_dc));
-        QString icon = eVal.getName(_sIcon);
-        if (icon.isEmpty()) setStandardIcon(_dc);
-        else setIconPixmap(QPixmap(icon));
+        QString s = eVal.getName(_sIcon);
+        QIcon icon;
+        QList<QSize> sizes;
+        if (s.isEmpty() || (sizes = (icon = resourceIcon(s)).availableSizes()).isEmpty()) {
+            setStandardIcon(_dc);
+        }
+        else {
+            setIconPixmap(icon.pixmap(sizes.first()));
+        }
     }
 }
 

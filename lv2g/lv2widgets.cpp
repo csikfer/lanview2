@@ -15,15 +15,18 @@
 
 bool pixmap(const cImage& o, QPixmap &_pixmap)
 {
-    bool f = o.dataIsPic();
-    if (!f) return false;
-    const char * _type = o._getType();
-    QByteArray   _data = o.getImage();
-    if (!_pixmap.loadFromData(_data, _type)) return false;
-    return true;
+    bool f;
+    f = o.dataIsPic();
+    if (f) {
+        const char * _type = o._getType();
+        QByteArray   _data = o.getImage();
+        if (!_pixmap.loadFromData(_data, _type)) return false;
+        return true;
+    }
+    return false;
 }
 
-bool setPixmap(cImage im, QLabel *pw)
+bool setPixmap(const cImage& im, QLabel *pw)
 {
     QPixmap pm;
     bool r = pixmap(im, pm);
@@ -1165,11 +1168,13 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     pPlainTextEdit = nullptr;
     pComboBox      = nullptr;
     pModel         = nullptr;
+    modeltype      = NO_MODEL;
     isPwd          = false;
     const QString sSetOfValue = "setOfValue";
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
-    if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
+    bool isText = _colDescr.eColType == cColStaticDescr::FT_TEXT;
+    if (isText && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget type
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
 //        QSizePolicy spol = pPlainTextEdit->sizePolicy();
@@ -1178,13 +1183,26 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pLayout->addWidget(pPlainTextEdit);
         _height = 4;
     }
-    else if (!_readOnly && _fieldShape.isFeature(sSetOfValue)) {
+    else if (!_readOnly && isText && _fieldShape.isFeature(sSetOfValue)) {
         _wType = FEW_COMBO_BOX;  // Widget type
         pEditWidget = pComboBox = new QComboBox;
         pComboBox->setEditable(true);
         pLayout->addWidget(pComboBox);
-        pModel = new cRecFieldSetOfValueModel(_fr, _fieldShape.feature(sSetOfValue));
-        pModel->joinWith(pComboBox);
+        cRecFieldSetOfValueModel *pm = new cRecFieldSetOfValueModel(_fr, _fieldShape.feature(sSetOfValue));
+        pModel = pm;
+        pm->joinWith(pComboBox);
+        modeltype = SETOF_MODEL;
+    }
+    else if (!_readOnly && isText && _fieldShape.getBool(_sFieldFlags, FF_IMAGE)) {   // Icon name from resource
+        _wType = FEW_COMBO_BOX;  // Widget type
+        pEditWidget = pComboBox = new QComboBox;
+        pComboBox->setEditable(false);
+        pLayout->addWidget(pComboBox);
+        cResourceIconsModel *pm = new cResourceIconsModel();
+        pModel = pm;
+        pm->joinWith(pComboBox);
+        modeltype = ICON_MODEL;
+        _nullable = false;
     }
     else {
         _wType = FEW_LINE;  // Widget type
@@ -1230,7 +1248,17 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
             break;
         case FEW_COMBO_BOX:
-            pModel->setCurrent(_fr);
+            switch (modeltype) {
+            case SETOF_MODEL:
+                static_cast<cRecFieldSetOfValueModel *>(pModel)->setCurrent(_fr);
+                break;
+            case ICON_MODEL:
+                static_cast<cResourceIconsModel *>(pModel)->setCurrent(_fr);
+                break;
+            case NO_MODEL:
+                EXCEPTION(EPROGFAIL, 0);
+
+            }
             connect(pComboBox, SIGNAL(currentTextChanged(QString)),  this, SLOT(setFromEdit()));
             break;
         default:
@@ -1281,10 +1309,27 @@ int cFieldLineWidget::set(const QVariant& v)
             txt = _colDescr.toView(*pq, _value);
         }
         switch (_wType) {
-        case FEW_LINE:      pLineEdit->setText(txt);            break;
-        case FEW_LINES:     pPlainTextEdit->setPlainText(txt);  break;
-        case FEW_COMBO_BOX: pModel->setCurrent(txt);            break;
-        default:            EXCEPTION(EPROGFAIL, _wType)
+        case FEW_LINE:
+            pLineEdit->setText(txt);
+            break;
+        case FEW_LINES:
+            pPlainTextEdit->setPlainText(txt);
+            break;
+        case FEW_COMBO_BOX:
+            switch (modeltype) {
+            case SETOF_MODEL:
+                static_cast<cRecFieldSetOfValueModel *>(pModel)->setCurrent(txt);
+                break;
+            case ICON_MODEL:
+                static_cast<cResourceIconsModel *>(pModel)->setCurrent(txt);
+                break;
+            case NO_MODEL:
+                EXCEPTION(EPROGFAIL, 0);
+
+            }
+            break;
+        default:
+            EXCEPTION(EPROGFAIL, _wType)
         }
     }
     return r;
@@ -2195,12 +2240,12 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             }
             if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
-        setConstFilter();   // 'refine' allowed, special filter not allowed
         if (_tf.isFeature(_sFilter)) {
             _filter = F_SIMPLE;
             _height = 2;
         }
     }
+    setConstFilter();   // 'refine'
 
     actId = qlonglong(__fr);
     if (_nullable || _hasDefault) {

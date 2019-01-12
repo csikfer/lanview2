@@ -58,7 +58,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabEnumValue">
       <attribute name="title">
@@ -189,16 +189,23 @@
          <item row="13" column="0">
           <widget class="QLabel" name="labelValiIconLabel">
            <property name="text">
-            <string>TextLabel</string>
+            <string>Icon :</string>
            </property>
           </widget>
          </item>
          <item row="13" column="1">
-          <widget class="QLabel" name="labelValIcon">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0">
+           <item>
+            <widget class="QComboBox" name="comboBoxValIcon"/>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonValIcon">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -292,6 +299,16 @@
             </size>
            </property>
           </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelTypeIcon">
+           <property name="text">
+            <string>Ikon :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QComboBox" name="comboBoxTypeIcon"/>
          </item>
         </layout>
        </item>
@@ -439,6 +456,16 @@
          <item row="5" column="1">
           <widget class="QTextEdit" name="textEditBoolToolTip"/>
          </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="labelBoolIcon">
+           <property name="text">
+            <string>Ikon :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QComboBox" name="comboBoxBoolIcon"/>
+         </item>
         </layout>
        </item>
        <item>
@@ -507,6 +534,20 @@
                </property>
               </widget>
              </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="labelTrueFontFam">
+               <property name="text">
+                <string>Karakter típus :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="labelTrueFntAtt">
+               <property name="text">
+                <string>Karakter attibutum(ok) :</string>
+               </property>
+              </widget>
+             </item>
              <item row="6" column="0">
               <widget class="QLabel" name="labelTrueNote">
                <property name="text">
@@ -527,33 +568,15 @@
              <item row="7" column="1">
               <widget class="QTextEdit" name="textEditTrueToolTip"/>
              </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="labelTrueFontFam">
-               <property name="text">
-                <string>Karakter típus :</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="labelTrueFntAtt">
-               <property name="text">
-                <string>Karakter attibutum(ok) :</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QLabel" name="labelTruesIcon">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
              <item row="8" column="0">
               <widget class="QLabel" name="labelTrueIconLabel">
                <property name="text">
                 <string>Ikon :</string>
                </property>
               </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QComboBox" name="comboBoxTrueIcon"/>
              </item>
             </layout>
            </item>
@@ -617,6 +640,13 @@
                </property>
               </widget>
              </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="labelFalseFntAtt">
+               <property name="text">
+                <string>Karakter attibutum(ok) :</string>
+               </property>
+              </widget>
+             </item>
              <item row="6" column="0">
               <widget class="QLabel" name="labelFalseNote">
                <property name="text">
@@ -637,26 +667,15 @@
              <item row="7" column="1">
               <widget class="QTextEdit" name="textEditFalseToolTip"/>
              </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="labelFalseFntAtt">
-               <property name="text">
-                <string>Karakter attibutum(ok) :</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QLabel" name="labelFalseIcon">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
              <item row="8" column="0">
               <widget class="QLabel" name="labelFalseIconLabel">
                <property name="text">
                 <string>Ikon :</string>
                </property>
               </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QComboBox" name="comboBoxFalseIcon"/>
              </item>
             </layout>
            </item>

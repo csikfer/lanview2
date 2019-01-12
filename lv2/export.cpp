@@ -388,7 +388,6 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
         b += lineText(_sTOOL_TIP,   f, cTableShapeField::LTX_TOOL_TIP);
         b += lineText(_sWHATS_THIS, f, cTableShapeField::LTX_WHATS_THIS);
         b += features(f);
-        b += paramLine(q, "EXPRESSION",   f[_sExpression]);
         b += paramLine(q, "FLAG",         f[_sFieldFlags], QVariant(QStringList()));
         b += paramLine(q, "DEFAULT VALUE",f[_sDefaultValue]);
         b += paramLine(q, "VIEW RIGHTS",  f[_sViewRights]);

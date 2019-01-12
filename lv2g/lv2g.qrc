@@ -60,5 +60,25 @@
         <file>icons/tag_st.png</file>
         <file>icons/servers.png</file>
         <file>icons/map.png</file>
+        <file>icons/dialog-no-2.ico</file>
+        <file>icons/dialog-ok-2.ico</file>
+        <file>icons/view-preview.ico</file>
+        <file>icons/configure-2.ico</file>
+        <file>icons/help.ico</file>
+        <file>icons/red-from.png</file>
+        <file>icons/red-from-to.png</file>
+        <file>icons/red-to.png</file>
+        <file>icons/bug.ico</file>
+        <file>icons/bell.ico</file>
+        <file>icons/disable.ico</file>
+        <file>icons/status.png</file>
+        <file>icons/off.ico</file>
+        <file>icons/dialog-ok-4.ico</file>
+        <file>icons/swap.png</file>
+        <file>icons/emblem-question-red.ico</file>
+        <file>icons/emblem-important-2.ico</file>
+        <file>icons/emblem-question-yellow.ico</file>
+        <file>icons/emblem-readonly.ico</file>
+        <file>icons/emblem-what.ico</file>
     </qresource>
 </RCC>

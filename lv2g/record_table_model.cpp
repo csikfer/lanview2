@@ -84,7 +84,11 @@ cRecordViewModelBase::~cRecordViewModelBase()
 
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
-    if (column.isImage) {
+    QString s, et;
+    switch (column.isImage) {
+    case cRecordTableColumn::IS_NOT_IMAGE:
+        break;
+    case cRecordTableColumn::IS_IMAGE:
         switch (role) {
         case Qt::DecorationRole: {
             qlonglong id;
@@ -103,8 +107,32 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         default:
             break;
         }
+        break;
+    case cRecordTableColumn::IS_ICON:
+    case cRecordTableColumn::IS_ICON_NAME:
+        if (cRecordTableColumn::IS_ICON == column.isImage) {
+            et = column.enumTypeName;
+            s = cEnumVal::enumVal(et, int(pr->getId(fix)), EX_IGNORE).getName(_sIcon);
+        }
+        else {  // IS_ICON_NAME
+            s = pr->getName(fix);
+        }
+        if (!s.isEmpty()) {
+            switch (role) {
+            case Qt::DecorationRole:
+                return QVariant(resourceIcon(s));
+            case Qt::TextColorRole:
+            case Qt::BackgroundRole:
+            case Qt::DisplayRole:
+            case Qt::FontRole:
+                return QVariant();
+            default:
+                break;
+            }
+        }
+        break;
     }
-    else if (isTextId) fix = column.textIndex;
+    if (isTextId) fix = column.textIndex;
     qlonglong& ff = column.fieldFlags;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
@@ -130,7 +158,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         return dcRole(DC_NULL,    role);
     }
     // Az opcionális mező dekorációs típus neve (vagy egy " = " string)
-    QString et = column.enumTypeName;
+    et = column.enumTypeName;
     if (et == _sEquSp) {    // A mező tartalma a szín
         QString c = pr->getName(fix);
         if (!isTextId && !c.isEmpty()) switch (role) {
@@ -153,7 +181,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         }
         return dcRole(column.dataCharacter, role);
     }
-    int        id = (int)pr->getId(fix);
+    int        id = int(pr->getId(fix));
     int        dd = column.dataCharacter;
     switch (role) {
     case Qt::TextColorRole: return (ff & ENUM2SET(FF_FG_COLOR)) ? fgColorByEnum(et, id) : dcFgColor(dd);
@@ -175,7 +203,6 @@ QVariant cRecordViewModelBase::_headerData(const QAbstractItemModel *pModel, int
         case Qt::DisplayRole:
             if (_viewRowNumbers) return QVariant(section + _firstRowNumber +1) ;
             return r;
-            break;
         case Qt::TextAlignmentRole:
         case Qt::ForegroundRole:
         case Qt::BackgroundRole:
@@ -183,17 +210,15 @@ QVariant cRecordViewModelBase::_headerData(const QAbstractItemModel *pModel, int
             break;
         }
         break;
-    case Qt::Horizontal:
+    case Qt::Horizontal: {
+        const cRecordTableColumn& column = *columns[section];
         switch (role) {
-        case Qt::DisplayRole:
-            if (_viewHeader) return columns[section]->header;
-            return r;
-            break;
-        default:
-            return dcRole(DC_HEAD, role);
-            break;
+        case Qt::DisplayRole:    return column.headerText;
+        case Qt::DecorationRole: return column.headerIcon;
+        case Qt::ToolTipRole:    return column.headerToolTyp;
+        default:                 return dcRole(DC_HEAD, role);
         }
-        break;
+    }
     }
 //    _DBGFNL() << " = " << quotedString(r.toString()) << endl;
     r = pModel->QAbstractItemModel::headerData(section, orientation, role);

@@ -353,7 +353,7 @@ private slots:
     void changeCurrentIndex(int i);
 };
 
-
+/// @class cZoneListModel
 /// Model: cRecordListModel leszármazottja. A zónákat  (a place_groups táblát) kérdezi le.
 /// A konstans szűrési feltétel a típus, ami 'zone' lesz a konstruktorban beállítva.
 /// Ha az eredmény string tartalmazza az 'all' zónát akkor az mindíg az első elem.
@@ -412,7 +412,7 @@ enum eNullType {
 class LV2GSHARED_EXPORT cEnumListModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    cEnumListModel(QObject * __par = nullptr) : QAbstractListModel(__par) { pType = nullptr; pq = nullptr; pComboBox = nullptr, nullType = NT_NOT_NULL; }
+    cEnumListModel(QObject * __par = nullptr) : QAbstractListModel(__par) { pType = nullptr; pq = nullptr; pComboBox = nullptr; nullType = NT_NOT_NULL; }
     cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = nullptr);
     cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = nullptr);
     ~cEnumListModel();
@@ -440,6 +440,9 @@ signals:
     void currentEnumChanged(int e);
 };
 
+/// @class cRecFieldSetOfValueModel
+/// QComboBox model. Egy mező érték megadása listából.
+/// A 'setofvalue' feature egy mező szerkesztésénél (editálható QComboBox)
 class LV2GSHARED_EXPORT cRecFieldSetOfValueModel : public QSqlQueryModel {
     Q_OBJECT
 public:
@@ -453,5 +456,23 @@ protected:
     QString     sql;
     QComboBox  *        pComboBox;
 };
+
+/// @class cResourceIconsModel
+class LV2GSHARED_EXPORT cResourceIconsModel : public QAbstractListModel {
+    Q_OBJECT
+public:
+    cResourceIconsModel();
+    virtual int rowCount(const QModelIndex &parent) const;
+    virtual QVariant data(const QModelIndex &index, int role) const;
+    void refresh();
+    void joinWith(QComboBox * _pComboBox);
+    void setCurrent(const QString& s);
+    int indexOf(const QString& s);
+protected:
+    const QStringList&  list;
+    QList<QIcon>        iconList;
+    QComboBox  *        pComboBox;
+};
+
 
 #endif // LV2MODELS_H

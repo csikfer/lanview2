@@ -42,3 +42,11 @@ design	Mappa: a vagyonvédelmi hardvare elemek gyártási dokumentációja
 
 firmware Mappa: a vagyonvédelmi hw elemek fimware
 
+
+Megjegyzés: Jelenleg én aktívan használom a programot, és a felmerülő igények szerint bővítem is. Sajnos a fejlesztő 'csapat'
+létszéma (1 fő) nincs igazán öszhangban a feladat méretével. Ezért idő hiányában, továbbá a visszajelzések teljes hiányának
+következtében viszonylag kevés figyelmet kap a modosítások problémamentes lekövetése, a dokumentációk frissítése.
+Ezért, ha valaki használni kívánja a programot, az legyen szíves jelezzen!
+A program honosítható, ehhez minden elemet tartalmaz, de a honosításhoz nekem sem időm, sem kellő nyelvtudásom mincsen.
+
+

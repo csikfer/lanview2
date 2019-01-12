@@ -1630,7 +1630,7 @@ static inline cEnumVal& actEnum()
 %token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
-%token      DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
+%token      DISABLE_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
@@ -2724,7 +2724,6 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
         | FIELD_T strs FEATURES_T str ';'       { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
-        | FIELD_T str EXPRESSION_T str ';'      { pTableShape->fset(sp2s($2), _sExpression, sp2s($4)); }
         | FIELD_T strs FLAG_T fflags ';'        { pTableShape->fsets(slp2sl($2), _sFieldFlags, $4); }
         | FIELD_T strs FLAG_T bool_ fflags ';'  { foreach (QString fn, *$2) {
                                                       cTableShapeField *pTS = pTableShape->shapeFields.get(fn);
@@ -2784,7 +2783,6 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
         | FEATURES_T str ';'            { pTableShapeField->setName(_sFeatures, sp2s($2)); }
-        | EXPRESSION_T str ';'          { pTableShapeField->setName(_sExpression, sp2s($2)); }
         | FLAG_T fflags ';'             { pTableShapeField->setId(_sFieldFlags, $2); }
         | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
         | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
@@ -3121,7 +3119,7 @@ static const struct token {
     TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
     TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
     TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
-    TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
+    TOK(DISABLE) TOK(PREFIX) TOK(RESET) TOK(CACHE)
     TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
@@ -3136,7 +3134,6 @@ static const struct token {
     { "PROTO",  PROTOCOL_T },
     { "SEQ",    SEQUENCE_T },
     { "DEL",    DELETE_T },
-    { "EXPR",   EXPRESSION_T },
     { "CAT",    CATEGORY_T },
     { "FG",     FOREGROUND_T },
     { "BG",     BACKGROUND_T },

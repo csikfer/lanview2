@@ -877,7 +877,6 @@ STRDEF(TableShapeFields, "table_shape_fields")
   STRDEF(ToolTip, "tool_tip")
   STRDEF(Raw, "raw")
   STRDEF(Image, "image")
- STRDEF(Expression, "expression")
  STRDEF(DefaultValue, "default_value")
  dnl features, tool_typ, is_read_only, view_rights, edit_rights flag
  STRDEF(TableFieldName, "table_field_name")

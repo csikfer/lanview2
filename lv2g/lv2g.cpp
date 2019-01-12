@@ -17,9 +17,8 @@ const QString lv2g::sHorizontal             = "Horizontal";
 const QString lv2g::sVertical               = "Vertical";
 const QString lv2g::sNativeMenubar          = "nativeMenubar";
 
-QIcon         lv2g::iconNull;
-QIcon         lv2g::iconDefault;
-
+QIcon   lv2g::iconNull;
+QIcon   lv2g::iconDefault;
 
 lv2g::lv2g() :
     lanView()//,
@@ -71,10 +70,10 @@ lv2g::lv2g() :
         cEnumVal::enumForce(q, _sFiltertype);
     }
     // Init icons...
-    iconNull.   addFile(":/icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
-    iconNull.   addFile(":/icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
-    iconDefault.addFile(":/icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
-    iconDefault.addFile(":/icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
+    iconNull.   addFile("://icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
+    iconNull.   addFile("://icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
+    iconDefault.addFile("://icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
+    iconDefault.addFile("://icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
 }
 
 lv2g::~lv2g()
@@ -118,6 +117,38 @@ void lv2g::splashMessage(const QString& msg)
         // QApplication::processEvents(QEventLoop::AllEvents);
     }
 }
+
+/* ******** */
+
+const QString iconBaseName = "://icons/";
+
+const QStringList& resourceIconList()
+{
+    static QStringList il;
+    if (il.isEmpty()) {
+        int n = iconBaseName.size();
+        QDirIterator it(iconBaseName);
+        while (it.hasNext()) {
+            QString s = it.next();
+            il << s.mid(n);
+        }
+        il.sort(Qt::CaseInsensitive);
+        il.push_front(_sNul);        // NULL
+    }
+    return il;
+}
+
+int indexOfResourceIcon(const QString& _s)
+{
+    if (_s.isEmpty()) return 0; // Index of NULL
+    QString s;
+    if (_s.startsWith(iconBaseName)) s = _s.mid(iconBaseName.size());
+    else                             s = _s;
+    int ix = resourceIconList().indexOf(s);
+    return ix > 0 ? ix : 0;
+}
+
+/* ******** */
 
 int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
 {
@@ -399,22 +430,34 @@ void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcId)
 QVariant enumRole(const cEnumVal& ev, int role, int e)
 {
     QString s;
+    QVariant r;
     switch (role) {
     case Qt::TextColorRole:
         s = ev.getName(cEnumVal::ixFgColor());
-        return s.isEmpty() ? QVariant() : QColor(s);
+        if (!s.isEmpty()) r = QColor(s);
+        break;
     case Qt::BackgroundRole:
         s = ev.getName(cEnumVal::ixBgColor());
-        return s.isEmpty() ? QVariant() : QColor(s);
+        if (!s.isEmpty()) r = QColor(s);
+        break;
     case Qt::DisplayRole:
-        return ev.getText(cEnumVal::LTX_VIEW_SHORT, ev.getName());
+        r = ev.getText(cEnumVal::LTX_VIEW_SHORT, ev.getName());
+        break;
     case Qt::ToolTipRole:
-        return ev.getText(cEnumVal::LTX_TOOL_TIP);
+        s = ev.getText(cEnumVal::LTX_TOOL_TIP);
+        if (!s.isEmpty()) r = s;
+        break;
     case Qt::FontRole:
-        return fontByEnum(ev.typeName(), e == NULL_IX ? ev.toInt() : e);
+        r = fontByEnum(ev.typeName(), e == NULL_IX ? ev.toInt() : e);
+        break;
+    case Qt::DecorationRole:
+        s = ev.getName(_sIcon);
+        if (!s.isEmpty()) r = resourceIcon(s);
+        break;
     default:
-        return QVariant();
+        break;
     }
+    return r;
 }
 
 QVariant enumRole(const QString& _t, int id, int role, const QString& dData)

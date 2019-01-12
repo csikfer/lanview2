@@ -130,7 +130,6 @@ enum eImageType {
     IT_BMP,             ///< Windows bit map
     IT_GIF,             ///< GIF
     IT_JPG,             ///< Jpeg
-    IT_JPEG,            ///< Jpeg
     IT_PNG,             ///< PNG
     IT_PBM,
     IT_PGM,
@@ -138,14 +137,12 @@ enum eImageType {
     IT_XBM,
     IT_XPM,
     IT_BIN,             ///< Other binary
-    IT_ICON
 };
 
 /// Image useability
 enum eUsability {
     US_MAP,     ///< image is map
     US_FLAG,    ///< image is flag
-    US_ICON     ///< image is icon
 };
 
 /// kép típus névvel tér vissza, a megadott konstans alapján.
@@ -418,9 +415,9 @@ public:
     /// A bináris adattartalmat állítja be
     void setImage(const QByteArray& __a)   { set(_ixImageData, QVariant(__a)); }
     /// Az kép típusának a nevét adja vissza
-    const char * _getType() const    { return _imageType(getId(_ixImageType)); }
+    const char * _getType() const    { return _imageType(int(getId(_ixImageType))); }
     /// Az kép típusának a nevét adja vissza
-    const QString& getType() const   { return imageType(getId(_ixImageType)); }
+    const QString& getType() const   { return imageType(int(getId(_ixImageType))); }
     /// A típust állítja be.
     void setType(const QString& __t)   { set(_ixImageType, QVariant(__t)); }
     /// Ha az objektum tartalmaz bináris adatot, és típusa nem valamilyen kép, vagy NULL (vagyis BIN), akkor true értékkel tár vissza
@@ -429,11 +426,6 @@ public:
     bool dataIsPic() const {
         if (isNull(_ixImageType)) return false;
         if (getId(_ixImageType) >= IT_BIN) return false;
-        if (isNull(_ixImageData)) return false;
-        return true;
-    }
-    bool dataIsIcon() const {
-        if (getId(_ixImageType) == IT_ICON) return false;
         if (isNull(_ixImageData)) return false;
         return true;
     }

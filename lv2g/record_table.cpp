@@ -546,7 +546,7 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     pType   = new QComboBox(&par);
     pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
     pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->trUtf8("Le"), &par);
-    pRowName->setText(field.header.toString());
+    pRowName->setText(field.headerText.toString());
     pRowName->setReadOnly(true);
     types |= enum2set(OT_NO);   // Ha esetleg a nincs rendezés nem lenne benne a set-ben
     for (int i = 0; enum2set(i) <= types ; ++i) {
@@ -1102,9 +1102,10 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     : parent(&table)
     , shapeField(sf)
     , recDescr(table.recDescr())
-    , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
+    , headerText(string2variant(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE)))
 {
-    isImage = false;
+    QString s;
+    isImage = IS_NOT_IMAGE;
     // 'raw' => features use by view() methode
     if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
         sf.features().insert(_sRaw, _sNul);
@@ -1132,27 +1133,53 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
         else if (pColDescr->eColType == cColStaticDescr::FT_REAL) {
             dataAlign |= Qt::AlignRight;
         }
-        // 'XX_color' vagy 'font' vagy 'tool_tip' flag esetén kell az enum típusa!
-        if (pColDescr->eColType == cColStaticDescr::FT_ENUM ||pColDescr->eColType == cColStaticDescr::FT_BOOLEAN) {
-            if (fieldFlags & ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
-                if (pColDescr->eColType == cColStaticDescr::FT_ENUM) {
-                    enumTypeName = pColDescr->enumType();
+        switch (pColDescr->eColType) {
+        case cColStaticDescr::FT_ENUM:
+        case cColStaticDescr::FT_BOOLEAN:
+            if (pColDescr->eColType == cColStaticDescr::FT_ENUM) {
+                enumTypeName = pColDescr->enumType();
+            }
+            else {  // FT_BOOLEAN
+                enumTypeName = mCat(recDescr.tableName(), *pColDescr);
+            }
+            {
+                const cEnumVal& ev = cEnumVal::enumVal(enumTypeName, ENUM_INVALID, EX_IGNORE);  // ENUM_INVALID = index of type
+                if (fieldFlags & ENUM2SET(FF_IMAGE)) {
+                    isImage = IS_ICON;
+                    headerIcon = resourceIcon2Variant(ev.getName(_sIcon));
                 }
-                else {  // FT_BOOLEAN
-                    enumTypeName = mCat(recDescr.tableName(), *pColDescr);
+                headerToolTyp = string2variant(ev.getText(_sToolTip));
+            }
+            break;
+        case cColStaticDescr::FT_TEXT:
+            if (fieldFlags & ENUM2SET2(FF_BG_COLOR, FF_FG_COLOR)) {
+                enumTypeName = _sEquSp; // Field is color
+            }
+            else if (fieldFlags & ENUM2SET(FF_IMAGE)) {
+                isImage = IS_ICON_NAME;
+            }
+            break;
+        case cColStaticDescr::FT_INTEGER:
+            if (fieldFlags & ENUM2SET(FF_IMAGE)) {
+                if (pColDescr->compare(_sImageId) == 0      // Field name is image_id
+                 || (pColDescr->fKeyType != cColStaticDescr::FT_NONE && pColDescr->fKeyTable.compare(_sImages) == 0)) {   // Foreign key to images
+                    isImage = IS_IMAGE;
                 }
             }
+            break;
+        default:
+            break;
         }
-        else if (fieldFlags & ENUM2SET2(FF_BG_COLOR, FF_FG_COLOR)) {
-            enumTypeName = _sEquSp; // Field is color
-        }
-        if (fieldFlags & ENUM2SET(FF_IMAGE) && pColDescr->eColType == cColStaticDescr::FT_INTEGER) {
-            if (pColDescr->compare(_sImageId) == 0      // Field name is image_id
-             || (pColDescr->fKeyType != cColStaticDescr::FT_NONE && pColDescr->fKeyTable.compare(_sImages) == 0)) {   // Foreign key to images
-                isImage = true;
-            }
+        s = shapeField.getName(_sIcon);
+        if (!s.isEmpty()) {
+            headerIcon = resourceIcon2Variant(s);
         }
     }
+    s = shapeField.getText(_sToolTip);
+    if (!s.isEmpty()) {
+        headerToolTyp = s;
+    }
+    if (headerText.isNull() && headerIcon.isNull()) headerText = shapeField.getName();
 }
 
 bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
@@ -2370,6 +2397,7 @@ void cRecordTable::initSimple(QWidget * pW)
     pButtons    = new cDialogButtons(buttons);
     pMainLayout = new QVBoxLayout(pW);
     pTableView  = new QTableView();
+    pTableView->horizontalHeader()->setMinimumSectionSize(24); // Icon
     pModel      = new cRecordTableModel(*this);
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
@@ -2412,8 +2440,6 @@ void cRecordTable::empty()
 {
     pTableModel()->clear();
 }
-
-
 
 void cRecordTable::first()
 {

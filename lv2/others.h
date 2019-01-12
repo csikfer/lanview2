@@ -109,10 +109,11 @@ EXT_ QStringList set2lst(const QString&(&f)(int e, eEx __ex), qlonglong _set, en
 
 /// @def ENUM2SET
 ///
-#define ENUM2SET(n)              (1LL << (n))
-#define ENUM2SET2(n,n2)         ((1LL << (n)) | (1LL << (n2)))
-#define ENUM2SET3(n,n2,n3)      ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)))
-#define ENUM2SET4(n,n2,n3,n4)   ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)) | (1LL << (n4)))
+#define ENUM2SET(n)                  (1LL << (n))
+#define ENUM2SET2(n,n2)             ((1LL << (n)) | (1LL << (n2)))
+#define ENUM2SET3(n,n2,n3)          ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)))
+#define ENUM2SET4(n,n2,n3,n4)       ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)) | (1LL << (n4)))
+#define ENUM2SET5(n,n2,n3,n4,n5)    ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)) | (1LL << (n4)) | (1LL << (n5)))
 
 /// Megvizsgálja hogy a set ként értelmezett s bitmap-ban az e-vel reprezentált enumerációs érték be van-e állítva
 static inline bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }

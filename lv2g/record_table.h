@@ -220,14 +220,16 @@ public:
     int                     textIndex;
     const cColStaticDescr * pColDescr;
     const cColEnumType *    pTextEnum;
-    const QVariant          header;
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
     int                     dataCharacter;  // eDataCharacter
     QString                 enumTypeName;
     qlonglong               fieldFlags;
     static qlonglong        type2filter(int _type);
-    bool                    isImage;
+    enum eIsImage { IS_NOT_IMAGE, IS_IMAGE, IS_ICON, IS_ICON_NAME }  isImage;
+    QVariant                headerText;
+    QVariant                headerIcon;
+    QVariant                headerToolTyp;
 };
 
 /// A tábla viszonyát meghatározó flag értékek
@@ -346,25 +348,25 @@ public:
     virtual void close(int r = QDialog::Accepted);
     /// Újraolvassa az adatbázist
     virtual void refresh(bool all = true);
-    /// Egy új rekord neszúrása
+    /// Inser new row/record
     virtual void insert(bool _similar = false);
-    /// Egy kijelölt rekord modosítása
+    /// Modify selected row/record
     virtual void modify(enum eEx __ex = EX_ERROR);
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void first();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void next();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void prev();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void last();
     /// Egy vagy több kijelölt rekord törlése
     virtual void remove();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void reset();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void putIn();
-    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    /// Optional method to implement. If it is not re-implemented, but it is still called, it drop exception
     virtual void takeOut();
     /// Kijeleölt sorok neveinek a vágólapra másolása, mint lista
     virtual void copy();
@@ -374,7 +376,7 @@ public:
     virtual void report();
 
     virtual void setEditButtons() = 0;
-    /// Nem kötelezően implementálandü virtuális metódus. Alapértelmezetten nem csinál semmit.
+    /// Optional method to implement. By default, you are not doing anything.
     virtual void setPageButtons();
     /// Alapértelmezetten a setEditButtons(); és setPageButtons(); metódusokat hívja
     virtual void setButtons();

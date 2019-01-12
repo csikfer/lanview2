@@ -999,3 +999,64 @@ int cRecFieldSetOfValueModel::indexOf(const QString &s)
    if (pComboBox == nullptr) return NULL_IX;
    return pComboBox->findText(s);
 }
+
+/************************************************ cResourceIconsModel ****************************************************/
+
+cResourceIconsModel::cResourceIconsModel()
+    : QAbstractListModel()
+    , list(resourceIconList())
+{
+    pComboBox = nullptr;
+    foreach (QString s, list) {
+        iconList << resourceIcon(s);
+    }
+}
+
+int cResourceIconsModel::rowCount(const QModelIndex &parent) const
+{
+    (void)parent;
+    return list.size();
+}
+
+QVariant cResourceIconsModel::data(const QModelIndex &index, int role) const
+{
+    QVariant r;
+    int row = index.row();
+    if (isContIx(list, row)) {
+        switch (role) {
+        case Qt::DisplayRole:
+            r = list.at(row);
+            break;
+        case Qt::DecorationRole:
+            r = iconList.at(row);
+            break;
+        default:
+            break;
+        }
+    }
+    return r;
+}
+
+void cResourceIconsModel::refresh()
+{
+    ;
+}
+
+void cResourceIconsModel::joinWith(QComboBox * _pComboBox)
+{
+    pComboBox = _pComboBox;
+    pComboBox->setModel(this);
+}
+
+void cResourceIconsModel::setCurrent(const QString& s)
+{
+    if (pComboBox == nullptr) return;
+    int ix = s.isEmpty() ? 0 : pComboBox->findText(s);
+    pComboBox->setCurrentIndex(ix >= 0 ? ix : 0);
+}
+
+int cResourceIconsModel::indexOf(const QString& s)
+{
+    if (s.isEmpty()) return 0;
+    return list.indexOf(s);
+}

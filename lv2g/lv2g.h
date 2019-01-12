@@ -96,19 +96,28 @@ public:
     static QIcon        iconDefault;
 };
 
+// Icon from resouce
+_GEX const QString iconBaseName;
+_GEX const QStringList& resourceIconList();
+_GEX int indexOfResourceIcon(const QString& _s);
+inline QString resourceIconPath(const QString& s) { return s.isEmpty() ? s : iconBaseName + s; }
+inline QString resourceIconPath(int ix)           { const QStringList& il = resourceIconList(); return isContIx(il, ix) ? resourceIconPath(il.at(ix)) : _sNul; }
+inline QIcon resourceIcon(const QString& s)       { return s.isEmpty() ? QIcon() : QIcon(resourceIconPath(s)); }
+inline QIcon resourceIcon(int ix)                 { QString s = resourceIconPath(ix); return s.isEmpty() ? QIcon() : QIcon(s); }
+template <typename K> QVariant resourceIcon2Variant(const K& k) { QString s = resourceIconPath(k); return s.isEmpty() ? QVariant() : QVariant(QIcon(s)); }
+inline QVariant string2variant(const QString& s)  { return s.isEmpty() ? QVariant() : QVariant(s); }
+
 _GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
 
-// typedef QList<QHBoxLayout *> hBoxLayoutList;
-// typedef QList<QLabel *>     labelList;
 
-static inline QWidget *newFrame(int _st, QWidget * p = nullptr)
+inline QWidget *newFrame(int _st, QWidget * p = nullptr)
 {
     QFrame *pFrame = new QFrame(p);
     pFrame->setFrameStyle(_st);
     return pFrame;
 }
-static inline QWidget *newHLine(QWidget * p = nullptr) { return newFrame(QFrame::HLine, p); }
-static inline QWidget *newVLine(QWidget * p = nullptr) { return newFrame(QFrame::VLine, p); }
+inline QWidget *newHLine(QWidget * p = nullptr) { return newFrame(QFrame::HLine, p); }
+inline QWidget *newVLine(QWidget * p = nullptr) { return newFrame(QFrame::VLine, p); }
 
 class cMenuAction;
 // A  megjelenítéshez egy segéd osztály,
@@ -117,7 +126,7 @@ class LV2GSHARED_EXPORT cIntSubObj : public QWidget {
     Q_OBJECT
 public:
     cIntSubObj(QMdiArea *par);
-    QWidget *pWidget() { return (QWidget *)this; }
+    QWidget *pWidget() { return static_cast<QWidget *>(this); }
 protected:
     QMdiSubWindow *pSubWindow;
 
@@ -164,9 +173,9 @@ inline const QFont& fontByEnum(const cEnumVal& ev) {
     return fontByEnum(ev.typeName(), ev.toInt());
 }
 
-static inline const QColor&  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
-static inline const QColor&  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
-static inline const QFont&   dcFont(int id)      { return fontByEnum(_sDatacharacter, id); }
+inline const QColor&  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
+inline const QColor&  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
+inline const QFont&   dcFont(int id)      { return fontByEnum(   _sDatacharacter, id); }
 
 static inline void enumSetColor(QWidget *pW, const QString& _t, int id) {
     const QColor& bgc = bgColorByEnum(_t, id);
@@ -197,9 +206,9 @@ static inline void enumSetFgColor(QWidget *pW, const QString& _t, int id) {
     }
 }
 
-static inline void dcSetColor(QWidget *pW, int id) { enumSetColor(pW, _sDatacharacter, id); }
-static inline void dcSetBgColor(QWidget *pW, int id) { enumSetBgColor(pW, _sDatacharacter, id); }
-static inline void dcSetFbColor(QWidget *pW, int id) { enumSetFgColor(pW, _sDatacharacter, id); }
+inline void dcSetColor(  QWidget *pW, int id) { enumSetColor(  pW, _sDatacharacter, id); }
+inline void dcSetBgColor(QWidget *pW, int id) { enumSetBgColor(pW, _sDatacharacter, id); }
+inline void dcSetFbColor(QWidget *pW, int id) { enumSetFgColor(pW, _sDatacharacter, id); }
 
 /// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
 /// @param pW A beállítandó wideget pointere.
@@ -223,7 +232,7 @@ _GEX void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcI
 /// rendelt paraméterek alapján.
 /// @param pW A beállítandó wideget pointere.
 /// @param id Az enumeráció numerikus értéke
-static inline void dcSetD(QWidget *pW, int id) { enumSetD(pW, _sDatacharacter, id); }
+inline void dcSetD(QWidget *pW, int id) { enumSetD(pW, _sDatacharacter, id); }
 
 /// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján,
 /// Továbbá a widget szövegének  beállítása a viewShort mező alapján.

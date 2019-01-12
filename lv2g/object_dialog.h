@@ -195,6 +195,8 @@ class cEnumValRow;
         cColorWidget   *pFgColorWidget;
         cFontFamilyWidget *pFntFamWidget;
         cFontAttrWidget *pFntAttWidget;
+        QComboBox       *pComboBoxIcon;
+        cResourceIconsModel *pModelIcon;
     };
 
     enum {
@@ -203,7 +205,7 @@ class cEnumValRow;
     };
 #endif
 
-inline static void formSetField(QFormLayout *pFormLayout, QWidget *pLabel, QWidget *pField)
+inline void formSetField(QFormLayout *pFormLayout, QWidget *pLabel, QWidget *pField)
 {
     int i, row;
     QFormLayout::ItemRole ir;
@@ -239,23 +241,28 @@ protected:
     cColorWidget       *pWidgetValFgColor;
     cFontFamilyWidget  *pWidgetValFntFam;
     cFontAttrWidget    *pWidgetValFntAtt;
+    cResourceIconsModel *pModelValIcon;
     // Type
     QString             enumTypeTypeName;
     cEnumVal            type;
     const cColEnumType *pEnumTypeType;
     QList<cEnumValRow *>    rows;
+    cResourceIconsModel *pModelTypeIcon;
     // Boolean
+    cResourceIconsModel *pModelBoolIcon;
         // true
     cEnumVal boolType, boolTrue, boolFalse;
     cColorWidget       *pWidgetTrueBgColor;
     cColorWidget       *pWidgetTrueFgColor;
     cFontFamilyWidget  *pWidgetTrueFntFam;
     cFontAttrWidget    *pWidgetTrueFntAtt;
+    cResourceIconsModel *pModelTrueIcon;
         // false
     cColorWidget       *pWidgetFalseBgColor;
     cColorWidget       *pWidgetFalseFgColor;
     cFontFamilyWidget  *pWidgetFalseFntFam;
     cFontAttrWidget    *pWidgetFalseFntAtt;
+    cResourceIconsModel *pModelFalseIcon;
 signals:
     void closeWidget();
 protected slots:

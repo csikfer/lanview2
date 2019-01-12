@@ -3,6 +3,8 @@
 #include "lv2validator.h"
 #include "popupreport.h"
 
+#include <QComboBox>
+
 class pINetValidator;
 /*
 cObjectDialog::cObjectDialog(QWidget *parent, bool ro)
@@ -802,19 +804,33 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     }
     QTableWidgetItem *p = setTableItemText(_val, pTableWidget, row, CEV_NAME);
     p->setFlags(p->flags() & ~Qt::ItemIsEditable);
+
     t = rec.getText(cEnumVal::LTX_VIEW_SHORT, _val);
     setTableItemText(t, pTableWidget, row, CEV_SHORT);
+
     t = rec.getText(cEnumVal::LTX_VIEW_LONG, _val);
     setTableItemText(t,  pTableWidget, row, CEV_LONG);
+
     pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[cEnumVal::ixBgColor()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget);
+
     pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[cEnumVal::ixFgColor()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget);
+
     pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[cEnumVal::ixFontFamily()], nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget);
+
     pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[cEnumVal::ixFontAttr()], false, nullptr);
     pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget);
+
+    pComboBoxIcon = new QComboBox;
+    pModelIcon    = new cResourceIconsModel;
+    pModelIcon->joinWith(pComboBoxIcon);
+    pTableWidget->setCellWidget(row, CEV_ICON, pComboBoxIcon);
+    QString s = rec.getName(_sIcon);
+    pModelIcon->setCurrent(s);
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
+
     t = rec.getText(cEnumVal::LTX_TOOL_TIP);
     setTableItemText(t,  pTableWidget, row, CEV_TOOL_TIP);
 }
@@ -830,7 +846,14 @@ void cEnumValRow::save(QSqlQuery& q)
     rec[cEnumVal::ixFgColor()]     = pFgColorWidget->get();
     rec[cEnumVal::ixFontFamily()]  = pFntFamWidget->get();
     rec[cEnumVal::ixFontAttr()]    = pFntAttWidget->get();
-    rec[_sEnumValNote] = getTableItemText(pTableWidget, row, CEV_NOTE);
+    QString s;
+    s = getTableItemText(pTableWidget, row, CEV_NOTE);
+    if (s.isEmpty()) rec.clear(_sEnumValNote);
+    else             rec[_sEnumValNote] = s;
+    s = pComboBoxIcon->currentText();
+    if (s.isEmpty()) rec.clear(_sIcon);
+    else             rec[_sIcon] = s;
+
     rec.replace(q);
     rec.saveText(q);
 }
@@ -890,15 +913,23 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetValFntAtt->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt);
 
+    pModelValIcon = new cResourceIconsModel;
+    pModelValIcon->joinWith(pUi->comboBoxValIcon);
+
     connect(pUi->comboBoxValType,  SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValType(QString)));
     connect(pUi->comboBoxValVal,   SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValVal(QString)));
     pUi->comboBoxValType->addItems(typeList);
 
+
     // Type
+    pModelTypeIcon = new cResourceIconsModel;
+    pModelTypeIcon->joinWith(pUi->comboBoxTypeIcon);
     connect(pUi->comboBoxTypeType, SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumTypeType(QString)));
     pUi->comboBoxTypeType->addItems(typeList);
 
     // Boolean
+    pModelBoolIcon = new cResourceIconsModel;
+    pModelBoolIcon->joinWith(pUi->comboBoxBoolIcon);
         // true
     pWidgetTrueBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolTrue[_sBgColor], false, nullptr);
     pWidgetTrueBgColor->setParent(this);
@@ -915,6 +946,9 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], false, nullptr);
     pWidgetTrueFntAtt->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt);
+
+    pModelTrueIcon = new cResourceIconsModel;
+    pModelTrueIcon->joinWith(pUi->comboBoxTrueIcon);
         // false
     pWidgetFalseBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolFalse[_sBgColor], false, nullptr);
     pWidgetFalseBgColor->setParent(this);
@@ -932,6 +966,9 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetFalseFntAtt->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt);
 
+    pModelFalseIcon = new cResourceIconsModel;
+    pModelFalseIcon->joinWith(pUi->comboBoxFalseIcon);
+
     connect(pUi->comboBoxBoolTable, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolTable(QString)));
     connect(pUi->comboBoxBoolField, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolField(QString)));
     pUi->comboBoxBoolTable->addItems(tableList);
@@ -941,6 +978,7 @@ cEnumValsEditWidget::~cEnumValsEditWidget()
 {
     delete pq;
 }
+
 
 bool cEnumValsEditWidget::save()
 {
@@ -955,7 +993,6 @@ bool cEnumValsEditWidget::save()
 bool cEnumValsEditWidget::saveValue()
 {
     val.clearId();
-    val[_sEnumValNote]  = pUi->lineEditValValNote->text();
     val[cEnumVal::ixBgColor()]      = pWidgetValBgColor->get();
     val[cEnumVal::ixFgColor()]      = pWidgetValFgColor->get();
     val.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditValShort->text());
@@ -963,17 +1000,30 @@ bool cEnumValsEditWidget::saveValue()
     val.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditValValTolTip->toPlainText());
     val[cEnumVal::ixFontFamily()]   = pWidgetValFntFam->get();
     val[cEnumVal::ixFontAttr()]     = pWidgetValFntAtt->get();
+    QString s;
+    s = pUi->lineEditValValNote->text();
+    if (s.isEmpty()) val.clear(_sEnumValName);
+    else             val[_sEnumValNote]  = s;
+    s = pUi->comboBoxValIcon->currentText();
+    if (s.isEmpty()) val.clear(_sIcon);
+    else             val[_sIcon] = s;
 
     return cErrorMessageBox::condMsgBox(val.tryReplace(*pq, TS_NULL, true));
 }
 
 bool cEnumValsEditWidget::saveType()
 {
+    QString s;
     type.clearId();
-    type[_sEnumValNote]  = pUi->lineEditTypeTypeNote->text();
     type.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditTypeShort->text());
     type.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditTypeLong->text());
     type.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTypeTypeToolTip->toPlainText());
+    s  = pUi->lineEditTypeTypeNote->text();
+    if (s.isEmpty()) type.clear(_sEnumValNote);
+    else             type[_sEnumValNote] = s;
+    s = pUi->comboBoxTypeIcon->currentText();
+    if (s.isEmpty()) type.clear(_sIcon);
+    else             type[_sIcon] = s;
 
     cError *pe = nullptr;
     static const QString tn = "cEnumValsEdit";
@@ -999,16 +1049,21 @@ bool cEnumValsEditWidget::saveType()
 bool cEnumValsEditWidget::saveBoolean()
 {
     QString type = mCat(pUi->comboBoxBoolTable->currentText(), pUi->comboBoxBoolField->currentText());
+    QString s;
 
     boolType.clear(cEnumVal::ixEnumValName());
-    boolType[_sEnumValNote]  = pUi->lineEditBoolTypeNote->text();
     boolType[cEnumVal::ixEnumTypeName()] = type;
     boolType.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditBoolTypeShort->text());
     boolType.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditBoolTypeLong->text());
     boolType.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditBoolToolTip->toPlainText());
+    s  = pUi->lineEditBoolTypeNote->text();
+    if (s.isEmpty()) boolType.clear(_sEnumValNote);
+    else             boolType[_sEnumValNote] = s;;
+    s = pUi->comboBoxBoolIcon->currentText();
+    if (s.isEmpty()) boolType.clear(_sIcon);
+    else             boolType[_sIcon] = s;
 
     boolTrue[cEnumVal::ixEnumValName()]  = _sTrue;
-    boolTrue[_sEnumValNote]  = pUi->lineEditTrueNote->text();
     boolTrue[cEnumVal::ixEnumTypeName()] = type;
     boolTrue[cEnumVal::ixBgColor()]      = pWidgetTrueBgColor->get();
     boolTrue[cEnumVal::ixFgColor()]      = pWidgetTrueFgColor->get();
@@ -1017,9 +1072,14 @@ bool cEnumValsEditWidget::saveBoolean()
     boolTrue.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTrueToolTip->toPlainText());
     boolTrue[cEnumVal::ixFontFamily()]   = pWidgetTrueFntFam->get();
     boolTrue[cEnumVal::ixFontAttr()]     = pWidgetTrueFntAtt->get();
+    s  = pUi->lineEditTrueNote->text();
+    if (s.isEmpty()) boolTrue.clear(_sEnumValNote);
+    else             boolTrue[_sEnumValNote] = s;
+    s = pUi->comboBoxTrueIcon->currentText();
+    if (s.isEmpty()) boolTrue.clear(_sIcon);
+    else             boolTrue[_sIcon] = s;
 
     boolFalse[cEnumVal::ixEnumValName()] = _sFalse;
-    boolFalse[_sEnumValNote] = pUi->lineEditFalseNote->text();
     boolFalse[cEnumVal::ixEnumTypeName()]= type;
     boolFalse[cEnumVal::ixBgColor()]     = pWidgetFalseBgColor->get();
     boolFalse[cEnumVal::ixFgColor()]     = pWidgetFalseFgColor->get();
@@ -1028,6 +1088,12 @@ bool cEnumValsEditWidget::saveBoolean()
     boolFalse.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditFalseToolTip->toPlainText());
     boolFalse[cEnumVal::ixFontFamily()]  = pWidgetFalseFntFam->get();
     boolFalse[cEnumVal::ixFontAttr()]    = pWidgetFalseFntAtt->get();
+    s  = pUi->lineEditFalseNote->text();
+    if (s.isEmpty()) boolFalse.clear(_sEnumValNote);
+    else             boolFalse[_sEnumValNote] = s;
+    s = pUi->comboBoxFalseIcon->currentText();
+    if (s.isEmpty()) boolFalse.clear(_sIcon);
+    else             boolFalse[_sIcon] = s;
 
     cError *pe = nullptr;
     static const QString tn = "cEnumValsEdit";
@@ -1108,6 +1174,8 @@ void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
     pUi->textEditValValTolTip->setText(t);
     pWidgetValFntFam->set(val[cEnumVal::ixFontFamily()]);
     pWidgetValFntAtt->set(val[cEnumVal::ixFontAttr()]);
+    t = val.getName(_sIcon);
+    pModelValIcon->setCurrent(t);
 }
 
 
@@ -1141,6 +1209,8 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
     pUi->lineEditTypeTypeNote->setText(type.getNote());
     t = type.getText(cEnumVal::LTX_TOOL_TIP);
     pUi->textEditTypeTypeToolTip->setText(t);
+    t = type.getName(_sIcon);
+    pModelTypeIcon->setCurrent(t);
 
     int row = 0;
     foreach (QString val, pEnumTypeType->enumValues) {
@@ -1191,6 +1261,8 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pUi->lineEditBoolTypeNote->setText(boolType.getNote());
     t = boolType.getText(cEnumVal::LTX_TOOL_TIP);
     pUi->textEditBoolToolTip->setText(t);
+    t = boolType.getName(_sIcon);
+    pModelBoolIcon->setCurrent(t);
 
     boolTrue.clear();
     boolTrue.setName(cEnumVal::ixEnumTypeName(), typeName);
@@ -1219,6 +1291,8 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pWidgetTrueFgColor->set(boolTrue[cEnumVal::ixFgColor()]);
     pWidgetTrueFntFam->set(boolTrue[cEnumVal::ixFontFamily()]);
     pWidgetTrueFntAtt->set(boolTrue[cEnumVal::ixFontAttr()]);
+    t = boolTrue.getName(_sIcon);
+    pModelTrueIcon->setCurrent(t);
 
     boolFalse.clear();
     boolFalse.setName(cEnumVal::ixEnumTypeName(), typeName);
@@ -1247,6 +1321,8 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     pWidgetFalseFgColor->set(boolFalse[cEnumVal::ixFgColor()]);
     pWidgetFalseFntFam->set(boolFalse[cEnumVal::ixFontFamily()]);
     pWidgetFalseFntAtt->set(boolFalse[cEnumVal::ixFontAttr()]);
+    t = boolFalse.getName(_sIcon);
+    pModelFalseIcon->setCurrent(t);
 }
 
 const enum ePrivilegeLevel cEnumValsEdit::rights = PL_ADMIN;
@@ -1265,6 +1341,4 @@ cEnumValsEdit::~cEnumValsEdit()
 {
 
 }
-
-/* ****** */
 

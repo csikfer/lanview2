@@ -22,7 +22,7 @@
 #include "lv2link.h"
 
 _GEX bool pixmap(const cImage& o, QPixmap &_pixmap);
-_GEX bool setPixmap(cImage im, QLabel *pw);
+_GEX bool setPixmap(const cImage& im, QLabel *pw);
 _GEX bool setPixmap(QSqlQuery& q, qlonglong iid, QLabel *pw);
 
 static inline qlonglong bitByButton(QAbstractButton *p, qlonglong m)
@@ -547,7 +547,8 @@ protected:
     QLineEdit      *pLineEdit;          ///< One line edit
     QPlainTextEdit *pPlainTextEdit;     ///< Multi line edit (huge flag/features)
     QComboBox      *pComboBox;          ///< ComboBox (setOfValues features)
-    cRecFieldSetOfValueModel *pModel;
+    QAbstractItemModel *pModel;
+    enum eModelType { NO_MODEL, SETOF_MODEL, ICON_MODEL }   modeltype;
     /// Ha  ez egy jelszó
     bool    isPwd;
 protected slots:

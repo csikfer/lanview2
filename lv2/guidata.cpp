@@ -369,7 +369,6 @@ int cTableShape::fetchFields(QSqlQuery& q, bool raw)
             p->modifyByFeature(_sOrdTypes);
             p->modifyByFeature(_sOrdInitSequenceNumber);
             p->modifyByFeature(_sFieldFlags);
-            p->modifyByFeature(_sExpression);
             p->modifyByFeature(_sDefaultValue);
             // Features => fieldFlags
             foreach (QString sFF, p->colDescr(_sFieldFlags).enumType().enumValues) {
