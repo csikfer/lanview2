@@ -287,7 +287,7 @@ cRecordTableModel::cRecordTableModel(cRecordTable& _rt)
 
 cRecordTableModel::~cRecordTableModel()
 {
-    clear();
+    // clear();
 }
 
 int cRecordTableModel::rowCount(const QModelIndex &) const

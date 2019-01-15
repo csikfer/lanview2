@@ -439,18 +439,21 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         }
         first = false;
     }
-    enum eNotifSwitch rs = RS_ON;
+    enum eNotifSwitch rs = RS_ON;   // State of pstat
     _DBGFN() << QChar(' ') << name() << endl;
     qlonglong parid = parentId(EX_IGNORE);
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
     cTable      tab;    // Interface table container
+    PDEB(INFO) << "Start snmp.getTable() in " << name() << endl;
     int r = snmp.getTable(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
+    PDEB(INFO) << "End snmp.getTable() = " << r << " in " << name() << endl;
     if (r) {
-        runMsg = trUtf8("SNMP get table error : %1 in %2 host, from %3 parent service.")
+        runMsg = trUtf8("SNMP get table error : %1 in %2; host : %3, from %4 parent service.")
                 .arg(snmp.emsg)
                 .arg(name())
+                .arg(lanView::getInstance()->selfNode().getName())
                 .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
         return RS_UNREACHABLE;
     }
@@ -461,16 +464,16 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     }
     for (i = 0; i < n; i++) {
         bool    ok;
-
         QString ifDescr = tab[_sIfDescr][i].toString();
         int     ifIndex = tab[_sIfIndex][i].toInt(&ok);
         if (!ok) {
             rs = RS_CRITICAL;
             QVariant v = tab[_sIfIndex][i];
-            runMsg += trUtf8("ifIndex (%1) is not numeric : %2, in %3 host, from %4 parent service. ")
+            runMsg += trUtf8("ifIndex (%1) is not numeric : %2, in %3; host : %4, from %5 parent service. ")
                     .arg(ifDescr)
                     .arg(debVariantToString(v))
                     .arg(name())
+                    .arg(lanView::getInstance()->selfNode().getName())
                     .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
             continue;
         }
