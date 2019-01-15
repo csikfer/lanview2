@@ -446,11 +446,12 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         EXCEPTION(ESNMP,-1, QString(QObject::trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
     cTable      tab;    // Interface table container
-    PDEB(INFO) << "Start snmp.getTable() in " << name() << endl;
+    QElapsedTimer timer;
+    timer.start();
     int r = snmp.getTable(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
-    PDEB(INFO) << "End snmp.getTable() = " << r << " in " << name() << endl;
+    runMsg  += trUtf8("SNMP query %1 milliseconds. Result : %1\n").arg(timer.elapsed()).arg(r);
     if (r) {
-        runMsg = trUtf8("SNMP get table error : %1 in %2; host : %3, from %4 parent service.")
+        runMsg += trUtf8("SNMP get table error : %1 in %2; host : %3, from %4 parent service.\n")
                 .arg(snmp.emsg)
                 .arg(name())
                 .arg(lanView::getInstance()->selfNode().getName())
@@ -469,7 +470,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         if (!ok) {
             rs = RS_CRITICAL;
             QVariant v = tab[_sIfIndex][i];
-            runMsg += trUtf8("ifIndex (%1) is not numeric : %2, in %3; host : %4, from %5 parent service. ")
+            runMsg += trUtf8("ifIndex (%1) is not numeric : %2, in %3; host : %4, from %5 parent service.\n")
                     .arg(ifDescr)
                     .arg(debVariantToString(v))
                     .arg(name())
