@@ -1149,7 +1149,7 @@ bool cInspector::doRun(bool __timed)
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (retStat & RS_STAT_MASK);
     } CATCHS(lastError);
-    // Ha többet csúszott az idúzítás mint 50%
+    // Ha többet csúszott az időzítés mint 50%
     if (__timed  && lastElapsedTime > ((interval*3)/2)) {
         // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
         statMsg = msgCat(statMsg, trUtf8("Az időzítés csúszott: %1 > %2").arg(lastElapsedTime).arg(interval));

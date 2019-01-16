@@ -116,8 +116,10 @@ protected:
     eNotifSwitch state;
     STATICIX(cServiceVar, ServiceVarTypeId)
     STATICIX(cServiceVar, ServiceVarValue)
-    STATICIX(cServiceVar, StateMsg)
     STATICIX(cServiceVar, VarState)
+    STATICIX(cServiceVar, LastTime)
+    STATICIX(cServiceVar, RawValue)
+    STATICIX(cServiceVar, StateMsg)
 protected:
     static QBitArray updateMask;
 public:

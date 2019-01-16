@@ -449,7 +449,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     QElapsedTimer timer;
     timer.start();
     int r = snmp.getTable(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
-    runMsg  += trUtf8("SNMP query %1 milliseconds. Result : %1\n").arg(timer.elapsed()).arg(r);
+    runMsg  += trUtf8("SNMP query %1 milliseconds. Result : %2\n").arg(timer.elapsed()).arg(r);
     if (r) {
         runMsg += trUtf8("SNMP get table error : %1 in %2; host : %3, from %4 parent service.\n")
                 .arg(snmp.emsg)
@@ -492,7 +492,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         QBitArray bitsSet(iface.cols(), false);     // bits: Field is changed
         iface.set(ixLastTouched, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
         bitsSet.setBit(ixLastTouched);
-        changeStringField(ifDescr, ixIfdescr,   iface, bitsSet);
+        changeStringField(ifDescr, ixIfdescr, iface, bitsSet);
 
         QString eMsg;
 

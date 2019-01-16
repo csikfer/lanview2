@@ -112,8 +112,10 @@ RECACHEDEF(cServiceVarType, srvartype)
 int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
 int cServiceVar::_ixServiceVarValue  = NULL_IX;
-int cServiceVar::_ixStateMsg         = NULL_IX;
 int cServiceVar::_ixVarState         = NULL_IX;
+int cServiceVar::_ixLastTime         = NULL_IX;
+int cServiceVar::_ixRawValue         = NULL_IX;
+int cServiceVar::_ixStateMsg         = NULL_IX;
 QBitArray                   cServiceVar::updateMask;
 tRecordList<cServiceVar>    cServiceVar::serviceVars;
 QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
@@ -135,12 +137,14 @@ cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
 const cRecStaticDescr&  cServiceVar::descr() const
 {
     if (initPDescr<cServiceVar>(_sServiceVars)) {
-        _ixFeatures         = _descr_cServiceVar().toIndex(_sFeatures);
-        _ixServiceVarTypeId = _descr_cServiceVar().toIndex(_sServiceVarTypeId);
-        _ixServiceVarValue  = _descr_cServiceVar().toIndex(_sServiceVarValue);
-        _ixStateMsg         = _descr_cServiceVar().toIndex(_sStateMsg);
-        _ixVarState         = _descr_cServiceVar().toIndex(_sVarState);
-        updateMask = _descr_cServiceVar().mask(_sLastTime, _sRawValue)
+        STFIELDIX(cServiceVar, Features);
+        STFIELDIX(cServiceVar, ServiceVarTypeId);
+        STFIELDIX(cServiceVar, ServiceVarValue);
+        STFIELDIX(cServiceVar, VarState);
+        STFIELDIX(cServiceVar, LastTime);
+        STFIELDIX(cServiceVar, RawValue);
+        STFIELDIX(cServiceVar, StateMsg);
+        updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
                    | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
     }
     return *_pRecordDescr;
@@ -186,7 +190,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, QString *pMsg)
     case SVT_ABSOLUTE:
         if (val < 0) {
             val = - val;
-            addMsg("Negált érték.");
+            // addMsg("Negált érték.");
         }
         r = updateVar(q, val, state);
         break;
@@ -206,8 +210,9 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, QString *pMsg)
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
-    QString m = getName(_ixStateMsg);
-    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
+    // QString m = getName(_ixStateMsg);
+    // if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
+    (void)pMsg;
     return r;
 }
 
@@ -216,11 +221,18 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, QString *pMs
     preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
     int r = RS_INVALID;
+    bool ok;
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
     case SVT_GAUGE:
-        r = updateVar(q, val, state);
+        if (val == get(_ixRawValue).toULongLong(&ok) && ok) {
+            touch(q);
+            r = RS_ON;
+        }
+        else {
+            r = updateVar(q, val, state);
+        }
         break;
     case SVT_COUNTER:
     case SVT_DCOUNTER:
@@ -232,8 +244,9 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, QString *pMs
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
-    QString m = getName(_ixStateMsg);
-    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
+//    QString m = getName(_ixStateMsg);
+//    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName()).arg(view(q, _ixVarState)) + m);
+    (void)pMsg;
     return r;
 }
 
@@ -280,8 +293,12 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state)
     if (!lastTime.isValid()) {
         lastCount = val;
         lastTime  = now;
-        addMsg(trUtf8("Első érték, nincs elég adat."));
+        // addMsg(trUtf8("Első érték, nincs elég adat."));
         return noValue(q, state);
+    }
+    if (lastCount == 0 && val == 0) {
+        touch(q);
+        return RS_ON;
     }
     qulonglong delta = 0;
     switch (svt) {
@@ -306,12 +323,11 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state)
         break;
     default:
         EXCEPTION(EPROGFAIL);
-        break;
     }
     lastCount = val;
-    qlonglong dt = lastTime.secsTo(now);
+    double dt = double(lastTime.msecsTo(now)) / 1000;
     lastTime = now;
-    double dVal = double(delta) / double(dt);
+    double dVal = double(delta) / dt;
     return updateVar(q, dVal, state);
 }
 
@@ -326,11 +342,10 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
     }
     double delta = val - lastValue;
     lastValue = val;
-    qlonglong dt = lastTime.secsTo(now);
+    double dt = double(lastTime.msecsTo(now)) / 1000;
     lastTime = now;
     double dVal = delta / double(dt);
     return updateVar(q, dVal, state);
-
 }
 
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state)
@@ -426,9 +441,9 @@ eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QVariant& 
     double p1 = _p1.toDouble(&ok1);
     double p2 = _p2.toDouble(&ok2);
     switch (ft) {
-    case FT_EQUAL:
-        r = !ok1 ? TS_NULL : (val == p1) ? TS_TRUE : TS_FALSE;
-        break;
+//    case FT_EQUAL:
+//        r = !ok1 ? TS_NULL : (val == p1) ? TS_TRUE : TS_FALSE;
+//        break;
     case FT_LITLE:
         r = !ok1 ? TS_NULL : (val < p1) ? TS_TRUE : TS_FALSE;
         break;
@@ -438,7 +453,8 @@ eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QVariant& 
     case FT_INTERVAL:
         r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
         break;
-    default:                EXCEPTION(EDATA, ft, identifying());
+    default:
+        EXCEPTION(EDATA, ft, identifying());
     }
     return _inverse ? inverse(r) : r;
 }

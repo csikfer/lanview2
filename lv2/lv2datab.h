@@ -2038,7 +2038,7 @@ public:
     /// @param __where Opcionális bitmap, a feltételben szereplő mezőkkel azonos indexű biteket 1-be kell állítani.
     ///        Alapértelmezetten az elsődleges kulcs mező(ke)t használja, ha egy üres tömböt adunk át,
     ///        ha viszont nem üres, de egyetlen true értéket sem tartalmazó tömböt adunk meg,
-    ///        akkor az a tábla összes elemét kiválasztja.
+    ///        akkor az a tábla összes rekordját kiválasztja, kivéve, ha vab deleted mező és értéke true.
     /// @return A módosított rekordok száma.
     int touch(QSqlQuery& q, const QString&_fn = _sNul, const QBitArray &_where = QBitArray());
     /// Az aktuális időt írja a megadott indexű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
