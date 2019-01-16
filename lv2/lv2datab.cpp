@@ -3793,14 +3793,15 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         }
     }
     sql.chop(1);    // Removing unnecessary commas from the end
+    sql += whereString(where);
     const int cols = descr().cols();
     QBitArray rbMask(cols, false);
     int idIx  = descr().idIndex(EX_IGNORE);
     switch (_toReadBack) {
     case RB_NO:
     case RB_NO_ONCE:
-    case RB_DEFAULT:    // ?
         break;
+    case RB_DEFAULT:    // ?
     case RB_YES:
         sql += " RETURNING *";
         rbMask.fill(true);
@@ -3810,7 +3811,6 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         rbMask[idIx] = true;
         break;
     }
-    sql += whereString(where) + " RETURNING *";
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     for (j = i = 0; i < bset.size(); i++) {
         if (bset[i] && false == get(i).isNull()) {
