@@ -272,6 +272,7 @@ bool cPortStat::postInit(QSqlQuery& q)
                 delete pVar;
             }
         }
+        pVar->_toReadBack = RB_NO;
     }
     pPortVars->pVars->removeMarked(q, TS_TRUE); // If flag is true then remove from database and list
     if (pPortVars->pVars->isEmpty()) {

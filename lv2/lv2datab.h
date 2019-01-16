@@ -712,6 +712,8 @@ public:
     ///
     QStringList columnNames(QBitArray mask) const;
     QStringList columnNames(tIntVector ixs) const;
+    QString columnNamesQ(QBitArray mask) const;
+    QString columnNamesQ(tIntVector ixs) const;
     /// A tábla típusával tér vissza
     quint16 tableType() const                       { return _tableType; }
     /// A visszaadott objektum referenciában a Primary Key-hez rendelt mezükkel azonos indexű bitek 1-be vannak
@@ -924,6 +926,15 @@ protected:
 
 /// containef valid flag : texts
 #define CV_LL_TEXT  1
+
+/// To read back for insert, update
+enum eToReadBack {
+    RB_DEFAULT,     ///< inteligent read back
+    RB_YES,         ///< full read back
+    RB_NO,          ///< no read back
+    RB_NO_ONCE,     ///< no read back once only
+    RB_ID           ///< read back only ID
+};
 /*!
 @class cRecord
 @brief Az adat rekord objektumok tisztán virtuális ős objektuma.
@@ -1083,24 +1094,6 @@ protected:
     /// Csak egy segéd konstans, ha egy üres konstans QVariant-ra mutató referenciát kel visszaadnia egy metódusnak.
     static const QVariant   _vNul;
 public:
-    /* A 32 bites kompatibilitás miatt nem lehet enum, mert akkor az csak 32 bites lesz, és nem kényszeríthető ki a 64 bit.
-    /// @enum eStat
-    /// Rekord státusz konstansok
-    typedef enum {
-        ES_FACELESS     =     -2LL, ///< A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cRecordAny típusú objektumokban lehetséges.
-        ES_NULL         =     -1LL, ///< A rekord üres, a _fields adattagnak nincs egy eleme sem
-        ES_EMPTY        = 0x0000LL, ///< A rekord üres, a _fields adattag feltöltve, de minden eleme null
-        ES_EXIST        = 0x0001LL, ///< O.K. Az adatbázisban létező rekord
-        ES_NONEXIST     = 0x0002LL, ///< O.K. Az adatbázisban nem létező rekord
-        ES_COMPLETE     = 0x0004LL, ///< Minden kötelező mező feltöltve
-        ES_INCOMPLETE   = 0x0008LL, ///< Hiányos
-        ES_MODIFY       = 0x0010LL, ///< Módosítva
-        ES_IDENTIF      = 0x0020LL, ///< A rendelkezésre álló mezők egyértelműen azonosíthatnak egy rekordot
-        ES_UNIDENT      = 0x0040LL, ///< A rendelkezésre álló mezők nem feltétlenül azonosítanak egy rekordot
-        ES_DEFECTIVE    = 0x0080LL, ///< A rekord, vagy leíró inkonzisztens, nem konvertálható érték megadása
-        ES_INV_FLD_MSK  = 0x0FFFFFFFFFFF0000LL   ///< A hibás értékadásban résztvevő mező(ke)t azonosító bit(ek), bit_ix = mező_ix + 8
-    } eStat; */
-    typedef qlonglong sStat;    /// Az enum eStat helyetti definíció
     qlonglong _stat;  ///< A rekord állapota
     /// Enumeráció (bitek) a deleted mező kezeléséhez.
     enum eDeletedBehavior {
@@ -1115,6 +1108,9 @@ public:
     /// Lekérdezéseknél ha a mező index szerinti bit létezik, és true, akkor egyenlőség helyett minta keresés lessz (LIKE)
     /// Mindíg üres tömbnek van inicializálva.
     QBitArray _likeMask;
+    /// The way to read the record when writing the record
+    eToReadBack _toReadBack;
+    eToReadBack _toReadBackDefault;
     /// Konstruktor.
     cRecord();
     /// Destruktor
@@ -1326,6 +1322,7 @@ public:
     cRecord& set(const QString& __fn, const QVariant& __v) { return set(chkIndex(toIndex(__fn)), __v); }
     /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja.
     cRecord& set(const QSqlQuery& __q, int * __fromp = nullptr, int __size = -1)   { return set(__q.record(), __fromp, __size);   }
+    cRecord& readBack(const QSqlQuery& __q, const QBitArray& msk);
     /// A megadott indexű mező értékének a lekérdezése. Az indexet ellenőrzi, ha nem megfelelő dob egy kizárást
     /// A mező értékére egy referenciát ad vissza, ez a referencia csak addig valós, amíg nem hajtunk végre
     /// az objektumon egy olyan metódust, amely ujra kreálja a _fields adat konténert. Azon értékadó műveletek, melyek
@@ -1560,7 +1557,7 @@ public:
     /// A nyelvi szövegeket nem modosítja! Nem hívja a saveText() metódust.
     virtual bool rewrite(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
-    /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel, egyébként a hiba objektum pointerével tér vissza.
+    /// Ha rendben megtörtént a művelet, akkor nullptr pointerrel, egyébként a hiba objektum pointerével tér vissza.
     /// Ha text értéke true, akkor menti a nyelvi szövegeket, ha text_id nem változott.
     cError *tryRewrite(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
 
@@ -2274,6 +2271,8 @@ protected:
     ///              a sorszám értéke a függvény visszatértekor az utolsó felhasznált mező sorszáma +1 lessz, ha nem NULL a pointer.
     /// @param __size Ha értéke nem -1, akkor a beolvasott rekordból csak ennyi mező lesz figyelembe véve.
     cRecord& _set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* __fromp = nullptr, int __size = -1);
+    ///
+    cRecord& _readBack(const QSqlQuery &__q, const cRecStaticDescr& __d, const QBitArray& _msk);
     /// Beállítja a megadott sorszámú mező értékét. Az objektum, ill. a _field konténer nem lehet üres, egyébként dob egy kizárást.
     /// Nem hív virtuális metódust, így a toEnd() metódusokat sem, így egyéb adatott nem módosít, a státust sem.
     cRecord& _set(int __i, const QVariant& __v) { if (isNull()) EXCEPTION(EPROGFAIL); _fields[__i] =  __v; return *this; }
