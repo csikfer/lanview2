@@ -215,7 +215,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
 }
 
-int cInspectorProcess::startProcess(int startTo, int stopTo)
+int cInspectorProcess::startProcess(unsigned long startTo, unsigned long stopTo)
 {
     _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
@@ -355,6 +355,7 @@ void cInspector::preInit(cInspector *__par)
     pPrimeService = nullptr;
     pService = nullptr;
     pVars    = nullptr;
+    pRunTimeVar = nullptr;
     initStatic();
 
     pParent = __par;
@@ -481,13 +482,13 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
     static time_t t = 0;
     if (t == 0) {
         t = time(nullptr);
-        srand((unsigned int)t);
+        srand(uint(t));
     }
     double r = i;
     r *= rand();
     r /= RAND_MAX;
     if (r < m) return m;
-    return (qlonglong)r;
+    return qlonglong(r);
 }
 
 void cInspector::down()
@@ -502,7 +503,7 @@ void cInspector::down()
     }
     pDelete(pProcess);
     if (inspectorType & IT_METHOD_PARSER) {
-        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
+        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser)) << endl;
         pDelete(pQparser);
     }
     else pQparser = nullptr;
@@ -584,8 +585,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         pProcess = newProcess();
     }
     // Az időzítéssek, ha kellenek
-    interval = variantToId(get(_sNormalCheckInterval), EX_IGNORE, -1);
-    retryInt = variantToId(get(_sRetryCheckInterval),  EX_IGNORE, interval);
+    interval = int(variantToId(get(_sNormalCheckInterval), EX_IGNORE, -1));
+    retryInt = int(variantToId(get(_sRetryCheckInterval),  EX_IGNORE, interval));
     if (interval <=  0 && isTimed()) {   // Időzített időzítés nélkül !
         EXCEPTION(EDATA, interval, QObject::trUtf8("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
@@ -882,8 +883,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
                 trUtf8("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
         break;
-    case -1:        // Van Check Cmd, de éppen a hívot app vagyunk
-	PDEB(VERBOSE) << trUtf8("A hívott alprogramban...") << endl;
+    case -1:        // Van Check Cmd, de éppen a hívot app mi vagyunk
+        PDEB(VERBOSE) << trUtf8("A hívott alprogramban...") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
@@ -1059,7 +1060,7 @@ void cInspector::timerEvent(QTimerEvent *)
     if (!timeperiod._isEmpty()) {
         if (!timeperiod.isOnTime(*pq)) {
             QDateTime now = QDateTime::currentDateTime();
-            int t = now.msecsTo(timeperiod.nextOnTime(*pq, now));
+            int t = int(now.msecsTo(timeperiod.nextOnTime(*pq, now)));
             internalStat = IS_OMITTED;
             timerStat    = TS_OMMIT;
             if (isThread()) {
@@ -1092,7 +1093,7 @@ void cInspector::timerEvent(QTimerEvent *)
               || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
               || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
                 ++n;
-                int state = (int)pSub->hostService.getId(_sHostServiceState);
+                int state = int(pSub->hostService.getId(_sHostServiceState));
                 if (minState < state) minState = state;
                 if (maxState > state) maxState = state;
             }
@@ -1105,8 +1106,8 @@ void cInspector::timerEvent(QTimerEvent *)
         internalStat = IS_SUSPENDED;
         return;
     }
-    if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
-    if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
+    if (!isTimed()) EXCEPTION(EPROGFAIL, inspectorType, name());
+    if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, inspectorType, name());
     bool statSetRetry = doRun(true);
     if (timerStat == TS_FIRST) toNormalInterval();  // Ha az első esetleg túl rövid, ne legyen felesleges event.
     // normal/retry intervallum kezelése
@@ -1149,6 +1150,7 @@ bool cInspector::doRun(bool __timed)
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (retStat & RS_STAT_MASK);
     } CATCHS(lastError);
+    qlonglong elapsed = lastRun.elapsed();
     // Ha többet csúszott az időzítés mint 50%
     if (__timed  && lastElapsedTime > ((interval*3)/2)) {
         // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
@@ -1172,7 +1174,7 @@ bool cInspector::doRun(bool __timed)
         if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pq, tn);
         if (retStat < RS_WARNING
          && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
-            statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(lastRun.elapsed()));
+            statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
             hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
         }
         else if (!statIsSet) {   // Ha még nem volt status állítás
@@ -1180,6 +1182,7 @@ bool cInspector::doRun(bool __timed)
             hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
         }
     }
+    if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), retStat); // retStat = dummy
     _DBGFNL() << name() << endl;
     return statSetRetry;
 }
@@ -1236,7 +1239,7 @@ enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
     case NR_UNKNOWN:    s = _sUnreachable;  break;
     }
     hostService.setState(*pq, s, note);
-    return (enum eNotifSwitch)r;
+    return eNotifSwitch(r);
 }
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
@@ -1337,9 +1340,17 @@ void cInspector::start()
     }
     // Start timer
     if (isTimed()) {
+        pRunTimeVar = getServiceVar(_sRuntime);
+        if (pRunTimeVar == nullptr) {
+            pRunTimeVar = new cServiceVar();
+            pRunTimeVar->setName(_sRuntime);
+            pRunTimeVar->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
+            pRunTimeVar->setId(_sHostServiceId, hostServiceId());
+            pRunTimeVar->insert(*pq);
+        }
         internalStat = IS_SUSPENDED;
         qlonglong t = firstDelay();
-        timerId = startTimer(t);
+        timerId = startTimer(int(t));
         if (0 == timerId) EXCEPTION(EPROGFAIL, interval, trUtf8("Timer not started."));
         timerStat = TS_FIRST;
         startSubs();
@@ -1633,27 +1644,6 @@ cServiceVar *cInspector::getServiceVar(const QString& name)
 
     if (pVars == nullptr || pVars->isEmpty()) return nullptr;
     return pVars->get(name, EX_IGNORE);
-}
-
-int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg)
-{
-    cServiceVar *pVar = getServiceVar(name);
-    if (pVar == nullptr) {
-        DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2").arg(name).arg(val)) << endl;
-
-        return RS_UNREACHABLE;
-    }
-    return pVar->setValue(q, val, state, pMsg);
-}
-
-int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg)
-{
-    cServiceVar *pVar = getServiceVar(name);
-    if (pVar == nullptr) {
-        DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2.").arg(name).arg(val)) << endl;
-        return RS_UNREACHABLE;
-    }
-    return pVar->setValue(q, val, state, pMsg);
 }
 
 /* ********************************************************************************** */

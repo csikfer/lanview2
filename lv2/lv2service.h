@@ -139,7 +139,7 @@ public:
     /// Hiba esetén dob egy kizárást.
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
     /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, vagy nulla, ha nem vár.
-    virtual int startProcess(int startTo, int stopTo = 0);
+    virtual int startProcess(unsigned long startTo, unsigned long stopTo = 0);
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
 protected slots:
@@ -277,10 +277,6 @@ public:
     virtual int getCheckCmd(QSqlQuery &q);
     /// Egy változó objektum elöszedése, név szerint
     cServiceVar *getServiceVar(const QString& name);
-    /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg = nullptr);
-    /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg = nullptr);
     // Adattagok
     /// Objektum típus
     int inspectorType;
@@ -303,9 +299,9 @@ public:
     /// Hiba esetén az időzítés
     int                 retryInt;
     /// Start TimeOut
-    int                 startTimeOut;
+    unsigned long       startTimeOut;
     /// Stop TimeOut
-    int                 stopTimeOut;
+    unsigned long       stopTimeOut;
     /// Az időzítő QTimer azonosítója
     int                 timerId;
     /// Timeperiod
@@ -338,6 +334,7 @@ public:
     bool    flag;
     /// Változók, ha vannak, vagy NULL.
     tOwnRecords<cServiceVar, cHostService>    *pVars;
+    cServiceVar *pRunTimeVar;
     ///
     bool isDeleted() const { return hostService.getBool(hostService.deletedIndex()); }
 protected:

@@ -921,7 +921,7 @@ enum eParamType {
     PT_MAC,         ///< MAC
     PT_POINT,       ///< koordináta
     PT_BYTEA,       ///< bináris adat
-    PT_SIZE         ///< Csak a lehetséges értékek számát jelzi
+    PT_ENUM_SIZE    ///< Csak a lehetséges értékek számát jelzi
 };
 
 /// Paraméter típus név konverzió
@@ -967,7 +967,7 @@ enum eFilterType {
     FT_SQL_WHERE,///< SQL WHERE ...
     // A további konstansokat a string konvertáló függvény nem kezeli!
     FT_FKEY_ID,  ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
-    FT_SIZE      ///< Csak a lehetséges értékek számát jelzi
+    FT_ENUM_SIZE ///< Csak a lehetséges értékek számát jelzi
 };
 
 /// A típus konverziós függvény neve. A függvény (aminek a nevét visszaadja) ha nem konvertálható a
@@ -984,14 +984,14 @@ inline QString nameToCast(const QString& __e, eEx __ex = EX_ERROR) { return name
 inline static qlonglong filterSetAndTypeSet(qlonglong ftSet, qlonglong ptSet)
 {
     qlonglong r = ftSet;
-    r |= ptSet << FT_SIZE;
+    r |= ptSet << FT_ENUM_SIZE;
     return r;
 }
 /// Az eFilterType enumeráció értékből és eParamType enumeráció setjéböl egy összetett érték képzése.
 inline static qlonglong filterEnumAndTypeSet(int ftEnum, qlonglong ptSet)
 {
     qlonglong r = ftEnum;
-    r |= ptSet << FT_SIZE;
+    r |= ptSet << FT_ENUM_SIZE;
     return r;
 }
 /// Egy összevont értékből az eFilterType típusú enumerációs vagy set érték kivonása.
@@ -1000,12 +1000,12 @@ inline static qlonglong filterEnumAndTypeSet(int ftEnum, qlonglong ptSet)
 /// akkor enum értéket kapunk vissza.
 inline static qlonglong pullFilter(qlonglong setSet)
 {
-    return setSet & ((1 << FT_SIZE) -1);
+    return setSet & ((1 << FT_ENUM_SIZE) -1);
 }
 /// Egy összevont értékből az eParemType típusú set érték kivonása.
 inline static qlonglong pullType(qlonglong setSet)
 {
-    return setSet >> FT_SIZE;
+    return setSet >> FT_ENUM_SIZE;
 }
 
 #endif //LV2TYPES_H_INCLUDED

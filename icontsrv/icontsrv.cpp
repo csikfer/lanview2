@@ -430,9 +430,9 @@ bool cGateway::com_s(void * io, size_t size, cInspector *pInsp)
         DERR() << "IO Device is NULL." << endl;
         return false;
     }
-    int to = pInsp->stopTimeOut;
-    PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)io, size) << endl;
-    qint64  wr = pIO->write((char *)io, size);
+    unsigned long to = pInsp->stopTimeOut;
+    PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray(static_cast<char *>(io), int(size)) << endl;
+    qint64  wr = pIO->write(static_cast<char *>(io), qint64(size));
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
     if (wr < 0) {
         DERR() << "Write error." << endl;

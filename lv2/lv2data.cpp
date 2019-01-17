@@ -96,6 +96,7 @@ const QString& reasons(int _r, eEx __ex)
 
 tRecordList<cParamType>  cParamType::paramTypes;
 cParamType *cParamType::pNull;
+int cParamType::_ixParamTypeType = NULL_IX;
 
 CRECCNTR(cParamType)
 CRECDEFD(cParamType)
@@ -104,6 +105,7 @@ const cRecStaticDescr& cParamType::descr() const
 {
     if (initPDescr<cParamType>(_sParamTypes)) {
         CHKENUM(toIndex(_sParamTypeType), paramTypeType)
+        STFIELDIX(cParamType, ParamTypeType);
     }
     return *_pRecordDescr;
 }
@@ -147,7 +149,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
         ok = true;
     }
     else {
-        switch ((int)__t) {
+        switch (__t) {
         case PT_TEXT:
             ok = __v.canConvert(QVariant::String);
             if (ok) r = __v.toString();
@@ -206,7 +208,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
     return r;
 }
 
-QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
+QVariant cParamType::paramFromString(eParamType __t, const QString& __v, eEx __ex)
 {
     QVariant r;
     bool    ok = true;
@@ -214,7 +216,7 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
         if (__t == PT_BOOLEAN) r = QVariant(false);
     }
     else {
-        switch ((int)__t) {
+        switch (__t) {
         case PT_TEXT:       r = QVariant(__v);                   break;
         case PT_BOOLEAN:    r = QVariant(str2bool(__v));         break;
         case PT_INTEGER:    r = QVariant(__v.toLongLong(&ok));   break;
@@ -234,7 +236,7 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
         }
     }
     if (!ok) {
-        if (__ex) EXCEPTION(ENOTSUPP, (int)__t, __v);
+        if (__ex) EXCEPTION(ENOTSUPP, __t, __v);
         r.clear();
     }
     return r;

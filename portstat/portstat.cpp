@@ -2,8 +2,8 @@
 #include "lv2daterr.h"
 
 
-#define VERSION_MAJOR   1
-#define VERSION_MINOR   99
+#define VERSION_MAJOR   2
+#define VERSION_MINOR   00
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 const QString& setAppHelp()
@@ -94,6 +94,8 @@ int cDevPortStat::ixLastChanged = NULL_IX;
 int cDevPortStat::ixLastTouched = NULL_IX;
 int cDevPortStat::ixDelegatePortState = NULL_IX;
 
+const QString cDevPortStat::sSnmpElapsed = "snmp_elapsed";
+
 cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
     : cInspector(nullptr)  // Self host service
     , snmp()
@@ -117,6 +119,14 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
         EXCEPTION(EDATA, protoServiceId(),
                QObject::trUtf8("Not supported protocol service : %1 , or device (%2) type in %3 instance of service.")
                   .arg(protoService().getName(), node().identifying(), name())    );
+    }
+    pSnmpElapsed = getServiceVar(sSnmpElapsed);
+    if (pSnmpElapsed == nullptr) {
+        pSnmpElapsed = new cServiceVar();
+        pSnmpElapsed->setName(sSnmpElapsed);
+        pSnmpElapsed->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
+        pSnmpElapsed->setId(_sHostServiceId, hostServiceId());
+        pSnmpElapsed->insert(*pq);
     }
 }
 
@@ -150,7 +160,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
         hostService.setState(_q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
         EXCEPTION(EOK);
     }
-    dev.fetchPorts(_q, 0);  // Fetch onli ports
+    dev.fetchPorts(_q, 0);  // Fetch only ports
     tRecordList<cNPort>::iterator it, eit = dev.ports.end();
     for (it = dev.ports.begin(); it != eit; ++it) {      // for each all ports
         cNPort     *pPort    = *it;
@@ -212,6 +222,7 @@ cPortStat::cPortStat(cInterface * pIf, cDevPortStat *par)
 bool cPortStat::postInit(QSqlQuery& q)
 {
     bool isWanted = true;
+    pInterface->_toReadBack = RB_NO;
  // portvars *********************************************
     // host service
     cHostService& vhs = pPortVars->hostService;
@@ -226,12 +237,15 @@ bool cPortStat::postInit(QSqlQuery& q)
         vhs.setId(_sPrimeServiceId, NIL_SERVICE_ID);
         vhs.setId(_sProtoServiceId, NIL_SERVICE_ID);
         vhs.setName(_sNoalarmFlag, _sOn);    // Default: alarm disaled
+        vhs._toReadBack = RB_ID;
         vhs.insert(q);
+        vhs._toReadBack = RB_YES;
     }
     else if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
         // Not ours !!!???
         vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
         vhs.setFlag(false);
+        vhs._toReadBack = RB_NO_ONCE;
         vhs.update(q, false, vhs.mask(_sSuperiorHostServiceId, _sFlag));
     }
     else {  // OK
@@ -265,6 +279,7 @@ bool cPortStat::postInit(QSqlQuery& q)
             if (pVar->getBool(_sDisabled)) {    // If disabled then dropp
                 if (pVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
                     pVar->setName(cServiceVar::ixVarState(), _sUnknown);
+                    pVar->_toReadBack = RB_NO_ONCE;
                     pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
                 }
                 int ix = pPortVars->pVars->indexOf(pVar->getId());
@@ -450,7 +465,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     QElapsedTimer timer;
     timer.start();
     int r = snmp.getTable(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
-    runMsg  += trUtf8("SNMP query %1 milliseconds. Result : %2\n").arg(timer.elapsed()).arg(r);
+    int state;
+    pSnmpElapsed->setValue(q, QVariant(timer.elapsed()), state);
     if (r) {
         runMsg += trUtf8("SNMP get table error : %1 in %2; host : %3, from %4 parent service.\n")
                 .arg(snmp.emsg)
@@ -533,13 +549,13 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             int sstate = RS_ON;         // delegated state to service state
             int pstate = RS_INVALID;    // delegated state to port state
             int rs;
-            qulonglong raw;
+            qlonglong raw;
             QString stMsg;
             foreach (QString vname, vnames) {
                 cServiceVar *psv = insp.getServiceVar(vname);
                 if (psv == nullptr) continue;
-                raw = tab[vname][i].toULongLong();
-                rs = psv->setValue(q, raw, sstate, &stMsg);
+                raw = tab[vname][i].toLongLong();
+                rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
             }
             insp.hostService.setState(q, notifSwitch(sstate), stMsg, parid);

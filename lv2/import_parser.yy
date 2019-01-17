@@ -2874,11 +2874,12 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
         | ENABLE_T  HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $4).setBool(_sDisabled, false).update(qq(), false); }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
-        | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
+        | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { int dummy;
+                                                                   ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8), dummy); }
         | SET_T HOST_T SERVICE_T hsid STATE_T int str_z ';'      { pHostService = new cHostService();
-                                                                      pHostService->setById(qq(), $4);
-                                                                      pHostService->setState(qq(), notifSwitch($6), sp2s($7));
-                                                                      pDelete(pHostService);
+                                                                   pHostService->setById(qq(), $4);
+                                                                   pHostService->setState(qq(), notifSwitch($6), sp2s($7));
+                                                                   pDelete(pHostService);
                                                                  }
         ;
 if      : IFDEF_T  ifdef                { bSkeep = !$2; }

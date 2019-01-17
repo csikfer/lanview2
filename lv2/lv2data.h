@@ -225,10 +225,28 @@ public:
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), enum eEx __ex = EX_ERROR);
-    ///
+    /// Egy QVariant típusból konvertálja az adatbázisba kiírandó text típusú értéket, a típusban meghatározott adattípusnak megfelelően.
+    /// @param __t Az adat típus
+    /// @param __v A konvertálandó érték
+    /// @param __ex Hiba kezelés
+    /// @return A konvertált string
     static QString paramToString(eParamType __t, const QVariant& __v, enum eEx __ex = EX_ERROR);
-    ///
-    static QVariant paramFromString(eParamType __t, QString& __v, enum eEx __ex = EX_ERROR);
+    /// Egy adatbázisból beolvasott stringet kovertál a típusnak megfelelő típuső értékké.
+    /// @param __t Az adat típus
+    /// @param __v A konvertálandó string
+    /// @param __ex Hiba kezelés
+    /// @return A konvertált érték
+    static QVariant paramFromString(eParamType __t, const QString &__v, enum eEx __ex = EX_ERROR);
+    /// Egy QVariant típusból konvertálja az adatbázisba kiírandó text típusú értéket, a típus leíróbanban meghatározott adattípusnak megfelelően.
+    /// @param __v A konvertálandó érték
+    /// @param __ex Hiba kezelés
+    /// @return A konvertált string
+    QString paramToString(const QVariant& __v, enum eEx __ex = EX_ERROR) const { return paramToString(eParamType(getId(_ixParamTypeType)), __v, __ex); }
+    /// Egy adatbázisból beolvasott stringet kovertál a típus leírónak megfelelő típusú értékké.
+    /// @param __v A konvertálandó string
+    /// @param __ex Hiba kezelés
+    /// @return A konvertált érték
+    QVariant paramFromString(const QString& __v, enum eEx __ex = EX_ERROR) const { return paramFromString(eParamType(getId(_ixParamTypeType)), __v, __ex); }
 protected:
     static tRecordList<cParamType>  paramTypes;
     static cParamType *pNull;
@@ -256,6 +274,7 @@ protected:
     /// Ha nincs feltöltve az paramTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchParamTypes(QSqlQuery& __q); metódust.
     static void checkParamTypes() { if (pNull == nullptr) { QSqlQuery q = getQuery(); fetchParamTypes(q); } }
+    STATICIX(cParamType, ParamTypeType)
 };
 
 class LV2SHARED_EXPORT cSysParam  : public cRecord {

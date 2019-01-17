@@ -58,6 +58,8 @@ class LV2SHARED_EXPORT cServiceVarType : public cRecord {
     CRECORD(cServiceVarType);
     FEATURES(cServiceVarType)
     RECACHEHED(cServiceVarType, srvartype)
+    STATICIX(cServiceVarType, ParamTypeId)
+    STATICIX(cServiceVarType, RawParamTypeId)
 };
 
 /*!
@@ -72,15 +74,28 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int _ix);
     const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
-    int setValue(QSqlQuery& q, double val, int& state, QString *pMsg = nullptr);
-    int setValue(QSqlQuery& q, qulonglong val, int& state, QString *pMsg = nullptr);
-    static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val);
-    static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals);
+    const cParamType& dataType(QSqlQuery& q)    { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixParamTypeId())); }
+    const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixRawParamTypeId())); }
+    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
+    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
+    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
+    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
+    int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
+    int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
+    int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
+    static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val, int &state);
+    static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals, int &state);
+    static QString sInvalidValue;
+    static QString sNotCredible;
+    static QString sFirstValue;
+    static QString sRawIsNull;
 protected:
-    void preSetValue(const QString& val);
-    int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state);
+    /// Ha raw érték változott, akkor true-val tér vissza
+    bool preSetValue(QSqlQuery &q, const QVariant &rawVal);
+    int setCounter(QSqlQuery &q, qlonglong val, int svt, int& state);
     int setDerive(QSqlQuery &q, double val, int& state);
-    int updateVar(QSqlQuery& q, qulonglong val, int& state);
+    int updateVar(QSqlQuery& q, eParamType pt, const QVariant&  val, int& state);
+    int updateVar(QSqlQuery& q, qlonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
     int noValue(QSqlQuery& q, int& state);
     /// Egy egész típusú értékre a megadott feltétel alkalmazása
@@ -91,7 +106,7 @@ protected:
     /// @param _inverse Az eredményt invertálni kell, ha igaz.
     /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
     /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható egész számmá.
-    eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2, bool _inverse);
+    eTristate checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse);
     /// Egy valós típusú értékre a megadott feltétel alkalmazása
     /// @param val A viszgálandó érték
     /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
@@ -100,7 +115,8 @@ protected:
     /// @param _inverse Az eredményt invertálni kell, ha igaz.
     /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
     /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható számmá.
-    eTristate checkRealValue(double val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse);
+    eTristate checkRealValue(double val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
+    eTristate checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);
         if (!msg.isEmpty()) msg += "\n";
@@ -110,9 +126,10 @@ protected:
     static QMap<qlonglong, qlonglong>   heartbeats;   ///< Heartbeat cache
     const cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
-    qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
+    qlonglong   lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
     QDateTime   lastLast;       ///< last_time mező előző értéke
+    QDateTime   now;            ///< most
     eNotifSwitch state;
     STATICIX(cServiceVar, ServiceVarTypeId)
     STATICIX(cServiceVar, ServiceVarValue)

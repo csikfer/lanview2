@@ -626,9 +626,11 @@ STRDEF(ServiceVarTypes, "service_var_types")
  STRDEF(CriticalParam2, "critical_param2")
  STRDEF(CriticalInverse, "critical_inverse")
  dnl features deleted
+ STRDEF(RawParamTypeId, "raw_param_type_id")
 STRDEF(ServiceVars, "service_vars")
  STRDEF(ServiceVarId, "service_var_id")
  STRDEF(ServiceVarName, "service_var_name")
+  STRDEF(Runtime, "runtime");
  STRDEF(ServiceVarNote, "service_var_note")
  STRDEF(ServiceVarValue, "service_var_value")
  STRDEF(VarState, "var_state")
