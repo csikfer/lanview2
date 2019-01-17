@@ -120,14 +120,6 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
                QObject::trUtf8("Not supported protocol service : %1 , or device (%2) type in %3 instance of service.")
                   .arg(protoService().getName(), node().identifying(), name())    );
     }
-    pSnmpElapsed = getServiceVar(sSnmpElapsed);
-    if (pSnmpElapsed == nullptr) {
-        pSnmpElapsed = new cServiceVar();
-        pSnmpElapsed->setName(sSnmpElapsed);
-        pSnmpElapsed->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
-        pSnmpElapsed->setId(_sHostServiceId, hostServiceId());
-        pSnmpElapsed->insert(*pq);
-    }
 }
 
 cDevPortStat::~cDevPortStat()
@@ -180,6 +172,14 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     }
     else {
         hostService.setState(_q, _sUnreachable, msg);
+    }
+    pSnmpElapsed = getServiceVar(sSnmpElapsed);
+    if (pSnmpElapsed == nullptr) {
+        pSnmpElapsed = new cServiceVar();
+        pSnmpElapsed->setName(sSnmpElapsed);
+        pSnmpElapsed->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
+        pSnmpElapsed->setId(_sHostServiceId, hostServiceId());
+        pSnmpElapsed->insert(*pq);
     }
 }
 

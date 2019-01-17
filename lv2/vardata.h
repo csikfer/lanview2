@@ -139,6 +139,18 @@ protected:
     STATICIX(cServiceVar, StateMsg)
 protected:
     static QBitArray updateMask;
+    int    skeepCnt;
+    bool   skeep() {
+        --skeepCnt;
+        bool r = skeepCnt > 0;
+        if (!r) {
+            skeepCnt = int(getId(_sRarefaction));
+        }
+        else {
+            PDEB(VERBOSE) << "Skeep" << endl;
+        }
+        return r;
+    }
 public:
     static void resetCacheData() { serviceVars.clear(); heartbeats.clear(); }
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex = EX_ERROR);

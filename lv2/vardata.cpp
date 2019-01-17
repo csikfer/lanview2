@@ -134,6 +134,7 @@ cServiceVar::cServiceVar() : cRecord()
     pVarType = nullptr;
     lastCount = 0;
     _set(cServiceVar::descr());
+    skeepCnt = 0;
 }
 cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
 {
@@ -141,6 +142,7 @@ cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
     lastCount = __o.lastCount;
     lastTime  = __o.lastTime;
     _cp(__o);
+    skeepCnt = 0;
 }
 
 const cRecStaticDescr&  cServiceVar::descr() const
@@ -198,6 +200,7 @@ const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
 
 int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
+    if (skeep()) return ENUM_INVALID;
     if (_rawVal.isNull()) {
         addMsg(sRawIsNull);
         return noValue(q, state);
@@ -234,9 +237,12 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
 {
     bool changed;
     switch (rawChg) {
-    case TS_NULL:   changed = preSetValue(q, QVariant(val));    break;
-    case TS_TRUE:   changed = true;                             break;
-    case TS_FALSE:  changed = false;                            break;
+    case TS_NULL:
+        if (skeep()) return ENUM_INVALID;
+        changed = preSetValue(q, QVariant(val));
+        break;
+    case TS_TRUE:   changed = true;     break;
+    case TS_FALSE:  changed = false;    break;
     }
     qlonglong svt = varType(q)->getId(_sServiceVarType);
     int r = RS_INVALID;
@@ -282,9 +288,12 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
 {
     bool changed;
     switch (rawChg) {
-    case TS_NULL:   changed = preSetValue(q, QVariant(val));    break;
-    case TS_TRUE:   changed = true;                             break;
-    case TS_FALSE:  changed = false;                            break;
+    case TS_NULL:
+        if (skeep()) return ENUM_INVALID;
+        changed = preSetValue(q, QVariant(val));
+        break;
+    case TS_TRUE:   changed = true;     break;
+    case TS_FALSE:  changed = false;    break;
     }
     qlonglong svt = varType(q)->getId(_sServiceVarType);
     int r = RS_INVALID;

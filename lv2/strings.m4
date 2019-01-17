@@ -638,6 +638,7 @@ STRDEF(ServiceVars, "service_vars")
  STRDEF(RawValue, "raw_value")
  STRDEF(DelegatePortState, "delegate_port_state")
  dnl service_var_types host_service_id features deleted
+ STRDEF(Rarefaction, "rarefaction")
 STRDEF(Graphs, "graphs")
  STRDEF(GraphId, "graph_id")
  STRDEF(GraphName, "graph_name")
