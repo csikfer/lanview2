@@ -237,7 +237,7 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
 {
-    bool changed;
+    bool changed = true;;
     switch (rawChg) {
     case TS_NULL:
         if (skeep()) return ENUM_INVALID;
@@ -288,7 +288,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
 
 int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
 {
-    bool changed;
+    bool changed = true;
     switch (rawChg) {
     case TS_NULL:
         if (skeep()) return ENUM_INVALID;
