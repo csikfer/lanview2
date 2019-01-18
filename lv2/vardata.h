@@ -97,7 +97,7 @@ protected:
     int updateVar(QSqlQuery& q, eParamType pt, const QVariant&  val, int& state);
     int updateVar(QSqlQuery& q, qlonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
-    int noValue(QSqlQuery& q, int& state);
+    int noValue(QSqlQuery& q, int& state, int _st = RS_UNREACHABLE);
     /// Egy egész típusú értékre a megadott feltétel alkalmazása
     /// @param val A viszgálandó érték
     /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.

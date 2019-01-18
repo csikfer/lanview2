@@ -376,7 +376,7 @@ int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
         lastCount = val;
         lastTime  = now;
         addMsg(sFirstValue);
-        return noValue(q, state);
+        return noValue(q, state, RS_UNKNOWN);
     }
     if (lastCount == 0 && val == 0) {
         touch(q);
@@ -420,7 +420,7 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
         lastValue = val;
         lastTime  = now;
         addMsg(sFirstValue);
-        return noValue(q, state);
+        return noValue(q, state, RS_UNKNOWN);
     }
     double delta = val - lastValue;
     lastValue = val;
@@ -506,12 +506,12 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
     return rs;
 }
 
-int cServiceVar::noValue(QSqlQuery& q, int &state)
+int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
     qlonglong hbt = heartbeat(q, EX_ERROR);
     if (lastLast.isNull() || isNull(_ixServiceVarValue)
      || (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime()))) {
-        setId(_ixVarState, RS_UNREACHABLE);
+        setId(_ixVarState, _st);
         clear(_ixServiceVarValue);
         update(q, false, updateMask);
         if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
