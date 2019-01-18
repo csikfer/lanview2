@@ -122,6 +122,7 @@ int cServiceVar::_ixVarState         = NULL_IX;
 int cServiceVar::_ixLastTime         = NULL_IX;
 int cServiceVar::_ixRawValue         = NULL_IX;
 int cServiceVar::_ixStateMsg         = NULL_IX;
+int cServiceVar::_ixRarefaction      = NULL_IX;
 QBitArray                   cServiceVar::updateMask;
 tRecordList<cServiceVar>    cServiceVar::serviceVars;
 QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
@@ -155,6 +156,7 @@ const cRecStaticDescr&  cServiceVar::descr() const
         STFIELDIX(cServiceVar, LastTime);
         STFIELDIX(cServiceVar, RawValue);
         STFIELDIX(cServiceVar, StateMsg);
+        STFIELDIX(cServiceVar, Rarefaction);
         updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
                    | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
         sInvalidValue = trUtf8("Value is invalid : %1");
@@ -686,6 +688,18 @@ eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QSt
     return _inverse ? inverse(r) : r;
 }
 
+bool   cServiceVar::skeep() {
+    --skeepCnt;
+    bool r = skeepCnt > 0;
+    if (!r) {
+        skeepCnt = int(getId(_ixRarefaction));
+    }
+    else {
+        PDEB(VERBOSE) << "Skeep" << endl;
+    }
+    return r;
+}
+
 
 cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex)
 {
@@ -726,40 +740,55 @@ qlonglong cServiceVar::heartbeat(QSqlQuery&__q, eEx __ex)
         if (__ex != EX_IGNORE) EXCEPTION(EOID, 0, identifying(false));
         return NULL_ID;
     }
-    if (heartbeats.contains(id)) return heartbeats[id];
     qlonglong hbt;
-    id = getId(_sHostServiceId);
-    cHostService hs;
-    if (id == NULL_ID || !hs.fetchById(__q, id)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EOID, id, identifying(false));
-        return NULL_ID;
+    if (heartbeats.contains(id)) {
+        hbt = heartbeats[id];
     }
-    hbt = hs.getId(_sHeartbeatTime);
-    if (hbt <=  0) {
-        id = hs.getId(_sServiceId);
-        cService s;
-        if (id == NULL_ID || !s.fetchById(__q, id)) {
-            if (__ex != EX_IGNORE) EXCEPTION(EOID, id, hs.identifying(false));
+    else {
+        id = getId(_sHostServiceId);
+        cHostService hs;
+        if (id == NULL_ID || !hs.fetchById(__q, id)) {
+            if (__ex != EX_IGNORE) EXCEPTION(EOID, id, identifying(false));
             return NULL_ID;
         }
-        qlonglong hbt = s.getId(_sHeartbeatTime);
-        if (hbt <= 0) {
-            bool f;
-            f = (id = hs.getId(_sPrimeServiceId)) != NULL_ID
-              && s.fetchById(__q, id)
-              && (hbt = s.getId(_sHeartbeatTime)) > 0;
-            f = f || (
-                (id = hs.getId(_sProtoServiceId)) != NULL_ID
-              && s.fetchById(__q, id)
-              && (hbt = s.getId(_sHeartbeatTime)) > 0
-              );
-            if (!f) {
-                if (__ex >= EX_WARNING) EXCEPTION(EDATA, hbt, identifying(false));
+        hbt = hs.getId(_sHeartbeatTime);
+        if (hbt <=  0) {
+            id = hs.getId(_sServiceId);
+            cService s;
+            if (id == NULL_ID || !s.fetchById(__q, id)) {
+                if (__ex != EX_IGNORE) EXCEPTION(EOID, id, hs.identifying(false));
+                return NULL_ID;
+            }
+            qlonglong hbt = s.getId(_sHeartbeatTime);
+            if (hbt <= 0) {
+                bool f;
+                f = (id = hs.getId(_sPrimeServiceId)) != NULL_ID
+                  && s.fetchById(__q, id)
+                  && (hbt = s.getId(_sHeartbeatTime)) > 0;
+                f = f || (
+                    (id = hs.getId(_sProtoServiceId)) != NULL_ID
+                  && s.fetchById(__q, id)
+                  && (hbt = s.getId(_sHeartbeatTime)) > 0
+                  );
+                if (!f) {
+                    if (__ex >= EX_WARNING) EXCEPTION(EDATA, hbt, identifying(false));
+                }
             }
         }
+        heartbeats[getId()] = hbt;
     }
-    heartbeats[getId()] = hbt;
+    int rarefaction = int(getId(_ixRarefaction));
+    if (rarefaction > 1) hbt *= rarefaction;
     return hbt;
+}
+
+bool cServiceVar::initSkeepCnt(int& delayCnt)
+{
+    int rarefaction = int(getId(_ixRarefaction));
+    if (rarefaction <= 1) return false;
+    skeepCnt = (delayCnt % rarefaction) + 1;
+    ++delayCnt;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------- */

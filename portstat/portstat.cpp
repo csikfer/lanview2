@@ -199,6 +199,7 @@ int cDevPortStat::queryInit(QSqlQuery &_q, QString& msg)
     QBitArray hsfWhereBits = hsf.mask(_sSuperiorHostServiceId, _sDisabled, _sDeleted);
     hsf.mark(_q, hsfWhereBits);
 
+    delayCounter = 0;
     foreach (qlonglong pid, ifMap.keys()) {
         if (ifMap[pid]->postInit(_q)) {
             int portIndex = int(ifMap[pid]->pInterface->getId(ixPortIndex));
@@ -259,37 +260,58 @@ bool cPortStat::postInit(QSqlQuery& q)
         pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
     }
     else {
-        pPortVars->pVars->mark(q);
+        pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
     }
     DM;
+    bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
     n = parent->vnames.size();
-    for (int i = 0; i < n; ++i) {
+    if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
+    for (int i = 0; i < n; ++i) {   // Names of required variables
         const QString& name = parent->vnames.at(i);
         cServiceVar *pVar = pPortVars->pVars->get(name, EX_IGNORE);
-        if (pVar == nullptr) {  // Not exists
+        if (pVar == nullptr) {      // If not exists, create
             pVar = new cServiceVar;
             pVar->setName(name);
-            pVar->setId(_sServiceVarTypeId, parent->vTypes.at(i));
+            pVar->setId(cServiceVar::ixServiceVarTypeId(), parent->vTypes.at(i));
             pVar->setId(_sHostServiceId, pPortVars->hostServiceId());
+            pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
             pVar->insert(q);
             *(pPortVars->pVars) << pVar;
+            pVar->_toReadBack = RB_NO;
         }
         else {
-            pVar->mark(q, pVar->primaryKey(), false);
-            if (pVar->getBool(_sDisabled)) {    // If disabled then dropp
+            pVar->_toReadBack = RB_NO;
+            if (pVar->getBool(_sDisabled)) {    // If disabled then dropp for list
                 if (pVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
                     pVar->setName(cServiceVar::ixVarState(), _sUnknown);
-                    pVar->_toReadBack = RB_NO_ONCE;
+                    pVar->_toReadBack = RB_NO;
                     pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
                 }
                 int ix = pPortVars->pVars->indexOf(pVar->getId());
+                if (ix < 0) EXCEPTION(EPROGFAIL);
                 pPortVars->pVars->removeAt(ix);
                 delete pVar;
+                continue;
+            }
+            else if (resetRarefaction) {
+                if (pVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
+                    pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
+                    pVar->update(q, false, pVar->mask(cServiceVar::ixRarefaction()), pVar->primaryKey());
+                }
             }
         }
-        pVar->_toReadBack = RB_NO;
+        pVar->setOff(_sFlag);   // unmarked
+        pVar->initSkeepCnt(parent->delayCounter);
     }
-    pPortVars->pVars->removeMarked(q, TS_TRUE); // If flag is true then remove from database and list
+    n = pPortVars->pVars->size();
+    for (int i = 0; i < n; ++i) {   // Find, and delete marked
+        cServiceVar *pVar = pPortVars->pVars->at(i);
+        if (pVar->getBool(_sFlag)) {
+            pVar->remove(q);                    // delete from database
+            delete pPortVars->pVars->takeAt(i); // delete from list, and delete object from memory
+            --i;
+        }
+    }
     if (pPortVars->pVars->isEmpty()) {
         pDelete(pPortVars);
         isWanted = false;
@@ -408,6 +430,7 @@ int cDevPortStat::checkAvailableVars(QSqlQuery& q)
 {
     vnames.clear();
     vTypes.clear();
+    vRarefactions.clear();
     snmpTabColumns.clear();
     snmpTabOIds.clear();
     // Variable names (all)
@@ -421,6 +444,9 @@ int cDevPortStat::checkAvailableVars(QSqlQuery& q)
     vTypes << st.getIdByName(q, _sIfMtu.toLower()) << st.getIdByName(q, _sIfSpeed.toLower())
            << ifBytesId << ifPacksId << ifPacksId << ifPacksId << ifPacksId
            << ifBytesId << ifPacksId << ifPacksId << ifPacksId << ifPacksId;
+    vRarefactions << 20 << 20       // MTU, speed : It rarely changes
+                  <<  1  << 2 << 2 << 10 << 10
+                  <<  1  << 2 << 2 << 10 << 10;
     snmpTabColumns << _sIfIndex << _sIfAdminStatus << _sIfOperStatus << _sIfDescr;
     const int important = snmpTabColumns.size();
     snmpTabColumns << vnames;
@@ -439,6 +465,7 @@ int cDevPortStat::checkAvailableVars(QSqlQuery& q)
                 snmpTabOIds.removeAt(j);
                 vnames.removeAt(j - important);
                 vTypes.removeAt(j - important);
+                vRarefactions.removeAt(j - important);
                 --j;
             }
         }

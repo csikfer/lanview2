@@ -39,10 +39,15 @@ public:
     cSnmp           snmp;
     /// Maximum index for the interfaces to be query
     int             maxPortIndex;
+    /// Ha egy cServiceVar objektumnál a rarefaction (ritkítás) van megadva (>1),
+    /// akkor az objektumban a skeepCnt-t ezzel a számlálóval inicializáljuk úgy,
+    /// hogy az adatbázis hozzáférések időben elosztva töténjenek.
+    int delayCounter;
     /// Available variable names.
     QStringList     vnames;
     /// Available variable default típes
     QList<qlonglong> vTypes;
+    QList<int>       vRarefactions;
     cOIdVector      snmpTabOIds;
     QStringList     snmpTabColumns;
     static const QString sSnmpElapsed;

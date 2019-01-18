@@ -137,20 +137,11 @@ protected:
     STATICIX(cServiceVar, LastTime)
     STATICIX(cServiceVar, RawValue)
     STATICIX(cServiceVar, StateMsg)
+    STATICIX(cServiceVar, Rarefaction)
 protected:
     static QBitArray updateMask;
     int    skeepCnt;
-    bool   skeep() {
-        --skeepCnt;
-        bool r = skeepCnt > 0;
-        if (!r) {
-            skeepCnt = int(getId(_sRarefaction));
-        }
-        else {
-            PDEB(VERBOSE) << "Skeep" << endl;
-        }
-        return r;
-    }
+    bool   skeep();
 public:
     static void resetCacheData() { serviceVars.clear(); heartbeats.clear(); }
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex = EX_ERROR);
@@ -158,6 +149,7 @@ public:
     /// A heartbeat értéket olvassa ki a host_services vagy services rekordból, az értéket csak az első alkalommal
     /// olvassa ki az adatbázisból, és letárolja a heartbeats konténerbe. ...
     qlonglong heartbeat(QSqlQuery&__q, eEx __ex = EX_ERROR);
+    bool initSkeepCnt(int& delayCnt);
 };
 
 /*!
