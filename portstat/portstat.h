@@ -55,7 +55,7 @@ public:
     /// Az "rlinkstat" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pRLinkStat;
     /// Az "portvars" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
-    static const cService *pPortVars;
+    static const cService *pSrvPortVars;
     /// Az "snmp" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     static int ixPortIndex;

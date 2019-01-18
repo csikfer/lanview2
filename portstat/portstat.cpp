@@ -57,7 +57,7 @@ lv2portStat::~lv2portStat()
 void lv2portStat::staticInit(QSqlQuery *pq)
 {
     cDevPortStat::pRLinkStat = cService::service(*pq, "rlinkstat");     // sub service by name
-    cDevPortStat::pPortVars  = cService::service(*pq, "portvars");      // sub service by name
+    cDevPortStat::pSrvPortVars  = cService::service(*pq, "portvars");      // sub service by name
     cDevPortStat::pSrvSnmp   = cService::service(*pq, _sSnmp);          // Protocol bay name
     cInterface i;   // Field indexs in the interface object
     cDevPortStat::ixPortIndex   = i.toIndex(_sPortIndex);
@@ -82,7 +82,7 @@ void lv2portStat::setup(eTristate _tr)
 /******************************************************************************/
 
 const cService *cDevPortStat::pRLinkStat = nullptr;
-const cService *cDevPortStat::pPortVars  = nullptr;
+const cService *cDevPortStat::pSrvPortVars  = nullptr;
 const cService *cDevPortStat::pSrvSnmp   = nullptr;
 int cDevPortStat::ixPortIndex   = NULL_IX;
 int cDevPortStat::ixIfTypeId    = NULL_IX;
@@ -217,7 +217,7 @@ cPortStat::cPortStat(cInterface * pIf, cDevPortStat *par)
     parent     = par;
     pInterface = pIf;
     pRlinkStat = nullptr;
-    pPortVars  = new cInspector(parent, parent->host().dup()->reconvert<cNode>(), parent->pPortVars, pInterface->dup()->reconvert<cNPort>());
+    pPortVars  = new cInspector(parent, parent->host().dup()->reconvert<cNode>(), parent->pSrvPortVars, pInterface->dup()->reconvert<cNPort>());
 }
 
 bool cPortStat::postInit(QSqlQuery& q)
@@ -231,7 +231,7 @@ bool cPortStat::postInit(QSqlQuery& q)
     int n = vhs.completion(q);
     if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());
     if (n == 0) {   // Not found, create...
-        vhs.setId(_sServiceId, parent->pPortVars->getId());
+        vhs.setId(_sServiceId, parent->pSrvPortVars->getId());
         vhs.setId(_sNodeId,    parent->host().getId());
         vhs.setId(_sPortId,    pInterface->getId());
         vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
@@ -242,78 +242,87 @@ bool cPortStat::postInit(QSqlQuery& q)
         vhs.insert(q);
         vhs._toReadBack = RB_YES;
     }
-    else if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
-        // Not ours !!!???
-        vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
-        vhs.setFlag(false);
-        vhs._toReadBack = RB_NO_ONCE;
-        vhs.update(q, false, vhs.mask(_sSuperiorHostServiceId, _sFlag));
-    }
-    else {  // OK
-        vhs.mark(q, vhs.primaryKey(), false); // clear flag
-    }
-    DM;
-    // service variables
-    pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
-    DM;
-    if (pPortVars->pVars == nullptr) {
-        pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
-    }
     else {
-        pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
+        if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
+            // Not ours !!!???
+            vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
+            vhs.setFlag(false);
+            vhs._toReadBack = RB_NO_ONCE;
+            vhs.update(q, false, vhs.mask(_sSuperiorHostServiceId, _sFlag));
+        }
+        else {  // OK
+            vhs.mark(q, vhs.primaryKey(), false); // clear flag
+        }
+        if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
+            pDelete(pPortVars);
+        }
     }
     DM;
-    bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
-    n = parent->vnames.size();
-    if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
-    for (int i = 0; i < n; ++i) {   // Names of required variables
-        const QString& name = parent->vnames.at(i);
-        cServiceVar *pVar = pPortVars->pVars->get(name, EX_IGNORE);
-        if (pVar == nullptr) {      // If not exists, create
-            pVar = new cServiceVar;
-            pVar->setName(name);
-            pVar->setId(cServiceVar::ixServiceVarTypeId(), parent->vTypes.at(i));
-            pVar->setId(_sHostServiceId, pPortVars->hostServiceId());
-            pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
-            pVar->insert(q);
-            *(pPortVars->pVars) << pVar;
-            pVar->_toReadBack = RB_NO;
+    if (pPortVars != nullptr) {
+        // service variables
+        pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
+        DM;
+        if (pPortVars->pVars == nullptr) {
+            pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
         }
         else {
-            pVar->_toReadBack = RB_NO;
-            if (pVar->getBool(_sDisabled)) {    // If disabled then dropp for list
-                if (pVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
-                    pVar->setName(cServiceVar::ixVarState(), _sUnknown);
-                    pVar->_toReadBack = RB_NO;
-                    pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
-                }
-                int ix = pPortVars->pVars->indexOf(pVar->getId());
-                if (ix < 0) EXCEPTION(EPROGFAIL);
-                pPortVars->pVars->removeAt(ix);
-                delete pVar;
-                continue;
+            pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
+        }
+        DM;
+        bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
+        n = parent->vnames.size();
+        if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
+        for (int i = 0; i < n; ++i) {   // Names of required variables
+            const QString& name = parent->vnames.at(i);
+            cServiceVar *pVar = pPortVars->pVars->get(name, EX_IGNORE);
+            if (pVar == nullptr) {      // If not exists, create
+                pVar = new cServiceVar;
+                pVar->setName(name);
+                pVar->setId(cServiceVar::ixServiceVarTypeId(), parent->vTypes.at(i));
+                pVar->setId(_sHostServiceId, pPortVars->hostServiceId());
+                pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
+                pVar->insert(q);
+                *(pPortVars->pVars) << pVar;
+                pVar->_toReadBack = RB_NO;
             }
-            else if (resetRarefaction) {
-                if (pVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
-                    pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
-                    pVar->update(q, false, pVar->mask(cServiceVar::ixRarefaction()), pVar->primaryKey());
+            else {
+                pVar->_toReadBack = RB_NO;
+                if (pVar->getBool(_sDisabled)) {    // If disabled then dropp for list
+                    if (pVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
+                        pVar->setName(cServiceVar::ixVarState(), _sUnknown);
+                        pVar->_toReadBack = RB_NO;
+                        pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
+                    }
+                    int ix = pPortVars->pVars->indexOf(pVar->getId());
+                    if (ix < 0) EXCEPTION(EPROGFAIL);
+                    pPortVars->pVars->removeAt(ix);
+                    delete pVar;
+                    continue;
                 }
+                else if (resetRarefaction) {
+                    if (pVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
+                        pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
+                        pVar->update(q, false, pVar->mask(cServiceVar::ixRarefaction()), pVar->primaryKey());
+                    }
+                }
+            }
+            pVar->setOff(_sFlag);   // unmarked
+            pVar->initSkeepCnt(parent->delayCounter);
+        }
+        n = pPortVars->pVars->size();
+        for (int i = 0; i < n; ++i) {   // Find, and delete marked
+            cServiceVar *pVar = pPortVars->pVars->at(i);
+            if (pVar->getBool(_sFlag)) {
+                pVar->remove(q);                    // delete from database
+                delete pPortVars->pVars->takeAt(i); // delete from list, and delete object from memory
+                --i;
             }
         }
-        pVar->setOff(_sFlag);   // unmarked
-        pVar->initSkeepCnt(parent->delayCounter);
-    }
-    n = pPortVars->pVars->size();
-    for (int i = 0; i < n; ++i) {   // Find, and delete marked
-        cServiceVar *pVar = pPortVars->pVars->at(i);
-        if (pVar->getBool(_sFlag)) {
-            pVar->remove(q);                    // delete from database
-            delete pPortVars->pVars->takeAt(i); // delete from list, and delete object from memory
-            --i;
+        if (pPortVars->pVars->isEmpty()) {
+            pDelete(pPortVars);
         }
     }
-    if (pPortVars->pVars->isEmpty()) {
-        pDelete(pPortVars);
+    if (pPortVars == nullptr) {
         isWanted = false;
         if (pInterface->getId(cDevPortStat::ixPortStat) != RS_UNKNOWN) {
             pInterface->setId(cDevPortStat::ixPortStat, RS_UNKNOWN);
