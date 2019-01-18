@@ -365,9 +365,9 @@ bool cServiceVar::preSetValue(QSqlQuery& q, const QVariant& rawVal)
     QString s = rawValToString(q, rawVal);
     bool changed = s.compare(getName(_ixRawValue));
     if (changed) setName(_ixRawValue, s);
-    lastLast = get(_sLastTime).toDateTime();
-    set(_sLastTime, now);
-    return changed;
+    lastLast = get(_ixLastTime).toDateTime();
+    set(_ixLastTime, now);
+    return changed; // Raw value is changed
 }
 
 int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
@@ -377,10 +377,6 @@ int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
         lastTime  = now;
         addMsg(sFirstValue);
         return noValue(q, state, RS_UNKNOWN);
-    }
-    if (lastCount == 0 && val == 0) {
-        touch(q);
-        return RS_ON;
     }
     qlonglong delta = 0;
     switch (svt) {

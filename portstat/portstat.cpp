@@ -578,10 +578,10 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             int rs;
             qlonglong raw;
             QString stMsg;
-            foreach (QString vname, vnames) {
-                cServiceVar *psv = insp.getServiceVar(vname);
-                if (psv == nullptr) continue;
-                raw = tab[vname][i].toLongLong();
+            foreach (QString vname, vnames) {   // foreac variable names
+                cServiceVar *psv = insp.getServiceVar(vname);   // Get variable obj.
+                if (psv == nullptr) continue;                   // not found, next
+                raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
             }
