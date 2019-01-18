@@ -349,3 +349,6 @@ ALTER TABLE table_shape_fields ADD COLUMN icon text DEFAULT NULL;
 COMMENT ON COLUMN table_shape_fields.icon IS 'Column header icon name';
 ALTER TABLE table_shape_fields DROP COLUMN  expression; -- unused (instead: 'view.func' or 'view.expr' in feature)
 
+-- Raring the query of service variables
+ALTER TABLE service_vars ADD COLUMN rarefaction integer DEFAULT 1;
+
