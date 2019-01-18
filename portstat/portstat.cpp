@@ -230,17 +230,19 @@ bool cPortStat::postInit(QSqlQuery& q)
     // Record exists ?
     int n = vhs.completion(q);
     if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());
-    if (n == 0) {   // Not found, create...
-        vhs.setId(_sServiceId, parent->pSrvPortVars->getId());
-        vhs.setId(_sNodeId,    parent->host().getId());
-        vhs.setId(_sPortId,    pInterface->getId());
-        vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
-        vhs.setId(_sPrimeServiceId, NIL_SERVICE_ID);
-        vhs.setId(_sProtoServiceId, NIL_SERVICE_ID);
-        vhs.setName(_sNoalarmFlag, _sOn);    // Default: alarm disaled
-        vhs._toReadBack = RB_ID;
-        vhs.insert(q);
-        vhs._toReadBack = RB_YES;
+    if (n == 0) {   // Not found, create if port type is ethernet
+        if (cIfType::ifTypeId(_sEthernet) == pInterface->getId(_sIfTypeId)) {
+            vhs.setId(_sServiceId, parent->pSrvPortVars->getId());
+            vhs.setId(_sNodeId,    parent->host().getId());
+            vhs.setId(_sPortId,    pInterface->getId());
+            vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
+            vhs.setId(_sPrimeServiceId, NIL_SERVICE_ID);
+            vhs.setId(_sProtoServiceId, NIL_SERVICE_ID);
+            vhs.setName(_sNoalarmFlag, _sOn);    // Default: alarm disaled
+            vhs._toReadBack = RB_ID;
+            vhs.insert(q);
+            vhs._toReadBack = RB_YES;
+        }
     }
     else {
         if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
@@ -254,6 +256,8 @@ bool cPortStat::postInit(QSqlQuery& q)
             vhs.mark(q, vhs.primaryKey(), false); // clear flag
         }
         if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
+            // Clear states
+
             pDelete(pPortVars);
         }
     }
