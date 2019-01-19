@@ -40,6 +40,7 @@ ALTER TABLE images ALTER COLUMN usabilityes SET DEFAULT '{}'::usability[];
 
 -- Bugfix 2019.01.10.
 -- drop noalarm from alarms table
+-- 2019.01.19. commented RAISE INFO ...
 
 CREATE OR REPLACE FUNCTION set_service_stat(
     hsid        bigint,             -- host_service_id
@@ -123,10 +124,10 @@ BEGIN
     END IF;
     -- Alarm ...
     alid := old_hs.act_alarm_log_id;
-    RAISE INFO 'act_alarm_log_id = %', alid;
+    -- RAISE INFO 'act_alarm_log_id = %', alid;
     IF state = 'on'::notifswitch THEN        -- ok
         IF alid IS NOT NULL THEN   -- close act alarm
-            RAISE INFO 'Close % alarms record for % service.', alid, hs.host_service_id;
+            -- RAISE INFO 'Close % alarms record for % service.', alid, hs.host_service_id;
             UPDATE alarms SET end_time = CURRENT_TIMESTAMP WHERE alarm_id = alid;
             hs.act_alarm_log_id := NULL;
             aldo := 'close'::reasons;
@@ -139,7 +140,7 @@ BEGIN
         END IF;
     ELSE                        -- not ok
         IF alid IS NULL THEN    -- create new alarm
-            RAISE INFO 'New (%) alarms record for % service.', na, hs.host_service_id;
+            -- RAISE INFO 'New (%) alarms record for % service.', na, hs.host_service_id;
             IF na = 'off'::isnoalarm AND NOT s.disabled AND NOT hs.disabled THEN -- Alarm is not disabled, and services is not disabled
                 INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id)
                     VALUES(hsid, dmid, state, state, state, note, supaid )
@@ -147,9 +148,9 @@ BEGIN
                 aldo := 'new'::reasons;
                 alid := hs.act_alarm_log_id;
                 hs.last_alarm_log_id := alid;
-                RAISE INFO 'New alarm_id = %', alid;
+                -- RAISE INFO 'New alarm_id = %', alid;
             ELSE
-                RAISE INFO 'New alarm discard';
+                -- RAISE INFO 'New alarm discard';
                 aldo := 'discard'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
             END IF;
@@ -157,7 +158,7 @@ BEGIN
             IF na = 'off'::isnoalarm AND NOT s.disabled AND NOT hs.disabled THEN -- Alarm is not disabled, and services is not disabled
                 aldo := 'remove'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
-                RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
+                -- RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
                 alid := NULL;
                 hs.last_alarm_log_id := NULL;
             ELSIF old_hs.host_service_state < state THEN
@@ -167,17 +168,17 @@ BEGIN
                         superior_alarm_id = supaid
                     WHERE alarm_id = alid;
                 aldo := 'modify'::reasons;
-                RAISE INFO 'Update alarm (alarm_id = %', alid;
+                -- RAISE INFO 'Update alarm (alarm_id = %', alid;
             ELSIF old_hs.host_service_state > state THEN
                 UPDATE alarms SET
                         last_status = hs.host_service_state,
                         superior_alarm_id = supaid
                     WHERE alarm_id = alid;
                 aldo := 'modify'::reasons;
-                RAISE INFO 'Update alarm (2) (alarm_id = %', alid;
+                -- RAISE INFO 'Update alarm (2) (alarm_id = %', alid;
             ELSE
                 aldo := 'unchange'::reasons;
-                RAISE INFO 'Unchange alarm (alarm_id = %', alid;
+                -- RAISE INFO 'Unchange alarm (alarm_id = %', alid;
             END IF;
         END IF;
     END IF;

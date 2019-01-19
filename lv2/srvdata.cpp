@@ -303,8 +303,8 @@ cHostService& cHostService::clearState(QSqlQuery& __q)
     setName(_sHardState, _sUnknown);
     setName(_sSoftState, _sUnknown);
     clear(_sStateMsg);
-    setName(_sNOW);
-    setName(_sNOW);
+    setName(_sLastChanged, _sNOW);
+    setName(_sLastTouched ,_sNOW);
     setBool(_sFlag, false);
     QBitArray setMask = mask(_sHostServiceState, _sHardState, _sSoftState, _sStateMsg);
     setMask = setMask | mask(_sLastChanged, _sLastTouched, _sFlag);
