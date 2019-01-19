@@ -243,6 +243,12 @@ bool cPortStat::postInit(QSqlQuery& q)
             vhs.insert(q);
             vhs._toReadBack = RB_YES;
         }
+        else {
+            if (_sUnknown != vhs.getName(_sHostServiceState)) {
+                vhs.clearState(q);
+            }
+            pDelete(pPortVars);
+        }
     }
     else {
         if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
@@ -257,7 +263,6 @@ bool cPortStat::postInit(QSqlQuery& q)
         }
         if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
             // Clear states
-
             pDelete(pPortVars);
         }
     }

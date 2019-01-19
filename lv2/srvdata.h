@@ -94,6 +94,9 @@ public:
     ///         ezzel jelezve, hogy a példány már nem létezik.
     /// @exception Bármilyen egyéb hiba esetén dob egy kizázást cError * -al.
     cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
+    /// Törli az aktuális rekord (ID alapján) állapot mezőit.
+    /// Az adatbázisból nem olvassa vissza a rekordok tartalmát.
+    cHostService& clearState(QSqlQuery& __q);
     /// A hálózati elem, és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.

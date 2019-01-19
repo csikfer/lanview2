@@ -297,6 +297,22 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     return *this;   // To avoid a warning message
 }
 
+cHostService& cHostService::clearState(QSqlQuery& __q)
+{
+    setName(_sHostServiceState, _sUnknown);
+    setName(_sHardState, _sUnknown);
+    setName(_sSoftState, _sUnknown);
+    clear(_sStateMsg);
+    setName(_sNOW);
+    setName(_sNOW);
+    setBool(_sFlag, false);
+    QBitArray setMask = mask(_sHostServiceState, _sHardState, _sSoftState, _sStateMsg);
+    setMask = setMask | mask(_sLastChanged, _sLastTouched, _sFlag);
+    _toReadBack = RB_NO_ONCE;
+    update(__q, false, setMask, primaryKey());
+    return *this;
+}
+
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)
 {
     set();
