@@ -368,11 +368,15 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pEditInventoryNumber = new cLineWidget;
     pEditModelNumber     = new cComboLineWidget(node[_sModelNumber], sqlWhere);
     pEditModelName       = new cComboLineWidget(node[_sModelName],   sqlWhere);
+    pEditOsName          = new cComboLineWidget(node[_sOsName],      sqlWhere);
+    pEditOsVersion       = new cComboLineWidget(node[_sOsVersion],   sqlWhere);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelNote,       pEditNote);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelSerial,     pEditSerialNumber);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelInventory,  pEditInventoryNumber);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelModelName,  pEditModelName);
     setFormEditWidget(pUi->formLayoutNode, pUi->labelModelNumber,pEditModelNumber);
+    setFormEditWidget(pUi->formLayoutNode, pUi->labelOsName,     pEditOsName);
+    setFormEditWidget(pUi->formLayoutNode, pUi->labelOsVersion,  pEditOsVersion);
     pEditPNote          = new cLineWidget;
     pEditPTag           = new cLineWidget;
     setFormEditWidget(pUi->formLayoutPort, pUi->labelPNote,      pEditPNote);
@@ -786,6 +790,8 @@ void cWorkstation::node2gui(bool setModOn)
     pEditInventoryNumber->set(node.get(_sInventoryNumber));
     pEditModelName->set(node.get(_sModelName));
     pEditModelNumber->set(node.get(_sModelNumber));
+    pEditOsName->set(node.get(_sOsName));
+    pEditOsVersion->set(node.get(_sOsVersion));
     pUi->lineEditNodeType->setText(node.getName(_sNodeType));
     // Display ports
     if (node.ports.isEmpty()) node.addPort(_sEthernet, _sEthernet, _sNul, NULL_IX);
@@ -1277,6 +1283,8 @@ void cWorkstation::on_pushButtonSave_clicked()
     node.set(_sInventoryNumber, pEditInventoryNumber->get());
     node.set(_sModelName,       pEditModelName->get());
     node.set(_sModelNumber,     pEditModelNumber->get());
+    node.set(_sOsName,          pEditOsName->get());
+    node.set(_sOsVersion,       pEditOsVersion->get());
     node.setId(_sNodeType, nodeType);
     node.setId(_sPlaceId, pSelPlace->currentPlaceId());
     pnp->setName(pUi->lineEditPName->text());
@@ -1328,6 +1336,8 @@ void cWorkstation::on_pushButtonSave_clicked()
     pUi->textEditMsg->append(trUtf8("A bevitt adatok sikeresen el lettek mentve."));
     pEditModelName->refresh();
     pEditModelNumber->refresh();
+    pEditOsName->refresh();
+    pEditOsVersion->refresh();
 }
 
 void cWorkstation::on_pushButtonPlaceEqu_clicked()

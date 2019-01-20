@@ -361,7 +361,7 @@ int cTableShape::fetchFields(QSqlQuery& q, bool raw)
             shapeFields << f;
         } while (f.next(q));
     }
-    foreach (cTableShapeField *p, (QList<cTableShapeField *>)shapeFields) {
+    foreach (cTableShapeField *p, static_cast<QList<cTableShapeField *> >(shapeFields)) {
         p->fetchText(q);
         if (!raw) {
             p->features().merge(features(), p->getName());
@@ -884,7 +884,7 @@ QString cTableShapeField::view(QSqlQuery &q, const cRecord& o, qlonglong fix) co
         }
         return lastMsg;
     }
-    return o.view(q, fix, &features());
+    return o.view(q, int(fix), &features());
 }
 
 
