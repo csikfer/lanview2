@@ -353,3 +353,10 @@ ALTER TABLE table_shape_fields DROP COLUMN  expression; -- unused (instead: 'vie
 -- Raring the query of service variables
 ALTER TABLE service_vars ADD COLUMN rarefaction integer DEFAULT 1;
 
+-- Mod. 2019.01.19.
+
+ALTER TABLE nodes ADD COLUMN os_name text;
+COMMENT ON COLUMN nodes.os_name IS 'Operating system or firmware name';
+ALTER TABLE nodes ADD COLUMN os_version text;
+COMMENT ON COLUMN nodes.os_version IS 'Operating system or firmware version';
+
