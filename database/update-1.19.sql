@@ -271,20 +271,29 @@ DECLARE
 BEGIN
     IF NEW.superior_alarm_id IS NULL
     OR NEW.host_service_id = 0 THEN -- ticket
+        -- on-line
         UPDATE user_events SET event_state = 'dropped'
             WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
                 AND event_state = 'necessary';
-        INSERT INTO user_events(user_id, alarm_id, event_type)
-            SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (
-                SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
-                FROM host_services WHERE host_service_id = NEW.host_service_id
-            );
 
-        INSERT INTO user_events(user_id, alarm_id, event_type)
-            SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (
-                SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
-                FROM host_services WHERE host_service_id = NEW.host_service_id
-            );
+        WITH uids AS (
+            SELECT DISTINCT user_id
+                FROM group_users
+                WHERE group_id = ANY (
+                    SELECT unnest(COALESCE(hs.online_group_ids, s.online_group_ids))
+                        FROM host_services AS hs JOIN services AS s USING(service_id)
+                        WHERE host_service_id = NEW.host_service_id)
+        ) INSERT INTO user_events(user_id, alarm_id, event_type) SELECT user_id, NEW.alarm_id, 'notice'::usereventtype FROM uids;
+        -- off-line
+        WITH uids AS (
+            SELECT DISTINCT user_id
+                FROM group_users
+                WHERE group_id = ANY (
+                    SELECT unnest(COALESCE(hs.offline_group_ids, s.offline_group_ids))
+                        FROM host_services AS hs JOIN services AS s USING(service_id)
+                        WHERE host_service_id = NEW.host_service_id)
+        ) INSERT INTO user_events(user_id, alarm_id, event_type) SELECT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM uids;
+        
         NOTIFY alarm;
     END IF;
     RETURN NEW;
