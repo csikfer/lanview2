@@ -634,24 +634,31 @@ qlonglong cUserEvent::insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _ai
     return ue.getId();
 }
 
-void cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
+bool cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
 {
+    QString et = userEventType(_et);
     if (_m.isEmpty()) {
         static const QString sql =
                 "UPDATE user_events SET event_state = 'happened'"
                 " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
-        execSql(q, sql, _uid, _aid, userEventType(_et));
+        execSql(q, sql, _uid, _aid, et);
     }
     else {
         static const QString sql =
                 "UPDATE user_events SET event_state = 'happened', user_event_note = ?"
                 " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
-        execSql(q, sql, _m, _uid, _aid, userEventType(_et));
+        execSql(q, sql, _m, _uid, _aid, et);
     }
+    int n = q.numRowsAffected();
+    if (n > 1) {
+        EXCEPTION(EDATA, n, trUtf8("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
+    }
+    return n == 1;
 }
 
-void cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
+bool cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
 {
+    QString et = userEventType(_et);
     if (_m.isEmpty()) {
         static const QString sql =
                 "UPDATE user_events SET event_state = 'dropped'"
@@ -664,6 +671,11 @@ void cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEven
                 " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
         execSql(q, sql, _m, _uid, _aid, userEventType(_et));
     }
+    int n = q.numRowsAffected();
+    if (n > 1) {
+        EXCEPTION(EDATA, n, trUtf8("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
+    }
+    return n == 1;
 }
 
 

@@ -234,8 +234,8 @@ class LV2SHARED_EXPORT cUserEvent  : public cRecord {
 public:
     static qlonglong insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
     static qlonglong insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
-    static void happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
-    static void dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
+    static bool happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
+    static bool dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
 };
 
 /* ---------------------------------------------------------------- */

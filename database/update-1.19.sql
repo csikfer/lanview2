@@ -262,34 +262,39 @@ CREATE OR REPLACE VIEW public.online_alarms_noack AS
      JOIN places p USING (place_id)
   WHERE 0 < array_length(a.online_user_ids, 1);
 
+-- Modify 2019.01.23. BEGIN
+DROP TRIGGER IF EXISTS alarms_after_insert_or_update ON alarms;
 
 CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
 DECLARE
     gids bigint[];
 BEGIN
-    IF NEW.superior_alarm_id IS NULL THEN
-        IF TG_OP = 'INSERT' THEN
-            UPDATE user_events SET event_state = 'dropped'
-                WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
-                  AND event_state = 'necessary';
-            SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
-                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
-            IF gids IS NOT NULL THEN
-                INSERT INTO user_events(user_id, alarm_id, event_type)
-                    SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (gids);
-            END IF;
-            SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
-                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
-            IF gids IS NOT NULL THEN
-                INSERT INTO user_events(user_id, alarm_id, event_type)
-                    SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (gids);
-            END IF;
-        END IF;
+    IF NEW.superior_alarm_id IS NULL
+    OR NEW.host_service_id = 0 THEN -- ticket
+        UPDATE user_events SET event_state = 'dropped'
+            WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
+                AND event_state = 'necessary';
+        INSERT INTO user_events(user_id, alarm_id, event_type)
+            SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (
+                SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
+                FROM host_services WHERE host_service_id = NEW.host_service_id
+            );
+
+        INSERT INTO user_events(user_id, alarm_id, event_type)
+            SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (
+                SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
+                FROM host_services WHERE host_service_id = NEW.host_service_id
+            );
         NOTIFY alarm;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER alarms_after_insert AFTER INSERT ON public.alarms
+  FOR EACH ROW EXECUTE PROCEDURE public.alarm_notice();
+
+-- Modify 2019.01.23. END
 
 
 CREATE OR REPLACE FUNCTION ticket_alarm(
