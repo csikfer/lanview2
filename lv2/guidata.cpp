@@ -887,6 +887,18 @@ QString cTableShapeField::view(QSqlQuery &q, const cRecord& o, qlonglong fix) co
     return o.view(q, int(fix), &features());
 }
 
+QString cTableShapeField::colName(bool icon)
+{
+    QString r = getText(LTX_TABLE_TITLE);
+    if (r.startsWith(QChar('*'))) {
+        if (icon) r = _sNul;
+        else      r = r.mid(1);
+    }
+    else if (r.isEmpty() && !icon) {
+        r = getName();
+    }
+    return r;
+}
 
 /* ------------------------------ cEnumVal ------------------------------ */
 CRECCNTR(cEnumVal) CRECDEFD(cEnumVal)

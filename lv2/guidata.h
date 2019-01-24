@@ -232,6 +232,8 @@ public:
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     /// Display string referenced from the field.
     QString view(QSqlQuery &q, const cRecord& o, qlonglong fix = -1) const;
+    ///
+    QString colName(bool icon = false);
 protected:
     static cRecStaticDescr  _staticDescr;
     STATICIX(cTableShapeField, TableFieldName)

@@ -333,9 +333,11 @@ public:
     cTableShape *   getInhShape(cTableShape *pTableShape, const cRecStaticDescr& d) { return getInhShape(*pq, pTableShape, d.tableName(), isReadOnly); }
     QStringList         inheritTableList;
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
-    QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
+    QString             viewName;       ///< A TEMP VIEW neve, vagy NULL, ha nincs
     eTableInheritType   tableInhType;
     cRecordDialogBase  *pRecordDialog;
+    QString             foreignKeyName; ///< Foreign key field name by features
+    QString             foreignKeyRef;  ///< Foreign key reference field name by features (if not record ID)
 
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
     const cRecStaticDescr& inhRecDescr(const QString& tn) const;
@@ -426,7 +428,8 @@ public:
     /// Alapesetben ez kiderül a rekord idegen kulcsokból.
     /// De megadható a features mezőben is, ha ez az idegen kilcsmezőkkel nem lehetséges, nem egyértelmű:
     /// ekkor a <table shape name>.owner kulcs értéke a keresett mező neve. (nem a tábla, hanem a leíró neve van a kulcsban)
-    int ixToOwner();
+    int ixToForeignKey();
+    void setOwnerId(qlonglong _id);
 
 private:
     void rightTabs(QVariantList &vlids);
