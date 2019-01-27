@@ -29,6 +29,7 @@ cTreeNode::~cTreeNode()
 
 void cTreeNode::addChild(cTreeNode *pn)
 {
+    if (pChildrens == nullptr) pChildrens = new QList<cTreeNode *>;
     pChildrens->append(pn);
     pn->parent = this;
 }
@@ -333,7 +334,7 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QMod
     qlonglong old_pid = NULL_ID;
     qlonglong new_pid = NULL_ID;
     if (ixPId < 0) {
-        int tit = tableShape.getId(_sTableInheritType);
+        int tit = int(tableShape.getId(_sTableInheritType));
         if (tit == TIT_NO || tit == TIT_ONLY) {
             EXCEPTION(EDATA, -1, tableShape.identifying(false));
         }
@@ -342,7 +343,7 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QMod
         old_pid = pn->pData->getId(ixPId);    // Régi parent ID
         new_pid = pRec->getId(ixPId);         // Új parent ID
     }
-    if (old_pid == new_pid) {   // A modosítottat ugyanode kell visszarakni
+    if (old_pid == new_pid) {   // A modosítottat ugyanoda kell visszarakni
         return 1;   // OK, A fát nem kell átrendezni
     }
     else {                      // Átírta az owber ID-t
@@ -385,12 +386,14 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
     case 2: {
         beginRemoveRows(mi.parent(), row, row);
         delete pp->pChildrens->takeAt(row)->pData; // pp->pChildrens->takeAt(row) === pn
+        pp->childNumber--;
         pn->pData = pRec;
         endRemoveRows();
         cTreeNode *pnp = nodeFromIndex(npi);
         row = pnp->rows();
         beginInsertRows(npi, row, row);
         pnp->addChild(pn);
+        pnp->childNumber++;
         endInsertRows();
         break;
     }

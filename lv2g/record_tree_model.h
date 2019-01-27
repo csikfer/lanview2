@@ -24,7 +24,7 @@ public:
     void addChild(cTreeNode *pn);
     void addChild(cRecord *pRec);
     int row() const;
-    int rows() const { if (pChildrens == nullptr) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
+    int rows() const { return childNumber; }
 };
 
 class LV2GSHARED_EXPORT cRecordTreeModel : public QAbstractItemModel, public cRecordViewModelBase {
