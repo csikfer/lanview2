@@ -41,6 +41,7 @@ ALTER TABLE images ALTER COLUMN usabilityes SET DEFAULT '{}'::usability[];
 -- Bugfix 2019.01.10.
 -- drop noalarm from alarms table
 -- 2019.01.19. commented RAISE INFO ...
+-- 2019.01.29. Javítás (felesleges alarms rekord törlések) hibás IF
 
 CREATE OR REPLACE FUNCTION set_service_stat(
     hsid        bigint,             -- host_service_id
@@ -152,10 +153,10 @@ BEGIN
             ELSE
                 -- RAISE INFO 'New alarm discard';
                 aldo := 'discard'::reasons;
-                DELETE FROM alarms WHERE alarm_id = alid;
+                -- DELETE FROM alarms WHERE alarm_id = alid;    Hülyeség! alid = NULL
             END IF;
         ELSE                    -- The alarm remains
-            IF na = 'off'::isnoalarm AND NOT s.disabled AND NOT hs.disabled THEN -- Alarm is not disabled, and services is not disabled
+            IF na = 'on'::isnoalarm OR s.disabled OR hs.disabled THEN -- Alarm is disabled, or services is disabled
                 aldo := 'remove'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
                 -- RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
