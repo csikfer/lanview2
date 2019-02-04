@@ -432,8 +432,11 @@ void cRecordDialog::init()
         if (_pOwnerTable != nullptr && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int flags = _pOwnerTable->flags;
             if (flags & RTF_CHILD) {
-                int oix = _pOwnerTable->ixToOwner();
-                _pRecord->setId(oix, _pOwnerTable->owner_id);
+                if (_pOwnerTable->pUpper == nullptr) EXCEPTION(EPROGFAIL);
+                if (_pOwnerTable->foreignKeyRef.isEmpty()) {
+                    int oix = _pOwnerTable->ixToForeignKey();
+                    _pRecord->setId(oix, _pOwnerTable->owner_id);
+                }
             }
         }
         if (_pOwnerTable != nullptr && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????

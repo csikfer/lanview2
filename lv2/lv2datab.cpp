@@ -3829,28 +3829,26 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
     return 1;
 #else
     _EXECSQL(__q);
+    int n = 0;
     if (rbMask.count(true) == 0) {
         if (_toReadBack == RB_NO_ONCE) _toReadBack = _toReadBackDefault;
-        int n = __q.numRowsAffected();
-        if (n == 0) {
-            QString msg = trUtf8("Nothing modify any record : %1").arg(identifying());
-            if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
-            return 0;
-        }
-        return 0;
+        n = __q.numRowsAffected();
     }
-    if (__q.first()) {
+    else if (__q.first()) {
         if (_toReadBack == RB_YES) set(__q);
         else                       readBack(__q, rbMask);
         _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
         // PDEB(VERBOSE) << "Update RETURNING :" << toString() << endl;
-        return __q.numRowsAffected();
+        n = __q.numRowsAffected();
     }
     else {
+        n = 0;
+    }
+    if (n == 0) {
         QString msg = trUtf8("Nothing modify any record : %1").arg(identifying());
         if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
-        return 0;
     }
+    return n;
 #endif
 }
 

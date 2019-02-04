@@ -179,8 +179,8 @@ void cOnlineAlarm::map()
         }
     }
     pMapText->setText(text);
-    int height= pMapText->document()->size().height() +5;
-    int width = pMapText->document()->size().width();
+    int height= int(pMapText->document()->size().height() +5);
+    int width = int(pMapText->document()->size().width());
     pMapText->setMinimumHeight(height);
     pMapText->resize(width, height);
 }

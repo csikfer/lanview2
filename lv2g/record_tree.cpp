@@ -155,8 +155,9 @@ void cRecordTree::initSimple(QWidget *pW)
     for (int i = 0; i < fields.size(); ++i) {
         hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
     }
+    pTreeView->header()->setMinimumSectionSize(24); // Icon
     // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
-    // pTreeView->resetIndentation();
+    pTreeView->setIndentation(16);
     // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
     pTreeView->setRootIsDecorated(true);
 

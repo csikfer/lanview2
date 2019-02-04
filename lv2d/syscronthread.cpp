@@ -73,15 +73,15 @@ void cSysInspector::mailCron()
     cUserEvent e;
     cError *pe = nullptr;
     try {
-
-        e.setId(_sEventType,  UE_SENDMAIL);
-        e.setId(_sEventState, UE_NECESSARY);
+        const QString sql =
+                "SELECT user_id, alarm_id FROM user_events "
+                "WHERE event_state = 'necessary' AND event_type = 'sendmail'";
+        qlonglong uid, aid;
         QMap<qlonglong, QList<qlonglong> >  uidMapByAid;    // User ID list map by alarm ID
         QMap<qlonglong, QList<qlonglong> >  aidMapByUid;    // Alarm ID list map by User ID
-        qlonglong uid, aid;
-        if (e.completion(q)) do {
-            uid = e.getId(_sUserId);
-            aid = e.getId(_sAlarmId);
+        if (execSql(q, sql)) do {
+            uid = q.value(0).toLongLong();
+            aid = q.value(1).toLongLong();
             uidMapByAid[aid] << uid;
             aidMapByUid[uid] << aid;
         } while (e.next(q));
@@ -89,6 +89,17 @@ void cSysInspector::mailCron()
             statMsg += "No mail sent. ";
             return;
         }
+        // Set message(s)
+        QMap<qlonglong, QString >  MsgMapByUid;         // Messages map by user ID(s)
+        foreach (aid, uidMapByAid.keys()) {             // For each all alarm ID(s)
+            QString msg = cAlarm::htmlText(q, aid);
+            foreach (uid, uidMapByAid[aid]) {
+                QString emsg = MsgMapByUid[uid];
+                if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>"; // Line separator
+                MsgMapByUid[uid] = emsg + msg;
+            }
+        }
+
 
         // e-mail sender obj.
         QString mailServer = cSysParam::getTextSysParam(q, "MailServer", "localhost");
@@ -107,17 +118,6 @@ void cSysInspector::mailCron()
         // sender e-mail address
         QString sSenderAddress = cSysParam::getTextSysParam(q, "SenderAddress");
         SimpleMail::EmailAddress senderAddress(sSenderAddress, ORGNAME);
-
-        // Set message(s)
-        QMap<qlonglong, QString >  MsgMapByUid;             // Messages map by user ID
-        foreach (aid, uidMapByAid.keys()) {
-            QString msg = cAlarm::htmlText(q, aid);
-            foreach (uid, uidMapByAid[aid]) {
-                QString emsg = MsgMapByUid[uid];
-                if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>"; // Line separator
-                MsgMapByUid[uid] = emsg + msg;
-            }
-        }
 
         // Send mesage(s) to recipient(s)
         foreach (uid, aidMapByUid.keys()) {
@@ -142,8 +142,15 @@ void cSysInspector::mailCron()
                 QString  msg = sendmail.responseText();
                 r = r && res;
                 foreach (aid, aidMapByUid[uid]) {
-                    if (res) cUserEvent::happened(q, uid, aid, UE_SENDMAIL, msg);
-                    else     cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, msg);
+                    bool rr;
+                    if (res) rr = cUserEvent::happened(q, uid, aid, UE_SENDMAIL, msg);
+                    else     rr = cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, msg);
+                    if (!rr) {
+                        statMsg += trUtf8("Unable to modify user event (%1 / alarm #%2) state to %3.\n")
+                                .arg(cUser().getNameById(q, uid))
+                                .arg(aid)
+                                .arg(userEventState(res ? UE_HAPPENED : UE_DROPPED));
+                    }
                 }
             }
         }

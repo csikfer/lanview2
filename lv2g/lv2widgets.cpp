@@ -3159,7 +3159,9 @@ int cFKeyArrayWidget::set(const QVariant& v)
         valueView.clear();
         foreach (QVariant vId, _value.toList()) {
             qlonglong id = vId.toLongLong();
-            valueView << ra.getNameById(*pq, id);
+            QString name = ra.getNameById(*pq, id, EX_IGNORE);
+            if (name.isNull()) name = dcViewShort(DC_HAVE_NO) + QString(" [%1]").arg(id);   // Error ...
+            valueView << name;
             ids       << id;
         }
         pArrayModel->setStringList(valueView);

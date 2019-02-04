@@ -174,6 +174,12 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
         ui->lineEditNodeId->setText(QString::number(pDev->getId()));
         ui->lineEditCom->setText(pDev->getName(_sCommunityRd));
         pTypeWidget->setId(pDev->getId(_sNodeType));
+        qlonglong pid = pDev->getId(_sPlaceId);
+        if (pSelectNode->currentPlaceId() != pid) {
+            qlonglong nid = pDev->getId();
+            pSelectNode->setCurrentPlace(pid);
+            pSelectNode->setCurrentNode(nid);
+        }
         ui->pushButtonQuery->setDisabled(true);
         ui->pushButtonSave->setDisabled(false);
         switch (pDev->snmpVersion()) {

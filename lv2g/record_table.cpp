@@ -546,7 +546,7 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     pType   = new QComboBox(&par);
     pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
     pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->trUtf8("Le"), &par);
-    pRowName->setText(field.headerText.toString());
+    pRowName->setText(field.shapeField.colName());
     pRowName->setReadOnly(true);
     types |= enum2set(OT_NO);   // Ha esetleg a nincs rendezés nem lenne benne a set-ben
     for (int i = 0; enum2set(i) <= types ; ++i) {
@@ -661,7 +661,7 @@ cRecordTableHideRow::cRecordTableHideRow(int row, cRecordTableHideRows * _par) :
     pi = new QTableWidgetItem(name);
     pParent->setItem(row, HRC_NAME, pi);
 
-    title = pColumn->shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, name);
+    title = pColumn->shapeField.colName();
     pi = new QTableWidgetItem(title);
     pParent->setItem(row, HRC_TITLE, pi);
 
@@ -775,7 +775,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
                 continue;
             }
             filters << pFilt;
-            cols    << tsf.getText(cTableShapeField::LTX_TABLE_TITLE);
+            cols    << tsf.colName();
 //        }
     }
     PDEB(VERBOSE) << trUtf8("Shape : %1 ; filtered fields : %2")
@@ -1102,7 +1102,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     : parent(&table)
     , shapeField(sf)
     , recDescr(table.recDescr())
-    , headerText(string2variant(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE)))
+    , headerText(string2variant(shapeField.colName(sf.getBool(_sFieldFlags, FF_IMAGE))))
 {
     QString s;
     isImage = IS_NOT_IMAGE;
@@ -1385,7 +1385,7 @@ void cRecordsViewBase::insert(bool _similar)
         }
         else if (owner_id != NULL_ID) {
             sample.setType(&recDescr());
-            sample.set(ixToOwner(), owner_id);
+            sample.set(ixToForeignKey(), owner_id);
             pRec = &sample;
         }
         pRec = objectDialog(sInsertDialog, *pq, this->pWidget(), pRec);
@@ -1808,6 +1808,18 @@ void cRecordsViewBase::initShape(cTableShape *pts)
         }
     }
     idName = pTableShape->feature("id");
+    if (pUpper != nullptr) {
+        QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
+        foreignKeyName = pTableShape->feature(key);
+        if (!foreignKeyName.isEmpty()) {
+            QStringList sl = cFeatures::value2list(foreignKeyName);
+            if (sl.size() > 1) {
+                foreignKeyName = sl.first();
+                foreignKeyRef  = sl.at(1);
+                if (foreignKeyRef == _sAt) foreignKeyRef = foreignKeyName;
+            }
+        }
+    }
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
@@ -1833,15 +1845,14 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
     return r;
 }
 
-int cRecordsViewBase::ixToOwner()
+int cRecordsViewBase::ixToForeignKey()
 {
     if (pUpper == nullptr) EXCEPTION(EPROGFAIL);
-    QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
-    QString ofn = pTableShape->feature(key);
     int r;
-    if (ofn.isEmpty()) {    // Ki kell találni, nincs megadva a features mezőben
+    if (foreignKeyName.isEmpty()) {    // Ki kell találni, nincs megadva a features mezőben
         r = recDescr().ixToOwner(pUpper->recDescr().tableName(), EX_IGNORE);
         if (r < 0) {
+            QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
             QString msg = trUtf8(
                     "A %1 al tábla nézetben (%2 tábla)\n a tulajdonos objektum táblára "
                     "(nézet : %3, tábla %4) mutató ID mező neve (idegen kilcs) nem állpítható meg. "
@@ -1854,13 +1865,15 @@ int cRecordsViewBase::ixToOwner()
         }
     }
     else {  // A features mezőben definiáltuk
-        r = recDescr().toIndex(ofn, EX_IGNORE);
+        r = recDescr().toIndex(foreignKeyName, EX_IGNORE);
         if (r < 0) {
+            QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
+            QString val = pTableShape->feature(key);
             QString msg = trUtf8(
                     "A %1 al tábla nézetben (%2 tábla) a %3 feature változó értéke %4. "
                     "Nincs ilyen nevű mező! A változónak a tulajdonos táblára "
                     "(nézet : %5, tábla %6) mutató mező nevét (idegen kulcs) kellene deifiniálnia.")
-                    .arg(pTableShape->getName(), pTableShape->getName(_sTableName), key, ofn,
+                    .arg(pTableShape->getName(), pTableShape->getName(_sTableName), key, val,
                          pUpper->pTableShape->getName(), pUpper->pTableShape->getName(_sTableName));
             EXCEPTION(EFOUND, 0, msg);
         }
@@ -1868,6 +1881,18 @@ int cRecordsViewBase::ixToOwner()
     return r;
 }
 
+void cRecordsViewBase::setOwnerId(qlonglong _id)
+{
+    if (_id == NULL_ID) {
+        owner_id = NULL_ID;
+    }
+    else if (foreignKeyRef.isEmpty()) {
+        owner_id = _id;
+    }
+    else {
+        owner_id = pUpper->actRecord()->getId(foreignKeyRef);
+    }
+}
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(QSqlQuery& q, qlonglong shapeId, cRecordsViewBase * own, QWidget *par)
 {
@@ -2064,7 +2089,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
         }
         switch (f) {
         case RTF_CHILD: {
-            int ofix = ixToOwner();
+            int ofix = ixToForeignKey();
             wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
         }   break;
         case RTF_IGROUP:
@@ -2222,7 +2247,7 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
         else {
             if (selectedRows().size() == 1) _actId = actId();
             foreach (cRecordsViewBase *pRightTable, *pRightTables) {
-                pRightTable->owner_id = _actId;
+                pRightTable->setOwnerId(_actId);
                 qlonglong __actId = pRightTable->actId(EX_IGNORE);
                 pRightTable->refresh();
                 if (__actId != pRightTable->actId(EX_IGNORE)) {
