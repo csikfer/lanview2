@@ -401,9 +401,10 @@ static QString colLink(QSqlQuery& q, qlonglong pid, ePhsLinkType lt, ePortShare 
             while (!list.isEmpty()) {
                 cPhsLink *ppl = list.pop_back();
                 qlonglong pid2 = ppl->getId(_sPortId2);
-                htmlIndent(16, "==>" + cNPort::getFullNameById(q, pid2));
+                msg += htmlIndent(16, "==> " + cNPort::getFullNameById(q, pid2));
                 ePhsLinkType lt = ePhsLinkType(ppl->getId(_sPhsLinkType2));
                 ePortShare   sh= ePortShare(ppl->getId(_sPortShared));
+                if (sh != ES_) msg += "/" + portShare(sh);
                 if (lt != LT_TERM) {
                     QMap<ePortShare, qlonglong> dummy;
                     QString m = linkChainReport(q, pid2, lt, sh, dummy);
