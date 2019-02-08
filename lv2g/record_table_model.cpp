@@ -137,11 +137,12 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         QColor c;
-        if (0 <= lineBgColorEnum2Ix && lineBgColorEnum2Val == pr->getId(lineBgColorEnum2Ix)) {
+        if (0 <= lineBgColorEnum2Ix && pr->isIndex(lineBgColorEnum2Ix) && lineBgColorEnum2Val == pr->getId(lineBgColorEnum2Ix)) {
             c = bgColorByEnum(lineBgColorEnum2Type, lineBgColorEnum2Val);
         }
         else {
-            qlonglong e = pr->getId(lineBgColorEnumIx);
+            qlonglong e = NULL_ID;
+            if (pr->isIndex(lineBgColorEnumIx)) e = pr->getId(lineBgColorEnumIx);
             if (e == NULL_ID) {
                 c = dcBgColor(DC_NULL);
             }
