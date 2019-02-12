@@ -262,7 +262,7 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
     QString val = value(key);
     if (val.isEmpty()) return;
     const cColEnumType *pEnumType = _fr.descr().getPEnumType();
-    if (pEnumType == nullptr || _fr.descr().colType == cColStaticDescr::FT_ENUM) { // Is not set or text_id
+    if (pEnumType == nullptr || _fr.descr().eColType == cColStaticDescr::FT_ENUM) { // Is not set or text_id
         if (val == "!") _fr.clear();
         else            _fr = val;
     }
