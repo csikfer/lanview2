@@ -43,7 +43,7 @@ void cRecordLink::init()
     if (!isNoInsert) buttons << DBT_INSERT;
     flags = 0;
     if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
-    switch (shapeType) {
+    switch (shapeType & ~ENUM2SET(TS_BARE)) {
     case ENUM2SET2(TS_CHILD, TS_LINK):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;

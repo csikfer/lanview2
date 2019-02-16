@@ -33,8 +33,10 @@ void cRecordTree::init()
         buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
-    switch (shapeType) {
-    case ENUM2SET2(TS_TREE, TS_BARE):
+    qlonglong st = shapeType & ~ENUM2SET2(TS_TREE, TS_BARE);
+    if (st == 0 && shapeType != ENUM2SET2(TS_TREE, TS_BARE)) st = TS_TREE;
+    switch (st) {
+    case 0:
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_TREE;
         buttons.pop_front();    // A close nem kell
@@ -45,38 +47,38 @@ void cRecordTree::init()
         flags = RTF_SINGLE | RTF_TREE;
         initSimple(_pWidget);
         break;
-    case ENUM2SET2(TS_TREE, TS_MEMBER):
+    case ENUM2SET(TS_MEMBER):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_MEMBER | RTF_TREE;
         initMaster();
         break;
-    case ENUM2SET2(TS_TREE, TS_GROUP):
+    case ENUM2SET(TS_GROUP):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_GROUP | RTF_TREE;
         initMaster();
         break;
-    case ENUM2SET2(TS_TREE, TS_IGROUP):
-    case ENUM2SET2(TS_TREE, TS_NGROUP):
-    case ENUM2SET2(TS_TREE, TS_IMEMBER):
-    case ENUM2SET2(TS_TREE, TS_NMEMBER):
+    case ENUM2SET(TS_IGROUP):
+    case ENUM2SET(TS_NGROUP):
+    case ENUM2SET(TS_IMEMBER):
+    case ENUM2SET(TS_NMEMBER):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_EXPAND << DBT_REFRESH << DBT_SPACER;
         switch (shapeType) {
-        case ENUM2SET2(TS_TREE, TS_IGROUP):
+        case ENUM2SET(TS_IGROUP):
             flags = RTF_SLAVE | RTF_IGROUP;
             if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
             break;
-        case ENUM2SET2(TS_TREE, TS_NGROUP):
+        case ENUM2SET(TS_NGROUP):
             flags = RTF_SLAVE | RTF_NGROUP;
             if (isReadOnly == false) buttons << DBT_INSERT << DBT_SIMILAR << DBT_PUT_IN;
             break;
-        case ENUM2SET2(TS_TREE, TS_IMEMBER):
+        case ENUM2SET(TS_IMEMBER):
             flags = RTF_SLAVE | RTF_IMEMBER;
             if (isReadOnly == false) buttons << DBT_TAKE_OUT;
             break;
-        case ENUM2SET2(TS_TREE, TS_NMEMBER):
+        case ENUM2SET(TS_NMEMBER):
             flags = RTF_SLAVE | RTF_NMEMBER;
             if (isReadOnly == false) buttons << DBT_PUT_IN;
             break;
@@ -85,18 +87,18 @@ void cRecordTree::init()
         }
         initSimple(_pWidget);
         break;
-    case ENUM2SET2(TS_TREE, TS_OWNER):
+    case ENUM2SET(TS_OWNER):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_OVNER | RTF_TREE;
         initMaster();
         break;
-    case ENUM2SET2(TS_TREE, TS_CHILD):
+    case ENUM2SET(TS_CHILD):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
-    case ENUM2SET3(TS_TREE, TS_OWNER, TS_CHILD):
+    case ENUM2SET2(TS_OWNER, TS_CHILD):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell

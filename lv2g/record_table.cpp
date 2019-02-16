@@ -2315,15 +2315,17 @@ void cRecordTable::init()
         buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
+
     if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
-    switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
-    case ENUM2SET(TS_BARE):
+    qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
+    if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
+    switch (st) {
+    case 0: // ONLY TS_BARE
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
-    case 0:
     case ENUM2SET(TS_SIMPLE):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SINGLE;
@@ -2381,7 +2383,7 @@ void cRecordTable::init()
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_CHILD):
-    case ENUM2SET2(TS_CHILD, TS_LINK):
+    case ENUM2SET2(TS_CHILD, TS_SIMPLE):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         buttons.pop_front();    // A close nem kell
