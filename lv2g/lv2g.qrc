@@ -80,5 +80,9 @@
         <file>icons/emblem-question-yellow.ico</file>
         <file>icons/emblem-readonly.ico</file>
         <file>icons/emblem-what.ico</file>
+        <file>icons/network-ethernet-connected.ico</file>
+        <file>icons/network-ethernet-disconnected.ico</file>
+        <file>icons/have_no.png</file>
+        <file>icons/null.png</file>
     </qresource>
 </RCC>

@@ -6,6 +6,14 @@
 
 const enum ePrivilegeLevel cExportsWidget::rights = PL_OPERATOR;
 
+static const QString _sGUI = "GUI";
+
+enum eExport {
+    E_PRAM_TYPES, E_SYS_PARAMS, E_SERVICES, E_QUERY_PARSERS, E_IF_TYPES,
+    E_TABLE_SHAPE, E_MENU_ITEMS, E_ENUM_VALS,
+    E_GUI
+};
+
 cExportsWidget::cExportsWidget(QMdiArea *par)
     : cIntSubObj(par)
     , pUi(new Ui::Exports)
@@ -14,7 +22,9 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
     isStop  = false;
     QSqlQuery q = getQuery();
     QStringList ol;
-    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers << _sIfTypes << _sTableShapes << _sMenuItems << _sEnumVals;
+    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers << _sIfTypes
+       << _sTableShapes << _sMenuItems << _sEnumVals
+       << _sGUI;
     pUi->setupUi(this);
     pUi->comboBoxTable->addItems(ol);
     bool empty = ol.isEmpty();
@@ -42,18 +52,25 @@ void cExportsWidget::disable(bool f)
 void cExportsWidget::start()
 {
     pUi->pushButtonExport->setDisabled(true);
-    QString tn = pUi->comboBoxTable->currentText();
+    int ix = pUi->comboBoxTable->currentIndex();
     QString r;
     cExport e;
-    if      (0 == tn.compare(_sParamTypes))     r = e.paramType(EX_IGNORE);
-    else if (0 == tn.compare(_sSysParams))      r = e.sysParams(EX_IGNORE);
-    else if (0 == tn.compare(_sServices))       r = e.services(EX_IGNORE);
-    else if (0 == tn.compare(_sQueryParsers))   r = e.queryParser(EX_IGNORE);
-    else if (0 == tn.compare(_sIfTypes))        r = e.ifType(EX_IGNORE);
-    else if (0 == tn.compare(_sTableShapes))    r = e.tableShapes(EX_IGNORE);
-    else if (0 == tn.compare(_sMenuItems))      r = e.menuItems(EX_IGNORE);
-    else if (0 == tn.compare(_sEnumVals))       r = e.enumVals(EX_IGNORE);
-    if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(tn);
+    switch (ix) {
+    case E_PRAM_TYPES:      r = e.paramType(EX_IGNORE);     break;
+    case E_SYS_PARAMS:      r = e.sysParams(EX_IGNORE);     break;
+    case E_SERVICES:        r = e.services(EX_IGNORE);      break;
+    case E_QUERY_PARSERS:   r = e.queryParser(EX_IGNORE);   break;
+    case E_IF_TYPES:        r = e.ifType(EX_IGNORE);        break;
+    case E_TABLE_SHAPE:     r = e.tableShapes(EX_IGNORE);   break;
+    case E_MENU_ITEMS:      r = e.menuItems(EX_IGNORE);     break;
+    case E_ENUM_VALS:       r = e.enumVals(EX_IGNORE);      break;
+    case E_GUI:
+        r  = e.menuItems(EX_IGNORE);
+        r += e.enumVals(EX_IGNORE);
+        r += e.tableShapes(EX_IGNORE);
+        break;
+    }
+    if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(pUi->comboBoxTable->currentText());
     r.prepend(pUi->plainTextEdit->toPlainText());
     pUi->plainTextEdit->setPlainText(r);
 }
@@ -65,11 +82,18 @@ void cExportsWidget::save()
 
 void cExportsWidget::changedName(const QString& tn)
 {
-    QSqlQuery q = getQuery();
-    cTableShape ts;
-    ts.setByName(q, tn);
-    ts.fetchText(q);
-    pUi->lineEditTableTitle->setText(ts.getText(cTableShape::LTX_TABLE_TITLE));
+    QString t;
+    if (tn == _sGUI) {
+        t = trUtf8("Teljes GUI export (menu + enum + shape).");
+    }
+    else {
+        QSqlQuery q = getQuery();
+        cTableShape ts;
+        ts.setByName(q, tn);
+        ts.fetchText(q);
+        t = ts.getText(cTableShape::LTX_TABLE_TITLE);
+    }
+    pUi->lineEditTableTitle->setText(t);
     pUi->pushButtonExport->setDisabled(false);
 }
 

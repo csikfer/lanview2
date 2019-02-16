@@ -1,4 +1,340 @@
 // Act Language : Magyar; ( default : US English ; failower : Magyar)
+DELETE GUI "indalarm" MENU;
+GUI "indalarm" {
+    MENU "file" {
+        TITLE "Fájl";
+        OWN "gsetup" {
+            TITLE "GUI Beállítások",@;
+        }
+        EXEC "restart" {
+            TITLE "Újraindítás";
+        }
+        EXEC "exit" {
+            TITLE "Kilép";
+        }
+    }
+    MENU "events" {
+        TITLE "Események","events";
+        SHAPE "alarms_tree" {
+            PARAM "alarms";
+            FEATURES ":shape.table_shape_type=!simple,tree:";
+            TITLE "Riasztások (fa)",@;
+        }
+        OWN "olalarm" {
+            TITLE "On-Line riasztások",@;
+        }
+    }
+}
+DELETE GUI "lv2gui" MENU;
+GUI "lv2gui" {
+    MENU "file" {
+        TITLE "Fájl";
+        OWN "setup" {
+            TITLE "Beállítások",@;
+        }
+        OWN "gsetup" {
+            TITLE "GUI Beállítások",@;
+        }
+        SHAPE "sys_params" {
+            TITLE "Rendszer paraméterek",@;
+        }
+        SHAPE "param_types" {
+            TITLE "Paraméter típus leírók",@;
+        }
+        EXEC "restart" {
+            TITLE "Újraindítás","restart";
+        }
+        EXEC "exit" {
+            TITLE "Kilép","exit";
+        }
+    }
+    MENU "view" {
+        TITLE "Nézet";
+        EXEC "tab" {
+            PARAM "tabs";
+            TITLE "Tab";
+        }
+        EXEC "windows" {
+            TITLE "Ablakok";
+        }
+        EXEC "closes" {
+            PARAM "close";
+            TITLE "Ablakok bezárása";
+        }
+    }
+    MENU "user" {
+        TITLE "Felhasználók","user";
+        SHAPE "users" {
+            TITLE "Felhasználók",@;
+        }
+        SHAPE "groups" {
+            TITLE "Felhasználói csoportok",@;
+        }
+        SHAPE "zones" {
+            PARAM "place_groups";
+            TITLE "Zónák",@;
+        }
+        EXEC "chgzone" {
+            PARAM "zone";
+            TITLE "Zóna váltás";
+        }
+    }
+    MENU "objects" {
+        TITLE "Objektumok","objects";
+        SHAPE "patchs" {
+            FEATURES ":multi:";
+            TITLE "Patch panelek",@;
+        }
+        MENU "nodes-sub" {
+            TITLE "Hálózati elemek",@;
+            SHAPE "nodes" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.model_name.setOfValue:shape.model_number.setOfValue:shape.os_name.setOfValue:shape.os_version.setOfValue:";
+                TITLE "Hálózati végpontok",@;
+                TOOL TIP "Hálózati végpontok táblája, alapértelmezett szűrés nélkül.";
+            }
+            SHAPE "switchs" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='switch' = ANY (node_type):shape.model_name.setOfValue='switch' = ANY (node_type):shape.model_number.setOfValue='switch' = ANY (node_type):shape.os_name.setOfValue='switch' = ANY (node_type):shape.os_version.setOfValue='switch' = ANY (node_type):";
+                TITLE "Switch-ek",@;
+                TOOL TIP "Switch-ek táblája.";
+            }
+            SHAPE "servers" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='server' = ANY (node_type):shape.model_name.setOfValue='server' = ANY (node_type):shape.model_number.setOfValue='server' = ANY (node_type):shape.os_name.setOfValue='server' = ANY (node_type):shape.os_varsion.setOfValue='server' = ANY (node_type):";
+                TITLE "Szerverek",@;
+                TOOL TIP "Szerverek listája.";
+            }
+            SHAPE "workstations" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='workstation' = ANY (node_type):shape.model_name.setOfValue='workstation' = ANY (node_type):shape.model_number.setOfValue='workstation' = ANY (node_type):shape.os_name.setOfValue='workstation' = ANY (node_type):shape.os_version.setOfValue='workstation' = ANY (node_type):";
+                TITLE "Munkaállomások táblázat",@;
+            }
+            SHAPE "printers" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='printer' = ANY (node_type):shape.model_name.setOfValue='printer' = ANY (node_type):shape.model_number.setOfValue='printer' = ANY (node_type):";
+                TITLE "Nyomtatók",@;
+            }
+            SHAPE "aps" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='ap' = ANY (node_type):shape.model_name.setOfValue='ap' = ANY (node_type):shape.model_number.setOfValue='ap' = ANY (node_type):";
+                TITLE "AP-k"," AP-k";
+            }
+            SHAPE "displays" {
+                PARAM "snmpdevices";
+                FEATURES ":multi:shape.refine='display' = ANY (node_type):shape.model_name.setOfValue='display' = ANY (node_type):shape.model_number.setOfValue='display' = ANY (node_type):";
+                TITLE "Monitorok, kijelzők",@;
+            }
+        }
+        SHAPE "places_t" {
+            PARAM "places";
+            FEATURES ":shape.table_shape_type=!simple,tree:";
+            TITLE "Helyek, helyiségek (fa)",@;
+        }
+        SHAPE "places" {
+            TITLE "Helyek, helyiségek (tábla)",@;
+        }
+        SHAPE "services" {
+            TITLE "Szolgáltatások",@;
+        }
+        SHAPE "service_types" {
+            TITLE "Szolgáltatás típusok",@;
+        }
+        SHAPE "service_var_types" {
+            TITLE "Szolgáltatás változó típusok",@;
+        }
+        SHAPE "all_service_var" {
+            PARAM "service_vars";
+            FEATURES ":shape.host_service_id.table_hide=false:";
+            TITLE "Szolgáltatás változók teljes lista",@;
+        }
+        SHAPE "query_parsers" {
+            TITLE "Lekérdezés fordító",@;
+        }
+        SHAPE "host_services_t" {
+            PARAM "host_services";
+            FEATURES ":multi:shape.table_shape_type=!simple,tree:";
+            TITLE "Szolgáltatás példányok (fa)",@;
+        }
+        SHAPE "host_services" {
+            FEATURES ":multi:shape.node_id.table_hide=false:";
+            TITLE "Szolgáltatás példányok (tábla)",@;
+        }
+        SHAPE "subnets" {
+            TITLE "Alhálózatok",@;
+        }
+        SHAPE "vlans" {
+            TITLE "VLAN-ok",@;
+        }
+        SHAPE "images" {
+            TITLE "Képek",@;
+        }
+        SHAPE "timeperiods" {
+            TITLE "Időintervallumok",@;
+        }
+    }
+    MENU "events" {
+        TITLE "Események","events";
+        SHAPE "alarms" {
+            TITLE "Riasztások",@;
+        }
+        SHAPE "alarms_tree" {
+            PARAM "alarms";
+            FEATURES ":shape.table_shape_type=!simple,tree:";
+            TITLE "Riasztások (fa)",@;
+        }
+        SHAPE "app_errs" {
+            TITLE "Program hiba napló",@;
+        }
+        SHAPE "app_memos" {
+            TITLE "Program esemény napló",@;
+        }
+        SHAPE "db_errs" {
+            TITLE "Adatbázis hiba napló",@;
+        }
+        SHAPE "host_service_logs" {
+            TITLE "Szervíz állapot napló",@;
+        }
+        OWN "olalarm" {
+            TITLE "On-Line riasztások",@;
+        }
+        OWN "api_ecodes" {
+            PARAM "errcodes";
+            TITLE "API hiba kódok",@;
+        }
+        SHAPE "user_events" {
+            TITLE "Felhasználói események",@;
+        }
+    }
+    MENU "topology" {
+        TITLE "Hálózati topológia","topology";
+        SHAPE "phsnodes" {
+            TITLE "Hálózati csomópontok",@;
+        }
+        SHAPE "place_topol" {
+            PARAM "places_topol";
+            TITLE "Helyiségek","Helyiségekben található objektumok";
+        }
+        SHAPE "all_phs_links" {
+            PARAM "phs_links";
+            TITLE "Fizikai linkek",@;
+        }
+        SHAPE "all_log_links" {
+            PARAM "log_links";
+            TITLE "Logika linkek","Logikai linkek";
+            TOOL TIP "A logikai linkek a fizikai linkek eredőjeként létrejött végponti kapcsolatok.";
+        }
+        SHAPE "all_lldp_links" {
+            PARAM "lldp_links";
+            TITLE "LLDP linkek",@;
+        }
+    }
+    MENU "netothers" {
+        TITLE "Egyébb hálózati adatok","netothers";
+        SHAPE "arps" {
+            TITLE "ARP tábla",@;
+        }
+        SHAPE "arp_logs" {
+            TITLE "ARP napló",@;
+        }
+        SHAPE "mactab" {
+            TITLE "Port címtáblák",@;
+        }
+        SHAPE "mactab_logs" {
+            TITLE "Port címtáblak napló",@;
+        }
+        SHAPE "dyn_addr_ranges" {
+            TITLE "Dinamikus címtartományok",@;
+        }
+        SHAPE "iftypes" {
+            TITLE "Port típusok",@;
+        }
+    }
+    MENU "internals" {
+        TITLE "Belső vezérlő adatok","internals";
+        SHAPE "fkey_types" {
+            TITLE "Idegen kulcs típusok",@;
+        }
+        SHAPE "unusual_fkeys" {
+            TITLE "Idegen kulcs és öröklődés",@;
+        }
+        SHAPE "selects" {
+            TITLE "Minták","Minta tár";
+        }
+    }
+    MENU "gui" {
+        TITLE "Megjelenítés";
+        SHAPE "alarm_messages" {
+            TITLE "Figyelmeztető üzenetek szövege",@;
+        }
+        SHAPE "shapes" {
+            PARAM "table_shapes";
+            TITLE "Táblák megjelenítése",@;
+        }
+        MENU "enums" {
+            TITLE "Enumerációk",@;
+            TOOL TIP "Az enumerációs értékekhez  kapcsolódó megjelenítések.";
+            SHAPE "enum_tab" {
+                PARAM "enum_vals";
+                TITLE "Táblázat","Enumerációval kapcsolatos paraméterek";
+            }
+            OWN "enums_edit" {
+                PARAM "enumedit";
+                TITLE "Szerkesztés","Enumerációk szerkesztése";
+            }
+        }
+        SHAPE "menus" {
+            PARAM "menu_items";
+            TITLE "GUI menük fa",@;
+        }
+        SHAPE "menus_tab" {
+            PARAM "menu_items";
+            FEATURES ":shape.table_shape_type=!tree:";
+            TITLE "GUI menük",@;
+        }
+        MENU "languages" {
+            TITLE "Nyelvek",@;
+            SHAPE "localizations" {
+                TITLE "lokalizációs szövegek","lokalizációs szöveg";
+                TOOL TIP "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">A nyelvi szövegek a táblázatos megjelenítésnél ugyan úgy mint a többi szlop megjelenik a táblázatban, de ilyenkor csak az aktuális (vagy alapértelmezett, vagy talált) nelvi szöveg.</p>\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Ebben a táblában viszont az összes szöveg listázásra kerül.</p></body></html>";
+            }
+            SHAPE "languages_tab" {
+                PARAM "languages";
+                TITLE "Nyelvek",@;
+            }
+            OWN "translator" {
+                TITLE "Fordítási segéd",@;
+            }
+        }
+    }
+    MENU "tools" {
+        TITLE "Eszközök";
+        OWN "import" {
+            PARAM "parser";
+            TITLE "Szöveges import",@;
+        }
+        OWN "export" {
+            TITLE "Szöveges export",@;
+        }
+        OWN "hsop" {
+            TITLE "Servíz állpot manipulálás",@;
+        }
+        OWN "findmac" {
+            TITLE "Keresés cím szerint",@;
+        }
+        OWN "workstation" {
+            TITLE "Munkaállomás",@;
+        }
+        OWN "deducepatch" {
+            TITLE "Falikábel felfedezés","Falikábel felfedezése";
+        }
+        OWN "snmpdevquery" {
+            PARAM "snmpdquery";
+            TITLE "SNMP beszúr/frissít",@;
+        }
+    }
+}
+// Act Language : Magyar; ( default : US English ; failower : Magyar)
 ENUM "addresstype" "addresstype" {
     VIEW "addresstype",@;
      "dynamic" {
@@ -103,6 +439,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "error" {
         VIEW "Hiba",@;
+        ICON "emblem-important-red.ico";
         FOREGROUND COLOR "#ff0000";
         FONT ATTR "bold", "underline";
     }
@@ -116,6 +453,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "have_no" {
         VIEW "Nincs ilyen adat","nincs";
+        ICON "have_no.png";
         FOREGROUND COLOR "#ff55ff";
         FONT ATTR "strikeout";
         TOOL TIP "Nincs ilyen adat.";
@@ -131,6 +469,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "info" {
         VIEW "Információ","információ";
+        ICON "document-properties.ico";
         FOREGROUND COLOR "#000000";
     }
      "key" {
@@ -144,6 +483,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "not_permit" {
         VIEW "Az adat megtekintéséhez nincs elegendő jogosultsága.","nem elérhető";
+        ICON "disable.ico";
         FOREGROUND COLOR "#ff0000";
         FONT FAMILY "Ubuntu";
         FONT ATTR "strikeout";
@@ -151,9 +491,11 @@ ENUM "datacharacter" "datacharacter" {
     }
      "null" {
         VIEW "null",@;
+        ICON "null.png";
         BACKGROUND COLOR "#babdb6";
         FOREGROUND COLOR "#ff55ff";
         FONT ATTR "strikeout";
+        TOOL TIP "NULL";
     }
      "primary" {
         VIEW "primary",@;
@@ -161,6 +503,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "question" {
         VIEW "question",@;
+        ICON "emblem-question-yellow.ico";
     }
      "text" {
         VIEW "text",@;
@@ -171,6 +514,7 @@ ENUM "datacharacter" "datacharacter" {
     }
      "warning" {
         VIEW "Figyelmeztetés",@;
+        ICON "emblem-important-yellow.ico";
         FOREGROUND COLOR "#ffaa00";
         FONT ATTR "bold";
     }
@@ -290,58 +634,69 @@ ENUM "host_services.disabled" {
     }
 }
 ENUM "ifstatus" {
-    VIEW "Interfész állapot","ifstatus";
+    VIEW "ifstatus",@;
      "broken" {
         VIEW "broken",@;
+        ICON "dialog-no-2.ico";
         BACKGROUND COLOR "#ef2929";
         FONT ATTR "underline";
     }
      "dormant" {
         VIEW "dormant",@;
+        ICON "emblem-important-yellow.ico";
         BACKGROUND COLOR "#729fcf";
         FONT ATTR "italic";
     }
      "down" {
         VIEW "down",@;
+        ICON "network-ethernet-disconnected.ico";
         BACKGROUND COLOR "#e9b96e";
     }
      "error" {
         VIEW "error",@;
+        ICON "emblem-important-red.ico";
         BACKGROUND COLOR "#ef2929";
         FONT ATTR "underline";
     }
      "invert" {
         VIEW "invert",@;
+        ICON "network-ethernet-connected.ico";
         BACKGROUND COLOR "#91e3d1";
         FONT ATTR "italic";
     }
      "lowerlayerdown" {
         VIEW "lowerlayerdown",@;
+        ICON "dialog-no.ico";
         BACKGROUND COLOR "#fce94f";
         FONT ATTR "italic";
     }
      "notpresent" {
         VIEW "notpresent",@;
+        ICON "dialog-no-2.ico";
         BACKGROUND COLOR "#ef2929";
         FONT ATTR "italic";
     }
      "short" {
         VIEW "short",@;
+        ICON "dialog-no-2.ico";
         BACKGROUND COLOR "#ef2929";
         FONT ATTR "underline";
     }
      "testing" {
         VIEW "testing",@;
+        ICON "emblem-question-yellow.ico";
         BACKGROUND COLOR "#ad7fa8";
         FONT ATTR "italic";
     }
      "unknown" {
         VIEW "unknown",@;
+        ICON "emblem-question-red.ico";
         BACKGROUND COLOR "#d3d7cf";
         FONT ATTR "strikeout";
     }
      "up" {
         VIEW "up",@;
+        ICON "network-ethernet-connected.ico";
         BACKGROUND COLOR "#8ae234";
         FONT ATTR "bold";
     }
@@ -1193,17 +1548,17 @@ TABLE SHAPE "enum_vals" "Enumerációs értékek" {
     EDIT RIGHTS "admin";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "admin";
-    ADD FIELD "enum_val_id" "enum_val_id" {
+    ADD FIELD "enum_val_id" {
         TITLE "enum_val_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
     }
-    ADD FIELD "enum_type_name" "enum_type_name" {
+    ADD FIELD "enum_type_name" {
         TITLE "enum_type_name",@;
     }
-    ADD FIELD "enum_val_name" "enum_val_name" {
+    ADD FIELD "enum_val_name" {
         TITLE "enum_val_name",@;
     }
-    ADD FIELD "enum_val_note" "enum_val_note" {
+    ADD FIELD "enum_val_note" {
         TITLE "enum_val_note",@;
     }
     ADD FIELD "bg_color" {
@@ -1224,14 +1579,18 @@ TABLE SHAPE "enum_vals" "Enumerációs értékek" {
         TITLE "font_attr",@;
         FEATURES ":font_family:";
     }
-    ADD FIELD "view_short" "view_short" {
-        TITLE "view_short",@;
+    ADD FIELD "view_short" {
+        TITLE "Rövid megn.","Rövid megnevezés";
     }
-    ADD FIELD "view_long" "view_long" {
-        TITLE "view_long",@;
+    ADD FIELD "view_long" {
+        TITLE "Hosszú megn.","Hosszú megnevezés";
+    }
+    ADD FIELD "tool_tip" {
+        TITLE "Tool tip",@;
+        FLAG "huge";
     }
     ADD FIELD "icon" {
-        TITLE "Ikon név","Az ikon neve";
+        TITLE "Ikon","Az ikon neve";
         FLAG "dialog_hide", "raw";
     }
     ADD FIELD "icon" AS "icon_icon" {
@@ -1325,17 +1684,19 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
     ADD FIELD "hwaddress" "hwaddress" {
         TITLE "hwaddress",@;
     }
-    ADD FIELD "port_ostat" "port_ostat" {
-        TITLE "port_ostat",@;
+    ADD FIELD "port_ostat" {
+        TITLE "*Op.St.","Port operativ állapota";
+        TOOL TIP "Port operativ állapota (link)";
         FEATURES ":color:";
-        FLAG "batch_edit", "bg_color", "HTML";
+        FLAG "batch_edit", "bg_color", "HTML", "image";
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
     }
-    ADD FIELD "port_astat" "port_astat" {
-        TITLE "port_astat",@;
+    ADD FIELD "port_astat" {
+        TITLE "*Adm.St.","Port adminisztrativ állapot";
+        TOOL TIP "Port adminisztrativ állapot";
         FEATURES ":color:";
-        FLAG "batch_edit", "bg_color", "HTML";
+        FLAG "batch_edit", "bg_color", "HTML", "image";
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
     }
@@ -1350,8 +1711,9 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         FLAG "read_only";
     }
     ADD FIELD "port_stat" {
-        TITLE "Port állapot","Port állapota";
-        FLAG "batch_edit", "HTML";
+        TITLE "*Port állapot","Port örökölt állapota";
+        TOOL TIP "Port örökölt állapota";
+        FLAG "batch_edit", "HTML", "image";
         EDIT RIGHTS "admin";
     }
     ADD FIELD "last_changed" {
@@ -3300,9 +3662,10 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
         TITLE "Név",@;
         FLAG "HTML";
     }
-    ADD FIELD "node_stat" "node_stat" {
-        TITLE "Állapot","Az eszköz állpota";
-        FLAG "HTML";
+    ADD FIELD "node_stat" {
+        TITLE "*Állapot","Az eszköz állpota";
+        TOOL TIP "Az eszköz állapota. A szolgáltatás példány(ok)-tól örökölt állapot.";
+        FLAG "HTML", "image";
     }
     ADD FIELD "node_type" "node_type" {
         TITLE "Típus","Az eszköz típusa";
@@ -4045,339 +4408,3 @@ SET table_shapes["places_topol"].right_shape_ids += ID TABLE SHAPE ("snmpdevices
 SET table_shapes["places_topol"].right_shape_ids += ID TABLE SHAPE ("users");
 SET table_shapes["snmpdevices"].right_shape_ids += ID TABLE SHAPE ("vlan_list_by_host");
 SET table_shapes["timeperiods"].right_shape_ids += ID TABLE SHAPE ("tpows");
-// Act Language : Magyar; ( default : US English ; failower : Magyar)
-DELETE GUI "indalarm" MENU;
-GUI "indalarm" {
-    MENU "file" {
-        TITLE "Fájl";
-        OWN "gsetup" {
-            TITLE "GUI Beállítások",@;
-        }
-        EXEC "restart" {
-            TITLE "Újraindítás";
-        }
-        EXEC "exit" {
-            TITLE "Kilép";
-        }
-    }
-    MENU "events" {
-        TITLE "Események","events";
-        SHAPE "alarms_tree" {
-            PARAM "alarms";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
-            TITLE "Riasztások (fa)",@;
-        }
-        OWN "olalarm" {
-            TITLE "On-Line riasztások",@;
-        }
-    }
-}
-DELETE GUI "lv2gui" MENU;
-GUI "lv2gui" {
-    MENU "file" {
-        TITLE "Fájl";
-        OWN "setup" {
-            TITLE "Beállítások",@;
-        }
-        OWN "gsetup" {
-            TITLE "GUI Beállítások",@;
-        }
-        SHAPE "sys_params" {
-            TITLE "Rendszer paraméterek",@;
-        }
-        SHAPE "param_types" {
-            TITLE "Paraméter típus leírók",@;
-        }
-        EXEC "restart" {
-            TITLE "Újraindítás","restart";
-        }
-        EXEC "exit" {
-            TITLE "Kilép","exit";
-        }
-    }
-    MENU "view" {
-        TITLE "Nézet";
-        EXEC "tab" {
-            PARAM "tabs";
-            TITLE "Tab";
-        }
-        EXEC "windows" {
-            TITLE "Ablakok";
-        }
-        EXEC "closes" {
-            PARAM "close";
-            TITLE "Ablakok bezárása";
-        }
-    }
-    MENU "user" {
-        TITLE "Felhasználók","user";
-        SHAPE "users" {
-            TITLE "Felhasználók",@;
-        }
-        SHAPE "groups" {
-            TITLE "Felhasználói csoportok",@;
-        }
-        SHAPE "zones" {
-            PARAM "place_groups";
-            TITLE "Zónák",@;
-        }
-        EXEC "chgzone" {
-            PARAM "zone";
-            TITLE "Zóna váltás";
-        }
-    }
-    MENU "objects" {
-        TITLE "Objektumok","objects";
-        SHAPE "patchs" {
-            FEATURES ":multi:";
-            TITLE "Patch panelek",@;
-        }
-        MENU "nodes-sub" {
-            TITLE "Hálózati elemek",@;
-            SHAPE "nodes" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.model_name.setOfValue:shape.model_number.setOfValue:shape.os_name.setOfValue:shape.os_version.setOfValue:";
-                TITLE "Hálózati végpontok",@;
-                TOOL TIP "Hálózati végpontok táblája, alapértelmezett szűrés nélkül.";
-            }
-            SHAPE "switchs" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='switch' = ANY (node_type):shape.model_name.setOfValue='switch' = ANY (node_type):shape.model_number.setOfValue='switch' = ANY (node_type):shape.os_name.setOfValue='switch' = ANY (node_type):shape.os_version.setOfValue='switch' = ANY (node_type):";
-                TITLE "Switch-ek",@;
-                TOOL TIP "Switch-ek táblája.";
-            }
-            SHAPE "servers" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='server' = ANY (node_type):shape.model_name.setOfValue='server' = ANY (node_type):shape.model_number.setOfValue='server' = ANY (node_type):shape.os_name.setOfValue='server' = ANY (node_type):shape.os_varsion.setOfValue='server' = ANY (node_type):";
-                TITLE "Szerverek",@;
-                TOOL TIP "Szerverek listája.";
-            }
-            SHAPE "workstations" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='workstation' = ANY (node_type):shape.model_name.setOfValue='workstation' = ANY (node_type):shape.model_number.setOfValue='workstation' = ANY (node_type):shape.os_name.setOfValue='workstation' = ANY (node_type):shape.os_version.setOfValue='workstation' = ANY (node_type):";
-                TITLE "Munkaállomások táblázat",@;
-            }
-            SHAPE "printers" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='printer' = ANY (node_type):shape.model_name.setOfValue='printer' = ANY (node_type):shape.model_number.setOfValue='printer' = ANY (node_type):";
-                TITLE "Nyomtatók",@;
-            }
-            SHAPE "aps" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='ap' = ANY (node_type):shape.model_name.setOfValue='ap' = ANY (node_type):shape.model_number.setOfValue='ap' = ANY (node_type):";
-                TITLE "AP-k"," AP-k";
-            }
-            SHAPE "displays" {
-                PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='display' = ANY (node_type):shape.model_name.setOfValue='display' = ANY (node_type):shape.model_number.setOfValue='display' = ANY (node_type):";
-                TITLE "Monitorok, kijelzők",@;
-            }
-        }
-        SHAPE "places_t" {
-            PARAM "places";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
-            TITLE "Helyek, helyiségek (fa)",@;
-        }
-        SHAPE "places" {
-            TITLE "Helyek, helyiségek (tábla)",@;
-        }
-        SHAPE "services" {
-            TITLE "Szolgáltatások",@;
-        }
-        SHAPE "service_types" {
-            TITLE "Szolgáltatás típusok",@;
-        }
-        SHAPE "service_var_types" {
-            TITLE "Szolgáltatás változó típusok",@;
-        }
-        SHAPE "all_service_var" {
-            PARAM "service_vars";
-            FEATURES ":shape.host_service_id.table_hide=false:";
-            TITLE "Szolgáltatás változók teljes lista",@;
-        }
-        SHAPE "query_parsers" {
-            TITLE "Lekérdezés fordító",@;
-        }
-        SHAPE "host_services_t" {
-            PARAM "host_services";
-            FEATURES ":multi:shape.table_shape_type=!simple,tree:";
-            TITLE "Szolgáltatás példányok (fa)",@;
-        }
-        SHAPE "host_services" {
-            FEATURES ":multi:shape.node_id.table_hide=false:";
-            TITLE "Szolgáltatás példányok (tábla)",@;
-        }
-        SHAPE "subnets" {
-            TITLE "Alhálózatok",@;
-        }
-        SHAPE "vlans" {
-            TITLE "VLAN-ok",@;
-        }
-        SHAPE "images" {
-            TITLE "Képek",@;
-        }
-        SHAPE "timeperiods" {
-            TITLE "Időintervallumok",@;
-        }
-    }
-    MENU "events" {
-        TITLE "Események","events";
-        SHAPE "alarms" {
-            TITLE "Riasztások",@;
-        }
-        SHAPE "alarms_tree" {
-            PARAM "alarms";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
-            TITLE "Riasztások (fa)",@;
-        }
-        SHAPE "app_errs" {
-            TITLE "Program hiba napló",@;
-        }
-        SHAPE "app_memos" {
-            TITLE "Program esemény napló",@;
-        }
-        SHAPE "db_errs" {
-            TITLE "Adatbázis hiba napló",@;
-        }
-        SHAPE "host_service_logs" {
-            TITLE "Szervíz állapot napló",@;
-        }
-        OWN "olalarm" {
-            TITLE "On-Line riasztások",@;
-        }
-        OWN "api_ecodes" {
-            PARAM "errcodes";
-            TITLE "API hiba kódok",@;
-        }
-        SHAPE "user_events" {
-            TITLE "Felhasználói események",@;
-        }
-    }
-    MENU "topology" {
-        TITLE "Hálózati topológia","topology";
-        SHAPE "phsnodes" {
-            TITLE "Hálózati csomópontok",@;
-        }
-        SHAPE "place_topol" {
-            PARAM "places_topol";
-            TITLE "Helyiségek","Helyiségekben található objektumok";
-        }
-        SHAPE "all_phs_links" {
-            PARAM "phs_links";
-            TITLE "Fizikai linkek",@;
-        }
-        SHAPE "all_log_links" {
-            PARAM "log_links";
-            TITLE "Logika linkek","Logikai linkek";
-            TOOL TIP "A logikai linkek a fizikai linkek eredőjeként létrejött végponti kapcsolatok.";
-        }
-        SHAPE "all_lldp_links" {
-            PARAM "lldp_links";
-            TITLE "LLDP linkek",@;
-        }
-    }
-    MENU "netothers" {
-        TITLE "Egyébb hálózati adatok","netothers";
-        SHAPE "arps" {
-            TITLE "ARP tábla",@;
-        }
-        SHAPE "arp_logs" {
-            TITLE "ARP napló",@;
-        }
-        SHAPE "mactab" {
-            TITLE "Port címtáblák",@;
-        }
-        SHAPE "mactab_logs" {
-            TITLE "Port címtáblak napló",@;
-        }
-        SHAPE "dyn_addr_ranges" {
-            TITLE "Dinamikus címtartományok",@;
-        }
-        SHAPE "iftypes" {
-            TITLE "Port típusok",@;
-        }
-    }
-    MENU "internals" {
-        TITLE "Belső vezérlő adatok","internals";
-        SHAPE "fkey_types" {
-            TITLE "Idegen kulcs típusok",@;
-        }
-        SHAPE "unusual_fkeys" {
-            TITLE "Idegen kulcs és öröklődés",@;
-        }
-        SHAPE "selects" {
-            TITLE "Minták","Minta tár";
-        }
-    }
-    MENU "gui" {
-        TITLE "Megjelenítés";
-        SHAPE "alarm_messages" {
-            TITLE "Figyelmeztető üzenetek szövege",@;
-        }
-        SHAPE "shapes" {
-            PARAM "table_shapes";
-            TITLE "Táblák megjelenítése",@;
-        }
-        MENU "enums" {
-            TITLE "Enumerációk",@;
-            TOOL TIP "Az enumerációs értékekhez  kapcsolódó megjelenítések.";
-            SHAPE "enum_tab" {
-                PARAM "enum_vals";
-                TITLE "Táblázat","Enumerációval kapcsolatos paraméterek";
-            }
-            OWN "enums_edit" {
-                PARAM "enumedit";
-                TITLE "Szerkesztés","Enumerációk szerkesztése";
-            }
-        }
-        SHAPE "menus" {
-            PARAM "menu_items";
-            TITLE "GUI menük fa",@;
-        }
-        SHAPE "menus_tab" {
-            PARAM "menu_items";
-            FEATURES ":shape.table_shape_type=!tree:";
-            TITLE "GUI menük",@;
-        }
-        MENU "languages" {
-            TITLE "Nyelvek",@;
-            SHAPE "localizations" {
-                TITLE "lokalizációs szövegek","lokalizációs szöveg";
-                TOOL TIP "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">A nyelvi szövegek a táblázatos megjelenítésnél ugyan úgy mint a többi szlop megjelenik a táblázatban, de ilyenkor csak az aktuális (vagy alapértelmezett, vagy talált) nelvi szöveg.</p>\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Ebben a táblában viszont az összes szöveg listázásra kerül.</p></body></html>";
-            }
-            SHAPE "languages_tab" {
-                PARAM "languages";
-                TITLE "Nyelvek",@;
-            }
-            OWN "translator" {
-                TITLE "Fordítási segéd",@;
-            }
-        }
-    }
-    MENU "tools" {
-        TITLE "Eszközök";
-        OWN "import" {
-            PARAM "parser";
-            TITLE "Szöveges import",@;
-        }
-        OWN "export" {
-            TITLE "Szöveges export",@;
-        }
-        OWN "hsop" {
-            TITLE "Servíz állpot manipulálás",@;
-        }
-        OWN "findmac" {
-            TITLE "Keresés cím szerint",@;
-        }
-        OWN "workstation" {
-            TITLE "Munkaállomás",@;
-        }
-        OWN "deducepatch" {
-            TITLE "Falikábel felfedezés","Falikábel felfedezése";
-        }
-        OWN "snmpdevquery" {
-            PARAM "snmpdquery";
-            TITLE "SNMP beszúr/frissít",@;
-        }
-    }
-}

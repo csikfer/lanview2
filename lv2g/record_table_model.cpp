@@ -85,6 +85,7 @@ cRecordViewModelBase::~cRecordViewModelBase()
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
     QString s, et;
+    QVariant tt;
     switch (column.isImage) {
     case cRecordTableColumn::IS_NOT_IMAGE:
         break;
@@ -111,8 +112,18 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     case cRecordTableColumn::IS_ICON:
     case cRecordTableColumn::IS_ICON_NAME:
         if (cRecordTableColumn::IS_ICON == column.isImage) {
-            et = column.enumTypeName;
-            s = cEnumVal::enumVal(et, int(pr->getId(fix)), EX_IGNORE).getName(_sIcon);
+            qlonglong e = pr->getId(fix);
+            const cEnumVal *pev = nullptr;
+            if (e != NULL_ID) {
+                et = column.enumTypeName;
+                pev = &cEnumVal::enumVal(et, int(e), EX_IGNORE);
+            }
+            else {
+                pev = &cEnumVal::enumVal(_sDatacharacter, DC_NULL, EX_IGNORE);
+            }
+            s  = pev->getName(_sIcon);
+            QString stt = pev->getText(cEnumVal::LTX_TOOL_TIP);
+            if (!stt.isEmpty()) tt = stt;
         }
         else {  // IS_ICON_NAME
             s = pr->getName(fix);
@@ -121,6 +132,8 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
             switch (role) {
             case Qt::DecorationRole:
                 return QVariant(resourceIcon(s));
+            case Qt::ToolTipRole:
+                return tt;
             case Qt::TextColorRole:
             case Qt::BackgroundRole:
             case Qt::DisplayRole:
