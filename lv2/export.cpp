@@ -106,7 +106,7 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
         r = escaped(v.toString());
         break;
     case cColStaticDescr::FT_BOOLEAN:
-        r = ((bool)fr) ? "TRUE" : "FALSE";
+        r = bool(fr) ? "TRUE" : "FALSE";
         break;
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
@@ -406,7 +406,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
                 }
             }
             ordTypes[types] << qfn;
-            ordFields[f.getId(_sOrdInitSequenceNumber)] << qfn;
+            ordFields[int(f.getId(_sOrdInitSequenceNumber))] << qfn;
         }
     }
     if (!ordTypes.isEmpty()) {
@@ -473,7 +473,7 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
     (void)q;
     QString r;
     o.fetchText(q);
-    int t = (int)o.getId(_sMenuItemType);
+    int t = int(o.getId(_sMenuItemType));
     switch (t) {
     case MT_SHAPE:
         r = head("SHAPE", o);
@@ -562,8 +562,8 @@ QString cExport::services(eEx __ex)
 QString cExport::_export(QSqlQuery &q, cService& o)
 {
     QString r;
-    static const qlonglong      flapIval   = 30 * 60 * 1000;   // 30 min
-    static const qlonglong      flapMax    = 15;
+    // static const qlonglong      flapIval   = 30 * 60 * 1000;   // 30 min
+    // static const qlonglong      flapMax    = 15;
     qlonglong id = o.getId();
     if (id == TICKET_SERVICE_ID || id == NIL_SERVICE_ID) {
         // Fix id, nem lehet exportálni, ill. inmportálni.
@@ -579,8 +579,8 @@ QString cExport::_export(QSqlQuery &q, cService& o)
         b += paramLine(q, "NORMAL CHECK INTERVAL", o[_sNormalCheckInterval]);
         b += paramLine(q, "HEARTBEAT TIME",        o[_sHeartbeatTime]);
         b += paramLine(q, "RETRY CHECK INTERVAL",  o[_sRetryCheckInterval]);
-        b += paramLine(q, "FLAPPING INTERVAL",     o[_sFlappingInterval],   flapIval);
-        b += paramLine(q, "FLAPPING MAX CHANGE",   o[_sFlappingMaxChange],  flapMax);
+        b += paramLine(q, "FLAPPING INTERVAL",     o[_sFlappingInterval]/*,   flapIval*/);
+        b += paramLine(q, "FLAPPING MAX CHANGE",   o[_sFlappingMaxChange]/*,  flapMax*/);
         b += paramLine(q, "TYPE",                  o[_sServiceTypeId],      UNMARKED_SERVICE_TYPE_ID);
         b += paramLine(q, "ON LINE GROUPS",        o[_sOnLineGroupIds],     cColStaticDescrArray::emptyVariantList);
         b += paramLine(q, "OFF LINE GROUPS",       o[_sOffLineGroupIds],    cColStaticDescrArray::emptyVariantList);
