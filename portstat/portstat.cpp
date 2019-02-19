@@ -561,7 +561,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         int    _opstat = tab[_sIfOperStatus][i].toInt(&ok);
         QString opstat = snmpIfStatus(_opstat, EX_IGNORE);
         if (!ok || opstat.isEmpty()) {
-            eMsg = QObject::trUtf8("ifOperStatus is not numeric, or invalid : %1").arg(tab[_sIfOperStatus][i].toString());
+            eMsg = QObject::trUtf8("Port %1: ifOperStatus is not numeric, or invalid : %2").arg(iface.getName(), tab[_sIfOperStatus][i].toString());
             opstat = _sUnknown;
         }
         changeStringField(opstat,  ixPortOStat, iface, bitsSet);
@@ -569,8 +569,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         int    _adstat = tab[_sIfAdminStatus][i].toInt(&ok);
         QString adstat = snmpIfStatus(_adstat, EX_IGNORE);
         if (!ok) {
-            if (!eMsg.isEmpty()) eMsg += "\n";
-            eMsg += QObject::trUtf8("ifAdminStatus is not numeric, or invalid : %1").arg(tab[_sIfAdminStatus][i].toString());
+            QString msg = trUtf8("Port %1: ifAdminStatus is not numeric, or invalid : %2").arg(iface.getName(), tab[_sIfAdminStatus][i].toString());
+            eMsg = msgCat(eMsg, msg, "\n");
             adstat = _sUnknown;
         }
         changeStringField(adstat,  ixPortAStat, iface, bitsSet);
@@ -582,9 +582,9 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             if      (_opstat == IF_UP)   state = _sOn;        // On
             else if (_adstat == IF_UP)   state = _sDown;      // Off
             else if (_adstat == IF_DOWN) state = _sWarning;   // Disabled
-            QString msg = trUtf8("interface state : op:%1/adm:%2").arg(opstat).arg(adstat);
-            if (!eMsg.isEmpty()) msg += "\n" + eMsg;
-            insp.hostService.setState(q, state, msg, parid);
+            QString msg = trUtf8("interface %1 state : op:%2/adm:%3").arg(iface.getName()).arg(opstat).arg(adstat);
+            eMsg = msgCat(eMsg, msg, "\n");
+            insp.hostService.setState(q, state, eMsg, parid);
             insp.flag = true; // State is set
         }
 
@@ -596,7 +596,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             int rs;
             qlonglong raw;
             QString stMsg;
-            foreach (QString vname, vnames) {   // foreac variable names
+            foreach (QString vname, vnames) {   // foreach variable names
                 cServiceVar *psv = insp.getServiceVar(vname);   // Get variable obj.
                 if (psv == nullptr) continue;                   // not found, next
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
