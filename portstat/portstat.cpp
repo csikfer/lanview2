@@ -551,7 +551,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         if (ifi == ifMap.end())
             continue;   // Not found
         cPortStat& portstat = **ifi;
-        QBitArray bitsSet(iface.cols(), false);     // bits: Field is changed
+        QBitArray bitsSet = iface.mask(ixPortOStat, ixPortAStat);     // bits: Field is changed
         iface.set(ixLastTouched, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
         bitsSet.setBit(ixLastTouched);
         changeStringField(ifDescr, ixIfdescr, iface, bitsSet);
@@ -564,7 +564,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             eMsg = QObject::trUtf8("Port %1: ifOperStatus is not numeric, or invalid : %2").arg(iface.getName(), tab[_sIfOperStatus][i].toString());
             opstat = _sUnknown;
         }
-        changeStringField(opstat,  ixPortOStat, iface, bitsSet);
+        iface.setName(ixPortOStat, opstat);
 
         int    _adstat = tab[_sIfAdminStatus][i].toInt(&ok);
         QString adstat = snmpIfStatus(_adstat, EX_IGNORE);
@@ -573,7 +573,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             eMsg = msgCat(eMsg, msg, "\n");
             adstat = _sUnknown;
         }
-        changeStringField(adstat,  ixPortAStat, iface, bitsSet);
+        iface.setName(ixPortAStat, adstat);
 
         // rlinkstat if exists
         if (portstat.pRlinkStat != nullptr) {
