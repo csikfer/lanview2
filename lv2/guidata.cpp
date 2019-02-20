@@ -448,6 +448,7 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         }
         if (ro)   fm.enum2setOn(_sFieldFlags, FF_READ_ONLY);
         if (hide) fm.enum2setOn(_sFieldFlags, FF_TABLE_HIDE, FF_DIALOG_HIDE);
+        else      fm.enum2setOn(_sFieldFlags, FF_HTML);
         shapeFields << fm;
     }
     // Kapcsoló tábla ?

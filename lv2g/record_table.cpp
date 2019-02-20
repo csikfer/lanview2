@@ -1193,7 +1193,9 @@ bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
         return false;
     }
     if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // new type
-    QString name = dQuotedCat(parent->viewName, pColDescr->colName());
+    QString table = parent->viewName;
+    if (table.isEmpty()) table = parent->pTableShape->getName(_sTableName);
+    QString name = dQuotedCat(table, pColDescr->colName());
     _name = expr.replace("?", name);
     return true;
 }
