@@ -42,6 +42,7 @@ void cRecordTree::init()
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
+    case ENUM2SET(TS_SIMPLE):
     case ENUM2SET(TS_TREE):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SINGLE | RTF_TREE;

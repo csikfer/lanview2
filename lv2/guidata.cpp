@@ -412,28 +412,28 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
     int ixFieldFlags = cTableShapeField().toIndex(_sFieldFlags);
     for (int i = 0; rDescr.isIndex(i); ++i) {
         const cColStaticDescr& cDescr = rDescr.colDescr(i);
+        const QString colName = cDescr.colName();
         cTableShapeField fm;
-        fm.setName(cDescr);             // Column name in view or dialog
-        fm.setName(_sTableFieldName);   // Field name in database table
-        fm.setName(_sTableShapeFieldNote, cDescr);
-        fm.setText(cTableShapeField::LTX_TABLE_TITLE, cDescr);
-        fm.setText(cTableShapeField::LTX_DIALOG_TITLE, cDescr);
+        fm.setName(colName);                     // Column name in view or dialog
+        fm.setName(_sTableFieldName, colName);   // Field name in database table
+        fm.setText(cTableShapeField::LTX_TABLE_TITLE,  colName);
+        fm.setText(cTableShapeField::LTX_DIALOG_TITLE, colName);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // Column sequence number
         bool ro = !cDescr.isUpdatable;
         bool hide = false;
-        if (i == 0 && rDescr.idIndex(EX_IGNORE) == 0 && rDescr.autoIncrement().at(0)) {
+        if (i == 0 && rDescr.idIndex(EX_IGNORE) == 0 && rDescr.autoIncrement().at(0)) { // ID
             hide = true;
             ro   = true;
         }
-        else if (rDescr.deletedIndex(EX_IGNORE) == i) {
+        else if (rDescr.deletedIndex(EX_IGNORE) == i) {             // deleted
             hide = true;
             ro   = true;
         }
-        else if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
+/*      else if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
             ro   = true;
             fm.enum2setOn(ixFieldFlags, FF_TABLE_HIDE);
             type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_CHILD);
-        }
+        }*/
         // Önmagára mutató fkey?
         else if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
          &&      rDescr.tableName()  == cDescr.fKeyTable

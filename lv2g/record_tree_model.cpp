@@ -77,10 +77,12 @@ QModelIndex cRecordTreeModel::findNode(qlonglong pid, const QModelIndex& mi)
     int rows = rowCount(mi);
     for (int i = 0; i < rows; ++i) {
         QModelIndex cmi = index(i, 0, mi);
-        cmi = findNode(pid, cmi);
         if (cmi.isValid()) {
-            _DBGFNL() << " found parent " << pn->name() << " row : " << i << endl;
-            return cmi;
+            cmi = findNode(pid, cmi);
+            if (cmi.isValid()) {
+                _DBGFNL() << " found parent " << pn->name() << " row : " << i << endl;
+                return cmi;
+            }
         }
     }
     _DBGFNL() << "not found : " << pn->name() << endl;
@@ -98,7 +100,8 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
         return QModelIndex();
     }
     cTreeNode *parentNode = nodeFromIndex(parent);
-    if (parentNode->pChildrens == nullptr) EXCEPTION(EPROGFAIL);
+    if (parentNode->pChildrens == nullptr) // EXCEPTION(EPROGFAIL);
+        return  QModelIndex(); // ??
 //    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
     if (parentNode->pChildrens->size() <= row) {
         DWAR() << "Invalid row = " << row << "child number : " << parentNode->pChildrens->size() << endl;
