@@ -781,7 +781,7 @@ int cOui::replace(QSqlQuery& __q, eEx __ex)
         EXCEPTION(EPROGFAIL);
     }
     QString r = __q.value(0).toString();
-    return (eReasons)reasons(r);
+    return eReasons(reasons(r));
 }
 
 bool cOui::fetchByMac(QSqlQuery& q, const cMac& __mac)
@@ -824,11 +824,11 @@ int cMacTab::replace(QSqlQuery& __q, eEx __ex)
     bind(_ixPortId,    __q, 0);
     bind(_ixHwAddress, __q, 1);
     int i = 2;
-    if (!isNull(_ixSetType))     bind(_ixSetType, __q, i++);
+    if (!isNull(_ixSetType))     bind(_ixSetType,     __q, i++);
     if (!isNull(_ixMacTabState)) bind(_ixMacTabState, __q, i);
     _EXECSQL(__q);
     __q.first();
-    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
+    enum eReasons r = eReasons(reasons(__q.value(0).toString(), EX_IGNORE));
     return r;
 }
 

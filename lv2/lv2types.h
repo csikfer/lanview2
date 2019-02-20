@@ -100,6 +100,8 @@ static inline eTristate tsOr(eTristate a, eTristate b) {
     return TS_NULL;
 }
 
+EXT_ QString tristate2string(int e, eEx __ex = EX_ERROR);
+
 /// Hiba string
 EXT_ QString sInvalidEnum();
 /*!

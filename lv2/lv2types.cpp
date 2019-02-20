@@ -8,6 +8,18 @@
 #include <float.h>
 #include "lv2sql.h"
 
+QString tristate2string(int e, eEx __ex)
+{
+    switch (e) {
+    case TS_NULL:   return _sNull;
+    case TS_TRUE:   return _sTrue;
+    case TS_FALSE:  return _sFalse;
+    default:        break;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
 /************************ enum converters ************************/
 QString sInvalidEnum() { return QObject::trUtf8("Invalid"); }
 

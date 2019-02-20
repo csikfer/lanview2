@@ -109,7 +109,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
     static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);
     static const qlonglong linkIsInvisibleForLLDPTypeId = cParamType().getIdByName(__q, _sLinkIsInvisibleForLLDP);
-    // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lessz
+    // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lesz
     if (protoServiceId() == NIL_SERVICE_ID && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
@@ -141,7 +141,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
         eTristate suspFlag  = np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE);
         if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
-            PDEB(VERBOSE) << trUtf8("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName()).arg((int)suspFlag).arg((int)queryFlag) << endl; 
+            PDEB(INFO) << trUtf8("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName(), tristate2string(suspFlag), tristate2string(queryFlag)) << endl;
             continue;
         }
         QString ifTypeName = np.ifType().getName();
@@ -153,20 +153,25 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (NULL_ID != lldp.getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített link
                 // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére (bármi legyen is) lekérdezzük
                 if (queryFlag == TS_TRUE) {
-                    PDEB(VERBOSE) << trUtf8("Force query %1 port.").arg(np.getName()) << endl;
+                    PDEB(INFO) << trUtf8("Force query %1 port.").arg(np.getName()) << endl;
                 }
                 else {
+                    qlonglong linkedPortId = lldp.getId(_sPortId2);
                     // De ez uplink? Az ellenoldali node-nal lekérdezzük a címtáblát?
                     const QString sql =
                             "SELECT COUNT(*)"
                             " FROM nports AS p"
-                            " JOIN host_services USING(node_id)"
-                            " WHERE p.port_id = ? AND service_id = ?";
-                    bool ok = execSql(__q, sql, lldp.get(_sPortId2), pSrvPMac->getId());
-                    int n;
+                            " JOIN host_services AS hs USING(node_id)"
+                            " WHERE p.port_id = ? AND hs.service_id = ?";
+                    bool ok = execSql(__q, sql, linkedPortId, pSrvPMac->getId());
+                    int n = 1;
                     if (ok) n = __q.value(0).toInt(&ok);
                     if (!ok) EXCEPTION(EDATA, 0, sql);
-                    if (n > 0) continue;    // Uplink, kihagyjuk
+                    if (n > 0) {
+                        PDEB(INFO) << trUtf8("Port %1, is uplink to %2, disabled.").arg(np.getName(), np.getFullNameById(__q, linkedPortId));
+                        continue;    // Uplink, kihagyjuk
+                    }
+                    PDEB(INFO) << trUtf8("Port %1, is no uplink to %2.").arg(np.getName(), np.getFullNameById(__q, linkedPortId));
                 }
             }
             // mehet a ports konténerbe az indexe
@@ -232,7 +237,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Más típusú port nem érdekes.
             continue;
         }
-        ix = (int)np.getId(_sPortIndex);    // Eredeti port index
+        ix = int(np.getId(_sPortIndex));    // Eredeti port index
         if (rxix.contains(ix)) {            // Van ilyen a kereszt index-ben?
             ix = rxix[ix];                  // a lekérdezésben ezt az indexet fogja megkapni
             PDEB(VERBOSE) << trUtf8("Set query %1 port, inex %2 (%3).").arg(np.getName()).arg(ix).arg(np.getId(_sPortIndex)) << endl;
@@ -266,7 +271,6 @@ cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglon
 
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
-    (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));
@@ -274,9 +278,12 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     QMap<cMac, int> macs;
     enum eNotifSwitch r;
 
-    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) return r;   // Az index nem feltétlenül az eredeti port index!
-    if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) return r;
-
+    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) {
+        return r;   // Az index nem feltétlenül az eredeti port index!
+    }
+    if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) {
+        return r;
+    }
     foundMacs.clear();
     QMap<cMac, int>::iterator   i;
     for (i = macs.begin(); i != macs.end(); ++i) {
@@ -289,9 +296,18 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
         mt.setMac(_sHwAddress, mac);
         mt.setId(_sPortId, pid);
         int r = mt.replace(q);
-        if (r == R_DISCARD) ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
-        else {
+        switch (r) {
+        case R_DISCARD:
+            runMsg = msgCat(runMsg, trUtf8("Port %1 set suspected uplink.").arg(pi.value()->getName()), "\n");
+            ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
+            break;
+        case R_RESTORE:
+            runMsg = msgCat(runMsg, trUtf8("Port %1 restored mac %2.").arg(pi.value()->getName(), mac.toString()), "\n");
             foundMacs[pid] |= mac;  // Talált MAC-ek a rightmac-hoz
+            break;
+        default:
+            foundMacs[pid] |= mac;  // Talált MAC-ek a rightmac-hoz
+            break;
         }
     }
     QMap<qlonglong, cRightMac *>::iterator j;
@@ -312,7 +328,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         int r = snmp.getNext(o);
         if (r) {
             runMsg = msgCat(runMsg,
-                    trUtf8("SNMP hiba #%1 (%2). OID:%3")
+                    trUtf8("SNMP error #%1 (%2). OID:%3")
                     .arg(r).arg(snmp.emsg)
                     .arg(__o.toString()), "\n");
             return RS_CRITICAL;
@@ -323,7 +339,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         int pix = snmp.value().toInt(&ok);
         if (!ok) {
             runMsg = msgCat(runMsg,
-                    trUtf8("Az SNMP válaszban: nem értelmezhető index. OID:%1: %2 = %3")
+                    trUtf8("SNMP ansver, invalid index. OID:%1: %2 = %3")
                     .arg(__o.toString()).arg(o.toString())
                     .arg(debVariantToString(snmp.value())), "\n");
             return RS_CRITICAL;
@@ -332,7 +348,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         cMac mac = snmp.name().toMac();
         if (!mac) {
             runMsg =  msgCat(runMsg,
-                    trUtf8("Az SNMP válaszban: nem értelmezhető MAC. OID:%1: %2 = %3")
+                    trUtf8("Az SNMP ansver, invalid MAC. OID:%1: %2 = %3")
                     .arg(__o.toString()).arg(o.toString())
                     .arg(snmp.value().toString()), "\n");
             continue;       // előfordul
@@ -363,7 +379,7 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
         if (pPort == nullptr || 0 != pPort->chkObjType<cInterface>(EX_IGNORE)) {
             flag = false;
             if (pPort == nullptr) msg = trUtf8("Nincs megadva port.\n");
-            else               msg = trUtf8("A port típusa csak interface lehet.\n");
+            else                  msg = trUtf8("A port típusa csak interface lehet.\n");
         }
         else {
             QString sMacList  = feature("MAC");
