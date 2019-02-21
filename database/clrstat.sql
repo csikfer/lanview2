@@ -24,4 +24,9 @@ UPDATE service_vars SET
 	raw_value = NULL,
 	var_state = 'unknown',
 	last_time = NULL;
-	
+UPDATE nodes SET
+	node_stat = 'unknown';
+UPDATE interfaces SET
+	port_ostat = 'unknown',
+	port_astat = 'unknown',
+	port_stat = 'unknown';

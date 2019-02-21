@@ -177,8 +177,10 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
         qlonglong pid = pDev->getId(_sPlaceId);
         if (pSelectNode->currentPlaceId() != pid) {
             qlonglong nid = pDev->getId();
+            pSelectNode->bbNode.begin();
             pSelectNode->setCurrentPlace(pid);
             pSelectNode->setCurrentNode(nid);
+            pSelectNode->bbNode.end(false);
         }
         ui->pushButtonQuery->setDisabled(true);
         ui->pushButtonSave->setDisabled(false);

@@ -1098,6 +1098,7 @@ signals:
 /// Egy hálózati elem kiválasztását a nodeNameChanged(); és nodeIdChanged();
 /// signal-okkal jelzi.
 class LV2GSHARED_EXPORT cSelectNode : public cSelectPlace {
+    friend class cSnmpDevQuery;
     Q_OBJECT
 public:
     /// Konstruktor.

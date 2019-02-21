@@ -8,6 +8,91 @@ UPDATE nodes SET node_stat = 'unknown' WHERE node_stat IS NULL;
 ALTER TABLE nodes ALTER COLUMN node_stat SET DEFAULT 'unknown';
 ALTER TABLE nodes ALTER COLUMN node_stat SET NOT NULL;
 
+-- Hibajavítás: 2019.02.21.
+-- Javítandó, átnevezendő, hiányzó függvények:
+
+-- Átnevezés, egyszerüsítés
+DROP FUNCTION IF EXISTS get_str_node_param(bigint, text); -- rename
+CREATE OR REPLACE FUNCTION get_text_node_param(nid bigint, tname text) RETURNS text AS $$
+DECLARE
+    v text;
+BEGIN
+    SELECT param_value INTO v
+        FROM node_params
+        JOIN param_types USING(param_type_id)
+        WHERE param_type_name = tname AND node_id = nid;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN v;
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_text_node_param(bigint, text) OWNER TO lanview2;
+
+-- Hibás konverzió, ha nem lehetett konvertálni kizárást dobott, az új függvény NULL-al tér vissza
+DROP FUNCTION IF EXISTS get_bool_node_param(bigint, text);
+CREATE OR REPLACE FUNCTION get_bool_node_param(nid bigint, tname text) RETURNS boolean AS $$
+BEGIN
+    RETURN cast_to_boolean(get_text_node_param(nid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_bool_node_param(bigint, text) OWNER TO lanview2;
+
+DROP FUNCTION IF EXISTS get_int_node_param(bigint, text);
+CREATE OR REPLACE FUNCTION get_int_node_param(nid bigint, tname text) RETURNS bigint AS $$
+BEGIN
+    RETURN cast_to_integer(get_text_node_param(nid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_int_node_param(bigint, text) OWNER TO lanview2;
+
+DROP FUNCTION IF EXISTS get_interval_node_param(bigint, text);
+CREATE OR REPLACE FUNCTION get_interval_node_param(nid bigint, tname text) RETURNS interval AS $$
+BEGIN
+    RETURN cast_to_interval(get_text_node_param(nid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_interval_node_param(bigint, text) OWNER TO lanview2;
+
+-- Ezek hiányoztak
+CREATE OR REPLACE FUNCTION get_text_port_param(pid bigint, tname text) RETURNS text AS $$
+DECLARE
+    v text;
+BEGIN
+    SELECT param_value INTO v
+        FROM port_params
+        JOIN param_types USING(param_type_id)
+        WHERE param_type_name = tname AND port_id = pid;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN v;
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_text_port_param(bigint, text) OWNER TO lanview2;
+
+CREATE OR REPLACE FUNCTION get_bool_port_param(pid bigint, tname text) RETURNS boolean AS $$
+BEGIN
+    RETURN cast_to_boolean(get_text_port_param(pid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_bool_port_param(bigint, text) OWNER TO lanview2;
+
+CREATE OR REPLACE FUNCTION get_int_port_param(pid bigint, tname text) RETURNS bigint AS $$
+BEGIN
+    RETURN cast_to_integer(get_text_port_param(pid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_int_port_param(bigint, text) OWNER TO lanview2;
+
+CREATE OR REPLACE FUNCTION get_interval_port_param(pid bigint, tname text) RETURNS interval AS $$
+BEGIN
+    RETURN cast_to_interval(get_text_port_param(pid, tname));
+END
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION get_interval_port_param(bigint, text) OWNER TO lanview2;
+
+-- hibajavítás 2019.02.21.  Vége
 
 CREATE OR REPLACE FUNCTION replace_mactab(
     pid bigint,     -- switch port ID
@@ -83,3 +168,4 @@ $$ LANGUAGE plpgsql;
 -- ----------------------------
 
 SELECT set_db_version(1, 20);
+
