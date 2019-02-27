@@ -862,7 +862,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         }
         break;
     case  1:        // Program hívása, a hívó applikációban
-	PDEB(VERBOSE) << trUtf8("A %1 program hívása").arg(checkCmd) << endl;
+    PDEB(VERBOSE) << trUtf8("A '%1' program hívása").arg(checkCmd + " " + checkCmdArgs.join(" ")) << endl;
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
@@ -1001,6 +1001,10 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         arg += qc;
     }
     checkCmdArgs << arg;                // Utolsó paraméter
+    if (protoService().getName() == _sSsh) {
+        checkCmdArgs.prepend(node().getIpAddress().toString());
+        checkCmdArgs.prepend(_sSsh);
+    }
     checkCmd = checkCmdArgs.first();    // Parancs név
     checkCmdArgs.pop_front();           // Argumentumok
 
