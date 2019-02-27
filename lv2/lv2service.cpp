@@ -1002,7 +1002,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     }
     checkCmdArgs << arg;                // Utolsó paraméter
     if (protoService().getName() == _sSsh) {
-        checkCmdArgs.prepend(node().getIpAddress().toString());
+        checkCmdArgs.prepend(node().getIpAddress(q).toString());
         checkCmdArgs.prepend(_sSsh);
     }
     checkCmd = checkCmdArgs.first();    // Parancs név
