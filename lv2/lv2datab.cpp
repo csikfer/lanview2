@@ -1512,6 +1512,7 @@ QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
             a = _f.value<QHostAddress>();
         }
         else if (metaIsString(mtid)) {
+            a = sql2netAddress(_f.toString());
             QString as = _f.toString();
             if (as.count() > 0) {
                 // néha hozzábigyeszt valamit az IPV6 címhez

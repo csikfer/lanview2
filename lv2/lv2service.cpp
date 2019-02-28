@@ -1607,7 +1607,9 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             if (lanView::testSelfName.isEmpty()) return _sNul;
             return "-S " + lanView::testSelfName;
         }
-        if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) return host().getIpAddress(q).toString();
+        if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) {
+            return cNode::fetchPreferedAddress(q, nodeId(), hostService.getId(_sPortId)).toString();
+        }
         if (0 == name.compare(_sProtocol,     Qt::CaseInsensitive)) return protoService().getName();
         if (0 == name.compare(_sPort,         Qt::CaseInsensitive)) {
             qlonglong pn = service()->getId(_sPort);

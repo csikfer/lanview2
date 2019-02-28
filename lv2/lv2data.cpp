@@ -2768,6 +2768,32 @@ cInterface *cNode::portSetVlans(int __port_index, const QVariantList& _ids)
     return p;
 }
 
+QHostAddress cNode::fetchPreferedAddress(QSqlQuery& q, qlonglong _nid, qlonglong _iid)
+{
+    bool r;
+    if (_iid == NULL_ID) {
+        static const QString sql =
+                "SELECT address FROM interfaces JOIN ip_addresses USING(port_id)"
+                   " WHERE node_id = ?"
+                   " ORDER BY preferred ASC";
+        r = execSql(q, sql, _nid);
+    }
+    else {
+        static const QString sql =
+                "SELECT address FROM ip_addresses"
+                   " WHERE port_id = ?"
+                   " ORDER BY preferred ASC";
+        r = execSql(q, sql, _iid);
+    }
+    QHostAddress a;
+    if (r) {
+        const netAddress na = sql2netAddress(q.value(0).toString());
+        a = na.addr();
+    }
+    return a;
+}
+
+
 int cNode::fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress>& cont, qlonglong __id) const
 {
     QString sql =
@@ -2805,6 +2831,8 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
     } while (q.next());
     return r;
 }
+
+
 
 QHostAddress cNode::getIpAddress(QSqlQuery& q)
 {
@@ -2862,7 +2890,7 @@ QList<cMac> cNode::getMacs() const
     for (tRecordList<cNPort>::const_iterator pi = ports.constBegin(); pi < ports.constEnd(); ++pi) {
         const cNPort *pp = *pi;
         if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
-            const cInterface& i = *(const cInterface *)pp;
+            const cInterface& i = *static_cast<const cInterface *>(pp);
             if (!i.isNull(ix)) {
                 cMac mac = i.getMac(ix);
                 if (r.contains(mac)) continue;  // csak egy példány a listába

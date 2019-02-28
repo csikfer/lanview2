@@ -4,6 +4,7 @@
 #include "lv2_global.h"
 #include <QtCore>
 #include <QtSql>
+#include "lv2types.h"
 
 /*!
  * \brief tableNameToBaseName
@@ -146,6 +147,8 @@ static inline QStringList sqlToStringList(const QVariant& v)
 EXT_ QString stringListToSql(const QStringList& sl);
 EXT_ QString integerListToSql(const QVariantList& vl);
 EXT_ QString doubleListToSql(const QVariantList& vl);
+
+EXT_ netAddress sql2netAddress(QString as);
 
 EXT_ qlonglong parseTime(const QString& _s, bool *pOk);
 EXT_ qlonglong _parseTimeIntervalISO8601(const QString& _s, bool *pOk);

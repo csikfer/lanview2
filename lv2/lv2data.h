@@ -1480,6 +1480,20 @@ public:
     /// Ha nincsenek beolvasva a portok, akkor beolvassa azokat.
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress(QSqlQuery& q);
+    ///
+    /// \brief fetchPreferedAddress
+    /// \param q
+    /// \param _nid node ID
+    /// \param _iid Interface ID, optional. If set, the _nid is ignore
+    /// \return Prefered ip adress, or NULL address
+    ///
+    static QHostAddress fetchPreferedAddress(QSqlQuery& q, qlonglong _nid, qlonglong _iid = NULL_ID);
+    /// \brief fetchAllAddress
+    /// \param q
+    /// \param cont
+    /// \param __id
+    /// \return
+    ///
     int fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress> &cont, qlonglong __id = NULL_ID) const;
     QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
     QList<cMac> getMacs() const;

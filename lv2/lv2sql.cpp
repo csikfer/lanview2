@@ -143,6 +143,19 @@ QString doubleListToSql(const QVariantList& vl)
     return r;
 }
 
+netAddress sql2netAddress(QString as)
+{
+    netAddress a;
+    if (as.count() > 0) {
+        // néha hozzábigyeszt valamit az IPV6 címhez
+        int i = as.indexOf(QRegExp("[^\\d\\.:A-Fa-f/]"));
+        // Ha a végén van szemét, azt levágjuk
+        if (i > 0) as = as.mid(0, i);
+        a.set(as);
+    }
+    return a;
+}
+
 
 /// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
 /// Konvertál egy ISO 8601 idő intervallum stringet mSec-re.
