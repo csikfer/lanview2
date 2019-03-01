@@ -215,7 +215,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
 }
 
-int cInspectorProcess::startProcess(unsigned long startTo, unsigned long stopTo)
+int cInspectorProcess::startProcess(int startTo, int stopTo)
 {
     _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
@@ -228,7 +228,7 @@ int cInspectorProcess::startProcess(unsigned long startTo, unsigned long stopTo)
     }
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
-        msg = trUtf8("'waitForStarted()' hiba : %1").arg(ProcessError2Message(error()));
+        msg = trUtf8("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
         inspector.hostService.setState(*inspector.pq, _sDown, msg);
         inspector.internalStat = IS_STOPPED;
         return -1;
@@ -241,7 +241,7 @@ int cInspectorProcess::startProcess(unsigned long startTo, unsigned long stopTo)
         }
         PDEB(VVERBOSE) << "Runing and wait for finished ..." << endl;
         if (!waitForFinished(stopTo)) {
-            msg = trUtf8("Start `%1` 'waitForFinished(%1)' error: '%2'.")
+            msg = trUtf8("Started `%1` 'waitForFinished(%2)' error: '%3'.")
                     .arg(inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "))
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
@@ -296,7 +296,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         }
         PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
         inspector.internalStat = IS_RUN;
-        startProcess(inspector.startTimeOut);
+        startProcess(int(inspector.startTimeOut));
     }
     else {  // ?! Nem szabadna itt lennünk.
         EXCEPTION(EPROGFAIL, inspector.inspectorType, inspector.name());
@@ -503,7 +503,7 @@ void cInspector::down()
     }
     pDelete(pProcess);
     if (inspectorType & IT_METHOD_PARSER) {
-        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser)) << endl;
+        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser), 0, 16) << endl;
         pDelete(pQparser);
     }
     else pQparser = nullptr;
@@ -1203,7 +1203,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
             return munin(q, runMsg);
         }*/
         else {
-            int ec = pProcess->startProcess(startTimeOut, stopTimeOut);
+            int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
             if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
             return parse(ec, *pProcess);
         }
@@ -1305,7 +1305,7 @@ void cInspector::start()
     _DBGFN() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     // Check
     if (internalStat != IS_INIT) {
-        EXCEPTION(EDATA, (int)internalStat, QObject::trUtf8("%1 nem megfelelő belső állapot").arg(name()));
+        EXCEPTION(EDATA, internalStat, QObject::trUtf8("%1 nem megfelelő belső állapot").arg(name()));
     }
     if (timerId != -1)
         EXCEPTION(EDATA, timerId, QObject::trUtf8("%1 óra újra inicializálása.").arg(name()));
@@ -1315,7 +1315,7 @@ void cInspector::start()
     if (inspectorType & IT_METHOD_PARSER) {
         internalStat = IS_RUN;
         pQparser = new cQueryParser();
-        PDEB(VVERBOSE) << trUtf8("%1: Alloc QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
+        PDEB(VVERBOSE) << trUtf8("%1: Alloc QParser : %2").arg(name()).arg(qlonglong(pQparser),0,16) << endl;
         int r = pQparser->load(*pq, serviceId(), true);
         if (R_NOTFOUND == r && nullptr != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
         if (R_NOTFOUND == r && nullptr != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
@@ -1338,7 +1338,7 @@ void cInspector::start()
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         internalStat = IS_RUN;
         PDEB(VERBOSE) << "Start : " << checkCmd << endl;
-        pProcess->startProcess(startTimeOut);
+        pProcess->startProcess(int(startTimeOut));
         _DBGFNL() << " (process) " << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
@@ -1385,19 +1385,19 @@ void cInspector::start()
 
 int cInspector::firstDelay()
 {
-    int t;
+    qint64 t;
     QDateTime last;
     bool ok;
-    t = feature("delay").toInt(&ok);
+    t = feature("delay").toLongLong(&ok);
     if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
         if (!hostService.isNull(_sLastTouched)) {
             last = hostService.get(_sLastTouched).toDateTime();
-            int ms = int(last.msecsTo(QDateTime::currentDateTime()));
+            qint64 ms = last.msecsTo(QDateTime::currentDateTime());
             if (ms < interval) t = interval - ms;
             else               t = int(rnd(retryInt));
         }
         else {
-            t = int(rnd(interval));
+            t = rnd(interval);
         }
     }
     if (t < 1000) t = 1000;    // min 1 sec
@@ -1411,7 +1411,7 @@ int cInspector::firstDelay()
     }
     PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
                   << " object thread : " << thread()->objectName() << endl;
-    return t;
+    return int(t);
 }
 
 void cInspector::startSubs()
@@ -1475,13 +1475,13 @@ void cInspector::drop(eEx __ex)
     }
     if (inspectorType & IT_METHOD_PARSER) {
         if (pQparser == nullptr) {
-            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
+            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, 0, name());
         }
         else {
             cError *pe = nullptr;
             pQparser->post(pe);
             if (pe != nullptr) DERR() << pe->msg() << endl;
-            PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
+            PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser),0 , 16) << endl;
             pDelete(pQparser);
             if (pSubordinates != nullptr) {
                 // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
@@ -1665,6 +1665,6 @@ QString internalStatName(eInternalStat is)
     case IS_STOPPED:    return _sStopped;
     case IS_ERROR:      return _sError;
     }
-    return QString("Invalid(%1)").arg((int)is, 0, 16);
+    return QString("Invalid(%1)").arg(is, 0, 16);
 }
 

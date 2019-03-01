@@ -139,7 +139,7 @@ public:
     /// Hiba esetén dob egy kizárást.
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
     /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, vagy nulla, ha nem vár.
-    virtual int startProcess(unsigned long startTo, unsigned long stopTo = 0);
+    virtual int startProcess(int startTo, int stopTo = 0);
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
 protected slots:
