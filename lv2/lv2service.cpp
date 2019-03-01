@@ -762,7 +762,7 @@ int cInspector::getInspectorProcess(const QString &value)
         switch (met) {
         // ezeknél nem is kell (lehet) időzítés
         case IT_METHOD_NAGIOS:
-        case IT_METHOD_MUNIN:
+//      case IT_METHOD_MUNIN:
         case IT_METHOD_QPARSE:
         case IT_METHOD_QPARSE | IT_METHOD_PARSER:
         case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
@@ -792,7 +792,7 @@ int cInspector::getInspectorMethod(const QString &value)
     int r = 0;  // IT_METHOD_CUSTOM
     QStringList vl = value.split(QRegExp("\\s*,\\s*"));
     if (vl.contains(_sNagios,   Qt::CaseInsensitive)) r |= IT_METHOD_NAGIOS;
-    if (vl.contains(_sMunin,    Qt::CaseInsensitive)) r |= IT_METHOD_MUNIN;
+//  if (vl.contains(_sMunin,    Qt::CaseInsensitive)) r |= IT_METHOD_MUNIN;
     if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_METHOD_CARRIED;
     if (vl.contains(_sQparse,   Qt::CaseInsensitive)) r |= IT_METHOD_QPARSE;
     if (vl.contains(_sParser,   Qt::CaseInsensitive)) r |= IT_METHOD_PARSER;
@@ -800,7 +800,7 @@ int cInspector::getInspectorMethod(const QString &value)
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
-    case IT_METHOD_MUNIN:
+//  case IT_METHOD_MUNIN:
     case IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
     case IT_METHOD_PARSER:
@@ -857,7 +857,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         PDEB(VERBOSE) << trUtf8("Nincs program hívás") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
-        if ((method() & (IT_METHOD_MUNIN | IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR)) != 0) {
+        if ((method() & (/* IT_METHOD_MUNIN | */ IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR)) != 0) {
             EXCEPTION(EDATA, inspectorType, trUtf8("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
         }
         break;
@@ -867,7 +867,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
             int timing = getInspectorTiming(feature(_sTiming));
-            if (!timing && inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_MUNIN)) timing = IT_PROCESS_TIMED;
+            if (!timing && inspectorType & (IT_METHOD_NAGIOS /*| IT_METHOD_MUNIN */)) timing = IT_PROCESS_TIMED;
             inspectorType |= timing;
             break;
         }
@@ -1199,9 +1199,9 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     if (pProcess != nullptr) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
-        if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
+/*        if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
             return munin(q, runMsg);
-        }
+        }*/
         else {
             int ec = pProcess->startProcess(startTimeOut, stopTimeOut);
             if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
@@ -1221,7 +1221,7 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
     switch (inspectorType & IT_METHOD_MASK) {
 //  case IT_METHOD_CUSTOM:
     case IT_METHOD_CARRIED: return RS_STAT_SETTED;
-    case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
+//  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
     case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
     case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
@@ -1291,14 +1291,14 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
     if (ok) return (inspectorType & IT_METHOD_CARRIED) ? RS_STAT_SETTED : RS_ON;
     return RS_INVALID;
 }
-
+/*
 enum eNotifSwitch cInspector::munin(QSqlQuery& q, QString& runMsg)
 {
     runMsg = trUtf8("Nem támogatott (még).");
     (void)q;
     return RS_INVALID;
 }
-
+*/
 
 void cInspector::start()
 {

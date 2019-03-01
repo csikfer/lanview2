@@ -1339,19 +1339,28 @@ public:
     /// @return A megadott mező értéke
     const QVariant& get(const QString& __n) const   { return get(toIndex(__n)); }
     /// Az ID mező értékét adja vissza, ha a mező értéke null, akkor a NULL_ID konstanssal tér vissza.
+    /// @exception Ha nincs ID mező, akkor dob egy kizárást.
     qlonglong getId() const                         { return getId(idIndex()); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy ID, vagy numerikus. Ha a mező NULL, vagy nem numerikus, akkor NULL_ID-vel tér vissza.
-    qlonglong getId(int i) const                    { return descr()[i].toId(get(i)); }
+    /// @param i a kért mező indexe, ha értéke NULL_IX, akkor az ID mező értékével tér vissza
+    /// @exception ha a hivatkozott mező nem létezik
+    qlonglong getId(int i) const                    { return i == NULL_IX ? getId() : descr()[i].toId(get(i)); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy ID. Ha a mező NULL, vagy nem numerikus, akkor NULL_ID-vel tér vissza.
-    qlonglong getId(const QString& __n) const       { return getId(toIndex(__n)); }
+    /// @param __n a kért mező neve, ha értéke NULL string, akkor a hivatkozott mező az ID mező.
+    /// @exception ha a hivatkozott mező nem létezik
+    qlonglong getId(const QString& __n) const       { return __n.isNull() ? getId() : getId(toIndex(__n)); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy string, ill. annak értékét stringgé konvertálja.
-    QString getName(int i) const                    { return descr()[i].toName(get(i)); }
+    /// @param A mező indexe, ha értéke NULL_IX, akkor a név mező értékével tér vissza.
+    /// @exception ha a hivatkozott mező nem létezik
+    QString getName(int i) const                    { return i == NULL_IX ? getName() : descr()[i].toName(get(i)); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy string, ill. annak értékét stringgé konvertálja.
-    QString getName(const QString& __n) const       { return getName(toIndex(__n)); }
-    /// Az név (name) mező értékével tér vissza, ha van.
+    /// @param __n A mező neve, ha értéke NULL, akkor a név mező értékével tér vissza
+    /// @exception ha a hivatkozott mező nem létezik
+    QString getName(const QString& __n) const       { return __n.isNull() ? getName() : getName(toIndex(__n)); }
+    /// Az név (name) mező értékével tér vissza.
     /// Ha nincs név mező megkísérli a rekord ID-ből az id2name SQL föggvénnyel konvertálni a nevet.
-    /// Ha a nibcs név mező, és nincs ID mező, vagy konvertáló függvény akkor kizárást dob.
     /// Ha nincs név és az ID mező értéke NULL, akkor egy NULL stringgel tér vissza.
+    /// @exception Ha a nincs név mező, és nincs ID mező sem, vagy konvertáló függvény akkor kizárást dob.
     QString getName() const;
     /// Feltételezve, hogy a megadott indexű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(int __i, enum eEx __ex = EX_ERROR) const;

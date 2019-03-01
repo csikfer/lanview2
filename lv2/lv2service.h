@@ -51,7 +51,7 @@ enum eInspectorType {
 
     IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
     IT_METHOD_NAGIOS        = 0x0100,   ///< Nagios plugin
-    IT_METHOD_MUNIN         = 0x0200,   ///< Munin plugin
+//  IT_METHOD_MUNIN         = 0x0200,   ///< Munin plugin
     IT_METHOD_QPARSE        = 0x0300,   ///< Query parser
     IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
     IT_METHOD_CARRIED       = 0x0800,   ///<
@@ -346,7 +346,7 @@ protected:
     int getInspectorMethod(const QString &value);
     enum eNotifSwitch parse_nagios(int _ec, QIODevice &text);
     enum eNotifSwitch parse_qparse(int _ec, QIODevice &text);
-    enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
+//  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
