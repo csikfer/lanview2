@@ -123,7 +123,7 @@ public:
     int isEmpty() const                         { return _records.isEmpty(); }
     QString             toCSV();
     QString             toHtml();
-    QList<QStringList>  toStringTable(const QModelIndexList mil = QModelIndexList());
+    QList<QStringList>  toStringTable(bool raw = true, const QModelIndexList mil = QModelIndexList());
     QString             toCSV(QModelIndexList mil);
     QString             toHtml(QModelIndexList mil);
     tRecords                    _records;

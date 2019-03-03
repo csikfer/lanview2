@@ -336,7 +336,7 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::ForegroundRole) {
-        cRecordTable& rt = (cRecordTable&)recordView;
+        cRecordTable& rt = static_cast<cRecordTable&>(recordView);
         if (rt.enabledBatchEdit(*rt.pTableShape->shapeFields[section])) {
             return QColor(Qt::blue);
         }
@@ -474,17 +474,18 @@ QString             cRecordTableModel::toCSV()
 QString             cRecordTableModel::toHtml()
 {
     QString r;
-    QList<QStringList>  m = toStringTable();
+    QList<QStringList>  m = toStringTable(false);
     QStringList head = m.takeFirst();
-    r = htmlTable(head, m);
+    r = htmlTable(head, m, false);
     return r;
 }
 
-QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
+QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndexList mil)
 {
     int rownums = rowCount(QModelIndex());
     int colnums = columnCount(QModelIndex());
     int col, row;
+    QString s;
     QList<int> selectedRows;
     foreach (QModelIndex mi, mil) {
         row = mi.row();
@@ -496,7 +497,9 @@ QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
     // Header
     for (col = 0; col <colnums; ++col) {
         if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
-            lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+            s = headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+            if (!raw) s = toHtmlBold(s, true, false);
+            lrow << s;
         }
     }
     r << lrow;
@@ -507,7 +510,31 @@ QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
             for (col = 0; col <colnums; ++col) {
                 if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
                     QModelIndex mi = index(row, col);
-                    lrow << data(mi, Qt::DisplayRole).toString();
+                    s = data(mi, Qt::DisplayRole).toString();
+                    if (!raw) { // STYLE
+                        s = ::toHtml(s);
+                        QVariant vFgColor = data(mi, Qt::TextColorRole);
+                        QVariant vBgColor = data(mi, Qt::BackgroundRole);
+                        if (vFgColor.isValid() || vBgColor.isValid()) {
+                            QString style;
+                            if (vFgColor.isValid()) {
+                                style += "color:" + vFgColor.value<QColor>().name() + _sSemicolon;
+                            }
+                            if (vBgColor.isValid()) {
+                                style += "background-color:" + vBgColor.value<QColor>().name() + _sSemicolon;
+                            }
+                            s = "<span style=\"" + style + "\">" + s + "</span>";
+                        }
+                        QVariant vFont    = data(mi, Qt::FontRole);
+                        if (vFont.isValid()) {
+                            QFont f = vFont.value<QFont>();
+                            if (f.italic())     s = toHtmlItalic(s, false, false);
+                            if (f.bold())       s = htmlBold(s, false, false);
+                            if (f.strikeOut())  s = toHtmlStrikethrough(s, false, false);
+                            if (f.underline())  s = toHtmlUnderline(s, false, false);
+                        }
+                    }
+                    lrow << s;
                 }
             }
             r << lrow;
@@ -519,7 +546,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
 QString cRecordTableModel::toCSV(QModelIndexList mil)
 {
     cCommaSeparatedValues csv;
-    foreach (QStringList row, toStringTable(mil)) {
+    foreach (QStringList row, toStringTable(true, mil)) {
         foreach (QString cel, row) {
             csv << cel;
         }
@@ -531,9 +558,9 @@ QString cRecordTableModel::toCSV(QModelIndexList mil)
 QString cRecordTableModel::toHtml(QModelIndexList mil)
 {
     QString r;
-    QList<QStringList>  m = toStringTable(mil);
+    QList<QStringList>  m = toStringTable(false, mil);
     QStringList head = m.takeFirst();
-    r = htmlTable(head, m);
+    r = htmlTable(head, m, false);
     return r;
 }
 

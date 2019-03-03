@@ -44,7 +44,7 @@ QString htmlTable(QStringList head, QList<QStringList> matrix, bool esc)
 {
     QString table;
     table += "\n<table border=\"1\"> ";
-    if (!head.isEmpty()) table += htmlTableLine(head, "th");
+    if (!head.isEmpty()) table += htmlTableLine(head, "th", esc);
     foreach (QStringList line, matrix) {
         table += htmlTableLine(line, "td", esc);
     }
@@ -989,7 +989,7 @@ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape)
                 html += htmlInfo(v, true);
             }
             else {
-                html += htmlInfo(toHhtmlBold(t) + toHtml(v), false, false);
+                html += htmlInfo(toHtmlBold(t) + toHtml(v), false, false);
             }
         }
     }
