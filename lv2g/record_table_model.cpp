@@ -480,6 +480,32 @@ QString             cRecordTableModel::toHtml()
     return sHtmlHead + r + sHtmlTail;
 }
 
+static QString htmlImage(const QVariant& vImage, const QString& alt)
+{
+    if (vImage.isValid()) {
+        QImage image;
+        switch (vImage.userType()) {
+        case QVariant::Pixmap:
+            image = vImage.value<QPixmap>().toImage();
+            break;
+        case QVariant::Icon:
+            image = vImage.value<QIcon>().pixmap(24).toImage();
+            break;
+        }
+        if (!image.isNull()) {
+            QBuffer b;
+            b.open(QIODevice::WriteOnly);
+            image.save(&b, __sPNG);
+            QByteArray b64 = b.data().toBase64();
+            static const QString img =
+                    "<img src=\"data:image/png;base64,%1\""
+                         "alt=\"%2\" />";
+            return img.arg(b64, alt);
+        }
+    }
+    return alt;
+}
+
 QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndexList mil)
 {
     int rownums = rowCount(QModelIndex());
@@ -498,7 +524,10 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
     for (col = 0; col <colnums; ++col) {
         if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
             s = headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
-            if (!raw) s = toHtmlBold(s, true, false);
+            if (!raw) {
+                s = htmlImage(headerData(col, Qt::Horizontal, Qt::DecorationRole), s);
+                s = toHtmlBold(s, true, false);
+            }
             lrow << s;
         }
     }
@@ -513,6 +542,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
                     s = data(mi, Qt::DisplayRole).toString();
                     if (!raw) { // STYLE
                         s = ::toHtml(s);
+                        s = htmlImage(data(mi, Qt::DecorationRole), s);
                         QVariant vFgColor = data(mi, Qt::TextColorRole);
                         QVariant vBgColor = data(mi, Qt::BackgroundRole);
                         if (vFgColor.isValid() || vBgColor.isValid()) {
@@ -523,7 +553,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
                             if (vBgColor.isValid()) {
                                 style += "background-color:" + vBgColor.value<QColor>().name() + _sSemicolon;
                             }
-                            s = "<div style=\"" + style + "\">" + s + "</span>";
+                            s = "<div style=\"" + style + "\">" + s + "</div>";
                         }
                         QVariant vFont    = data(mi, Qt::FontRole);
                         if (vFont.isValid()) {
