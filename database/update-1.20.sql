@@ -93,7 +93,7 @@ $$ LANGUAGE plpgsql;
 ALTER FUNCTION get_interval_port_param(bigint, text) OWNER TO lanview2;
 
 -- hibajavítás 2019.02.21.  Vége
-
+-- javítva 2019.03.04.
 CREATE OR REPLACE FUNCTION replace_mactab(
     pid bigint,     -- switch port ID
     mac macaddr,    -- MAC in addres table
@@ -124,7 +124,7 @@ BEGIN
             my_moved_cnt    integer;    -- moved my port
             an_moved_cnt    integer;    -- moved other port
         BEGIN
-            begin_time := NOW - mactab_move_check_interval;
+            begin_time := NOW() - mactab_move_check_interval;
             SELECT COUNT(*) INTO my_moved_cnt FROM mactab_logs
                 WHERE begin_time < date_of
                   AND (port_id_old = pid OR port_id_new = pid)

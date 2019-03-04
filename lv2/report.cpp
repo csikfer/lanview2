@@ -1,6 +1,8 @@
 #include "report.h"
 #include "guidata.h"
 
+const QString sHtmlHead   = "<!DOCTYPE html> <html> <head> <meta charset=\"UTF-8\"> </head> <body>\n";
+const QString sHtmlTail   = "</body> </html>\n";
 const QString sHtmlLine   = "\n<hr>\n";
 const QString sHtmlTabBeg = "<table border=\"1\" cellpadding=\"2\" cellspacing=\"2\">";
 const QString sHtmlTabEnd = "</table>\n";

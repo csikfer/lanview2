@@ -7,6 +7,8 @@
 #include "lv2link.h"
 #include "lv2user.h"
 
+EXT_ const QString sHtmlHead;
+EXT_ const QString sHtmlTail;
 EXT_ const QString sHtmlLine;
 EXT_ const QString sHtmlTabBeg;
 EXT_ const QString sHtmlTabEnd;

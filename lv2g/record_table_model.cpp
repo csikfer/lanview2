@@ -477,7 +477,7 @@ QString             cRecordTableModel::toHtml()
     QList<QStringList>  m = toStringTable(false);
     QStringList head = m.takeFirst();
     r = htmlTable(head, m, false);
-    return r;
+    return sHtmlHead + r + sHtmlTail;
 }
 
 QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndexList mil)
@@ -523,7 +523,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
                             if (vBgColor.isValid()) {
                                 style += "background-color:" + vBgColor.value<QColor>().name() + _sSemicolon;
                             }
-                            s = "<span style=\"" + style + "\">" + s + "</span>";
+                            s = "<div style=\"" + style + "\">" + s + "</span>";
                         }
                         QVariant vFont    = data(mi, Qt::FontRole);
                         if (vFont.isValid()) {
@@ -561,7 +561,7 @@ QString cRecordTableModel::toHtml(QModelIndexList mil)
     QList<QStringList>  m = toStringTable(false, mil);
     QStringList head = m.takeFirst();
     r = htmlTable(head, m, false);
-    return r;
+    return sHtmlHead + r + sHtmlTail;
 }
 
 

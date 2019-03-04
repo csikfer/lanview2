@@ -2634,9 +2634,17 @@ void cRecordTable::copy()
         return;
     }
     switch (t) {
-    case TET_CLIP:
-        QApplication::clipboard()->setText(r);
-        break;
+    case TET_CLIP: {
+        //static const QString sMimeTypeCsv = "text/csv";
+        QMimeData *pMime = new QMimeData;
+        switch (f) {
+        case TEF_CSV:   // pMime->setData(sMimeTypeCsv, r.toUtf8()); break; // NOT WORKING
+                        pMime->setText(r);                      break;
+        case TEF_HTML:  pMime->setHtml(r);                      break;
+        default:        EXCEPTION(EPROGFAIL);
+        }
+        QApplication::clipboard()->setMimeData(pMime);
+      } break;
     case TET_FILE: {
         QString path = dialog.path();
         while (!path.isEmpty()) {
