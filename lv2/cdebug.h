@@ -1,9 +1,8 @@
 #ifndef CDEBUG_H
 #define CDEBUG_H
 #include "lv2_global.h"
-#include <QtCore>
 #include <QtSql>
-#include "strings.h"
+#include "lv2dict.h"
 
 /*!
 @file cdebug.h

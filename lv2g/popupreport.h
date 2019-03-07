@@ -19,12 +19,12 @@ private slots:
     void save();
 };
 
-static inline cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
+inline cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
 {
     return new cPopupReportWindow(_par, _text, _title);
 }
 
-static inline cPopupReportWindow* popupTextWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
+inline cPopupReportWindow* popupTextWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
 {
     return new cPopupReportWindow(_par, _text, _title, false);
 }

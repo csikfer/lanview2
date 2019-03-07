@@ -125,6 +125,21 @@ QStringList cFeatures::value2list(const QString &s)
     return r;
 }
 
+QString cFeatures::list2value(const QStringList& l)
+{
+    static const QString sep = ",";
+    static const QString esep = "\\,";
+    QString r;
+    if (!l.isEmpty()) {
+        foreach (QString s, l) {
+            s = s.replace(sep, esep);
+            r += s + sep;
+        }
+        r.chop(sep.size());
+    }
+    return r;
+}
+
 qlonglong cFeatures::value2set(const QString &s, const QStringList& enums)
 {
     qlonglong m = 0;
@@ -146,11 +161,11 @@ qlonglong cFeatures::eValue(const QString &_nm, const QStringList& enums) const
     return r;
 }
 
-QMap<QString, QStringList> cFeatures::sMapValue(const QString &_nm) const
+QMap<QString, QStringList> cFeatures::sListMapValue(const QString &_nm) const
 {
     QMap<QString, QStringList> r;
     if (contains(_nm)) {
-        r =  value2map(value(_nm));
+        r =  value2listMap(value(_nm));
     }
     return r;
 }
@@ -158,7 +173,38 @@ QMap<int, qlonglong> cFeatures::eMapValue(const QString &_nm, const QStringList&
 {
     QMap<int, qlonglong>  r;
     if (contains(_nm)) {
-        r = mapEnum(sMapValue(_nm), enums);
+        r = mapEnum(sListMapValue(_nm), enums);
+    }
+    return r;
+}
+
+tStringMap cFeatures::value2map(const QString& _s)
+{
+    tStringMap r;
+    QString key;
+    QString val;
+    QString s = _s.simplified();
+    QRegExp re("^(\\w+)\\[([\\w\\s,]*)\\](.*)$");
+    while (re.exactMatch(s)) {
+        key = re.cap(1);
+        val = re.cap(2);
+        r[key] = val;
+        s = re.cap(3);
+        if (!s.startsWith(QChar(','))) break; // Missing ',' or empty
+        s = s.mid(1);
+    }
+    return r;
+}
+
+QString cFeatures::map2value(const tStringMap& _map)
+{
+    QString r;
+    if (!_map.isEmpty()) {
+        foreach (QString key, _map.keys()) {
+            QString val = _map[key];
+            r += key + "[" + val + "],";
+        }
+        r.chop(1);
     }
     return r;
 }
@@ -166,9 +212,17 @@ QMap<int, qlonglong> cFeatures::eMapValue(const QString &_nm, const QStringList&
 
 /// Egy string stringList map-á felbontása:
 /// <key>[<v1>,<v2>...],<key2>[<v2>...]
-QMap<QString, QStringList> cFeatures::value2map(const QString& s)
+QMap<QString, QStringList> cFeatures::value2listMap(const QString& s)
 {
     QMap<QString, QStringList>  r;
+#if 1
+    tStringMap m = value2map(s);
+    QRegExp re("\\s*,\\s*");
+    foreach (QString key, m.keys()) {
+        QString val = m[key];
+        r[key] = val.split(re);
+    }
+#else
     if (s.isEmpty()) return r;
     QStringList sl = s.split(',');
     QStringList keyAndFirst = sl.first().split('[');
@@ -204,6 +258,7 @@ QMap<QString, QStringList> cFeatures::value2map(const QString& s)
             }
         }
     }
+#endif
     return r;
 }
 
@@ -227,11 +282,14 @@ QMap<int, qlonglong> cFeatures::mapEnum(QMap<QString, QStringList> smap, const Q
 
 QString cFeatures::join() const
 {
-    QString r = QChar(':');
+    static const QString sep = ":";
+    static const QString esep = "::";
+    QString r = sep;
     for (ConstIterator i = constBegin(); i != constEnd(); ++i) {
-        r += i.key();
-        if (!i.value().isEmpty()) r +=  "=" + i.value();
-        r += QChar(':');
+        QString s = i.key();
+        if (!i.value().isEmpty()) s +=  "=" + i.value();
+        s.replace(sep, esep);
+        r += s + sep;
     }
     return r;
 }

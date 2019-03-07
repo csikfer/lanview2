@@ -19,6 +19,8 @@ This file is part of LanView2.
 */
 
 #include <QtCore/qglobal.h>
+#include <QtCore>
+
 
 #if defined(LV2_LIBRARY)
 #  define LV2SHARED_EXPORT Q_DECL_EXPORT
@@ -62,6 +64,27 @@ enum eEx {
 };
 
 inline enum eEx bool2ex(bool b, eEx ex = EX_ERROR) { return b ? ex : EX_IGNORE; }
+
+#define ENUM_INVALID    -1
+
+enum eTristate {
+    TS_NULL = -1,
+    TS_FALSE=  0,
+    TS_TRUE =  1
+};
+
+typedef QPair<QString, QString>     tStringPair;
+/// A QPolygonF osztály a GUI része, így nem használlható
+/// Mert vagy nem GUI-val fordítjuk, és akkor elszállhat (pl. a QVariant-ból való kikonvertáláskor)
+/// Vagy GUI-val fordítunk, de akkor meg nem fog elindulni tisztán konzolos módban
+typedef QList<QPointF>  tPolygonF;
+
+/// Egész szám (int/index) vektor
+typedef QVector<int>        tIntVector;
+/// Egész szám (qlonglong/id) vektor
+typedef QVector<qlonglong>  tLongLongVector;
+
+typedef QMap<QString, QString>  tStringMap;
 
 
 #endif // LV2_GLOBAL_H

@@ -20,7 +20,6 @@
 #ifndef LV2TYPES_H_INCLUDED
 #define LV2TYPES_H_INCLUDED
 #include "lv2_global.h"
-#include <QtCore>
 #include <QtNetwork>
 #include <QSqlRecord>
 #include <QProcess>
@@ -40,14 +39,6 @@ Név string literállá konvertálása. Csak makró definícióban használható
 Név string literállá konvertálása.
  */
 #define _STR(s)     __STR(s)
-
-#define ENUM_INVALID    -1
-
-enum eTristate {
-    TS_NULL = -1,
-    TS_FALSE=  0,
-    TS_TRUE =  1
-};
 
 static inline bool setBool(bool& b, eTristate v) {
     switch (v) {
@@ -835,25 +826,12 @@ TSTREAMO(netAddress)
 TSTREAMO(QHostAddress)
 TSTREAMO(cMac)
 
-typedef QPair<QString, QString>     tStringPair;
-/// A QPolygonF osztály a GUI része, így nem használlható
-/// Mert vagy nem GUI-val fordítjuk, és akkor elszállhat (pl. a QVariant-ból való kikonvertáláskor)
-/// Vagy GUI-val fordítunk, de akkor meg nem fog elindulni tisztán konzolos módban
-typedef QList<QPointF>  tPolygonF;
-
-/// Egész szám (int/index) vektor
-typedef QVector<int>        tIntVector;
-/// Egész szám (qlonglong/id) vektor
-typedef QVector<qlonglong>  tLongLongVector;
-
 /// Egy egész szám (int) vektor előállítása.
 /// A vektornak annyi eleme lesz, ahány paramétert megadtunk (max 8 elem), az első NULL_IX érték utáni elemek
 /// figyelmen kívül lesznek hagyva. A vektor elemei a paraméterek értékeivel lesznek feltöltve.
 /// @return egy maximum 8 elemű egész szám vektor. Ahol az elemek (ha vannak) első = a, második = b, stb.
 /// @relates cRecord
 EXT_ tIntVector   iTab(int a = NULL_IX, int b = NULL_IX, int c = NULL_IX, int d = NULL_IX, int e = NULL_IX, int f = NULL_IX, int g = NULL_IX, int h = NULL_IX);
-
-typedef QMap<QString, QString>  tStringMap;
 
 /* ------------------------------------------------------------------ */
 

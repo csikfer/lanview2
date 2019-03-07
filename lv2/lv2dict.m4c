@@ -1,5 +1,5 @@
 #include <lv2_global.h>
-#include <strings.h>
+#include <lv2dict.h>
 
 define(`__SDEF',`
 const char   __s$1[] = "$1";
@@ -9,5 +9,5 @@ define(`STRDEF',`
 const char   __s$1[] = $2;
 const QString _s$1(__s$1);')
 
-include(strings.m4)
+include(lv2dict.m4)
 

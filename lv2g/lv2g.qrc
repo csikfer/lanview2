@@ -84,5 +84,7 @@
         <file>icons/network-ethernet-disconnected.ico</file>
         <file>icons/have_no.png</file>
         <file>icons/null.png</file>
+        <file>icons/view-list-details.ico</file>
+        <file>icons/view-list-icon.ico</file>
     </qresource>
 </RCC>

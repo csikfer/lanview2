@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QBitArray>
 #include <QFile>
+#include <QBitArray>
 
 static inline bool isNumNull(const QVariant v)
 {
@@ -174,6 +175,7 @@ public:
     /// @param s A darabolandó string.
     /// @return A szét darabolt stringgek litája
     static QStringList value2list(const QString &s);
+    static QString list2value(const QStringList& l);
     /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
     /// space karakter van, akkor azt a space karaktert eldobja a metódus.
     /// A kapott lista elemeket enumerációs értékeknek tekintve (a listát set-nek) összeállít egy maszk értéket.
@@ -182,9 +184,11 @@ public:
     /// @return A maszk
     static qlonglong value2set(const QString &s, const QStringList& enums);
     qlonglong eValue(const QString &_nm, const QStringList& enums) const;
-    static QMap<QString, QStringList> value2map(const QString &s);
+    static tStringMap value2map(const QString& _s);
+    static QString map2value(const tStringMap& _map);
+    static QMap<QString, QStringList> value2listMap(const QString &s);
     static QMap<int, qlonglong> mapEnum(QMap<QString, QStringList> smap, const QStringList& enums);
-    QMap<QString, QStringList> sMapValue(const QString &_nm) const;
+    QMap<QString, QStringList> sListMapValue(const QString &_nm) const;
     QMap<int, qlonglong> eMapValue(const QString &_nm, const QStringList& enums) const;
     /// Megkeresi a megadott nevű paramétert.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)

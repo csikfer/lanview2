@@ -417,6 +417,7 @@ QString fieldWidgetType(int _t)
     case FEW_FONT_ATTR:     return "cFontAttrWidget";
     case FEW_LTEXT:         return "cLTextWidget";
     case FEW_LTEXT_LONG:    return "cLTextWidget/long";
+    case FEW_FEATURES:      return "cFeatureWidget";
     default:                return sInvalidEnum();
     }
 }
@@ -599,7 +600,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     bool ro = (_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr);
     qlonglong fieldFlags = _tf.getId(_sFieldFlags);
     int fl = ro ? (_fl | FEB_READ_ONLY) : _fl;
-    if (ro) {       // Néhány widget-nek nincs read-only módja, azok helyett read-only esetén egy soros megj.
+    if (ro) {       // Néhány widget-nek nincs read-only módja, azok helyett read-only esetén egy soros megj. Ez hűlyeség! Legyen Read-only. Javítani!!!
         switch (et) {
         // ReadOnly esetén a felsoroltak kivételével egysoros megjelenítés
         case cColStaticDescr::FT_SET:
@@ -651,6 +652,10 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFontFamilyWidget" << endl;
             return p;
         }
+        if (_fr.columnName() == _sFeatures && 0 == (fieldFlags & ENUM2SET(FF_RAW))) {   // features
+            cFeatureWidget *p = new cFeatureWidget(_tm, _tf, _fr, fl, _par);
+            return p;
+        }
         goto case_FieldLineWidget;                                  // Egy soros text...
     // Egy soros bevitel (LineEdit) kivételek vége
     case cColStaticDescr::FT_REAL:
@@ -659,7 +664,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFieldSpinBoxWidget/double" << endl;
             return p;
         }
-//    [[clang::fallthrough]];
+//    [[fallthrough]];
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
@@ -3699,6 +3704,293 @@ void cLTextWidget::setFromEdit()
     setFromWidget(v);
 }
 
+/* **** **** */
+
+cFeatureWidgetRow::cFeatureWidgetRow(cFeatureWidget *par, int _row, const QString& key, const QString& val)
+    : QObject(par), row(_row), parent(par)
+{
+    pDialog = nullptr;
+    pListWidget = nullptr;
+    pTableWidget = nullptr;
+    QTableWidgetItem *pItem;
+    pItem = new QTableWidgetItem(key);
+    parent->pTable->setItem(row, COL_KEY, pItem);
+    pItem = new QTableWidgetItem(val);
+    parent->pTable->setItem(row, COL_VAL, pItem);
+    pListButton = new QToolButton;
+    pListButton->setIcon(QIcon(QString(":/icons/view-list-details.ico")));
+    parent->pTable->setCellWidget(row, COL_B_LIST, pListButton);
+    connect(pListButton, SIGNAL(clicked()), this, SLOT(listDialog()));
+    pMapButton  = new QToolButton;
+    pMapButton->setIcon(QIcon(QString(":/icons/view-list-icon.ico")));
+    parent->pTable->setCellWidget(row, COL_B_MAP, pMapButton);
+    connect(pMapButton, SIGNAL(clicked()), this, SLOT(mapDialog()));
+}
+
+cFeatureWidgetRow::~cFeatureWidgetRow()
+{
+    ;
+}
+
+void cFeatureWidgetRow::clickButton(int id)
+{
+    if (pDialog == nullptr) return;
+    switch (id) {
+    case DBT_OK:
+    case DBT_CANCEL:
+        pDialog->done(id);
+        break;
+    case DBT_INSERT:
+        if (pListWidget != nullptr) {
+            QListWidgetItem *pItem = new QListWidgetItem;
+            QModelIndexList mil = pListWidget->selectionModel()->selectedRows();
+            if (mil.isEmpty()) pListWidget->addItem(pItem);
+            else               pListWidget->insertItem(mil.first().row(), pItem);
+        }
+        else if (pTableWidget != nullptr) {
+
+        }
+        break;
+    case DBT_DELETE:
+        if (pListWidget != nullptr) {
+            QModelIndexList mil = pListWidget->selectionModel()->selectedRows();
+            if (!mil.isEmpty()) delete pListWidget->takeItem(mil.first().row());
+        }
+        else if (pTableWidget != nullptr) {
+
+        }
+        break;
+    }
+}
+
+void cFeatureWidgetRow::listDialog()
+{
+    pDialog     = new QDialog;
+    pListWidget = new QListWidget;
+    QVBoxLayout *   pVLayout    = new QVBoxLayout;
+    cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET4(DBT_OK, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
+
+    pDialog->setWindowTitle(trUtf8("Lista szerkesztése"));
+    pDialog->setLayout(pVLayout);
+    pVLayout->addWidget(pListWidget);
+    pVLayout->addWidget(pButtons->pWidget());
+    QTableWidgetItem * pItem = parent->pTable->item(row, COL_VAL);
+    if (pItem == nullptr) EXCEPTION(EPROGFAIL);
+    QString val = pItem->text();
+    QStringList list = cFeatures::value2list(val);
+    foreach (QString s, list) {
+        QListWidgetItem *pItem = new QListWidgetItem(s);
+        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
+        pListWidget->addItem(pItem);
+    }
+    connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(clickButton(int)));
+    int id = pDialog->exec();
+    if (id == DBT_OK) {
+        list.clear();
+        int i, n = pListWidget->count();
+        for (i = 0; i < n; ++i) {
+            list << pListWidget->item(i)->text();
+        }
+        val = cFeatures::list2value(list);
+        pItem = new QTableWidgetItem(val);
+        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
+        parent->pTable->setItem(row, COL_VAL, pItem);
+    }
+    pDelete(pDialog);
+    pListWidget = nullptr;
+}
+
+void cFeatureWidgetRow::mapDialog()
+{
+    pDialog     = new QDialog;
+    pTableWidget = new QTableWidget;
+    QVBoxLayout *   pVLayout    = new QVBoxLayout;
+    cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET4(DBT_OK, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
+
+    pDialog->setWindowTitle(trUtf8("Map szerkesztése"));
+    pDialog->setLayout(pVLayout);
+    pVLayout->addWidget(pTableWidget);
+    pVLayout->addWidget(pButtons->pWidget());
+    QTableWidgetItem * pItem = parent->pTable->item(row, COL_VAL);
+    if (pItem == nullptr) EXCEPTION(EPROGFAIL);
+    QString val = pItem->text();
+    tStringMap map = cFeatures::value2map(val);
+    QStringList keys = map.keys();
+    pTableWidget->setRowCount(keys.size());
+    pTableWidget->setColumnCount(2);
+    QStringList labels;
+    labels << trUtf8("Név") << trUtf8("Érték");
+    pTableWidget->setHorizontalHeaderLabels(labels);
+    int _row = 0;
+    foreach (QString key, keys) {
+        QString val = map[key];
+        pItem = new QTableWidgetItem(key);
+        pTableWidget->setItem(_row, 0, pItem);
+        pItem = new QTableWidgetItem(val);
+        pTableWidget->setItem(_row, 1, pItem);
+        ++_row;
+    }
+    connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(clickButton(int)));
+    int id = pDialog->exec();
+    if (id == DBT_OK) {
+        map.clear();
+        int i, n = pTableWidget->rowCount();
+        for (i = 0; i < n; ++i) {
+            QString key = pTableWidget->item(i, 0)->text();
+            QString kvl = pTableWidget->item(i, 1)->text();
+            map[key] = kvl;
+        }
+        val = cFeatures::map2value(map);
+        pItem = new QTableWidgetItem(val);
+        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
+        parent->pTable->setItem(row, COL_VAL, pItem);
+    }
+    pDelete(pDialog);
+    pTableWidget = nullptr;
+
+}
+
+/* ---- ---- */
+cFeatureWidget::cFeatureWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
+{
+    _wType   = FEW_FEATURES;
+    _height  = 6;
+    busy = true;
+
+    pHLayout = new QHBoxLayout;
+    setLayout(pHLayout);
+    pEditWidget = pTable  = new QTableWidget;
+    pTable->horizontalHeader()->setStretchLastSection(true);
+    QStringList headLabels;
+    headLabels << _sNul << _sNul;
+    headLabels << trUtf8("Név");
+    headLabels << trUtf8("Érték");
+    pTable->setColumnCount(cFeatureWidgetRow::COL_NUMBER);
+    pTable->setMinimumWidth(24);
+    pTable->setRowCount(0);     // empty
+    pTable->setHorizontalHeaderLabels(headLabels);
+    pHLayout->addWidget(pTable, 1);
+    pVLayout = new QVBoxLayout;
+    pHLayout->addLayout(pVLayout);
+    pDelRow = new QPushButton(trUtf8("Töröl"));
+    pInsRow = new QPushButton(trUtf8("Beszúr"));
+    pVLayout->addWidget(pInsRow);
+    pVLayout->addWidget(pDelRow);
+    pVLayout->addStretch();
+    pLayout = new QHBoxLayout;
+    pVLayout->addLayout(pLayout);
+    pLayout->addStretch();
+
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    connect(pTable, SIGNAL(cellChanged(int, int)), this, SLOT(onChangedCell(int, int)));
+    connect(pInsRow, SIGNAL(clicked()), this, SLOT(onInsClicked()));
+    connect(pDelRow, SIGNAL(clicked()), this, SLOT(onDelClicked()));
+    busy = false;
+}
+
+cFeatureWidget::~cFeatureWidget()
+{
+    busy = true;
+    clearRows();
+}
+
+int cFeatureWidget::set(const QVariant& v)
+{
+    int r = cFieldEditBase::set(v);
+    if (1 == r) {
+        busy = true;
+        clearRows();
+        QString s = v.toString();
+        if (!s.isEmpty() && s != ":") {
+            if (!features.split(s, false, EX_IGNORE)) {
+                cMsgBox::error(trUtf8("Hibás features érték: '%1'").arg(s));
+            }
+        }
+        QStringList keys = features.keys();
+        pTable->setRowCount(keys.size());
+        int row = 0 ;
+        foreach (QString key, keys) {
+            QString val = features.value(key);
+            rowList << new cFeatureWidgetRow(this, row, key, val);
+            ++row;
+        }
+        pTable->resizeColumnsToContents();
+        busy = false;
+    }
+    return r;
+}
+
+void cFeatureWidget::clearRows()
+{
+    features.clear();
+    pTable->setRowCount(0);
+    while (!rowList.isEmpty()) delete rowList.takeLast();
+}
+
+void cFeatureWidget::onChangedCell(int, int)
+{
+    if (!busy) setFromEdit();
+}
+
+void cFeatureWidget::setFromEdit()
+{
+    if (pNullButton != nullptr && pNullButton->isChecked()) {
+        if (!_value.isNull()) setFromWidget(QVariant());
+    }
+    else {
+        features.clear();
+        int rows = pTable->rowCount();
+        for (int i = 0; i < rows; ++i) {
+            QTableWidgetItem *p = pTable->item(i, cFeatureWidgetRow::COL_KEY);
+            if (p == nullptr) {
+                continue;
+            }
+            QString key  = p->text();
+            if (!key.isEmpty()) {
+                p = pTable->item(i, cFeatureWidgetRow::COL_VAL);
+                QString value;
+                if (p != nullptr) {
+                    value = p->text();
+                }
+                features[key] = value;
+            }
+        }
+        QString s = features.join();
+        if (s != _value.toString()) setFromWidget(s);
+    }
+}
+
+void cFeatureWidget::onInsClicked()
+{
+    busy = true;
+    int rows = pTable->rowCount();
+    pTable->setRowCount(rows +1);
+    pTable->setItem(rows, 0, new QTableWidgetItem(_sNul));
+    pTable->setItem(rows, 1, new QTableWidgetItem(_sNul));
+    busy = false;
+}
+
+void cFeatureWidget::onDelClicked()
+{
+    QModelIndexList mil = pTable->selectionModel()->selectedRows();
+    if (mil.isEmpty()) return;
+    busy = true;
+    QList<int> rowsIndexList;
+    foreach (QModelIndex mi, mil) { rowsIndexList << mi.row(); }
+    std::sort(rowsIndexList.begin(), rowsIndexList.end());
+    while (rowsIndexList.size() > 0) {
+        int row = rowsIndexList.takeLast();
+        pTable->removeRow(row);
+        delete rowList.takeAt(row);
+    }
+    busy = false;
+    onChangedCell(0,0);
+}
 
 /* **** **** */
 

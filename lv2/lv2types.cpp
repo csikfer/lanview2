@@ -4,7 +4,7 @@
 #include "cdebug.h"
 #include "cerror.h"
 #include "lv2types.h"
-#include "strings.h"
+#include "lv2dict.h"
 #include <float.h>
 #include "lv2sql.h"
 

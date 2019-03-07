@@ -32,7 +32,7 @@ m4h.output = ${QMAKE_FILE_IN_PATH}/${QMAKE_FILE_BASE}.h
 m4h.clean = rm ${QMAKE_FILE_OUT}
 m4h.CONFIG += target_predeps
 m4h.variable_out = HEADERS
-m4h.depends  += ${QMAKE_FILE_IN_PATH}/strings.m4
+m4h.depends  += ${QMAKE_FILE_IN_PATH}/lv2dict.m4
 QMAKE_EXTRA_COMPILERS += m4h
 
 m4c.name = m4c
@@ -47,12 +47,12 @@ m4c.output =${QMAKE_FILE_BASE}.cpp
 m4c.clean = rm ${QMAKE_FILE_OUT}
 m4c.CONFIG += target_predeps
 m4c.variable_out = SOURCES
-m4c.depends  += ${QMAKE_FILE_IN_PATH}/strings.m4
+m4c.depends  += ${QMAKE_FILE_IN_PATH}/lv2dict.m4
 QMAKE_EXTRA_COMPILERS +=  m4c
 
 BISONSOURCES += import_parser.yy
-M4HEADER      = strings.m4h
-M4SOURCE      = strings.m4c
+M4HEADER      = lv2dict.m4h
+M4SOURCE      = lv2dict.m4c
 DEPENDPATH   += $$TARGETPATH
 
 OTHER_FILES += $$BISONSOURCES $$M4HEADER $$M4SOURCE
@@ -108,7 +108,7 @@ HEADERS += lanview.h \
     lv2cont.h \
     doxydoc.h \
     import_parser.h \
-    strings.m4 \
+    lv2dict.m4 \
     lv2daterr.h \
     qtelnet.h \
     srvdata.h \

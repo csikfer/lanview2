@@ -10,7 +10,7 @@
 #include <signal.h>
 
 #include "lv2_global.h"
-#include "strings.h"
+#include "lv2dict.h"
 #include "cdebug.h"
 #include "cerror.h"
 #include "lv2types.h"

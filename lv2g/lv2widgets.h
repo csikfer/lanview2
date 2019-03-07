@@ -287,7 +287,8 @@ enum eFieldWidgetType {
     FEW_FONT_FAMILY,    ///< cFontFamilyWidget
     FEW_FONT_ATTR,      ///< cFontAttrWidget
     FEW_LTEXT,
-    FEW_LTEXT_LONG
+    FEW_LTEXT_LONG,
+    FEW_FEATURES
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -393,7 +394,7 @@ protected:
     /// @param __ex Ha értéke nem EX_IGNORE és nincs parent, vagy men találja az objektumot, akkor kizárást dob.
     /// @return A talált objektum pointere, vagy NULL.
     cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);
-    QLayout            *pLayout;        ///< Main layout
+    QBoxLayout         *pLayout;        ///< Main layout
     QAbstractButton    *pNullButton;    ///< NULL button or default button or NULL pointer
     QWidget            *pEditWidget;
     int                 _height;        ///< A Widget hozzávetőleges magassága (karakter) sorokban
@@ -1001,6 +1002,52 @@ protected:
     int textIndex;
 private slots:
     void setFromEdit();
+};
+
+class cFeatureWidget;
+class cFeatureWidgetRow : public QObject {
+    friend class cFeatureWidget;
+    Q_OBJECT
+protected:
+    enum { COL_B_LIST, COL_B_MAP, COL_KEY, COL_VAL, COL_NUMBER };
+    cFeatureWidgetRow(cFeatureWidget *par, int _row, const QString &key, const QString &val);
+    virtual ~cFeatureWidgetRow();
+    const int       row;
+    cFeatureWidget *parent;
+    QToolButton *pListButton;
+    QToolButton *pMapButton;
+    QDialog *       pDialog;
+    QListWidget *   pListWidget;
+    QTableWidget *  pTableWidget;
+private slots:
+    void clickButton(int id);
+    void listDialog();
+    void mapDialog();
+};
+
+class LV2GSHARED_EXPORT cFeatureWidget : public cFieldEditBase {
+    friend class cFeatureWidgetRow;
+    Q_OBJECT
+public:
+    cFeatureWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par);
+    ~cFeatureWidget();
+    virtual int set(const QVariant& v);
+protected:
+    void clearRows();
+    QList<cFeatureWidgetRow *>   rowList;
+    QVBoxLayout *   pVLayout;
+    QHBoxLayout *   pHLayout;
+    QTableWidget *  pTable;
+    QPushButton *   pDelRow;
+    QPushButton *   pInsRow;
+    cFeatures       features;
+    bool            busy;
+private slots:
+    void setFromEdit();
+    void onChangedCell(int, int);
+    void onInsClicked();
+    void onDelClicked();
+
 };
 
 /// Az osztály egy zóna ás hely QComboBox párossal egy hely kiválasztását teszi lehetővé.
