@@ -184,7 +184,7 @@ tStringMap cFeatures::value2map(const QString& _s)
     QString key;
     QString val;
     QString s = _s.simplified();
-    QRegExp re("^(\\w+)\\[([\\w\\s,]*)\\](.*)$");
+    QRegExp re("^(\\w+)\\[([^\\]]*)\\](.*)$");
     while (re.exactMatch(s)) {
         key = re.cap(1);
         val = re.cap(2);

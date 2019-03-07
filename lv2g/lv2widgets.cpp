@@ -3706,24 +3706,23 @@ void cLTextWidget::setFromEdit()
 
 /* **** **** */
 
-cFeatureWidgetRow::cFeatureWidgetRow(cFeatureWidget *par, int _row, const QString& key, const QString& val)
-    : QObject(par), row(_row), parent(par)
+cFeatureWidgetRow::cFeatureWidgetRow(cFeatureWidget *par, int row, const QString& key, const QString& val)
+    : QObject(par)
 {
     pDialog = nullptr;
     pListWidget = nullptr;
     pTableWidget = nullptr;
-    QTableWidgetItem *pItem;
-    pItem = new QTableWidgetItem(key);
-    parent->pTable->setItem(row, COL_KEY, pItem);
-    pItem = new QTableWidgetItem(val);
-    parent->pTable->setItem(row, COL_VAL, pItem);
+    pItemKey = new QTableWidgetItem(key);
+    par->pTable->setItem(row, COL_KEY, pItemKey);
+    pItemVal = new QTableWidgetItem(val);
+    par->pTable->setItem(row, COL_VAL, pItemVal);
     pListButton = new QToolButton;
     pListButton->setIcon(QIcon(QString(":/icons/view-list-details.ico")));
-    parent->pTable->setCellWidget(row, COL_B_LIST, pListButton);
+    par->pTable->setCellWidget(row, COL_B_LIST, pListButton);
     connect(pListButton, SIGNAL(clicked()), this, SLOT(listDialog()));
     pMapButton  = new QToolButton;
     pMapButton->setIcon(QIcon(QString(":/icons/view-list-icon.ico")));
-    parent->pTable->setCellWidget(row, COL_B_MAP, pMapButton);
+    par->pTable->setCellWidget(row, COL_B_MAP, pMapButton);
     connect(pMapButton, SIGNAL(clicked()), this, SLOT(mapDialog()));
 }
 
@@ -3748,7 +3747,10 @@ void cFeatureWidgetRow::clickButton(int id)
             else               pListWidget->insertItem(mil.first().row(), pItem);
         }
         else if (pTableWidget != nullptr) {
-
+            int rows = pTableWidget->rowCount();
+            pTableWidget->setRowCount(rows +1);
+            pTableWidget->setItem(rows, 0, new QTableWidgetItem);
+            pTableWidget->setItem(rows, 1, new QTableWidgetItem);
         }
         break;
     case DBT_DELETE:
@@ -3757,7 +3759,10 @@ void cFeatureWidgetRow::clickButton(int id)
             if (!mil.isEmpty()) delete pListWidget->takeItem(mil.first().row());
         }
         else if (pTableWidget != nullptr) {
-
+            QModelIndexList mil = pTableWidget->selectionModel()->selectedRows();
+            if (!mil.isEmpty()) {
+                pTableWidget->removeRow(mil.first().row());
+            }
         }
         break;
     }
@@ -3774,9 +3779,7 @@ void cFeatureWidgetRow::listDialog()
     pDialog->setLayout(pVLayout);
     pVLayout->addWidget(pListWidget);
     pVLayout->addWidget(pButtons->pWidget());
-    QTableWidgetItem * pItem = parent->pTable->item(row, COL_VAL);
-    if (pItem == nullptr) EXCEPTION(EPROGFAIL);
-    QString val = pItem->text();
+    QString val = pItemVal->text();
     QStringList list = cFeatures::value2list(val);
     foreach (QString s, list) {
         QListWidgetItem *pItem = new QListWidgetItem(s);
@@ -3792,9 +3795,7 @@ void cFeatureWidgetRow::listDialog()
             list << pListWidget->item(i)->text();
         }
         val = cFeatures::list2value(list);
-        pItem = new QTableWidgetItem(val);
-        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
-        parent->pTable->setItem(row, COL_VAL, pItem);
+        pItemVal->setText(val);
     }
     pDelete(pDialog);
     pListWidget = nullptr;
@@ -3811,16 +3812,16 @@ void cFeatureWidgetRow::mapDialog()
     pDialog->setLayout(pVLayout);
     pVLayout->addWidget(pTableWidget);
     pVLayout->addWidget(pButtons->pWidget());
-    QTableWidgetItem * pItem = parent->pTable->item(row, COL_VAL);
-    if (pItem == nullptr) EXCEPTION(EPROGFAIL);
-    QString val = pItem->text();
+    QString val = pItemVal->text();
     tStringMap map = cFeatures::value2map(val);
     QStringList keys = map.keys();
     pTableWidget->setRowCount(keys.size());
     pTableWidget->setColumnCount(2);
+    pTableWidget->horizontalHeader()->setStretchLastSection(true);
     QStringList labels;
     labels << trUtf8("Név") << trUtf8("Érték");
     pTableWidget->setHorizontalHeaderLabels(labels);
+    QTableWidgetItem *pItem;
     int _row = 0;
     foreach (QString key, keys) {
         QString val = map[key];
@@ -3841,9 +3842,7 @@ void cFeatureWidgetRow::mapDialog()
             map[key] = kvl;
         }
         val = cFeatures::map2value(map);
-        pItem = new QTableWidgetItem(val);
-        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
-        parent->pTable->setItem(row, COL_VAL, pItem);
+        pItemVal->setText(val);
     }
     pDelete(pDialog);
     pTableWidget = nullptr;
@@ -3867,7 +3866,7 @@ cFeatureWidget::cFeatureWidget(const cTableShape &_tm, const cTableShapeField& _
     headLabels << trUtf8("Név");
     headLabels << trUtf8("Érték");
     pTable->setColumnCount(cFeatureWidgetRow::COL_NUMBER);
-    pTable->setMinimumWidth(24);
+    pTable->horizontalHeader()->setMinimumSectionSize(24);
     pTable->setRowCount(0);     // empty
     pTable->setHorizontalHeaderLabels(headLabels);
     pHLayout->addWidget(pTable, 1);
@@ -3970,8 +3969,7 @@ void cFeatureWidget::onInsClicked()
     busy = true;
     int rows = pTable->rowCount();
     pTable->setRowCount(rows +1);
-    pTable->setItem(rows, 0, new QTableWidgetItem(_sNul));
-    pTable->setItem(rows, 1, new QTableWidgetItem(_sNul));
+    rowList << new cFeatureWidgetRow(this, rows, _sNul, _sNul);
     busy = false;
 }
 

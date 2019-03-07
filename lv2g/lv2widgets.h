@@ -1010,12 +1010,12 @@ class cFeatureWidgetRow : public QObject {
     Q_OBJECT
 protected:
     enum { COL_B_LIST, COL_B_MAP, COL_KEY, COL_VAL, COL_NUMBER };
-    cFeatureWidgetRow(cFeatureWidget *par, int _row, const QString &key, const QString &val);
+    cFeatureWidgetRow(cFeatureWidget *par, int row, const QString &key, const QString &val);
     virtual ~cFeatureWidgetRow();
-    const int       row;
-    cFeatureWidget *parent;
     QToolButton *pListButton;
     QToolButton *pMapButton;
+    QTableWidgetItem * pItemKey;
+    QTableWidgetItem * pItemVal;
     QDialog *       pDialog;
     QListWidget *   pListWidget;
     QTableWidget *  pTableWidget;
