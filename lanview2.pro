@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
-SUBDIRS = lv2
+SUBDIRS = lv2 \
+    snmpvars
 lv2.subdir = lv2
 
 !exists(lv2g/miss) {
