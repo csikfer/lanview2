@@ -1,8 +1,8 @@
 TEMPLATE = subdirs
 
-SUBDIRS = lv2 \
-    snmpvars
 lv2.subdir = lv2
+SUBDIRS += lv2
+lv2.subdirs = lv2
 
 !exists(lv2g/miss) {
     SUBDIRS += lv2g lv2gui
@@ -55,6 +55,12 @@ unix {
     SUBDIRS += portvlan
     portvlan.subdirs = portvlan
     portvlan.depends = lv2
+  }
+
+  !exists(snmpvars/miss) {
+    SUBDIRS += snmpvars
+    snmpvars.subdirs = snmpvars
+    snmpvars.depends = lv2
   }
 
 }

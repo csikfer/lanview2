@@ -55,7 +55,8 @@ M4HEADER      = lv2dict.m4h
 M4SOURCE      = lv2dict.m4c
 DEPENDPATH   += $$TARGETPATH
 
-OTHER_FILES += $$BISONSOURCES $$M4HEADER $$M4SOURCE
+OTHER_FILES += $$BISONSOURCES \
+    $$M4HEADER $$M4SOURCE lv2dict.m4
 
 QT += network \
     sql \
@@ -108,7 +109,6 @@ HEADERS += lanview.h \
     lv2cont.h \
     doxydoc.h \
     import_parser.h \
-    lv2dict.m4 \
     lv2daterr.h \
     qtelnet.h \
     srvdata.h \
