@@ -87,7 +87,6 @@ cDeviceSV::cDeviceSV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     if (__tableoid != cSnmpDevice().tableoid()) {
         EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem támogatott node típus!"));
     }
-    first = true;
 }
 
 cDeviceSV::~cDeviceSV()
@@ -106,7 +105,7 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
     }
     foreach (QString vname, varNames) {
         QStringList sl = listmap[vname];
-        if (sl.size() != 2) {
+        if (sl.size() != 2) {   /// OId, varTypeName
             EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid variable list : '%1'").arg(sVars));
         }
         cOId oid = cOId(sl.first());
@@ -116,35 +115,44 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
         oidVector << oid;
         QString typeName = sl.at(1);
         varTypes << cServiceVarType::srvartype(q, typeName);
+        qlonglong varTypeId = varTypes.last()->getId();
+        // read or create variable
+        cServiceVar *psv = new cServiceVar;
+        psv->setId(_sHostServiceId, hostServiceId());
+        psv->setName(_sServiceVarName, vname);
+        switch (psv->completion(q)) {
+        case 0:
+            psv->setId(_sServiceVarTypeId, varTypeId);
+            psv->insert(q);
+            break;
+        case 1:
+            if (psv->getId(_sServiceVarTypeId) != varTypeId) {  // if modifyed type
+                varTypes.last() = cServiceVarType::srvartype(q, psv->getId(_sServiceVarTypeId));
+            }
+            break;
+        default:
+            EXCEPTION(EDATA, q.size());
+        }
 
     }
     snmpDev().open(q, snmp);
 }
 
-int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
-{
-    int i, n = varNames.size();
-    if (n != oidVector.size() || n != varTypes.size()) {
-        EXCEPTION(EPROGFAIL);
-    }
-    for (i = 0; i < n; ++i) {
-        cOId oid = oidVector.at(i);
-        int r = snmp.get(oid);
-        if (r == 0) {   // OK
-
-        }
-    }
-}
-
 int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
 {
-    if (first) {
-        if (RS_ON != queryInit(q, runMsg)) {
-            return RS_UNREACHABLE;
-        }
-        first = false;
-    }
     enum eNotifSwitch rs = RS_ON;
+    qlonglong parid = parentId(EX_IGNORE);
+    int r = snmp.get(oidVector);
+    if (r) {
+        runMsg += trUtf8("SNMP get error : %1 in %2; host : %3, from %4 parent service.\n")
+                .arg(snmp.emsg)
+                .arg(name())
+                .arg(lanView::getInstance()->selfNode().getName())
+                .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
+        return RS_UNREACHABLE;
+    }
+    snmp.first();
+
     return rs;
 }
 
