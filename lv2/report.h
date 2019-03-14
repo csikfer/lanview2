@@ -260,20 +260,20 @@ EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& sMac);
 /// @param aAddr A keresett IP
 EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
 
-static inline QString logLink2str(QSqlQuery& q, cLogLink& lnk) {
+inline QString logLink2str(QSqlQuery& q, cLogLink& lnk) {
     return QObject::trUtf8("#%1 : %2  <==> %3\n")
             .arg(lnk.getId())
             .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)));
 }
 
-static inline QString lldpLink2str(QSqlQuery& q, cLldpLink& lnk) {
+inline QString lldpLink2str(QSqlQuery& q, cLldpLink& lnk) {
     return QObject::trUtf8("#%1 : %2  <==> %3  (%4 > %5\n")
             .arg(lnk.getId())
             .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)))
             .arg(lnk.getName(_sFirstTime), lnk.getName(_sLastTime));
 }
 
-static inline QString mactab2str(QSqlQuery& q, cMacTab& mt) {
+inline QString mactab2str(QSqlQuery& q, cMacTab& mt) {
     return QObject::trUtf8("%1  ==> %2  (%3 > %4\n")
             .arg(cNPort::getFullNameById(q, mt.getId(_sPortId)), mt.getName(_sHwAddress))
             .arg(mt.getName(_sFirstTime), mt.getName(_sLastTime));
@@ -287,33 +287,33 @@ EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, e
 EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool saved = false, const QString& msgPref = QString());
 EXT_ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, const QString& msgPref = QString());
 
-static inline void expWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(htmlWarning(text, chgBreaks, esc));
 }
-static inline void expInfo(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expInfo(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(htmlInfo(text, chgBreaks, esc));
 }
-static inline void expError(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expError(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(htmlError(text, chgBreaks, esc));
 }
-static inline void expItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(toHtmlItalic(text, chgBreaks, esc));
 }
-static inline void expBold(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expBold(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(toHtmlBold(text, chgBreaks, esc));
 }
-static inline void expGreen(const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expGreen(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push("<div><b><span style=\"color:green\">" + toHtml(text, chgBreaks, esc) + "</span></b></div>");
 }
 
-static inline void expText(int _r, const QString& text, bool chgBreaks = false, bool esc = true) {
+inline void expText(int _r, const QString& text, bool chgBreaks = false, bool esc = true) {
     int r = _r & RS_STAT_MASK;
     if      (r  < RS_WARNING) expInfo(text, chgBreaks, esc);
     else if (r == RS_WARNING) expWarning(text, chgBreaks, esc);
     else                      expError(text, chgBreaks, esc);
 }
 
-static inline void expHtmlLine() {
+inline void expHtmlLine() {
     cExportQueue::push(sHtmlLine);
 }
 

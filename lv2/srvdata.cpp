@@ -238,9 +238,22 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
     return R_ERROR;
 }
 
-#define _MAX_TRY_   5
-cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
+int cHostService::setStateMaxTry = NULL_IX;
+
+cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong elapsed, qlonglong __did, bool _resetIfDeleted)
 {
+    if (setStateMaxTry < 0) {
+        setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
+    }
+    if (elapsed >= 0) {
+        cServiceVar srvVar;
+        srvVar.setName(_sRuntime);
+        srvVar.setId(_sHostServiceId, getId());
+        if (srvVar.completion(__q)) {
+            int dummyRetStat;
+            srvVar.setValue(__q, elapsed, dummyRetStat);
+        }
+    }
     static const QString _sHostServiceId2Name = "host_service_id2name";
     QString sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
     if (sFulName.isEmpty()) {   // Törölték?
@@ -271,12 +284,11 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             EXCEPTION(EENODATA, 0, trUtf8("SQL függvény: %1(%2,%3,%4,%5)")
                       .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
                       );
-            break;
         case 1:         // OK
             set(__q);
             if (tf) sqlCommit(__q, sFulName);
             _DBGFNL() << toString() << endl;
-            return *this;
+            break;
         case -1:    // prepare error
         case -2:    // exec error
             QSqlError le = __q.lastError();
@@ -284,7 +296,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             QString s = le.databaseText().split('\n').first();  // első sor
             cnt++;
             // deadlock ?
-            if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= _MAX_TRY_) {
+            if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= setStateMaxTry) {
                 DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.number()).arg(cnt)
                     << trUtf8("driverText   : ") << le.driverText() << "\n"
                     << trUtf8("databaseText : ") << le.databaseText() << endl;
@@ -293,6 +305,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             }
             _SQLERR(le, EQUERY);    // no return
         }
+        break;
     }
     return *this;   // To avoid a warning message
 }
@@ -894,7 +907,7 @@ int cArp::replace(QSqlQuery& __q, eEx __ex)
     if (!isNull(_ixHostServiceId)) bind(_ixHostServiceId, __q, i);
     _EXECSQL(__q);
     __q.first();
-    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
+    eReasons r = eReasons(reasons(__q.value(0).toString(), EX_IGNORE));
     return r;
 }
 

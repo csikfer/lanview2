@@ -913,17 +913,17 @@ int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
             if (p == nullptr) EXCEPTION(EPROGFAIL);
         }
         if (typeid(*p) != typeid(cGateway)) EXCEPTION(EPROGFAIL);   // Egy cGateway objektum kell legyen.
-        pGate = (cGateway *)p;
+        pGate = dynamic_cast<cGateway *>(p);
     }
     PDEB(VVERBOSE) << "Gateway : " << pGate->name() << " Open..." << endl;
-    int r = pGate->open(q, runMsg, startTimeOut);
+    int r = pGate->open(q, runMsg, int(startTimeOut));
     if (r == RS_ON) {
         r = query(*pGate, q, runMsg);
         pGate->close();
-        pGate->hostService.setState(q, _sOn, runMsg);
+        pGate->hostService.setState(q, _sOn, runMsg, lastRun.elapsed());
     }
     else {
-        pGate->hostService.setState(q, notifSwitch(r), runMsg);
+        pGate->hostService.setState(q, notifSwitch(r), runMsg, lastRun.elapsed());
     }
     DBGFNL();
     return r;
@@ -986,7 +986,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
 
         cAttached   *pa = (cAttached *)pSubordinates->at(i);
         if (pa == nullptr) continue;
-        pa->hostService.setState(q, sst, nos, g.parentId());
+        pa->hostService.setState(q, sst, nos, lastRun.elapsed(), g.parentId());
     }
 //    if (conf) sets(qs);
     return RS_ON;

@@ -49,7 +49,7 @@ lv2snmpVars::~lv2snmpVars()
 
 void lv2snmpVars::staticInit(QSqlQuery *pq)
 {
-    ;
+    (void)pq;
 }
 
 void lv2snmpVars::setup(eTristate _tr)

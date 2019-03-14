@@ -149,7 +149,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     // Node original type
     cSnmpDevice& dev = snmpDev();
     if (0 != dev.open(_q, snmp, EX_IGNORE)) {
-        hostService.setState(_q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
+        hostService.setState(_q, _sUnreachable, "SNMP Open error: " + snmp.emsg, 0);
         EXCEPTION(EOK);
     }
     dev.fetchPorts(_q, 0);  // Fetch only ports
@@ -171,7 +171,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
         first = false;
     }
     else {
-        hostService.setState(_q, _sUnreachable, msg);
+        hostService.setState(_q, _sUnreachable, msg, 0);
     }
     pSnmpElapsed = getServiceVar(sSnmpElapsed);
     if (pSnmpElapsed == nullptr) {
@@ -584,7 +584,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             else if (_adstat == IF_DOWN) state = _sWarning;   // Disabled
             QString msg = trUtf8("interface %1 state : op:%2/adm:%3").arg(iface.getName()).arg(opstat).arg(adstat);
             eMsg = msgCat(eMsg, msg, "\n");
-            insp.hostService.setState(q, state, eMsg, parid);
+            insp.hostService.setState(q, state, eMsg, NULL_ID, parid);
             insp.flag = true; // State is set
         }
 
@@ -603,7 +603,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
             }
-            insp.hostService.setState(q, notifSwitch(sstate), stMsg, parid);
+            insp.hostService.setState(q, notifSwitch(sstate), stMsg, NULL_ID, parid);
             insp.flag = true; // State is set
             if (pstate != RS_INVALID && changeStringField(notifSwitch(pstate), ixPortStat, iface, bitsSet)) {
                 iface.set(ixLastChanged, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
@@ -622,7 +622,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     }
     foreach (cInspector *ps, *pSubordinates) {
         if (ps != nullptr && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
-            ps->hostService.setState(q, _sUnknown, trUtf8("Not set by query") , parid);
+            ps->hostService.setState(q, _sUnknown, trUtf8("Not set by query"), NULL_ID, parid);
         }
     }
     DBGFNL();

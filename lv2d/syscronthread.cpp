@@ -31,13 +31,20 @@ void cSysInspector::timerEvent(QTimerEvent *e)
         cInspector::timerEvent(e);
         return;
     }
+    if (lastRun.isValid()) {
+        lastElapsedTime = lastRun.restart();
+    }
+    else {
+        lastElapsedTime = 0;
+        lastRun.start();
+    }
     internalStat = IS_RUN;
     statMsg.clear();
     state = RS_ON;
     dbCron();
     mailCron();
     smsCron();
-    hostService.setState(*pq, notifSwitch(state), statMsg);
+    hostService.setState(*pq, notifSwitch(state), statMsg, lastRun.elapsed());
     internalStat = IS_SUSPENDED;
 }
 

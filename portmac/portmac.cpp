@@ -425,7 +425,7 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
         hostService.setState(q, _sUnreachable, msg);
     }
     else {
-        ((cDevicePMac&)parent()).rightMap[portId()] = this;
+        dynamic_cast<cDevicePMac&>(parent()).rightMap[portId()] = this;
     }
 }
 

@@ -362,7 +362,7 @@ lanView::~lanView()
         if (eid != NULL_ID && setSelfStateF) {
             if (pSelfHostService != nullptr && pQuery != nullptr) {
                 try {
-                    pSelfHostService->setState(*pQuery, _sCritical, lastError->msg(), NULL_ID, false);
+                    pSelfHostService->setState(*pQuery, _sCritical, lastError->msg(), NULL_ID, NULL_ID, false);
                 } catch(...) {
                     DERR() << "!!!!" << endl;
                 }
@@ -380,11 +380,11 @@ lanView::~lanView()
                 int rs = RS_ON;
                 QString n;
                 if (lastError != nullptr) {
-                    rs = lastError->mErrorSubCode;      // Ide kéne rakni a kiírandó staust
+                    rs = int(lastError->mErrorSubCode); // Ide kéne rakni a kiírandó staust
                     n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
                 }
-                if ((rs & RS_STAT_SETTED) == 0) {        // Jelezheti, hogy már megvolt a kiírás!
-                    pSelfHostService->setState(*pQuery, notifSwitch(rs), n, NULL_ID, false);
+                if ((rs & RS_STAT_SETTED) == 0) {       // Jelezheti, hogy már megvolt a kiírás!
+                    pSelfHostService->setState(*pQuery, notifSwitch(rs), n, NULL_ID, NULL_ID, false);
                 }
             } catch(...) {
                 DERR() << "!!!!" << endl;

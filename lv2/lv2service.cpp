@@ -229,7 +229,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
         msg = trUtf8("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
-        inspector.hostService.setState(*inspector.pq, _sDown, msg);
+        inspector.hostService.setState(*inspector.pq, _sDown, msg, inspector.lastRun.elapsed());
         inspector.internalStat = IS_STOPPED;
         return -1;
     }
@@ -245,7 +245,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
                     .arg(inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "))
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
-            inspector.hostService.setState(*inspector.pq, _sUnreachable, msg);
+            inspector.hostService.setState(*inspector.pq, _sUnreachable, msg, inspector.lastRun.elapsed());
             inspector.internalStat = IS_STOPPED;
             return -1;
         }
@@ -264,7 +264,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     inspector.internalStat = IS_STOPPED;
     msg = trUtf8("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
-    inspector.hostService.setState(*inspector.pq, _sCritical, msg);
+    inspector.hostService.setState(*inspector.pq, _sCritical, msg, inspector.lastRun.elapsed());
     return -1;
 }
 
@@ -286,12 +286,12 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
                 msg = trUtf8("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
             }
             if (reStartCnt > reStartMax) {
-                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.");
+                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.", inspector.lastRun.elapsed());
                 inspector.internalStat = IS_STOPPED;
                 return;
             }
             else {
-                inspector.hostService.setState(*inspector.pq, _sWarning, msg + "Újraindítási kíérlet.");
+                inspector.hostService.setState(*inspector.pq, _sWarning, msg + "Újraindítási kíérlet.", inspector.lastRun.elapsed());
             }
         }
         PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
@@ -652,7 +652,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             if (pe->mErrorCode != eError::EOK) {
                 cHostService hs;
                 QSqlQuery q3 = getQuery();
-                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId(), false);
+                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), 0, hostServiceId(), false);
             }
             pDelete(p);
             delete pe;
@@ -1155,7 +1155,6 @@ bool cInspector::doRun(bool __timed)
         retStat      = (retStat & RS_STAT_MASK);
     } CATCHS(lastError);
     qlonglong elapsed = lastRun.elapsed();
-    int dummyRetStat;
     // Ha többet csúszott az időzítés mint 50%
     if (__timed  && lastElapsedTime > ((interval*3)/2)) {
         // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
@@ -1171,23 +1170,20 @@ bool cInspector::doRun(bool __timed)
         qlonglong id = sendError(lastError);
         if (plv->lastError == lastError) plv->lastError = nullptr;
         pDelete(lastError);
-        if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
-        hostService.setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
+        hostService.setState(*pq, _sUnreachable, statMsg, elapsed, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
     }
     else {
         if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pq, tn);
         if (retStat < RS_WARNING
          && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
-            if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
             statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
-            hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
+            hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, elapsed, parentId(EX_IGNORE));
         }
         else if (!statIsSet) {   // Ha még nem volt status állítás
-            if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
-            else statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(elapsed));
-            hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
+            statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(elapsed));
+            hostService.setState(*pq, notifSwitch(retStat), statMsg, elapsed, parentId(EX_IGNORE));
         }
     }
     _DBGFNL() << name() << endl;
@@ -1245,7 +1241,7 @@ enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
     case NR_CRITICAL:   s = _sCritical;     break;
     case NR_UNKNOWN:    s = _sUnreachable;  break;
     }
-    hostService.setState(*pq, s, note);
+    hostService.setState(*pq, s, note, lastRun.elapsed());
     return eNotifSwitch(r);
 }
 
