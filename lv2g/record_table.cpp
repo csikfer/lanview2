@@ -1378,6 +1378,7 @@ void cRecordsViewBase::insert(bool _similar)
             parent_id = pARec->getId();
         }
     }
+    // Egyedi dialógus ablak
     if (!sInsertDialog.isEmpty()) {
         cRecord *pRec = nullptr;
         cRecordAny sample;
@@ -1396,6 +1397,7 @@ void cRecordsViewBase::insert(bool _similar)
         refresh();
         return;
     }
+    // Dialógus a keíró szerint összeállítva
     // A dialógusban megjelenítendő nyomógombok.
     qlonglong buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
     switch (tableInhType) {

@@ -58,55 +58,55 @@
        <item row="3" column="1">
         <widget class="QLineEdit" name="lineEditPatName"/>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="labelNode">
          <property name="text">
           <string>Modosítandó eszköz kiválasztása :</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="labelName">
          <property name="text">
           <string>Eszköz neve (új vagy modosított) :</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <widget class="QLineEdit" name="lineEditName"/>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="labelIP">
          <property name="text">
           <string>IP cím :</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="labelCom">
          <property name="text">
           <string>Community :</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QLineEdit" name="lineEditCom">
          <property name="text">
           <string>public</string>
          </property>
         </widget>
        </item>
-       <item row="9" column="0">
+       <item row="10" column="0">
         <widget class="QLabel" name="labelNote">
          <property name="text">
           <string>Megjegzés (az eszközhöz) :</string>
          </property>
         </widget>
        </item>
-       <item row="9" column="1">
+       <item row="10" column="1">
         <widget class="QLineEdit" name="lineEditNote"/>
        </item>
-       <item row="8" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="labelSnmpV">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
@@ -119,7 +119,7 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QRadioButton" name="radioButtonSnmpV2c">
@@ -140,7 +140,7 @@
          </item>
         </layout>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,0">
          <item>
           <widget class="QComboBox" name="comboBoxNode"/>
@@ -170,10 +170,24 @@
          </item>
         </layout>
        </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <widget class="QComboBox" name="comboBoxIp">
          <property name="editable">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="checkBoxToSnmp">
+         <property name="text">
+          <string>Konvertálás SNMP eszközzé</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelToSnmp">
+         <property name="text">
+          <string>Nem SNMP eszközök listázása :</string>
          </property>
         </widget>
        </item>

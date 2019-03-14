@@ -1155,6 +1155,7 @@ bool cInspector::doRun(bool __timed)
         retStat      = (retStat & RS_STAT_MASK);
     } CATCHS(lastError);
     qlonglong elapsed = lastRun.elapsed();
+    int dummyRetStat;
     // Ha többet csúszott az időzítés mint 50%
     if (__timed  && lastElapsedTime > ((interval*3)/2)) {
         // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
@@ -1170,6 +1171,7 @@ bool cInspector::doRun(bool __timed)
         qlonglong id = sendError(lastError);
         if (plv->lastError == lastError) plv->lastError = nullptr;
         pDelete(lastError);
+        if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
         hostService.setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
@@ -1178,15 +1180,16 @@ bool cInspector::doRun(bool __timed)
         if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pq, tn);
         if (retStat < RS_WARNING
          && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
+            if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
             statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
             hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
         }
         else if (!statIsSet) {   // Ha még nem volt status állítás
-            statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(lastRun.elapsed()));
+            if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), dummyRetStat);
+            else statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(elapsed));
             hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
         }
     }
-    if (pRunTimeVar != nullptr) pRunTimeVar->setValue(*pq, QVariant(elapsed), retStat); // retStat = dummy
     _DBGFNL() << name() << endl;
     return statSetRetry;
 }

@@ -83,6 +83,7 @@ public:
     int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
     int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
+    int setUnreachable(QSqlQuery q);
     static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val, int &state);
     static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals, int &state);
     static QString sInvalidValue;

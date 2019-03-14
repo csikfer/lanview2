@@ -1753,7 +1753,9 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
     }
     if (!ok && variantIsString(_f)) {
         QString sDt = _f.toString();
-        if (sDt.compare(_sNOW, Qt::CaseInsensitive) == 0) return QVariant(sDt);
+        static const QString sNowF = _sNOW + "()";
+        if (sDt.compare(_sNOW, Qt::CaseInsensitive) == 0) return QVariant(sNowF);
+        if (sDt.compare(sNowF, Qt::CaseInsensitive) == 0) return QVariant(sNowF);
         dt = QDateTime::fromString(sDt);
     }
     if (ok && dt.isNull()) {

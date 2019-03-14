@@ -335,6 +335,13 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
     return r;
 }
 
+int cServiceVar::setUnreachable(QSqlQuery q)
+{
+    setName(_ixVarState, _sUnreachable);
+    setName(_ixLastTime, _sNOW);
+    return update(q, false, mask(_ixVarState, _ixLastTime));
+}
+
 int cServiceVar::setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val, int& state)
 {
     int rs;

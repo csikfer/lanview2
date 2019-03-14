@@ -1071,10 +1071,15 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
     bool isNull = eval == NULL_ID;
-    if (_hasDefault) {
+    evalDef = ENUM_INVALID;
+    if (!_hasDefault && !_nullable) {   // Nem lehet NULL, nincs default, akkor a default az első érték.
+        _value = eval = evalDef = 0;
+        isNull = false;
+    }
+    else if (_hasDefault) {
         evalDef = _colDescr.enumType().str2enum(_colDescr.colDefault);
         if (isNull) {
-            eval = evalDef;
+            _value = eval = evalDef;
             isNull = false;
         }
     }
@@ -1082,7 +1087,6 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
         setupNullButton(isNull || eval == evalDef);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    evalDef = ENUM_INVALID;
     pModel = new cEnumListModel(&_colDescr.enumType());
     pModel->joinWith(pComboBox);
     pComboBox->setEditable(false);
@@ -4329,8 +4333,8 @@ void cSelectNode::setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nulla
     _pNodeModel->joinWith(pComboBoxNode);
     pDelete(pModelNode);    // ?
     pModelNode = _pNodeModel;
-    pModelNode->setOwnerId(currentPlaceId(), _sPlaceId, TS_TRUE);
     pModelNode->setConstFilter(constFilterNode, FT_SQL_WHERE);
+    pModelNode->setOwnerId(currentPlaceId(), _sPlaceId, TS_TRUE);
     bbNode.end(false);
 }
 
@@ -4390,6 +4394,10 @@ void cSelectNode::setNodeInfoButton(QAbstractButton * p)
     connect(p, SIGNAL(clicked()), this, SLOT(nodeReport()));
 }
 
+void cSelectNode::changeNodeConstFilter(const QString& _sql)
+{
+    pModelNode->setConstFilter(_sql, FT_SQL_WHERE);
+}
 
 void cSelectNode::setDisableWidgets(bool f)
 {

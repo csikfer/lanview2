@@ -30,14 +30,16 @@ public:
     /// Destruktor
     ~cDeviceSV();
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    int queryInit(QSqlQuery &_q, QString& msg);
     /// A lekérdezést végző virtuális metódus.
     /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);
+    bool            first;
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
     ///
-    QStringList                 varNames;
-    cOIdVector                  oidVector;
+    QStringList     varNames;
+    cOIdVector      oidVector;
     QList<const cServiceVarType *> varTypes;
     tRecordList<cServiceVar> serviceVars;
 };

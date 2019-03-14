@@ -712,9 +712,17 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     text += _sBr + trUtf8("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
     text += _sBr + trUtf8("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
     text += _sBr + trUtf8("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
-    tOwnRecords<cServiceVar, cHostService> vars(&hs);
-    int n = vars.fetch(q);
-    if (n)  {
+    static const QString sql =
+            "SELECT s.service_var_id, s.service_var_name, s.service_var_note, s.service_var_type_id, s.host_service_id,"
+                    " a.service_var_value, a.var_state, NULL AS last_time, s.features, s.deleted, a.raw_value,"
+                    " s.delegate_service_state, a.state_msg, s.delegate_port_state, s.disabled, s.rrd_file_id, s.flag"
+            " FROM service_vars AS s"
+            " JOIN alarm_service_vars AS a USING(service_var_id)"
+            " WHERE s.host_service_id = ? AND a.alarm_id = ?"
+            " ORDER BY service_var_name ASC";
+    if (execSql(q, sql, hs.getId(), _id)) {
+        tRecordList<cServiceVar> vars;
+        vars.set(q);
         static cTableShape *pShape = nullptr;
         if (pShape == nullptr) {
             pShape = new cTableShape;

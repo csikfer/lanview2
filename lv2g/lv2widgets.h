@@ -1188,6 +1188,7 @@ public:
     void setPatchInsertButton(QAbstractButton * p);
     void setNodeRefreshButton(QAbstractButton * p);
     void setNodeInfoButton(QAbstractButton * p);
+    void changeNodeConstFilter(const QString& _sql);
     /// Letiltja a widgeteket
     virtual void setDisableWidgets(bool f = true);
 protected:
