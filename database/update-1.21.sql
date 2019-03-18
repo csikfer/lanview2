@@ -262,6 +262,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Hibajavítás: Nem zárta le az alarm-okat rendesen
+-- Hibajavítás: Nincs szűrés
 CREATE OR REPLACE FUNCTION set_service_stat(
     hsid        bigint,             -- host_service_id
     state       notifswitch,        -- new state
@@ -345,10 +346,11 @@ BEGIN
     -- Alarm ...
     alid := old_hs.act_alarm_log_id;
     -- RAISE INFO 'act_alarm_log_id = %', alid;
-    IF state < 'warning'::notifswitch THEN        -- ok
+    IF hs.hard_state < 'warning'::notifswitch THEN        -- ok
         IF alid IS NOT NULL THEN   -- close act alarm
             -- RAISE INFO 'Close % alarms record for % service.', alid, hs.host_service_id;
             UPDATE alarms SET end_time = CURRENT_TIMESTAMP WHERE alarm_id = alid;
+            hs.last_alarm_log_id := aid;
             hs.act_alarm_log_id := NULL;
             aldo := 'close'::reasons;
         ELSE
@@ -367,21 +369,20 @@ BEGIN
                     RETURNING alarm_id INTO hs.act_alarm_log_id;
                 aldo := 'new'::reasons;
                 alid := hs.act_alarm_log_id;
-                hs.last_alarm_log_id := alid;
                 -- RAISE INFO 'New alarm_id = %', alid;
             ELSE
                 -- RAISE INFO 'New alarm discard';
                 aldo := 'discard'::reasons;
                 -- DELETE FROM alarms WHERE alarm_id = alid;    Hülyeség! alid = NULL
             END IF;
-        ELSE                    -- The alarm remains
+        ELSE                    -- not ok and there was an alarm
             IF na = 'on'::isnoalarm OR s.disabled OR hs.disabled THEN -- Alarm is disabled, or services is disabled
                 aldo := 'remove'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
                 -- RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
                 alid := NULL;
                 hs.last_alarm_log_id := NULL;
-            ELSIF old_hs.host_service_state < state THEN
+            ELSIF old_hs.host_service_state <> state THEN
                 UPDATE alarms SET
                         max_status  = greatest(hs.host_service_state, max_status),
                         last_status = hs.host_service_state,
@@ -389,13 +390,6 @@ BEGIN
                     WHERE alarm_id = alid;
                 aldo := 'modify'::reasons;
                 -- RAISE INFO 'Update alarm (alarm_id = %', alid;
-            ELSIF old_hs.host_service_state > state THEN
-                UPDATE alarms SET
-                        last_status = hs.host_service_state,
-                        superior_alarm_id = supaid
-                    WHERE alarm_id = alid;
-                aldo := 'modify'::reasons;
-                -- RAISE INFO 'Update alarm (2) (alarm_id = %', alid;
             ELSE
                 aldo := 'unchange'::reasons;
                 -- RAISE INFO 'Unchange alarm (alarm_id = %', alid;
