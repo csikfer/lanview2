@@ -350,7 +350,7 @@ BEGIN
         IF alid IS NOT NULL THEN   -- close act alarm
             -- RAISE INFO 'Close % alarms record for % service.', alid, hs.host_service_id;
             UPDATE alarms SET end_time = CURRENT_TIMESTAMP WHERE alarm_id = alid;
-            hs.last_alarm_log_id := aid;
+            hs.last_alarm_log_id := alid;
             hs.act_alarm_log_id := NULL;
             aldo := 'close'::reasons;
         ELSE
