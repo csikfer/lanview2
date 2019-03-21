@@ -140,7 +140,7 @@ qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString&
     return pp.getId();
 }
 
-QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
+QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex, bool *pOk)
 {
     QString r;
     bool ok = false;
@@ -205,6 +205,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
         }
     }
     if (!ok && __ex) EXCEPTION(EDATA, __t, debVariantToString(__v));
+    if (pOk != nullptr) *pOk = ok;
     return r;
 }
 
@@ -312,6 +313,7 @@ const cRecStaticDescr&  cSysParam::descr() const
 void    cSysParam::toEnd()
 {
     cSysParam::toEnd(_ixParamTypeId);
+    cRecord::toEnd();
 }
 
 bool cSysParam::toEnd(int i)
@@ -648,6 +650,7 @@ const cRecStaticDescr&  cSubNet::descr() const
 void cSubNet::toEnd()
 {
     cSubNet::toEnd(_ixVlanId);
+    cRecord::toEnd();
 }
 
 bool cSubNet::toEnd(int __i)
@@ -920,6 +923,7 @@ const cRecStaticDescr&  cPortParam::descr() const
 void    cPortParam::toEnd()
 {
     cPortParam::toEnd(_ixParamTypeId);
+    cRecord::toEnd();
 }
 
 bool cPortParam::toEnd(int i)
@@ -1190,6 +1194,7 @@ void cNPort::clearToEnd()
 void cNPort::toEnd()
 {
     toEnd(idIndex());
+    cRecord::toEnd();
 }
 
 bool cNPort::toEnd(int i)
@@ -1871,6 +1876,7 @@ void cPatch::clearToEnd()
 void cPatch::toEnd()
 {
     toEnd(idIndex());
+    cRecord::toEnd();
 }
 
 bool cPatch::toEnd(int i)
@@ -2264,6 +2270,7 @@ const cRecStaticDescr&  cNodeParam::descr() const
 void    cNodeParam::toEnd()
 {
     cNodeParam::toEnd(_ixParamTypeId);
+    cRecord::toEnd();
 }
 
 bool cNodeParam::toEnd(int i)

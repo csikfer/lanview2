@@ -93,11 +93,22 @@ CRECDEFD(cRrdBeat)
 
 /* ---------------------------------------------------------------------------- */
 
-CRECCNTR(cServiceVarType)
-
 int cServiceVarType::_ixFeatures = NULL_IX;
 int cServiceVarType::_ixParamTypeId = NULL_IX;
 int cServiceVarType::_ixRawParamTypeId = NULL_IX;
+
+cServiceVarType::cServiceVarType() : cRecord()
+{
+    _pFeatures = nullptr;
+    _set(cServiceVarType::descr());
+}
+cServiceVarType::cServiceVarType(const cServiceVarType& __o) : cRecord()
+{
+    _pFeatures = nullptr;
+    _cp(__o);
+    _pFeatures = __o._pFeatures == nullptr ? nullptr : new cFeatures(*__o._pFeatures);
+}
+
 
 const cRecStaticDescr&  cServiceVarType::descr() const
 {
@@ -111,7 +122,12 @@ const cRecStaticDescr&  cServiceVarType::descr() const
     return *_pRecordDescr;
 }
 
-CRECDEFD(cServiceVarType)
+CRECDEF(cServiceVarType)
+
+cServiceVarType::~cServiceVarType() {
+    pDelete(_pFeatures);
+}
+
 RECACHEDEF(cServiceVarType, srvartype)
 
 /* ---------------------------------------------------------------------------- */
@@ -132,18 +148,32 @@ QString cServiceVar::sFirstValue;
 QString cServiceVar::sRawIsNull;
 cServiceVar::cServiceVar() : cRecord()
 {
+    _pFeatures = nullptr;
+    pEnumVals = nullptr;
     pVarType = nullptr;
     lastCount = 0;
     _set(cServiceVar::descr());
     skeepCnt = 0;
+    featuresIsMerged = false;
 }
 cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
 {
+    _pFeatures = nullptr;
+    pEnumVals  = nullptr;
+    _cp(__o);
+    _pFeatures = __o._pFeatures == nullptr ? nullptr : new cFeatures(*__o._pFeatures);
+    pEnumVals  = __o.pEnumVals  == nullptr ? nullptr : new QStringList(*__o.pEnumVals);
     pVarType  = __o.pVarType;
     lastCount = __o.lastCount;
     lastTime  = __o.lastTime;
-    _cp(__o);
     skeepCnt = 0;
+    featuresIsMerged = __o.featuresIsMerged;
+}
+
+cServiceVar::~cServiceVar()
+{
+    pDelete(pEnumVals);
+    pDelete(_pFeatures);
 }
 
 const cRecStaticDescr&  cServiceVar::descr() const
@@ -167,10 +197,12 @@ const cRecStaticDescr&  cServiceVar::descr() const
     return *_pRecordDescr;
 }
 
-CRECDEFD(cServiceVar)
+CRECDEF(cServiceVar)
 
 void cServiceVar::clearToEnd()
 {
+    _pFeatures = nullptr;
+    pEnumVals = nullptr;
     pVarType = nullptr;
     lastCount = 0;
     lastTime = QDateTime();
@@ -179,6 +211,8 @@ void cServiceVar::clearToEnd()
 void cServiceVar::toEnd()
 {
     toEnd(_ixServiceVarTypeId);
+    toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cServiceVar::toEnd(int _ix)
@@ -186,7 +220,13 @@ bool cServiceVar::toEnd(int _ix)
     if (_ix == _ixServiceVarTypeId) {
         if (pVarType != nullptr && getId(_ixServiceVarTypeId) != pVarType->getId()) {
             pVarType = nullptr;
+            pDelete( _pFeatures);
+            pDelete(pEnumVals);
         }
+        return true;
+    }
+    if (_ix == _ixFeatures) {
+        pDelete( _pFeatures);
         return true;
     }
     return false;
@@ -200,6 +240,21 @@ const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
     return pVarType;
 }
 
+const cFeatures& cServiceVar::mergedFeatures()
+{
+    if (featuresIsMerged) {
+        if (_pFeatures == nullptr) EXCEPTION(EPROGFAIL);
+    }
+    else {
+        if (pVarType == nullptr) EXCEPTION(EPROGFAIL);
+        cFeatures *pTmp = new cFeatures(pVarType->features());
+        pTmp->merge(features());
+        pDelete(_pFeatures);
+        _pFeatures = pTmp;
+    }
+    return *_pFeatures;
+}
+
 int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
@@ -207,140 +262,236 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
         addMsg(sRawIsNull);
         return noValue(q, state);
     }
-    bool rawChanged = preSetValue(q, _rawVal);
-    const cParamType& rawType = rawDataType(q);
-    eParamType pt = eParamType(rawType.getId(cParamType::ixParamTypeType()));
+    eParamType ptRaw = eParamType(rawDataType(q).getId(cParamType::ixParamTypeType()));
+    eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
+    if (rawChanged == TS_NULL) return RS_UNREACHABLE;
     bool ok = true;
-    QVariant rawVal = _rawVal;
-    if (pt == PT_INTEGER || pt == PT_REAL) {    // Numeric
-        if (pt == PT_INTEGER) {
-            qlonglong rwi = rawVal.toLongLong(&ok);
-            if (ok) return setValue(q, rwi, state, bool2ts(rawChanged));
+    switch (ptRaw) {
+    case PT_INTEGER: {
+        qlonglong rwi = _rawVal.toLongLong(&ok);
+        if (ok) return setValue(q, rwi, state, rawChanged);
+    }   break;
+    case PT_REAL: {
+        double    rwd = _rawVal.toDouble(&ok);
+        if (ok) return setValue(q, rwd, state, rawChanged);
+    }   break;
+    case PT_INTERVAL: {
+        qlonglong rwi = parseTimeInterval(_rawVal.toString(), &ok);
+        if (ok) return setValue(q, rwi, state, rawChanged);
+    }   break;
+    case PT_TEXT:
+        if (nullptr != enumVals()) {   // ENUM?
+            qlonglong i = enumVals()->indexOf(_rawVal.toString());
+            return updateEnumVar(q, i, state);
         }
-        else {
-            double    rwd = rawVal.toDouble(&ok);
-            if (ok) return setValue(q, rwd, state, bool2ts(rawChanged));
-        }
+        break;
+    default:
+        break;
+    }
+    if (!ok) {
         addMsg(sInvalidValue.arg(debVariantToString(_rawVal)));
         return noValue(q, state);
     }
-    int r;
-    if (rawChanged) {
-        r = updateVar(q, pt, rawVal, state);
+    int rs;
+    if (rawChanged == TS_TRUE) {
+        eParamType ptVal = eParamType(dataType(q).getId(cParamType::ixParamTypeType()));
+        rs = postSetValue(q, ptVal, _rawVal, RS_ON, state);
     }
     else {
         touch(q);
-        r = int(getId(_ixVarState));
+        rs = int(getId(_ixVarState));
     }
-    return r;
+    return rs;
 }
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
 {
-    bool changed = true;;
+    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    // Check raw type
+    if (rpt == PT_INTEGER || rpt == PT_INTERVAL) {
+        return setValue(q, qlonglong(val + 0.5), state, rawChg);
+    }
+    if (rpt != PT_REAL) {    // supported types
+        addMsg(trUtf8("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        noValue(q, state);
+        return RS_UNREACHABLE;
+    }
+    eTristate changed;
     switch (rawChg) {
     case TS_NULL:
         if (skeep()) return ENUM_INVALID;
-        changed = preSetValue(q, QVariant(val));
+        changed = preSetValue(q, rpt, QVariant(val), state);
+        if (changed == TS_NULL) return RS_UNREACHABLE;
         break;
-    case TS_TRUE:   changed = true;     break;
-    case TS_FALSE:  changed = false;    break;
+    case TS_TRUE:
+    case TS_FALSE:
+        changed = rawChg;
+        break;
     }
+    // Var preprocessing methode
     qlonglong svt = varType(q)->getId(_sServiceVarType);
-    int r = RS_INVALID;
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+        return setCounter(q, qlonglong(val + 0.5), int(svt), state);
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         return setDerive(q, val, state);
+    }
+    int rs = int(getId(_sVarState));
+    if (changed == TS_FALSE && rs != RS_UNKNOWN) {
+        touch(q);
+        return rs;
+    }
+    rs = RS_INVALID;
     switch (svt) {
     case SVT_ABSOLUTE:
         if (val < 0) {
             val = - val;
         }
-        if (changed) {
-            r = updateVar(q, val, state);
-        }
-        else {
-            touch(q);
-            r = RS_ON;
-        }
         break;
+    case SVT_COMPUTE: {
+        QString rpn = mergedFeatures().value("rpn");
+        QString err;
+        val = rpn_calc(val, rpn, mergedFeatures(), err);
+        if (!err.isEmpty()) {
+            addMsg(trUtf8("RPN error : %1").arg(err));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+        }
+    }   break;
+    }
+    int vpt = int(dataType(q).getId(_sParamTypeType));
+    switch (svt) {
+    case SVT_ABSOLUTE:
     case NULL_ID:
     case SVT_GAUGE:
-        if (changed) {
-            r = updateVar(q, val, state);
+    case SVT_COMPUTE: {
+        switch (vpt) {
+        case PT_INTEGER:    rs = updateVar(q, qlonglong(val + 0.5), state);   break;
+        case PT_REAL:       rs = updateVar(q, val,                  state);   break;
+        case PT_INTERVAL:   rs = updateIntervalVar(q, qlonglong(val), state); break;
+        default:
+            addMsg(trUtf8("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+            return rs;
         }
-        else {
-            touch(q);
-            r = RS_ON;
-        }
-        break;
-    case SVT_COUNTER:
-    case SVT_DCOUNTER:
-        r = setCounter(q, qlonglong(val + 0.5), int(svt), state);
-        break;
-    case SVT_DERIVE:
-    case SVT_DDERIVE:
-         r = setDerive(q, val, state);
-        break;
-    case SVT_COMPUTE:
+    }   break;
     default:
-        EXCEPTION(EDATA, svt, identifying(false));
+        addMsg(trUtf8("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }
-    return r;
+    return rs;
 }
 
 int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
 {
-    bool changed = true;
+    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    // Check raw type
+    if (rpt == PT_REAL) {
+        return setValue(q, double(val), state, rawChg);
+    }
+    if (rpt != PT_INTEGER && rpt != PT_INTERVAL) {    // supported types
+        addMsg(trUtf8("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        noValue(q, state);
+        return RS_UNREACHABLE;
+    }
+    eTristate changed;
     switch (rawChg) {
     case TS_NULL:
         if (skeep()) return ENUM_INVALID;
-        changed = preSetValue(q, QVariant(val));
+        changed = preSetValue(q, rpt, QVariant(val), state);
+        if (changed == TS_NULL) return RS_UNREACHABLE;
         break;
-    case TS_TRUE:   changed = true;     break;
-    case TS_FALSE:  changed = false;    break;
+    case TS_TRUE:
+    case TS_FALSE:
+        changed = rawChg;
+        break;
     }
+    // Var preprocessing methode
     qlonglong svt = varType(q)->getId(_sServiceVarType);
-    int r = RS_INVALID;
     switch (svt) {
-    case SVT_ABSOLUTE:
-        if (val < 0) {
-            val = - val;
-        }
-        if (changed) {
-            r = updateVar(q, val, state);
-        }
-        else {
-            touch(q);
-            r = RS_ON;
-        }
-        break;
-    case NULL_ID:
-    case SVT_GAUGE:
-        if (changed) {
-            r = updateVar(q, val, state);
-        }
-        else {
-            touch(q);
-            r = RS_ON;
-        }
-        break;
     case SVT_COUNTER:
     case SVT_DCOUNTER:
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         r = setCounter(q, val, int(svt), state);
-        break;
-    case SVT_COMPUTE:
-    default:
-        EXCEPTION(EDATA, svt, identifying(false));
+         return setCounter(q, val, int(svt), state);
     }
-    return r;
+    int rs = int(getId(_sVarState));
+    if (changed == TS_FALSE && rs != RS_UNKNOWN) {
+        touch(q);
+        return rs;
+    }
+    rs = RS_INVALID;
+    double d = val;
+    switch (svt) {
+    case SVT_ABSOLUTE:
+        if (val < 0) {
+            val = - val;
+            d   = - d;
+        }
+        break;
+    case SVT_COMPUTE: {
+        QString rpn = mergedFeatures().value("rpn");
+        QString err;
+        d = rpn_calc(d, rpn, mergedFeatures(), err);
+        if (!err.isEmpty()) {
+            addMsg(trUtf8("RPN error : %1").arg(err));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+            return rs;
+        }
+        val = qlonglong(d + 0.5);
+        break;
+    }
+    }
+    const cParamType& pt = dataType(q);
+    int vpt = int(pt.getId(cParamType::ixParamTypeType()));
+//    int vpt = int(dataType(q).getId(_sParamTypeType));
+    switch (svt) {
+    case SVT_ABSOLUTE:
+    case NULL_ID:
+    case SVT_GAUGE:
+    case SVT_COMPUTE: {
+        switch (vpt) {
+        case PT_INTEGER:    return updateVar(q, val,         state);
+        case PT_REAL:       return updateVar(q, d,           state);
+        case PT_INTERVAL:   return updateIntervalVar(q, val, state);
+        case PT_TEXT:
+            if (nullptr != enumVals()) {   // ENUM ?
+                return updateEnumVar(q, val, state);
+            }
+        }
+        addMsg(trUtf8("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+    }   break;
+    default:
+        addMsg(trUtf8("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+    }
+    return rs;
 }
 
-int cServiceVar::setUnreachable(QSqlQuery q)
+int cServiceVar::setUnreachable(QSqlQuery q, const QString& msg)
 {
     setName(_ixVarState, _sUnreachable);
     setName(_ixLastTime, _sNOW);
+    setName(_ixStateMsg, msg);
     return update(q, false, mask(_ixVarState, _ixLastTime));
 }
+
+const QStringList * cServiceVar::enumVals()
+{
+    if (pEnumVals == nullptr) {
+        pEnumVals = new QStringList(mergedFeatures().slValue(_sEnumeration));
+    }
+    return pEnumVals;
+}
+
 
 int cServiceVar::setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val, int& state)
 {
@@ -365,16 +516,41 @@ int cServiceVar::setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _na
     return r;
 }
 
-bool cServiceVar::preSetValue(QSqlQuery& q, const QVariant& rawVal)
+eTristate cServiceVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& rawVal, int& state)
 {
     now = QDateTime::currentDateTime();
     clear(_ixStateMsg);
-    QString s = rawValToString(q, rawVal);
+    if (rawVal.isNull()) {
+        addMsg(trUtf8("Raw data is NULL."));
+        noValue(q, state);
+        return TS_NULL;
+    }
+    bool ok;
+    QString s = cParamType::paramToString(eParamType(ptRaw), rawVal, EX_IGNORE, &ok);
+    if (!ok) {
+        addMsg(trUtf8("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
+        postSetValue(q, ENUM_INVALID, QVariant(), RS_UNREACHABLE, state);
+        return TS_NULL;
+    }
     bool changed = s.compare(getName(_ixRawValue));
     if (changed) setName(_ixRawValue, s);
     lastLast = get(_ixLastTime).toDateTime();
     set(_ixLastTime, now);
-    return changed; // Raw value is changed
+    return bool2ts(changed); // Raw value is changed ?
+}
+
+bool cServiceVar::postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state)
+{
+    bool ok = true;
+    if (ptVal == ENUM_INVALID || val.isNull()) clear(_ixServiceVarValue);
+    else setName(_ixServiceVarValue, cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
+    if (!ok) {
+        rs = RS_UNREACHABLE;
+        addMsg(trUtf8("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+    }
+    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
+    setId(_ixVarState, rs);
+    return 1 == update(q, false, updateMask);
 }
 
 int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
@@ -433,39 +609,21 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
     return updateVar(q, dVal, state);
 }
 
-int cServiceVar::updateVar(QSqlQuery& q, eParamType pt, const QVariant&  val, int& state)
+
+int cServiceVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
 {
     int rs = RS_ON;
-    switch (pt) {
-    case PT_INTEGER:
-    case PT_REAL:
-        EXCEPTION(EPROGFAIL);
-    case PT_INTERVAL: {
-        bool ok;
-        qlonglong i = val.toLongLong(&ok);
-        if (!ok) {
-            addMsg(sInvalidValue.arg(debVariantToString(val)));
-            return noValue(q, state);
-        }
-        if (TS_FALSE == checkIntervalValue(i, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
-            addMsg(sNotCredible);
-            return noValue(q, state);
-        }
-        if (TS_TRUE == checkIntervalValue(i, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
-            rs = RS_CRITICAL;
-        }
-        else if (TS_TRUE == checkIntervalValue(i, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
-            rs = RS_WARNING;
-        }
-        break;
-      }
-    default:
-        break;
+    if (TS_FALSE == checkIntervalValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
+        addMsg(sNotCredible);
+        return noValue(q, state);
     }
-    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_ixVarState, rs);
-    setName(_ixServiceVarValue, cParamType::paramToString(pt, val, EX_IGNORE)); // error?
-    update(q, false, updateMask);
+    if (TS_TRUE == checkIntervalValue(val, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkIntervalValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+        rs = RS_WARNING;
+    }
+    postSetValue(q, PT_INTERVAL, val, rs, state);
     return rs;
 }
 
@@ -482,10 +640,7 @@ int cServiceVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
     else if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
-    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_ixVarState, rs);
-    setName(_ixServiceVarValue, QString::number(val));
-    update(q, false, updateMask);
+    postSetValue(q, PT_INTEGER, val, rs, state);
     return rs;
 }
 
@@ -502,12 +657,30 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
     else if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
-    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_ixVarState, rs);
-    setName(_ixServiceVarValue, QString::number(val));
-    update(q, false, updateMask);
+    postSetValue(q, PT_REAL, val, rs, state);
     return rs;
 }
+
+int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
+{
+    int ix = int(i);
+    if (pEnumVals == nullptr) EXCEPTION(EPROGFAIL);
+    const QStringList& evals = *pEnumVals;
+    if (!isContIx(evals, i) || evals[ix] == "!") {
+        addMsg(sNotCredible);
+        return noValue(q, state);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkEnumValue(ix, evals, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkEnumValue(ix, evals, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+        rs = RS_CRITICAL;
+    }
+    postSetValue(q, PT_TEXT, evals[ix], rs, state);
+    return rs;
+}
+
 
 int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
@@ -691,6 +864,75 @@ eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QSt
     return _inverse ? inverse(r) : r;
 }
 
+eTristate cServiceVar::checkEnumValue(int ix, const QStringList& evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse)
+{
+    if (ft == NULL_ID) return TS_NULL;
+    bool ok1 = true, ok2 = true;
+    int p1 = 0, p2 = 0;
+    eTristate r = TS_NULL;
+    // required parameters
+    switch (ft) {
+    case FT_BOOLEAN:
+        r = str2tristate(_p1, EX_IGNORE);
+        if (r != TS_NULL) p1 = r;
+        else              ok1 = false;
+        break;
+    case FT_EQUAL:
+    case FT_LITLE:
+    case FT_BIG:
+        p1 = _p1.toInt(&ok1);
+        if (!ok1) {
+            p1 = evals.indexOf(_p1);
+            ok1 = p1 >= 0;
+        }
+        break;
+    case FT_INTERVAL:
+        p1 = _p1.toInt(&ok1);
+        p2 = _p2.toInt(&ok2);
+        if (!ok1) {
+            p1 = evals.indexOf(_p1);
+            ok1 = p1 >= 0;
+        }
+        if (!ok2) {
+            p2 = evals.indexOf(_p2);
+            ok2 = p2 >= 0;
+        }
+        break;
+    }
+    // Check parameter(s)
+    if (!ok1) {
+        addMsg(trUtf8("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+    }
+    if (!ok2) {
+        addMsg(trUtf8("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+    }
+    // Check rules, if all parameters is OK.
+    if (ok1 && ok2) {
+        switch (ft) {
+        case FT_BOOLEAN:
+            r = (ix == 0) == (p1 == 0) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_EQUAL:
+            r = (ix == p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_LITLE:
+            r = (ix  < p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_BIG:
+            r = (ix  > p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_INTERVAL:
+            r = (ix > p1 && ix < p2) ? TS_TRUE : TS_FALSE;
+            break;
+        default:
+            addMsg(trUtf8("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            break;
+        }
+    }
+    return _inverse ? inverse(r) : r;
+
+}
+
 bool   cServiceVar::skeep() {
     --skeepCnt;
     bool r = skeepCnt > 0;
@@ -795,6 +1037,7 @@ bool cServiceVar::initSkeepCnt(int& delayCnt)
 }
 
 /* ---------------------------------------------------------------------------- */
+// ERROR: _pFeatures inicializálás, törlés !!! (nem használlt class)
 CRECCNTR(cGraph)
 int  cGraph::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cGraph::descr() const
@@ -807,6 +1050,7 @@ const cRecStaticDescr&  cGraph::descr() const
 CRECDEFD(cGraph)
 /* ---------------------------------------------------------------------------- */
 
+// ERROR: _pFeatures inicializálás, törlés !!! (nem használlt class)
 CRECCNTR(cGraphVar)
 
 int  cGraphVar::_ixFeatures = NULL_IX;
@@ -819,3 +1063,89 @@ const cRecStaticDescr&  cGraphVar::descr() const
 }
 
 CRECDEFD(cGraphVar)
+
+/* ---------------------------------------------------------------------------- */
+
+/// Reverse Polish Notation
+double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
+{
+    QStack<double>  stack;
+    stack << _v;
+    QRegExp sep(QString("\\s+"));
+    QStringList tokens = _expr.split(sep);
+    while (!tokens.isEmpty()) {
+        QString token = tokens.takeFirst();
+        int n = stack.size();
+        char c = token[0].toLatin1();
+        bool ok;
+        if (token.size() == 1) {    // Character token
+            static const char * ctokens = "+-*/";   // all
+            static const char * binToks = "+-*/";   // binary
+            if (nullptr == strchr(ctokens, c)) {
+                st = QObject::trUtf8("One character token %1 unknown.").arg(token);
+                return 0.0;
+            }
+            if (n < 2 && nullptr != strchr(binToks, c)) {
+                st = QObject::trUtf8("A binary operator %1 expects two parameters.").arg(token);
+                return 0.0;
+            }
+            switch (c) {
+            case '+':   _v = stack.pop();   stack.top() += _v;  break;
+            case '-':   _v = stack.pop();   stack.top() -= _v;  break;
+            case '*':   _v = stack.pop();   stack.top() *= _v;  break;
+            case '/':   _v = stack.pop();   stack.top() /= _v;  break;
+            }
+            continue;
+        }
+        if (c == '$') {     // variable/macro for features
+            QString key = token.mid(1);
+            QString val = _f.value(key);
+            if (val.isEmpty()) {
+                st = QObject::trUtf8("Unknown feature variable %1.").arg(key);
+                return 0.0;
+            }
+            QStringList sl = val.split(sep);
+            while (!sl.isEmpty()) tokens.prepend(sl.takeLast());
+            continue;
+        }
+        _v = token.toDouble(&ok);
+        if (ok) {   // numeric
+            stack.push(_v);
+            continue;
+        }
+        enum eTokens { T_NULL, UT_NEG, UT_DROP, UT_DUP, BT_SWAP };
+#define UNARYTOK(s)     { #s, UT_##s, 1 }
+#define BINARYTOK(s)    { #s, BT_##s, 2 }
+        struct tTokens { QString name; int key; int ops; }
+                       tokens[] = {
+            UNARYTOK(NEG), UNARYTOK(DROP), UNARYTOK(DROP), UNARYTOK(DUP),
+            BINARYTOK(SWAP),
+            { "",  T_NULL, 0 }
+        };
+        tTokens *pTok;
+        for (pTok = tokens; pTok->key != T_NULL; ++pTok) {
+            if (pTok->name.compare(token, Qt::CaseInsensitive)) {
+                break;
+            }
+        }
+        if (pTok->key != T_NULL) {
+            st = QObject::trUtf8("Invalid tokan %1.").arg(token);
+            return 0.0;
+        }
+        if (pTok->ops < n) {
+            st = QObject::trUtf8("There is not enough operand (%1 instead of just %2) for the %3 token.").arg(pTok->ops).arg(n).arg(token);
+            return 0.0;
+        }
+        switch (pTok->key) {
+        case UT_NEG:    stack.top() = - stack.top();    break;
+        case UT_DROP:   stack.pop();                    break;
+        case UT_DUP:    stack.push(stack.top());        break;
+        case BT_SWAP:   _v = stack.pop(); std::swap(_v, stack.top()); stack.push(_v);    break;
+        }
+    }
+    if (stack.isEmpty()) {
+        st = QObject::trUtf8("No return value.");
+        return 0.0;
+    }
+    return stack.top();
+}

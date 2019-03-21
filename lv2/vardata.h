@@ -76,14 +76,16 @@ public:
     const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
     const cParamType& dataType(QSqlQuery& q)    { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixParamTypeId())); }
     const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixRawParamTypeId())); }
-    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
-    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
-    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
-    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
+    const cFeatures &mergedFeatures();
+//    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
+//    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
+//    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
+//    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
     int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
     int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
-    int setUnreachable(QSqlQuery q);
+    int setUnreachable(QSqlQuery q, const QString &msg = QString());
+    const QStringList * enumVals();
     static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val, int &state);
     static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals, int &state);
     static QString sInvalidValue;
@@ -91,13 +93,19 @@ public:
     static QString sFirstValue;
     static QString sRawIsNull;
 protected:
-    /// Ha raw érték változott, akkor true-val tér vissza
-    bool preSetValue(QSqlQuery &q, const QVariant &rawVal);
+    /// Aktualizálja a now adattagot. Törli a state_msg mezőt.
+    /// Ha raw érték változott, akkor TS_TRUE-val tér vissza
+    /// Ha nem konvertálható az adat a megadott tíousba, akkor TS_NULL -lal  tér vissza,
+    ///  elötte a state_msg mezőbe beírja a hiba üzenetet, és kiírja az állapotot (hívja a postSetValue() metódust).
+    /// Ha rawVal értéke null, akkor szintén TS_NULL-lal térvissza, szintén kiírja az állapotot (hivja a noDate() metódust).
+    eTristate preSetValue(QSqlQuery &q, int ptRaw, const QVariant &rawVal, int &state);
+    bool postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state);
     int setCounter(QSqlQuery &q, qlonglong val, int svt, int& state);
     int setDerive(QSqlQuery &q, double val, int& state);
-    int updateVar(QSqlQuery& q, eParamType pt, const QVariant&  val, int& state);
+    int updateIntervalVar(QSqlQuery& q, qlonglong val, int &state);
     int updateVar(QSqlQuery& q, qlonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
+    int updateEnumVar(QSqlQuery& q, qlonglong i, int& state);
     int noValue(QSqlQuery& q, int& state, int _st = RS_UNREACHABLE);
     /// Egy egész típusú értékre a megadott feltétel alkalmazása
     /// @param val A viszgálandó érték
@@ -118,6 +126,7 @@ protected:
     /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható számmá.
     eTristate checkRealValue(double val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
     eTristate checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
+    eTristate checkEnumValue(int ix, const QStringList &evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);
         if (!msg.isEmpty()) msg += "\n";
@@ -131,7 +140,9 @@ protected:
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
     QDateTime   lastLast;       ///< last_time mező előző értéke
     QDateTime   now;            ///< most
-    eNotifSwitch state;
+    bool        featuresIsMerged;
+    // eNotifSwitch state;
+    QStringList * pEnumVals;
     STATICIX(cServiceVar, ServiceVarTypeId)
     STATICIX(cServiceVar, ServiceVarValue)
     STATICIX(cServiceVar, VarState)
@@ -173,6 +184,7 @@ class LV2SHARED_EXPORT cGraphVar : public cRecord {
 public:
 };
 
+EXT_  double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st);
 
 
 #endif // MUNINDATA

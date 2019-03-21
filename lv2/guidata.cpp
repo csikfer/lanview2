@@ -283,6 +283,7 @@ void cTableShape::toEnd()
 {
     toEnd(_descr_cTableShape().idIndex());
     toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cTableShape::toEnd(int i)

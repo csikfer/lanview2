@@ -230,7 +230,7 @@ public:
     /// @param __v A konvertálandó érték
     /// @param __ex Hiba kezelés
     /// @return A konvertált string
-    static QString paramToString(eParamType __t, const QVariant& __v, enum eEx __ex = EX_ERROR);
+    static QString paramToString(eParamType __t, const QVariant& __v, enum eEx __ex = EX_ERROR, bool *pOk = nullptr);
     /// Egy adatbázisból beolvasott stringet kovertál a típusnak megfelelő típuső értékké.
     /// @param __t Az adat típus
     /// @param __v A konvertálandó string

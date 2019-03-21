@@ -77,6 +77,7 @@ const cRecStaticDescr&  cService::descr() const
 void cService::toEnd()
 {
     cService::toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cService::toEnd(int i)
@@ -210,6 +211,7 @@ const cRecStaticDescr&  cHostService::descr() const
 void cHostService::toEnd()
 {
     toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cHostService::toEnd(int i)

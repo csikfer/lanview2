@@ -202,7 +202,7 @@ public:
     /// Ha megadtuk az _cKey kulcsot, akkor csak azok a mezők kerülnek az objektumba, melyeknek a kulcsa
     /// a megadott kulcssal, és egy pont karakterrel kezdödnek, ekkor a kulcsból ez az előteag tölődik, és
     /// így kerül az objektumba. Ha a _o -ban egy (modosított)kulcsértékhez a "!" van rendelve,
-    /// akkor az ez alatti érték törődik az objektumban.
+    /// akkor az ez alatti érték törlődik az objektumban.
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
     void modifyField(cRecordFieldRef& _fr);
     cFeatures noSimple() const;

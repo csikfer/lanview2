@@ -86,18 +86,52 @@ cFeatures::cFeatures()
 
 bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 {
-    QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
-    if (__ms.isEmpty()) return true;
-    QStringList sl = splitBy(__ms);
-    // Első és utolsó karakter a szeparátor, tehát az első és utolsó elem üres
-    if (sl.isEmpty() || !(sl.first().isEmpty() && sl.last().isEmpty())) {
-        if (__ex) EXCEPTION(EDATA, -1, msg);
-        DERR() << msg << endl;
+    static const QString msg = QObject::trUtf8("Invalid magic string %1 : %2");
+    static const QChar sep = QChar(':');
+    int i, n = __ms.size();
+    if (n == 0 || (n == 1 && __ms[0] == sep)) return true;
+    QString field;
+    if (__ms[0] != sep) {   // The first character must be a separator
+        if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
+        DERR() << msg.arg(QObject::trUtf8("Missing first separator character.")).arg(__ms) << endl;
         return false;
     }
-    if (sl.size() <= 2) return true; // űres
-    sl.pop_back();  // utolsó ures elem
-    sl.pop_front(); // első üres elem
+    QStringList sl;
+    for (i = 1; i < n; ++i) {   // split
+        QChar c = __ms[i];
+        if (c == sep) {
+            QChar next;
+            if (n > i +1) {    // If no last separator
+                next = __ms[i +1];
+            }
+            if (next == sep) {
+                field += sep;
+                ++i;
+            }
+            else {  // Real separator
+                if (field.isEmpty()) {
+                    if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
+                    DERR() << msg.arg(_sNul).arg(__ms) << endl;
+                    return false;
+                }
+                else {
+                   sl << field;
+                   field.clear();
+                }
+            }
+        }
+        else {
+            field += c;
+        }
+    }
+    if (!field.isEmpty()) {
+        if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
+        DERR() << msg.arg(QObject::trUtf8("Missing last separator character.")).arg(__ms) << endl;
+        return false;
+    }
+    if (sl.isEmpty()) {
+        EXCEPTION(EPROGFAIL);
+    }
     foreach (QString s, sl) {
         QStringList pv = splitBy(s, QChar('='));
         if (pv.count()  > 2) {
@@ -105,7 +139,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
         }
         QString key = pv[0].toLower();
         QString val = pv.count() >= 2 ? pv[1] : _sNul;
-        if (merge && val == "!") remove(key);        // Törli (ha van)
+        if (merge && val == "!") remove(key);        // Clear
         else            (*this)[key] = val;
     }
     return true;

@@ -1,7 +1,7 @@
 QT       += core sql xml network
 QT       -= gui
 
-TARGET = portvlan
+TARGET = snmpvars
 CONFIG += c++11 console
 CONFIG -= app_bundle
 

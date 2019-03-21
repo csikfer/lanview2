@@ -149,7 +149,9 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
         psv->setId(_sHostServiceId, hostServiceId());
         psv->setName(_sServiceVarName, varNames.at(i));
         switch (psv->completion(_q)) {
-        case 0:     // Not found, create
+        case 0:     // Not found, create (psv cleared)
+            psv->setId(_sHostServiceId, hostServiceId());
+            psv->setName(_sServiceVarName, varNames.at(i));
             psv->setId(_sServiceVarTypeId, varTypeId);
             psv->insert(_q);
             break;
@@ -161,6 +163,7 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
         default:
             EXCEPTION(EDATA, _q.size());
         }
+        serviceVars << psv;
     }
     return RS_ON;
 }
@@ -185,7 +188,7 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
         return RS_UNREACHABLE;
     }
     int i, n = varNames.size();
-    if (n != oidVector.size() || n != varTypes.size() || !serviceVars.isEmpty()) {
+    if (n != oidVector.size() || n != varTypes.size() || n != serviceVars.size()) {
         EXCEPTION(EPROGFAIL);
     }
     snmp.first();
@@ -195,9 +198,10 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
             serviceVars.at(i)->setValue(q, value, rs);
         }
         else {
-            serviceVars.at(i)->setUnreachable(q);
+            serviceVars.at(i)->setUnreachable(q, trUtf8("There is no such data in the SNMP query result."));
             rs = RS_UNREACHABLE;
         }
+        snmp.next();
     }
 
     return rs;

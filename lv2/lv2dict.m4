@@ -56,6 +56,8 @@ STRDEF(Color, "color")
 STRDEF(ViewFunc, "view.func")
 STRDEF(ViewExpr, "view.expr")
 
+STRDEF(Enumeration, "enumeration")
+
 dnl eDataCharacter ENUM
 STRDEF(Datacharacter, "datacharacter")
  STRDEF(Head, "head")
