@@ -521,16 +521,17 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
         // PDEB(VVERBOSE) << " type = # " << (int)__var->type << "; ";
         switch (__var->type) {
             case ASN_BOOLEAN: //         ((u_char)0x01)
-                r = (bool)*(__var->val.integer);
+                r = bool(*(__var->val.integer));
                 // _PDEB(VVERBOSE) << DBOOL(r.toBool()) << endl;
                 break;
             case ASN_INTEGER: //         ((u_char)0x02)
-                r = (int)*(__var->val.integer);
+                r = int(*(__var->val.integer));
                 // _PDEB(VVERBOSE) << r.toInt() << endl;
                 break;
             case 0x41:  // COUNTER32
             case 0x42:  // GAUGE32
-                r = (unsigned int)*(__var->val.integer);
+            case 0x43:  // ?? PowerNet-MIB: time ticks ??
+                r = u_int(*(__var->val.integer));
                 //_PDEB(VVERBOSE) << r.toUInt() << endl;
                 break;
             case ASN_APP_COUNTER64: //   ((u_char)0x46)
@@ -546,7 +547,7 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
                 break;
             case ASN_APPLICATION: //     ((u_char)0x40)     hátha ??!!
             case ASN_OCTET_STR: //       ((u_char)0x04)
-                r = QByteArray((const char *)__var->val.string, __var->val_len);
+                r = QByteArray(reinterpret_cast<const char *>(__var->val.string), int(__var->val_len));
                 // _PDEB(VVERBOSE) << "len = " << __var->val_len << " data = " << dump(r.toByteArray()) << endl;
                 break;
             case ASN_NULL: //            ((u_char)0x05)

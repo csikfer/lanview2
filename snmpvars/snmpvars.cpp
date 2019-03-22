@@ -198,8 +198,9 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
     snmp.first();
     for (i = 0; i < n; ++i) {
         if (oidVector.at(i) < snmp.name()) {
+            cServiceVar& svar = *serviceVars.at(i);
             QVariant value = snmp.value();
-            serviceVars.at(i)->setValue(q, value, rs);
+            svar.setValue(q, value, rs);
         }
         else {
             serviceVars.at(i)->setUnreachable(q, trUtf8("There is no such data in the SNMP query result."));
