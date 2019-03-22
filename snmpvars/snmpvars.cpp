@@ -139,6 +139,10 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
         }
     }
     int n = varNames.size();
+    if (n == 0) {
+        msg = trUtf8("There is no queryable data.");
+        return RS_UNREACHABLE;
+    }
     if (n != oidVector.size() || n != varTypes.size() || !serviceVars.isEmpty()) {
         EXCEPTION(EPROGFAIL);
     }

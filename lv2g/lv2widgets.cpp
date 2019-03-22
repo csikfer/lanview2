@@ -10,6 +10,7 @@
 #include "ui_rplace_ed.h"
 #include "ui_port_ed.h"
 #include "ui_fkeyarrayed.h"
+#include "mainwindow.h"
 
 #include "popupreport.h"
 
@@ -2511,7 +2512,7 @@ void cFKeyWidget::setFilter(const QString& _s)
         pModel->setFilter(s, OT_DEFAULT, FT_LIKE);
     }
     ix = pModel->indexOf(id);
-    if (ix >= 0) pUi->comboBox->setCurrentIndex(ix);
+    if (ix >= 0) pComboBox->setCurrentIndex(ix);
     setFromEdit();
 }
 
@@ -3716,6 +3717,7 @@ cFeatureWidgetRow::cFeatureWidgetRow(cFeatureWidget *par, int row, const QString
     pDialog = nullptr;
     pListWidget = nullptr;
     pTableWidget = nullptr;
+    _pParentWidget = par;
     pItemKey = new QTableWidgetItem(key);
     par->pTable->setItem(row, COL_KEY, pItemKey);
     pItemVal = new QTableWidgetItem(val);
@@ -3769,6 +3771,27 @@ void cFeatureWidgetRow::clickButton(int id)
             }
         }
         break;
+    case DBT_REPORT:
+        if (pTableWidget != nullptr) {
+            int rows = pTableWidget->rowCount();
+            if (rows > 0) {
+                QList<QStringList> matrix;
+                for (int row = 0; row < rows; ++row) {
+                    QStringList v;
+                    v << pTableWidget->item(row, 0)->text();
+                    v << pTableWidget->item(row, 1)->text();
+                    matrix << v;
+                }
+                QStringList head;
+                head << trUtf8("Név");
+                head << trUtf8("Érték");
+                QString name = pItemKey->text();
+                QString title = trUtf8("A features %1 nevű értékébe ágyazott nevesített érték lista.")
+                        .arg(name);
+                QWidget *par = lv2g::pMainWindow;
+                popupReportWindow(par, htmlTable(head, matrix), title);
+            }
+        }
     }
 }
 
@@ -3810,7 +3833,7 @@ void cFeatureWidgetRow::mapDialog()
     pDialog     = new QDialog;
     pTableWidget = new QTableWidget;
     QVBoxLayout *   pVLayout    = new QVBoxLayout;
-    cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET4(DBT_OK, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
+    cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET5(DBT_OK, DBT_REPORT, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
 
     pDialog->setWindowTitle(trUtf8("Map szerkesztése"));
     pDialog->setLayout(pVLayout);

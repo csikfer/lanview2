@@ -1012,6 +1012,7 @@ protected:
     enum { COL_B_LIST, COL_B_MAP, COL_KEY, COL_VAL, COL_NUMBER };
     cFeatureWidgetRow(cFeatureWidget *par, int row, const QString &key, const QString &val);
     virtual ~cFeatureWidgetRow();
+    cFeatureWidget * _pParentWidget;
     QToolButton *pListButton;
     QToolButton *pMapButton;
     QTableWidgetItem * pItemKey;
