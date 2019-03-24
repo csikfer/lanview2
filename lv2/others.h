@@ -151,7 +151,7 @@ class cRecordFieldRef;
 
 /// @class cFeatures
 /// \brief A features mezőt kezelő osztály. A kulcs a metódusokban mindíg kisbetüssé van konvertálva.
-class LV2SHARED_EXPORT cFeatures : public QMap<QString, QString>
+class LV2SHARED_EXPORT cFeatures : public tStringMap
 {
 public:
     cFeatures();
@@ -168,7 +168,7 @@ public:
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
     ///         ha viszont nincs paraméternek értéke, akkor egy üres string
-    QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
+    QString value(const QString &_nm) const { return tStringMap::value(_nm.toLower()); }
     QStringList slValue(const QString &_nm) const { return value2list(value(_nm)); }
     /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
     /// space karakter van, akkor azt a space karaktert eldobja a metódus.
@@ -193,11 +193,12 @@ public:
     /// Megkeresi a megadott nevű paramétert.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Ha létezik ilyen nevű paraméter (értéke lehet üres, akkor true
-    bool contains(const QString &_nm) const { return QMap<QString, QString>::contains(_nm.toLower()); }
+    bool contains(const QString &_nm) const { return tStringMap::contains(_nm.toLower()); }
     /// A features mező értékének az előállítása.
-    /// @param __map a forrás konténer
+    /// @param _sm a forrás konténer
     /// @return Az eredmény string
-    QString join() const;
+    static QString join(const tStringMap& _sm);
+    QString join() const { return join(*static_cast<const tStringMap *>(this)); }
     /// Összefésül két objektumot.
     /// Ha megadtuk az _cKey kulcsot, akkor csak azok a mezők kerülnek az objektumba, melyeknek a kulcsa
     /// a megadott kulcssal, és egy pont karakterrel kezdödnek, ekkor a kulcsból ez az előteag tölődik, és

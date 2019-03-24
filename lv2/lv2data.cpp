@@ -3547,19 +3547,19 @@ const QString& execState(int _e, enum eEx __ex)
 /* ---------------------------------------------------------------------------------------------------- */
 DEFAULTCRECDEF(cImportTemplate, _sImportTemplates)
 
-cTemplateMap::cTemplateMap(const QString& __type) : QMap<QString, QString>(), type(__type)
+cTemplateMap::cTemplateMap(const QString& __type) : tStringMap(), type(__type)
 {
     ;
 }
 
-cTemplateMap::cTemplateMap(const cTemplateMap& __o) : QMap<QString, QString>(__o), type(__o.type)
+cTemplateMap::cTemplateMap(const cTemplateMap& __o) : tStringMap(__o), type(__o.type)
 {
     ;
 }
 
 const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name, eEx __ex)
 {
-    QMap<QString, QString>::iterator i = find(__name);
+    tStringMap::iterator i = find(__name);
     if (i != end()) return i.value();
     cImportTemplate it;
     it[_sTemplateType] = type;

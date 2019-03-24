@@ -201,7 +201,7 @@ public:
 protected:
     QString emFildsIsEmpty();
     QString emFieldNotFound(const QString& __f);
-    static QMap<QString, QString>   fieldDialogTitleMap;
+    static tStringMap   fieldDialogTitleMap;
     STATICIX(cTableShape, TableShapeType)
 };
 

@@ -9,6 +9,7 @@ static const QString _sTITLE        = "TITLE";
 static const QString _sWHATS_THIS   = "WHATS THIS";
 static const QString _sTOOL_TIP     = "TOOL TIP";
 static const QString _sPARAM        = "PARAM";
+static const QString _sFEATURES     = "FEATURES ";
 
 cExport::cExport(QObject *par) : QObject(par)
 {
@@ -204,7 +205,42 @@ QString cExport::features(cRecord& o)
     QString s = o.getName(_sFeatures);
     QString r;
     if (!s.isEmpty() && s != ":") {
-        r = line("FEATURES " + escaped(s) + _sSemicolon);
+        cFeatures features;
+        if (!features.split(s, EX_IGNORE)) {
+            r  = line(QString("// ") + trUtf8("Invalid features:"));
+            r += line("//" + _sFEATURES + escaped(s) + _sSemicolon);
+            return r;
+        }
+        if (s.size() < 32) {
+            return line(_sFEATURES + escaped(s) + _sSemicolon); // Small, print raw string
+        }
+        r = lineBeginBlock(_sFEATURES);
+        QString b;
+        QRegExp isMap("\\[\\w+\\s*=\\s*\\w+");
+        QStringList keys = features.keys();
+        foreach (QString key, keys) {
+            QString v = features[key];
+            if (v.isEmpty()) {
+                b += line(escaped(key) + _sSemicolon);
+            }
+            else {
+                tStringMap map = cFeatures::value2map(v);
+                if (map.isEmpty()) {
+                    b += line(escaped(key) + " = " + escaped(v) + _sSemicolon);
+                }
+                else {
+                    b += lineBeginBlock(escaped(key) + " = ");
+                    QString bb;
+                    QStringList subKeys = map.keys();
+                    foreach (QString subKey, subKeys) {
+                        v = map[subKey];
+                        bb += line(escaped(subKey) + " = " + escaped(v) + _sSemicolon);
+                    }
+                    b = lineEndBlock(b, bb);
+                }
+            }
+        }
+        r = lineEndBlock(r, b);
     }
     return r;
 }
@@ -586,6 +622,72 @@ QString cExport::_export(QSqlQuery &q, cService& o)
         b += paramLine(q, "OFF LINE GROUPS",       o[_sOffLineGroupIds],    cColStaticDescrArray::emptyVariantList);
         b += paramLine(q, "TIME PERIODS",          o[_sTimePeriodId],       ALWAYS_TIMEPERIOD_ID);
         b += flag(        "DISABLE",               o[_sDisabled]);
+    r  = lineEndBlock(r, b);
+    return r;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::serviceVals(eEx __ex)
+{
+    cServiceVar o;
+    return sympleExport(o, o.toIndex(_sServiceName), __ex);
+}
+QString cExport::_export(QSqlQuery &q, cServiceVar& o)
+{
+    // Még hiányzik a parser-ből!!!
+    (void)q;
+    QString r;
+    return r;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::serviceValTipes(eEx __ex)
+{
+    cServiceVarType o;
+    return sympleExport(o, o.toIndex(_sServiceName), __ex);
+}
+
+static QString varFilter(const QString& _kv, qlonglong _t, bool _i, const QVariant& _p1, const QVariant& _p2)
+{
+    QString r;
+    if (_t != NULL_ID) {
+        r  = _kv + _sSp;
+        if (_i) r += "INVERSE ";
+        r += filterType(int(_t));
+        if (!_p1.isNull()) {
+            r += _sSp + cExport::escaped(_p1.toString());
+            if (!_p2.isNull()) {
+                r += _sCommaSp + cExport::escaped(_p1.toString());
+            }
+        }
+        r += _sSemicolon;
+    }
+    return r;
+}
+
+QString cExport::_export(QSqlQuery &q, cServiceVarType& o)
+{
+    (void)q;
+    QString r;
+    r = lineBeginBlock(head("SERVICE_T VAR_T TYPE_T", o));
+        QString b;
+        QString s;
+        int ptVal = int(cParamType::paramType(o.getId(_sParamTypeId)).getId(_sParamTypeType));
+        int ptRaw = int(cParamType::paramType(o.getId(_sRawParamTypeId)).getId(_sParamTypeType));
+        QString type;
+        if (ptVal == ptRaw) type = escaped(paramTypeType(ptVal));
+        else                type = escaped(paramTypeType(ptVal)) + _sCommaSp + escaped(paramTypeType(ptRaw));
+        if (!o.isNull(_sServiceVarType)) type += _sSp + escaped(o.getName(_sServiceVarType));
+        b  = line("TYPE " + type + _sSemicolon);
+        s = varFilter("PLAUSIBILITY", o.getId(_sPlausibilityType), o.getBool(_sPlausibilityInverse), o.get(_sPlausibilityParam1), o.get(_sPlausibilityParam2));
+        if (!s.isEmpty()) b += line(s);
+        s = varFilter("CRITICAL", o.getId(_sCriticalType), o.getBool(_sCriticalInverse), o.get(_sCriticalParam1), o.get(_sCriticalParam2));
+        if (!s.isEmpty()) b += line(s);
+        s = varFilter("WARNING", o.getId(_sWarningType), o.getBool(_sWarningInverse), o.get(_sWarningParam1), o.get(_sWarningParam2));
+        if (!s.isEmpty()) b += line(s);
+        b += features(o);
     r  = lineEndBlock(r, b);
     return r;
 }

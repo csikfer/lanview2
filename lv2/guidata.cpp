@@ -230,7 +230,7 @@ QString dcViewShort(int id)
 
 /* ------------------------------ cTableShape ------------------------------ */
 
-QMap<QString, QString>   cTableShape::fieldDialogTitleMap;
+tStringMap   cTableShape::fieldDialogTitleMap;
 
 cTableShape::cTableShape() : cRecord(), shapeFields(this)
 {
@@ -732,7 +732,7 @@ QString cTableShape::emFieldNotFound(const QString& __f)
 const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex)
 {
     QString key = mCat(_sn, _fn);
-    QMap<QString, QString>::const_iterator i = fieldDialogTitleMap.find(key);
+    tStringMap::const_iterator i = fieldDialogTitleMap.find(key);
     if (i == fieldDialogTitleMap.constEnd()) {
         cTableShape ts;
         QString r = _fn;

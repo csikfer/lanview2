@@ -226,7 +226,7 @@ static cServiceVarType* pServiceVarType = nullptr;
 static cTableShape *    pTableShape = nullptr;
 static qlonglong        alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
-static QMap<QString, QString>      svars;
+static tStringMap                  svars;
 static QMap<QString, QVariantList> avars;
 static QSqlQuery  *     pq2 = nullptr;
 static bool             breakParse = false;
@@ -1606,6 +1606,7 @@ static inline cEnumVal& actEnum()
     QStringPairList *   ssl;
     cSnmpDevice *       sh;
     cHostServices *     hss;
+    tStringMap *        sm;
 }
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
@@ -1630,7 +1631,7 @@ static inline cEnumVal& actEnum()
 %token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
-%token      DISABLE_T PREFIX_T RESET_T CACHE_T
+%token      DISABLE_T PREFIX_T RESET_T CACHE_T INVERSE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
@@ -1649,23 +1650,26 @@ static inline cEnumVal& actEnum()
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered
+%type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered inverse
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from features
 %type  <sl> strs strs_z strs_zz alert list_m nsws nsws_
 %type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
-%type  <vl> vals
+%type  <vl> vals vtfilt
 %type  <n>  subnet
 %type  <ip> ip
 %type  <pnt> point
 %type  <pol> frame points rectangle
 %type  <ids> vlan_ids grpids
-%type  <ss>  ip_qq ip_q ip_a as
+%type  <ss>  ip_qq ip_q ip_a as feature map
 %type  <mac> mac
 %type  <sh>  snmph
 %type  <hss> hss hsss
+%type  <sm>  feature_s maps
+
+%destructor { pDelete($$); } <sm>
 
 %left  NOT_T
 %left  OR_T
@@ -1947,6 +1951,22 @@ replfl  : replace                   { switch ($1) {
                                         case REPLACE_DEF:   $$ = globalReplaceFlag; break;
                                       }
                                     }
+        ;
+features: str ';'                   { $$ = $1; }
+        | '{' feature_s '}'         { $$ = new QString(cFeatures::join(*$2)); }
+        ;
+feature_s: feature                  { ($$ = new tStringMap)->insert($1->first, $1->second); delete $1; }
+        | feature_s feature         { ($$ = $1)            ->insert($2->first, $2->second); delete $2; }
+        ;
+feature : str ';'                   { $$ = new tStringPair(sp2s($1), _sNul); }
+        | str '=' vals ';'          { $$ = new tStringPair(sp2s($1), QVariantListToString(*$3)); delete $3; }
+        | str '=' '{' maps '}'      { $$ = new tStringPair(sp2s($1), cFeatures::map2value(*$4)); }
+        ;
+maps    : map                       { ($$ = new tStringMap)->insert($1->first, $1->second); delete $1; }
+        | maps map                  { ($$ = $1)            ->insert($2->first, $2->second); delete $2; }
+        ;
+map     : str '=' vals ';'          { $$ = new tStringPair(sp2s($1), QVariantListToString(*$3)); delete $3; }
+        ;
 // felhasználók, felhesználói csoportok definíciója.
 user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3, $4); pUser->setId(_sPlaceId, gPlace()); }
             user_e                              { writeAndDel(pUser); }
@@ -2027,7 +2047,7 @@ ugrp_ps :
 ugrp_p  : NOTE_T str ';'                        { SETNOTE(pGroup, $2); }
         | RIGHTS_T rights ';'                   { pGroup->setName(_sGroupRights, *$2); delete $2; }
         | PLACE_T GROUP_T plg_id ';'            { pGroup->setId(_sPlaceGroupId, $3); }
-        | FEATURES_T str ';'                    { pGroup->setName(_sFeatures); }
+        | FEATURES_T features ';'               { pGroup->setName(_sFeatures); }
         | CLEAR_T ';'                           { pGroup->clear(~pGroup->mask(_sGroupId, _sGroupName)); }
         | CLEAR_T usrgfns ';'                   { pGroup->clear(pGroup->mask(slp2sl($2))); }
         | COPY_T FROM_T str ';'                 { pGroup->fieldsCopy(cGroup().setByName(qq(), sp2s($3)), ~pGroup->mask(_sGroupId, _sGroupName));}
@@ -2505,7 +2525,7 @@ shar    :                                           { $$ = ES_; }
 srv     : service
         | hostsrv
         | qparse
-        | srvars
+        | srvvtype
         ;
 service : SERVICE_T replace str str_z           { REPOBJ(pService, cService(), $2, $3, $4); }
           srvend                                { writeAndDel(pService); }
@@ -2521,7 +2541,7 @@ srv_ps  : srv_p
         ;
 srv_p   : SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
         | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
-        | FEATURES_T str ';'                  { (*pService)[_sFeatures] = *$2; delete $2; }
+        | FEATURES_T features ';'               { (*pService)[_sFeatures] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4 * 1000; }
@@ -2564,7 +2584,7 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostService->set(_sPrimeServi
         | PORT_T str ';'                        { pHostService->setPort(qq(), *$2); delete $2; }
         | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostService->set(_sDelegateHostState, $4); }
         | COMMAND_T str ';'                     { pHostService->set(_sCheckCmd, *$2); delete $2; }
-        | FEATURES_T str ';'                    { pHostService->set(_sFeatures, *$2); delete $2; }
+        | FEATURES_T features ';'               { pHostService->set(_sFeatures, *$2); delete $2; }
         | SUPERIOR_T SERVICE_T hsid ';'         { pHostService->set(_sSuperiorHostServiceId,  $3); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostService->set(_sMaxCheckAttempts, $4); }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { pHostService->set(_sNormalCheckInterval, sp2s($4)); }
@@ -2615,31 +2635,46 @@ hss     : fhs                                   { $$ = new cHostServices(qq(), p
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
         ;
-srvars  : SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
+// Nincs letesztelve, hiányos !!!!
+srvvtype: SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
          '{' varts '}'                              { writeAndDel(pServiceVarType); }
         ;
 varts   : vart
         | varts vart
         ;
-vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParamTypeId, cParamType().getIdByName(qq(), sp2s($2))); }
-        | TYPE_T str str ';'                    { pServiceVarType->setId(_sParamTypeId, cParamType().getIdByName(qq(), sp2s($2)));
+vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(),     *$2 ));
+                                                  pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2))); }
+        | TYPE_T str str ';'                    { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(),     *$2 ));
+                                                  pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2)));
                                                   pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($3)));  }
-        | PLAUSIBILITY_T str value ';'          { pServiceVarType->setId(_sPlausibilityType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sPlausibilityParam1, vp2v($3));  }
-        | PLAUSIBILITY_T str value ',' value ';'{ pServiceVarType->setId(_sPlausibilityType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sPlausibilityParam1, vp2v($3));
-                                                  pServiceVarType->set(_sPlausibilityParam2, vp2v($5));  }
-        | WARNING_T str value ';'               { pServiceVarType->setId(_sWarningType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sWarningParam1, vp2v($3));  }
-        | WARNING_T str value ',' value ';'     { pServiceVarType->setId(_sWarningType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sWarningParam1, vp2v($3));
-                                                  pServiceVarType->set(_sWarningParam2, vp2v($5));  }
-        | CRITICAL_T str value ';'              { pServiceVarType->setId(_sCriticalType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sCriticalParam1, vp2v($3));  }
-        | CRITICAL_T str value ',' value ';'    { pServiceVarType->setId(_sCriticalType, filterType(sp2s($2)));
-                                                  pServiceVarType->set(_sCriticalParam1, vp2v($3));
-                                                  pServiceVarType->set(_sCriticalParam2, vp2v($5));  }
-        | FEATURES_T str ';'                    { pServiceVarType->setName(_sFeatures, sp2s($2)); }
+        | TYPE_T str ',' str ';'                { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
+                                                  pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4))); }
+        | TYPE_T str ',' str str ';'            { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
+                                                  pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4)));
+                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($5)));  }
+        | PLAUSIBILITY_T vtfilt ';'             { pServiceVarType->setId(_sPlausibilityType, filterType($2->at(0).toString()));
+                                                  pServiceVarType->set(_sPlausibilityInverse, $2->at(1));
+                                                  pServiceVarType->set(_sPlausibilityParam1, $2->at(2));
+                                                  pServiceVarType->set(_sPlausibilityParam2, $2->at(3));
+                                                  delete $2; }
+        | WARNING_T  vtfilt ';'                 { pServiceVarType->setId(_sWarningType, filterType($2->at(0).toString()));
+                                                      pServiceVarType->set(_sWarningInverse, $2->at(1));
+                                                      pServiceVarType->set(_sWarningParam1, $2->at(2));
+                                                      pServiceVarType->set(_sWarningParam2, $2->at(3));
+                                                      delete $2; }
+        | CRITICAL_T  vtfilt ';'                { pServiceVarType->setId(_sCriticalType, filterType($2->at(0).toString()));
+                                                      pServiceVarType->set(_sCriticalInverse, $2->at(1));
+                                                      pServiceVarType->set(_sCriticalParam1, $2->at(2));
+                                                      pServiceVarType->set(_sCriticalParam2, $2->at(3));
+                                                      delete $2; }
+        | FEATURES_T features ';'               { pServiceVarType->setName(_sFeatures, sp2s($2)); }
+        ;
+vtfilt  : str inverse                           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant()         << QVariant();  }
+        | str inverse value                     { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant(vp2v($3)) << QVariant();}
+        | str inverse value ',' value           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant(vp2v($3)) << QVariant(vp2v($5));}
+        ;
+inverse :                                       { $$ = false; }
+        | INVERSE_T                             { $$ = true; }
         ;
 /*******/
 delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
@@ -2706,7 +2741,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         // title, dialog title, member title (group), not member title (group)
         | TITLE_T strs_zz  ';'              { pTableShape->setTitle(slp2sl($2)); }
         | READ_T ONLY_T bool_on ';'         { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $3); }
-        | FEATURES_T str ';'                { pTableShape->set(_sFeatures, sp2s($2)); }
+        | FEATURES_T features ';'           { pTableShape->set(_sFeatures, sp2s($2)); }
         | AUTO_T REFRESH_T str ';'          { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
         | AUTO_T REFRESH_T int ';'          { pTableShape->setId(  _sAutoRefresh, 1000*$3 ); }  // sec->mSec !!
         | RIGHT_T SHAPE_T strs ';'          { pTableShape->addRightShape(*$3); delete $3; }
@@ -2723,7 +2758,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
-        | FIELD_T strs FEATURES_T str ';'       { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
+        | FIELD_T strs FEATURES_T features ';'  { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
         | FIELD_T strs FLAG_T fflags ';'        { pTableShape->fsets(slp2sl($2), _sFieldFlags, $4); }
         | FIELD_T strs FLAG_T bool_ fflags ';'  { foreach (QString fn, *$2) {
                                                       cTableShapeField *pTS = pTableShape->shapeFields.get(fn);
@@ -2782,7 +2817,7 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
-        | FEATURES_T str ';'            { pTableShapeField->setName(_sFeatures, sp2s($2)); }
+        | FEATURES_T features ';'       { pTableShapeField->setName(_sFeatures, sp2s($2)); }
         | FLAG_T fflags ';'             { pTableShapeField->setId(_sFieldFlags, $2); }
         | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
         | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
@@ -2831,7 +2866,7 @@ miops   : miop miops
         |
         ;
 miop    : PARAM_T str ';'               { actMenuItem().setName(cMenuItem::ixMenuParam(), sp2s($2)); }
-        | FEATURES_T str ';'            { actMenuItem().setName(cMenuItem::ixFeatures(), sp2s($2)); }
+        | FEATURES_T features ';'       { actMenuItem().setName(cMenuItem::ixFeatures(), sp2s($2)); }
         | TITLE_T strs_zz ';'           { actMenuItem().setTitle(slp2sl($2)); }
         | TOOL_T TIP_T str ';'          { actMenuItem().setText(cMenuItem::LTX_TOOL_TIP, sp2s($3)); }
         | WHATS_T THIS_T str ';'        { actMenuItem().setText(cMenuItem::LTX_WHATS_THIS, sp2s($3)); }
@@ -3120,7 +3155,7 @@ static const struct token {
     TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
     TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
     TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
-    TOK(DISABLE) TOK(PREFIX) TOK(RESET) TOK(CACHE)
+    TOK(DISABLE) TOK(PREFIX) TOK(RESET) TOK(CACHE) TOK(INVERSE)
     TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)

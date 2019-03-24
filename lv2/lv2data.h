@@ -1595,7 +1595,7 @@ class LV2SHARED_EXPORT cImportTemplate : public cRecord {
 
 /// @class cTemplateMap
 /// import_template record cache
-class LV2SHARED_EXPORT cTemplateMap : public QMap<QString, QString> {
+class LV2SHARED_EXPORT cTemplateMap : public tStringMap {
 public:
     /// Konstruktor
     cTemplateMap() { EXCEPTION(ENOTSUPP); }
@@ -1607,7 +1607,7 @@ public:
     /// copy operator, csak akkor másol, ha a type adattag azonos
     cTemplateMap& operator=(const cTemplateMap& __o) {
         if (__o.type != type) EXCEPTION(EPROGFAIL);
-        *(QMap<QString, QString> *)this = (QMap<QString, QString>)__o;
+        *static_cast<tStringMap *>(this) = static_cast<tStringMap>(__o);
         return *this;
     }
     /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.

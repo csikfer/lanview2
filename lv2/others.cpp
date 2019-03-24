@@ -79,7 +79,7 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
 /******************************************************************************/
 
 cFeatures::cFeatures()
-    : QMap<QString, QString>()
+    : tStringMap()
 {
     ;
 }
@@ -314,12 +314,12 @@ QMap<int, qlonglong> cFeatures::mapEnum(QMap<QString, QStringList> smap, const Q
 }
 
 
-QString cFeatures::join() const
+QString cFeatures::join(const tStringMap &_sm)
 {
     static const QString sep = ":";
     static const QString esep = "::";
     QString r = sep;
-    for (ConstIterator i = constBegin(); i != constEnd(); ++i) {
+    for (ConstIterator i = _sm.constBegin(); i != _sm.constEnd(); ++i) {
         QString s = i.key();
         if (!i.value().isEmpty()) s +=  "=" + i.value();
         s.replace(sep, esep);

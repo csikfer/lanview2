@@ -3,12 +3,14 @@
 #include "lv2data.h"
 #include "srvdata.h"
 #include "guidata.h"
+#include "vardata.h"
 
 #define EXPORT_INDENT_SIZE  4
 
 class LV2SHARED_EXPORT cExport : public QObject {
 public:
     cExport(QObject *par = nullptr);
+    static QString escaped(const QString& s);
 protected:
     QString sNoAnyObj;
     int     actIndent;
@@ -67,7 +69,6 @@ protected:
         return r;
     }
     QString line(const QString& s) { return QString(actIndent * EXPORT_INDENT_SIZE, QChar(' ')) + s + '\n'; }
-    static QString escaped(const QString& s);
     static QString head(const QString& kw, const QString& s, const QString &n);
     static QString head(const QString& kw, const cRecord &o) { return head(kw, o.getName(), o.getNote()); }
     static QString str(const cRecordFieldRef& fr, bool sp = true);
@@ -103,6 +104,10 @@ public:
     QString _export(QSqlQuery &q, cEnumVal &o);
     QString services(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cService& o);
+    QString serviceVals(eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery &q, cServiceVar& o);
+    QString serviceValTipes(eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery &q, cServiceVarType& o);
     QString queryParser(eEx __ex = EX_NOOP);
 };
 
