@@ -77,9 +77,9 @@ public:
     const cParamType& dataType(QSqlQuery& q)    { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixParamTypeId())); }
     const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixRawParamTypeId())); }
     const cFeatures &mergedFeatures();
-//    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
+    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
 //    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
-//    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
+    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
 //    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
     int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);

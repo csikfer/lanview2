@@ -6,6 +6,7 @@
 #include "tableexportdialog.h"
 #include "lv2validator.h"
 #include "popupreport.h"
+#include "export.h"
 
 
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, ePrivilegeLevel _need, const QString& _obj, const QString& _html)
@@ -2592,7 +2593,7 @@ void cRecordTable::takeOut()
 
 void cRecordTable::copy()
 {
-    cTableExportDialog  dialog(pWidget());
+    cTableExportDialog  dialog(pWidget(), pTableShape->getName(_sTableName));
     if (QDialog::Accepted != dialog.exec()) return;
     enum eTableExportWhat   w = dialog.what();
     enum eTableExportTarget t = dialog.target();
@@ -2606,14 +2607,14 @@ void cRecordTable::copy()
         switch (f) {
         case TEF_CSV:   r = pTableModel()->toCSV(selectedRows());     break;
         case TEF_HTML:  r = pTableModel()->toHtml(selectedRows());    break;
-        default:        EXCEPTION(EPROGFAIL);
+        case TEF_INTER: r = pTableModel()->toImport(selectedRows());  break;
         }
         break;
     case TEW_VIEWED:
         switch (f) {
         case TEF_CSV:   r = pTableModel()->toCSV();     break;
         case TEF_HTML:  r = pTableModel()->toHtml();    break;
-        default:        EXCEPTION(EPROGFAIL);
+        case TEF_INTER: r = pTableModel()->toImport();  break;
         }
         break;
     case TEW_ALL: {
@@ -2628,8 +2629,6 @@ void cRecordTable::copy()
         pTableModel()->_maxRows = mr;
         break;
     }
-    default:
-        EXCEPTION(EPROGFAIL);
     }
     if (r.isEmpty()) {
         cMsgBox::warning(trUtf8("Nincs adat."), pWidget());
@@ -2640,10 +2639,14 @@ void cRecordTable::copy()
         //static const QString sMimeTypeCsv = "text/csv";
         QMimeData *pMime = new QMimeData;
         switch (f) {
-        case TEF_CSV:   // pMime->setData(sMimeTypeCsv, r.toUtf8()); break; // NOT WORKING
-                        pMime->setText(r);                      break;
-        case TEF_HTML:  pMime->setHtml(r);                      break;
-        default:        EXCEPTION(EPROGFAIL);
+        case TEF_CSV:
+        case TEF_INTER:
+            // pMime->setData(sMimeTypeCsv, r.toUtf8()); break; // NOT WORKING
+            pMime->setText(r);
+            break;
+        case TEF_HTML:
+            pMime->setHtml(r);
+            break;
         }
         QApplication::clipboard()->setMimeData(pMime);
       } break;
@@ -2663,11 +2666,13 @@ void cRecordTable::copy()
     }
         break;
     case TET_WIN:
-        if (f == TEF_CSV) r = toHtml(r, true);
+        switch (f) {
+        case TEF_CSV:   r = toHtml(r, true);    break;
+        case TEF_INTER: r = toHtml(r, true, true, EXPORT_INDENT_SIZE);  break;
+        default:        break;
+        }
         popupReportWindow(this->pWidget(), r, tableShape().getText(cTableShape::LTX_TABLE_TITLE));
         break;
-    default:
-        EXCEPTION(EPROGFAIL);
     }
 }
 

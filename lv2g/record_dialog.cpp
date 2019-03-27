@@ -168,7 +168,7 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon(":/icons/minus.ico"),   keys, Qt::Key_Minus,  DBT_TAKE_OUT);
         appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon(":/icons/zoom.ico"),    keys, Qt::Key_Plus,   DBT_EXPAND);
         appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(":/icons/restore.ico"), keys, 0,              DBT_ROOT);
-        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon(":/icons/copy.ico"),    keys, 0,              DBT_COPY);
+        appendCont(buttonNames, _sNul,        icons,QIcon("://icons/document-export-2.ico"),keys, 0,              DBT_COPY);
         appendCont(buttonNames, trUtf8("Nyugtáz"),     icons, QIcon(":/icons/check.ico"),   keys, 0,              DBT_RECEIPT);
         appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon(":/icons/delete.ico"),  keys, 0,              DBT_TRUNCATE);
         appendCont(buttonNames, trUtf8("Kiegészítés"), icons, QIcon(":/icons/export.ico"),  keys, 0,              DBT_COMPLETE);

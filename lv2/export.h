@@ -7,6 +7,24 @@
 
 #define EXPORT_INDENT_SIZE  4
 
+#define X_EXPORTABLE_OBJECTS \
+    X(ParamType) \
+    X(SysParam) \
+    X(Service) \
+    X(QueryParser) \
+    X(IfType) \
+    X(TableShape) \
+    X(MenuItem) \
+    X(EnumVal) \
+    X(ServiceVarType) \
+    X(ServiceVar)
+
+enum eExportableObjects {
+#define X(e)       EO_##e,
+    X_EXPORTABLE_OBJECTS
+#undef X
+};
+
 class LV2SHARED_EXPORT cExport : public QObject {
 public:
     cExport(QObject *par = nullptr);
@@ -16,6 +34,7 @@ protected:
     int     actIndent;
     QString divert;
     QStringList exportedNames;
+    static QStringList _exportableObjects;
 
     /// Egy tábla kiexportálása
     /// @param q
@@ -82,33 +101,43 @@ protected:
     /// @param _fr First text index
     /// @param _to Last text index
     QString lineTitles(const QString &kw, const cRecord& o, int _fr, int _to);
-    QString features(cRecord& o);
+    QString features(const cRecord &o);
     QString paramLine(QSqlQuery &q, const QString& kw, const cRecordFieldRef& fr, const QVariant &_def = QVariant());
     QString flag(const QString& kw, const cRecordFieldRef& fr, bool inverse = false);
     QString lineBeginBlock(const QString& s) { QString r = line(s + " {"); actIndent++; return r; }
     QString lineEndBlock();
     QString lineEndBlock(const QString& s, const QString& b);
+    QString hostService(QSqlQuery& q, qlonglong _id);
 public:
-    QString paramType(eEx __ex = EX_NOOP);
+    static const QStringList& exportableObjects();
+    static bool isExportable(const QString& name) { return exportableObjects().contains(name); }
+    static bool isExportable(const cRecord& o)    { return isExportable(o.tableName()); }
+    QString exportObjects(const QString& name, eEx __ex = EX_NOOP);
+    QString exportObjects(int ix, eEx __ex = EX_NOOP);
+    QString exportObject(QSqlQuery &q, cRecord& o, eEx __ex = EX_ERROR);
+    QString ParamTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cParamType& o);
-    QString sysParams(eEx __ex = EX_NOOP);
+    QString SysParams(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cSysParam& o);
-    QString ifType(eEx __ex = EX_NOOP);
+    QString IfTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cIfType& o);
-    QString tableShapes(eEx __ex = EX_NOOP);
+    QString TableShapes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cTableShape& o);
-    QString menuItems(eEx __ex = EX_NOOP);
-    QString menuItems(const QString& _app, qlonglong upperMenuItemId = NULL_ID, eEx __ex = EX_NOOP);
+    QString MenuItems(eEx __ex = EX_NOOP);
+    QString MenuItems(const QString& _app, qlonglong upperMenuItemId = NULL_ID, eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cMenuItem &o);
-    QString enumVals(eEx __ex = EX_NOOP);
+    QString EnumVals(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cEnumVal &o);
-    QString services(eEx __ex = EX_NOOP);
+    QString Services(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cService& o);
-    QString serviceVals(eEx __ex = EX_NOOP);
-    QString _export(QSqlQuery &q, cServiceVar& o);
-    QString serviceValTipes(eEx __ex = EX_NOOP);
+    QString ServiceVars(eEx __ex = EX_NOOP);
+    /// A változó aktuális értékeit, és az állapotot nem írja ki.
+    QString _export(QSqlQuery &q, cServiceVar &o);
+    QString ServiceVarTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cServiceVarType& o);
-    QString queryParser(eEx __ex = EX_NOOP);
+    QString QueryParsers(eEx __ex = EX_NOOP);
+    /// ?! Kilóg a sorból, nem csinál semmit
+    QString _export(QSqlQuery& q, cQueryParser& o);
 };
 
 #endif // EXPORT_H

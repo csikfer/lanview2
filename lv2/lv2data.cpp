@@ -276,8 +276,16 @@ const cParamType& cParamType::paramType(const QString& __nm, eEx __ex)
     checkParamTypes();
     int i = paramTypes.indexOf(_descr_cParamType().nameIndex(), QVariant(__nm));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid ParamType name %1 or program error.").arg(__nm));
-        return *pNull;
+        cParamType pt;
+        QSqlQuery q = getQuery();
+        if (pt.fetchByName(q, __nm)) {
+            paramTypes << pt;
+            return *paramTypes.last();
+        }
+        else {
+            if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid ParamType name %1 or program error.").arg(__nm));
+            return *pNull;
+        }
     }
     return *(paramTypes[i]);
 }
@@ -287,8 +295,16 @@ const cParamType& cParamType::paramType(qlonglong __id, eEx __ex)
     checkParamTypes();
     int i = paramTypes.indexOf(_descr_cParamType().idIndex(), QVariant(__id));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid ParamType id or program error."));
-        return *pNull;
+        cParamType pt;
+        QSqlQuery q = getQuery();
+        if (pt.fetchById(q, __id)) {
+            paramTypes << pt;
+            return *paramTypes.last();
+        }
+        else {
+            if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid ParamType id or program error."));
+            return *pNull;
+        }
     }
     return *(paramTypes[i]);
 }

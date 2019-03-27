@@ -11,6 +11,8 @@ static const QString _sTOOL_TIP     = "TOOL TIP";
 static const QString _sPARAM        = "PARAM";
 static const QString _sFEATURES     = "FEATURES ";
 
+QStringList cExport::_exportableObjects;
+
 cExport::cExport(QObject *par) : QObject(par)
 {
     sNoAnyObj = QObject::trUtf8("No any object");
@@ -200,7 +202,7 @@ QString cExport::lineTitles(const QString& kw, const cRecord& o, int _fr, int _t
     return r;
 }
 
-QString cExport::features(cRecord& o)
+QString cExport::features(const cRecord& o)
 {
     QString s = o.getName(_sFeatures);
     QString r;
@@ -286,7 +288,77 @@ QString cExport::lineEndBlock(const QString& s, const QString& b)
 
 /* ======================================================================================== */
 
-QString cExport::paramType(eEx __ex)
+
+const QStringList& cExport::exportableObjects()
+{
+    if (_exportableObjects.isEmpty()) {
+#define X(e)    _exportableObjects << _s##e##s;
+        X_EXPORTABLE_OBJECTS
+#undef X
+    }
+    return _exportableObjects;
+}
+
+QString cExport::exportObjects(const QString& name, eEx __ex)
+{
+    int ix = exportableObjects().indexOf(name);
+    QString r;
+    if (ix < 0) {
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, ix, trUtf8("Invalid or unsupported object name %1").arg(name));
+    }
+    else {
+        r = exportObjects(ix, __ex);
+    }
+    return r;
+}
+
+QString cExport::exportObjects(int ix, eEx __ex)
+{
+    QString r;
+    switch (ix) {
+#define X(e)    case EO_##e:   r = e##s(__ex);    break;
+    X_EXPORTABLE_OBJECTS
+#undef X
+    default:
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, trUtf8("Invalid or unsupported object index %1").arg(ix));
+    }
+    return r;
+}
+
+QString cExport::exportObject(QSqlQuery& q, cRecord &o, eEx __ex)
+{
+    QString r;
+    QString tableName = o.tableName();
+    int ix = exportableObjects().indexOf(tableName);
+    if (ix < 0) {
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, trUtf8("Invalid or unsupported object index %1").arg(ix));
+        return r;
+    }
+    cExport x;
+    if (typeid (o) == typeid (cRecordAny)) {
+        switch (ix) {
+    #define X(e)    case EO_##e: { c##e oo; oo.copy(o); r = x._export(q, oo); } break;
+        X_EXPORTABLE_OBJECTS
+    #undef X
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+    }
+    else {
+        switch (ix) {
+    #define X(e)    case EO_##e: r = x._export(q, *o.reconvert<c##e>()); break;
+        X_EXPORTABLE_OBJECTS
+    #undef X
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+    }
+    return r;
+}
+
+/* ======================================================================================== */
+
+QString cExport::ParamTypes(eEx __ex)
 {
     cParamType o;
     return sympleExport(o, o.toIndex(_sParamTypeName), __ex);
@@ -300,7 +372,7 @@ QString cExport::_export(QSqlQuery& q, cParamType& o)
     return line(r);
 }
 
-QString cExport::sysParams(eEx __ex)
+QString cExport::SysParams(eEx __ex)
 {
     cSysParam o;
     return sympleExport(o, o.toIndex(_sSysParamName), __ex);
@@ -317,7 +389,7 @@ QString cExport::_export(QSqlQuery& q, cSysParam& o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::ifType(eEx __ex)
+QString cExport::IfTypes(eEx __ex)
 {
     cIfType o;
     return sympleExport(o, o.toIndex(_sIfTypeIanaId), __ex);
@@ -348,7 +420,7 @@ QString cExport::_export(QSqlQuery &q, cIfType& o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::tableShapes(eEx __ex)
+QString cExport::TableShapes(eEx __ex)
 {
     exportedNames.clear();
     divert.clear();
@@ -466,7 +538,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::menuItems(eEx __ex)
+QString cExport::MenuItems(eEx __ex)
 {
     static const QString sql = "SELECT DISTINCT(app_name) FROM menu_items ORDER BY app_name ASC";
     QSqlQuery q = getQuery();
@@ -477,7 +549,7 @@ QString cExport::menuItems(eEx __ex)
             QString sAppName = q.value(0).toString();
             r += line(QString("DELETE GUI %1 MENU;").arg(quotedString(sAppName)));
             r += lineBeginBlock("GUI " + quotedString(sAppName));
-            r += menuItems(sAppName, NULL_ID, __ex);
+            r += MenuItems(sAppName, NULL_ID, __ex);
             r += lineEndBlock();
         } while (q.next());
     }
@@ -487,7 +559,7 @@ QString cExport::menuItems(eEx __ex)
     return r;
 }
 
-QString cExport::menuItems(const QString& _app, qlonglong upperMenuItemId, eEx __ex)
+QString cExport::MenuItems(const QString& _app, qlonglong upperMenuItemId, eEx __ex)
 {
     QSqlQuery q = getQuery();
     QSqlQuery q2 = getQuery();
@@ -537,7 +609,7 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
     r += lineText(_sTOOL_TIP, o, cMenuItem::LTX_TOOL_TIP);
     r += lineText(_sWHATS_THIS, o, cMenuItem::LTX_WHATS_THIS);
     if (t == MT_MENU) {
-        r += menuItems(o.getName(_sAppName), o.getId());
+        r += MenuItems(o.getName(_sAppName), o.getId());
     }
     r += lineEndBlock();
     return r;
@@ -545,7 +617,7 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::enumVals(eEx __ex)
+QString cExport::EnumVals(eEx __ex)
 {
     cEnumVal o;
     QString r;
@@ -589,7 +661,7 @@ QString cExport::_export(QSqlQuery &q, cEnumVal &o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::services(eEx __ex)
+QString cExport::Services(eEx __ex)
 {
     cService o;
     return sympleExport(o, o.toIndex(_sServiceName), __ex);
@@ -626,27 +698,98 @@ QString cExport::_export(QSqlQuery &q, cService& o)
     return r;
 }
 
-/* ---------------------------------------------------------------------------------------- */
-
-QString cExport::serviceVals(eEx __ex)
+QString cExport::hostService(QSqlQuery& q, qlonglong _id)
 {
-    cServiceVar o;
-    return sympleExport(o, o.toIndex(_sServiceName), __ex);
-}
-QString cExport::_export(QSqlQuery &q, cServiceVar& o)
-{
-    // Még hiányzik a parser-ből!!!
-    (void)q;
-    QString r;
+    cHostService hs;
+    hs.setById(q, _id);
+    QString r, s;
+    qlonglong id, id2;
+    id = hs.getId(_sNodeId);
+    s  = cNode().getNameById(q, id);
+    r += s;
+    id2 = hs.getId(_sPortId);
+    if (id2 != NULL_ID) {
+        cNPort p;
+        if (p.fetchById(q, id2)) {
+            if (p.getId(_sNodeId) != id) {
+                r+= trUtf8("/* invalid port : %1 (#%2) */").arg(p.getFullName(q)).arg(id2);
+            }
+            else {
+                r += ":" + s;
+            }
+        }
+        else {
+            r+= trUtf8("/* invalid port_id : %1").arg(id2);
+        }
+    }
+    id = hs.getId(_sServiceId);
+    s  = cService::service(q, id)->getName();
+    r += "." + escaped(s);
+    id = hs.getId(_sProtoServiceId);
+    id2= hs.getId(_sPrimeServiceId);
+    if (id != NIL_SERVICE_ID || id2 != NIL_SERVICE_ID) {
+        r += "(";
+        if (id != NIL_SERVICE_ID) {
+            s = cService::service(q, id)->getName();
+            r += escaped(s);
+        }
+        r += ":";
+        if (id != NIL_SERVICE_ID) {
+            s = cService::service(q, id2)->getName();
+            r += escaped(s);
+        }
+        r += ")";
+    }
     return r;
 }
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::serviceValTipes(eEx __ex)
+QString cExport::ServiceVars(eEx __ex)
+{
+    (void)__ex;
+    cServiceVar o;
+    static const QString sql =
+            "SELECT * FROM service_vars ORDER BY host_service_id2name(host_service_id) ASC, service_var_name ASC";
+    QSqlQuery q = getQuery();
+    QSqlQuery q2 = getQuery();
+    QString r;
+    if (execSql(q, sql)) {
+        do {
+            o.set(q);
+            r += _export(q2, o);
+        } while (q.next());
+    }
+    return r;
+}
+
+QString cExport::_export(QSqlQuery &q, cServiceVar& o)
+{
+    (void)q;
+    QString r, s, ss;
+    qlonglong id;
+    id = o.getId(_sHostServiceId);
+    s  = "SERVICE VAR " + hostService(q, id) + _sSp;
+    s += escaped(o.getName());
+    ss = o.getNote();
+    if (!ss.isEmpty()) s += _sSp + ss;
+    ss += " TYPE " + o.varType(q)->getName();
+    r = lineBeginBlock(s);
+        QString b;
+        b  = paramLine(q, "DELEGATE SERVICE STATE", o[_sDelegateServiceState], false);
+        b += paramLine(q, "DELEGATE PORT STATE",    o[_sDelegatePortState],    false);
+        b += paramLine(q, "RAREFACTION",            o[_sRarefaction],          1);
+        b += features(o);
+    r = lineEndBlock(r, b);
+    return r;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::ServiceVarTypes(eEx __ex)
 {
     cServiceVarType o;
-    return sympleExport(o, o.toIndex(_sServiceName), __ex);
+    return sympleExport(o, o.toIndex(_sServiceVarTypeName), __ex);
 }
 
 static QString varFilter(const QString& _kv, qlonglong _t, bool _i, const QVariant& _p1, const QVariant& _p2)
@@ -655,11 +798,11 @@ static QString varFilter(const QString& _kv, qlonglong _t, bool _i, const QVaria
     if (_t != NULL_ID) {
         r  = _kv + _sSp;
         if (_i) r += "INVERSE ";
-        r += filterType(int(_t));
+        r += cExport::escaped(filterType(int(_t)));
         if (!_p1.isNull()) {
             r += _sSp + cExport::escaped(_p1.toString());
             if (!_p2.isNull()) {
-                r += _sCommaSp + cExport::escaped(_p1.toString());
+                r += _sCommaSp + cExport::escaped(_p2.toString());
             }
         }
         r += _sSemicolon;
@@ -667,18 +810,18 @@ static QString varFilter(const QString& _kv, qlonglong _t, bool _i, const QVaria
     return r;
 }
 
-QString cExport::_export(QSqlQuery &q, cServiceVarType& o)
+QString cExport::_export(QSqlQuery &q, cServiceVarType &o)
 {
     (void)q;
     QString r;
-    r = lineBeginBlock(head("SERVICE_T VAR_T TYPE_T", o));
+    r = lineBeginBlock(head("SERVICE VAR TYPE", o));
         QString b;
         QString s;
-        int ptVal = int(cParamType::paramType(o.getId(_sParamTypeId)).getId(_sParamTypeType));
-        int ptRaw = int(cParamType::paramType(o.getId(_sRawParamTypeId)).getId(_sParamTypeType));
+        QString valType = cParamType::paramType(o.getId(_sParamTypeId)).getName();
+        QString rawType = cParamType::paramType(o.getId(_sRawParamTypeId)).getName();
         QString type;
-        if (ptVal == ptRaw) type = escaped(paramTypeType(ptVal));
-        else                type = escaped(paramTypeType(ptVal)) + _sCommaSp + escaped(paramTypeType(ptRaw));
+        type = escaped(valType);
+        if (valType != rawType) type += _sCommaSp + escaped(rawType);
         if (!o.isNull(_sServiceVarType)) type += _sSp + escaped(o.getName(_sServiceVarType));
         b  = line("TYPE " + type + _sSemicolon);
         s = varFilter("PLAUSIBILITY", o.getId(_sPlausibilityType), o.getBool(_sPlausibilityInverse), o.get(_sPlausibilityParam1), o.get(_sPlausibilityParam2));
@@ -694,7 +837,7 @@ QString cExport::_export(QSqlQuery &q, cServiceVarType& o)
 
 /* ---------------------------------------------------------------------------------------- */
 
-QString cExport::queryParser(eEx __ex)
+QString cExport::QueryParsers(eEx __ex)
 {
     const static QString _sQUERY_PARSER_ = "QUERY PARSER ";
     cQueryParser o;
@@ -732,3 +875,9 @@ QString cExport::queryParser(eEx __ex)
     return r;
 }
 
+QString cExport::_export(QSqlQuery& q, cQueryParser& o)
+{
+    (void)q;
+    (void)o;
+    return QString();
+}

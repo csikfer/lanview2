@@ -553,14 +553,14 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
             case ASN_NULL: //            ((u_char)0x05)
                 // _PDEB(VVERBOSE) << "NULL" << endl;
                 break;
-            case ASN_OBJECT_ID: {//       ((u_char)0x06)
+            case ASN_OBJECT_ID: {//      ((u_char)0x06)
                 // cOId _oid = cOId((oid *)__var->val.string, __var->val_len / sizeof(oid));    // Ez lenne a logikus
-                int len = __var->val_len / sizeof(int);             // De 64 biten ez tűnik jónak
-                cOId _oid = cOId((oid *)__var->val.string, len);
+                size_t len = __var->val_len / sizeof(int);             // De 64 biten ez tűnik jónak
+                cOId _oid = cOId(reinterpret_cast<oid *>(__var->val.string), len);
                 if (len > 0) {
                     QString sOid;
-                    for (int i = 0; i < len; ++i) {
-                        sOid += QString::number((unsigned long)_oid[i]) + ".";
+                    for (int i = 0; i < int(len); ++i) {
+                        sOid += QString::number(_oid[i]) + ".";
                     }
                     sOid.chop(1);
                     r = sOid;

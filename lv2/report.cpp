@@ -19,13 +19,49 @@ const QString sHtmlBGreen = "<b><span style=\"color:green\"> %1 </span></b>";
 const QString sHtmlNbsp   = " &nbsp; ";
 
 
-QString toHtml(const QString& text, bool chgBreaks, bool esc)
+QString toHtml(const QString& text, bool chgBreaks, bool esc, int indent)
 {
     static const QChar   cr = QChar('\n');
+    static const QString sp = "&#160;";
     QString r = text;
     if (chgBreaks)  r = r.trimmed();
     if (esc)        r = r.toHtmlEscaped();
-    if (chgBreaks)  r = r.replace(cr, sHtmlBr);
+    if (chgBreaks)  {
+        if (indent) {
+            QString rr;
+            int i, n = r.size();
+            for (i = 0; i < n; i++) {
+                QChar c = r[i];
+                if (c == cr) {
+                    rr += sHtmlBr;
+                    while (true) {
+                        ++i;
+                        if (i >= n) {
+                            EXCEPTION(EPROGFAIL);
+                        }
+                        c = r[i];
+                        switch (c.toLatin1()) {
+                        case 32:    // Space
+                            rr += sp;
+                            continue;
+                        case 11:    // TAB
+                            for (int j = indent; j > 0; --j) rr += sp;
+                            continue;
+                        }
+                        break;
+                    }
+                    rr += c;
+                }
+                else {
+                    rr += c;
+                }
+            }
+            r = rr;
+        }
+        else {
+            r = r.replace(cr, sHtmlBr);
+        }
+    }
     return r;
 }
 

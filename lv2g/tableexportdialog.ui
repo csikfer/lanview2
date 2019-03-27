@@ -2,16 +2,22 @@
 <ui version="4.0">
  <class>cTableExportDialog</class>
  <widget class="QDialog" name="cTableExportDialog">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>415</width>
-    <height>342</height>
+    <height>371</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Export dialóg</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
@@ -23,7 +29,7 @@
       <item>
        <widget class="QRadioButton" name="radioButtonName">
         <property name="text">
-         <string>Csak a kijelölt rekod név/nevek</string>
+         <string>Csak a kijelölt rekod(ok) név/nevek</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -90,6 +96,9 @@
         </item>
         <item>
          <widget class="QRadioButton" name="radioButtonWin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Ablakba</string>
           </property>
@@ -101,7 +110,7 @@
      <item>
       <widget class="QGroupBox" name="groupBoxForm">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="title">
         <string>Formátum</string>
@@ -124,6 +133,16 @@
           </property>
           <property name="text">
            <string>HTML</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonINT">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Interpreter</string>
           </property>
          </widget>
         </item>
@@ -274,7 +293,7 @@
   <connection>
    <sender>radioButtonName</sender>
    <signal>toggled(bool)</signal>
-   <receiver>radioButtonHTML</receiver>
+   <receiver>radioButtonWin</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -282,24 +301,56 @@
      <y>38</y>
     </hint>
     <hint type="destinationlabel">
-     <x>253</x>
-     <y>182</y>
+     <x>107</x>
+     <y>271</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>radioButtonName</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>radioButtonCSV</receiver>
-   <slot>setChecked(bool)</slot>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBoxForm</receiver>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>170</x>
-     <y>38</y>
+     <x>207</x>
+     <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>253</x>
-     <y>160</y>
+     <x>307</x>
+     <y>232</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonName</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>radioButtonCSV</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>207</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>307</x>
+     <y>213</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonName</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>radioButtonHTML</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>207</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>307</x>
+     <y>242</y>
     </hint>
    </hints>
   </connection>

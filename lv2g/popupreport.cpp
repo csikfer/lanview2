@@ -308,7 +308,7 @@ bool cFileDialog::textEditToFile(QString &fileName, const QTextEdit *pTE, QWidge
     if (pFile == nullptr) return false;
     QString ext = QFileInfo(*pFile).suffix();
     QString text;
-    if (0 == ext.compare("html", Qt::CaseInsensitive) || ext.compare("htm", Qt::CaseInsensitive)) {
+    if (0 == ext.compare("html", Qt::CaseInsensitive) || 0 == ext.compare("htm", Qt::CaseInsensitive)) {
         text = pTE->toHtml();
     }
     else  {

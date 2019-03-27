@@ -11,6 +11,7 @@ static const QString _sGUI = "GUI";
 enum eExport {
     E_PRAM_TYPES, E_SYS_PARAMS, E_SERVICES, E_QUERY_PARSERS, E_IF_TYPES,
     E_TABLE_SHAPE, E_MENU_ITEMS, E_ENUM_VALS,
+    E_SERVICE_VAR_TYPES, E_SERVICE_VARS,
     E_GUI
 };
 
@@ -21,15 +22,12 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
 //    pThread = NULL;
     isStop  = false;
     QSqlQuery q = getQuery();
-    QStringList ol;
-    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers << _sIfTypes
-       << _sTableShapes << _sMenuItems << _sEnumVals
-       << _sGUI;
+    QStringList ol = cExport::exportableObjects();
+    ol << _sGUI;
     pUi->setupUi(this);
     pUi->comboBoxTable->addItems(ol);
-    bool empty = ol.isEmpty();
-    pUi->pushButtonStop->setDisabled(true);
-    if (!empty) changedName(ol.first());
+    pUi->pushButtonStop->hide();    // Not working
+    changedName(ol.first());
     connect(pUi->pushButtonExport, SIGNAL(clicked()),     this, SLOT(start()));
     connect(pUi->pushButtonSave,   SIGNAL(clicked()),     this, SLOT(save()));
     connect(pUi->comboBoxTable,    SIGNAL(currentTextChanged(QString)), this, SLOT(changedName(QString)));
@@ -55,20 +53,19 @@ void cExportsWidget::start()
     int ix = pUi->comboBoxTable->currentIndex();
     QString r;
     cExport e;
-    switch (ix) {
-    case E_PRAM_TYPES:      r = e.paramType(EX_IGNORE);     break;
-    case E_SYS_PARAMS:      r = e.sysParams(EX_IGNORE);     break;
-    case E_SERVICES:        r = e.services(EX_IGNORE);      break;
-    case E_QUERY_PARSERS:   r = e.queryParser(EX_IGNORE);   break;
-    case E_IF_TYPES:        r = e.ifType(EX_IGNORE);        break;
-    case E_TABLE_SHAPE:     r = e.tableShapes(EX_IGNORE);   break;
-    case E_MENU_ITEMS:      r = e.menuItems(EX_IGNORE);     break;
-    case E_ENUM_VALS:       r = e.enumVals(EX_IGNORE);      break;
-    case E_GUI:
-        r  = e.menuItems(EX_IGNORE);
-        r += e.enumVals(EX_IGNORE);
-        r += e.tableShapes(EX_IGNORE);
-        break;
+    if (ix < cExport::exportableObjects().size()) {
+        r = e.exportObjects(ix);
+    }
+    else {
+        QString s = pUi->comboBoxTable->currentText();
+        if (_sGUI == s) {
+            r  = e.MenuItems(EX_IGNORE);
+            r += e.EnumVals(EX_IGNORE);
+            r += e.TableShapes(EX_IGNORE);
+        }
+        else {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(pUi->comboBoxTable->currentText());
     r.prepend(pUi->plainTextEdit->toPlainText());
@@ -84,7 +81,7 @@ void cExportsWidget::changedName(const QString& tn)
 {
     QString t;
     if (tn == _sGUI) {
-        t = trUtf8("Teljes GUI export (menu + enum + shape).");
+        t = trUtf8("Teljes GUI export (MenuItems + EnumVals + TableShapes).");
     }
     else {
         QSqlQuery q = getQuery();

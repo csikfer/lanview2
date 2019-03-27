@@ -40,8 +40,9 @@ inline QString tag(const QString& t, const QString& p) {
 /// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
 ///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @param indent Csak akkor érvényes, ha chgBreak értéke true, ebben az esetben a sor eleji space-ket kikényszeríti.
 /// @return A konverált szöveg.
-EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true);
+EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true, int indent = 0);
 
 /// HTML konverzió, indentáltparagrafus
 /// @param text A konvertálandó szöveg

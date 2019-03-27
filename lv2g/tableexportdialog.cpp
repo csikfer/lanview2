@@ -2,12 +2,15 @@
 #include "ui_tableexportdialog.h"
 #include "QPushButton"
 #include "QFileDialog"
+#include "export.h"
 
-cTableExportDialog::cTableExportDialog(QWidget *parent) :
+cTableExportDialog::cTableExportDialog(QWidget *parent, const QString& _objName) :
     QDialog(parent),
+    objectName(_objName),
     ui(new Ui::cTableExportDialog)
 {
     ui->setupUi(this);
+    isExportableObject = cExport::isExportable(objectName);
 }
 
 cTableExportDialog::~cTableExportDialog()
@@ -32,7 +35,8 @@ enum eTableExportWhat   cTableExportDialog::what() const
 enum eTableExportForm   cTableExportDialog::form() const
 {
     if (ui->radioButtonCSV->isChecked()) return TEF_CSV;
-    return TEF_HTML;
+    if (ui->radioButtonHTML->isChecked()) return TEF_HTML;
+    return TEF_INTER;
 }
 
 QString cTableExportDialog::path()
@@ -66,4 +70,9 @@ void cTableExportDialog::on_toolButtonFilePath_clicked()
     QString path = QFileDialog::getSaveFileName(this);
     if (path.isEmpty()) return;
     ui->lineEditFilePath->setText(path);
+}
+
+void cTableExportDialog::on_radioButtonName_toggled(bool checked)
+{
+    ui->radioButtonINT->setEnabled(!checked && isExportableObject);
 }

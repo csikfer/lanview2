@@ -2,6 +2,17 @@
 #include "record_table.h"
 #include "cerrormessagebox.h"
 #include "popupreport.h"
+#include "export.h"
+
+bool isRowSelected(int row, const QModelIndexList& selected, bool retIfEmpty)
+{
+    if (selected.isEmpty()) return retIfEmpty;
+    foreach (QModelIndex mi, selected) {
+        if (mi.row() == row) return true;
+    }
+    return false;
+}
+
 
 QString cRecordViewModelBase::sIrrevocable;
 
@@ -459,7 +470,7 @@ void cRecordTableModel::clear()
     q.clear();
 }
 
-QString             cRecordTableModel::toCSV()
+QString cRecordTableModel::toCSV() const
 {
     cCommaSeparatedValues csv;
     foreach (QStringList row, toStringTable()) {
@@ -471,7 +482,7 @@ QString             cRecordTableModel::toCSV()
     return csv.toString();
 }
 
-QString             cRecordTableModel::toHtml()
+QString cRecordTableModel::toHtml() const
 {
     QString r;
     QList<QStringList>  m = toStringTable(false);
@@ -506,7 +517,7 @@ static QString htmlImage(const QVariant& vImage, const QString& alt)
     return alt;
 }
 
-QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndexList mil)
+QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndexList& mil) const
 {
     int rownums = rowCount(QModelIndex());
     int colnums = columnCount(QModelIndex());
@@ -573,7 +584,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
     return r;
 }
 
-QString cRecordTableModel::toCSV(QModelIndexList mil)
+QString cRecordTableModel::toCSV(const QModelIndexList &mil) const
 {
     cCommaSeparatedValues csv;
     foreach (QStringList row, toStringTable(true, mil)) {
@@ -585,7 +596,7 @@ QString cRecordTableModel::toCSV(QModelIndexList mil)
     return csv.toString();
 }
 
-QString cRecordTableModel::toHtml(QModelIndexList mil)
+QString cRecordTableModel::toHtml(const QModelIndexList& mil) const
 {
     QString r;
     QList<QStringList>  m = toStringTable(false, mil);
@@ -594,6 +605,20 @@ QString cRecordTableModel::toHtml(QModelIndexList mil)
     return sHtmlHead + r + sHtmlTail;
 }
 
+QString cRecordTableModel::toImport(const QModelIndexList& mil) const
+{
+    QString r;
+    int i, n = _records.size();
+    cExport e;
+    QSqlQuery q = getQuery();
+    for (i = 0; i < n; ++i) {
+        if (!isRowSelected(i, mil, true)) continue;
+        cRecord& rec = *_records.at(i);
+        r += e.exportObject(q, rec);
+    }
+
+    return r;
+}
 
 int cRecordTableModel::setRecords(QSqlQuery& _q, bool _first)
 {

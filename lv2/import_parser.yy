@@ -223,6 +223,7 @@ static cService   *     pService = nullptr;
 static cHostService*    pHostService = nullptr;
 static cHostService*    pHostService2 = nullptr;
 static cServiceVarType* pServiceVarType = nullptr;
+static cServiceVar*     pServiceVar = nullptr;
 static cTableShape *    pTableShape = nullptr;
 static qlonglong        alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
@@ -423,6 +424,7 @@ void downImportParser()
     pDelete(pHostService);
     pDelete(pHostService2);
     pDelete (pServiceVarType);
+    pDelete (pServiceVar);
     pDelete(pTableShape);
     ivars.clear();
     svars.clear();
@@ -1631,7 +1633,7 @@ static inline cEnumVal& actEnum()
 %token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
-%token      DISABLE_T PREFIX_T RESET_T CACHE_T INVERSE_T
+%token      DISABLE_T PREFIX_T RESET_T CACHE_T INVERSE_T RAREFACTION_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
@@ -1648,7 +1650,7 @@ static inline cEnumVal& actEnum()
 %type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id image_idz tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
-%type  <i>  node_h node_ts
+%type  <i>  node_h node_ts srvvt_id
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered inverse
 %type  <r>  /* real */ num fexpr
@@ -1804,6 +1806,7 @@ int_    : INTEGER_V                             { $$ = $1; }
         | ID_T GROUP_T '(' grpid ')'            { $$ = $4; }
         | ID_T TABLE_T SHAPE_T '(' tmod ')'     { $$ = $5; }
         | ID_T TABLE_T SHAPE_T '(' ftmod ')'    { $$ = $5; }
+        | ID_T SERVICE_T VAR_T TYPE_T '(' srvvt_id ')' { $$ = $6; }
         | '#' NAME_V                            { $$ = vint(*$2); delete $2; }
         | '#' '+' NAME_V                        { $$ = (vint(*$3) += 1); delete $3; }
         | '#' '-' NAME_V                        { $$ = (vint(*$3) -= 1); delete $3; }
@@ -1858,6 +1861,9 @@ grpid   : str                       { $$ = cGroup().getIdByName(qq(), *$1); dele
         ;
 grpids  : grpid                     { *($$ = new QVariantList) << $1; }
         | grpids ',' grpid          { *($$ = $1) << $3; }
+        ;
+srvvt_id: str                       { $$ = cServiceVarType().getIdByName(qq(), *$1); delete $1; }
+        ;
 /* */
 iexpr   : int_                      { $$ = $1; }
         | '-' iexpr  %prec NEG      { $$ = -$2; }
@@ -2525,13 +2531,26 @@ shar    :                                           { $$ = ES_; }
 srv     : service
         | hostsrv
         | qparse
-        | srvvtype
         ;
-service : SERVICE_T replace str str_z           { REPOBJ(pService, cService(), $2, $3, $4); }
+service : SERVICE_T str str_z                   { REPOBJ(pService, cService(), REPLACE_DEF, $2, $3); }
+          srvend                                { writeAndDel(pService); }
+        | SERVICE_T REPLACE_T str str_z         { REPOBJ(pService, cService(), REPLACE_ON, $3, $4); }
+          srvend                                { writeAndDel(pService); }
+        | SERVICE_T INSERT_T str str_z          { REPOBJ(pService, cService(), REPLACE_OFF, $3, $4); }
           srvend                                { writeAndDel(pService); }
         | SERVICE_T TYPE_T str str_z ';'        { cServiceType::insertNew(qq(), sp2s($3), sp2s($4)); }
         | MESSAGE_T str str SERVICE_T TYPE_T srvtid nsws ';'    { cAlarmMsg::replaces(qq(), $6, slp2sl($7), sp2s($2), sp2s($3)); }
         | SERVICE_T TYPE_T srvtid MESSAGE_T  '{'                { id = $3; }    srvmsgs '}'
+        | SERVICE_T VAR_T hsid replace str str_z TYPE_T srvvt_id { REPOBJ(pServiceVar, cServiceVar(), $4, $5, $6);
+                                                                          pServiceVar->setId(_sServiceVarTypeId, $8);
+                                                                          pServiceVar->setId(_sHostServiceId, $3); }
+          '{' svars '}'                             { writeAndDel(pServiceVar); }
+        | SERVICE_T VAR_T hsid replace str str_z TYPE_T srvvt_id { REPOBJ(pServiceVar, cServiceVar(), $4, $5, $6);
+                                                                          pServiceVar->setId(_sServiceVarTypeId, $8);
+                                                                          pServiceVar->setId(_sHostServiceId, $3); }
+            ';'                                     { writeAndDel(pServiceVar); }
+        | SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
+            '{' varts '}'                           { writeAndDel(pServiceVarType); }
         ;
 srvend  : '{' srv_ps '}'
         | ';'
@@ -2635,10 +2654,7 @@ hss     : fhs                                   { $$ = new cHostServices(qq(), p
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
         ;
-// Nincs letesztelve, hiányos !!!!
-srvvtype: SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
-         '{' varts '}'                              { writeAndDel(pServiceVarType); }
-        ;
+// Nincs letesztelve !!!!
 varts   : vart
         | varts vart
         ;
@@ -2646,27 +2662,27 @@ vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParam
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2))); }
         | TYPE_T str str ';'                    { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(),     *$2 ));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2)));
-                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($3)));  }
+                                                  pServiceVarType->setId(_sServiceVarType, cServiceVarType::srvartype(qq(), sp2s($3))->getId());  }
         | TYPE_T str ',' str ';'                { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4))); }
         | TYPE_T str ',' str str ';'            { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4)));
-                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($5)));  }
+                                                  pServiceVarType->setId(_sServiceVarType, cServiceVarType::srvartype(qq(), sp2s($5))->getId());  }
         | PLAUSIBILITY_T vtfilt ';'             { pServiceVarType->setId(_sPlausibilityType, filterType($2->at(0).toString()));
                                                   pServiceVarType->set(_sPlausibilityInverse, $2->at(1));
-                                                  pServiceVarType->set(_sPlausibilityParam1, $2->at(2));
-                                                  pServiceVarType->set(_sPlausibilityParam2, $2->at(3));
+                                                  pServiceVarType->set(_sPlausibilityParam1,  $2->at(2));
+                                                  pServiceVarType->set(_sPlausibilityParam2,  $2->at(3));
                                                   delete $2; }
         | WARNING_T  vtfilt ';'                 { pServiceVarType->setId(_sWarningType, filterType($2->at(0).toString()));
-                                                      pServiceVarType->set(_sWarningInverse, $2->at(1));
-                                                      pServiceVarType->set(_sWarningParam1, $2->at(2));
-                                                      pServiceVarType->set(_sWarningParam2, $2->at(3));
-                                                      delete $2; }
+                                                  pServiceVarType->set(_sWarningInverse, $2->at(1));
+                                                  pServiceVarType->set(_sWarningParam1,  $2->at(2));
+                                                  pServiceVarType->set(_sWarningParam2,  $2->at(3));
+                                                  delete $2; }
         | CRITICAL_T  vtfilt ';'                { pServiceVarType->setId(_sCriticalType, filterType($2->at(0).toString()));
-                                                      pServiceVarType->set(_sCriticalInverse, $2->at(1));
-                                                      pServiceVarType->set(_sCriticalParam1, $2->at(2));
-                                                      pServiceVarType->set(_sCriticalParam2, $2->at(3));
-                                                      delete $2; }
+                                                  pServiceVarType->set(_sCriticalInverse, $2->at(1));
+                                                  pServiceVarType->set(_sCriticalParam1,  $2->at(2));
+                                                  pServiceVarType->set(_sCriticalParam2,  $2->at(3));
+                                                  delete $2; }
         | FEATURES_T features ';'               { pServiceVarType->setName(_sFeatures, sp2s($2)); }
         ;
 vtfilt  : str inverse                           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant()         << QVariant();  }
@@ -2675,6 +2691,18 @@ vtfilt  : str inverse                           { *($$ = new QVariantList) << QV
         ;
 inverse :                                       { $$ = false; }
         | INVERSE_T                             { $$ = true; }
+        ;
+svars   :
+        | svar svars
+        ;
+svar    : FEATURES_T features ';'               { pServiceVar->setName(_sFeatures, sp2s($2)); }
+        | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2));
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$2)); delete $2; }
+        | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2)); delete $2;
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$4)); delete $4; }
+        | DELEGATE_T SERVICE_T STATE_T bool ';' { pServiceVar->setBool(_sDelegateServiceState, $4); }
+        | DELEGATE_T PORT_T    STATE_T bool ';' { pServiceVar->setBool(_sDelegatePortState, $4); }
+        | RAREFACTION_T int ';'                 { pServiceVar->setBool(_sRarefaction, $2); }
         ;
 /*******/
 delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
@@ -2971,7 +2999,7 @@ exports : print
         | lang
         ;
 print   : PRINT_T str ';'               { cExportQueue::push(*$2); delete $2; }
-        | EXPORT_T SERVICE_T ';'        { cExportQueue::push(cExport().services()); }
+        | EXPORT_T SERVICE_T ';'        { cExportQueue::push(cExport().Services()); }
         | PRINT_T ALL_T TOKEN_T ';'     { cExportQueue::push(getAllTokens(true)); }
         ;
 lang    : LANG_T replfl str str str image_idz lnx ';'  { if ($2) cLanguage::repLanguage(qq(), sp2s($3), sp2s($4), sp2s($5), $6, $7);
@@ -3155,7 +3183,7 @@ static const struct token {
     TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
     TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
     TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
-    TOK(DISABLE) TOK(PREFIX) TOK(RESET) TOK(CACHE) TOK(INVERSE)
+    TOK(DISABLE) TOK(PREFIX) TOK(RESET) TOK(CACHE) TOK(INVERSE) TOK(RAREFACTION)
     TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)

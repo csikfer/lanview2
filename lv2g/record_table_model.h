@@ -3,6 +3,8 @@
 
 #include "lv2g.h"
 
+EXT_ bool isRowSelected(int row, const QModelIndexList& selected, bool retIfEmpty = false);
+
 typedef tRecordList<cRecord>         tRecords;
 class   cRecordTableColumn;
 typedef tRecordList<cRecordTableColumn>  tRecordTableColumns;
@@ -121,11 +123,12 @@ public:
 
     int size() const                            { return _records.size(); }
     int isEmpty() const                         { return _records.isEmpty(); }
-    QString             toCSV();
-    QString             toHtml();
-    QList<QStringList>  toStringTable(bool raw = true, const QModelIndexList mil = QModelIndexList());
-    QString             toCSV(QModelIndexList mil);
-    QString             toHtml(QModelIndexList mil);
+    QString             toCSV() const;
+    QString             toHtml() const;
+    QList<QStringList>  toStringTable(bool raw = true, const QModelIndexList &mil = QModelIndexList()) const;
+    QString             toCSV(const QModelIndexList& mil) const;
+    QString             toHtml(const QModelIndexList &mil) const;
+    QString             toImport(const QModelIndexList& mil = QModelIndexList()) const;
     tRecords                    _records;
 public:
     /// A megjelenítendő record set megadása, a táblázat újra rajzolása

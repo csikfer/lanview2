@@ -24,7 +24,6 @@ void cRecordTree::init()
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER;
     if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
-        buttons << DBT_COPY;
         if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
         if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;
     }
