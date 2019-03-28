@@ -70,6 +70,7 @@ private:
     QString whereEnum(const QString &n, QVariantList& qparams);
     QString whereSet(const QString &n, QVariantList& qparams);
     template <class V> void tSetValidator();
+    void clearValidator();
     void setValidatorRegExp(const QString& _re);
     void setValidator(int i);
 public slots:

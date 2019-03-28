@@ -74,5 +74,19 @@ void cTableExportDialog::on_toolButtonFilePath_clicked()
 
 void cTableExportDialog::on_radioButtonName_toggled(bool checked)
 {
-    ui->radioButtonINT->setEnabled(!checked && isExportableObject);
+    bool f = false;
+    if (!checked || EXPORT_NOT != isExportableObject) {
+        if (EXPORT_ANY == isExportableObject)           f = true;
+        else if (EXPORT_TABLE == isExportableObject)    f = what() == TEW_ALL;
+    }
+    ui->radioButtonINT->setEnabled(f);
+}
+
+void cTableExportDialog::on_radioButtonAll_toggled(bool checked)
+{
+    bool f = EXPORT_NOT != isExportableObject;
+    if (f && !checked) {
+        f = isExportableObject == EXPORT_ANY;
+    }
+    ui->radioButtonINT->setEnabled(f);
 }

@@ -43,9 +43,11 @@ private slots:
     void on_toolButtonFilePath_clicked();
     void on_radioButtonName_toggled(bool checked);
 
+    void on_radioButtonAll_toggled(bool checked);
+
 private:
     Ui::cTableExportDialog *ui;
-    bool isExportableObject;
+    int isExportableObject;
 };
 
 #endif // TABLEEXPORTDIALOG_H

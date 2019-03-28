@@ -12,6 +12,7 @@ static const QString _sPARAM        = "PARAM";
 static const QString _sFEATURES     = "FEATURES ";
 
 QStringList cExport::_exportableObjects;
+QList<int>  cExport::_exportPotentials;
 
 cExport::cExport(QObject *par) : QObject(par)
 {
@@ -37,7 +38,7 @@ QString cExport::escaped(const QString& s)
             default:
                 if (c.isPrint())   r += c;
                 else if (cc == 0)  r += "\\?";
-                else               r += "\\" + QString::number((int)cc, 8);
+                else               r += "\\" + QString::number(cc, 8);
                 break;
             }
         }
@@ -289,17 +290,17 @@ QString cExport::lineEndBlock(const QString& s, const QString& b)
 /* ======================================================================================== */
 
 
-const QStringList& cExport::exportableObjects()
+const QStringList cExport::exportableObjects()
 {
     if (_exportableObjects.isEmpty()) {
-#define X(e)    _exportableObjects << _s##e##s;
+#define X(e, f)    _exportableObjects << _s##e##s; _exportPotentials << f;
         X_EXPORTABLE_OBJECTS
 #undef X
     }
     return _exportableObjects;
 }
 
-QString cExport::exportObjects(const QString& name, eEx __ex)
+QString cExport::exportTable(const QString& name, eEx __ex)
 {
     int ix = exportableObjects().indexOf(name);
     QString r;
@@ -307,16 +308,16 @@ QString cExport::exportObjects(const QString& name, eEx __ex)
         if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, ix, trUtf8("Invalid or unsupported object name %1").arg(name));
     }
     else {
-        r = exportObjects(ix, __ex);
+        r = exportTable(ix, __ex);
     }
     return r;
 }
 
-QString cExport::exportObjects(int ix, eEx __ex)
+QString cExport::exportTable(int ix, eEx __ex)
 {
     QString r;
     switch (ix) {
-#define X(e)    case EO_##e:   r = e##s(__ex);    break;
+#define X(e, f)    case EO_##e:   r = e##s(__ex);    break;
     X_EXPORTABLE_OBJECTS
 #undef X
     default:
@@ -337,7 +338,7 @@ QString cExport::exportObject(QSqlQuery& q, cRecord &o, eEx __ex)
     cExport x;
     if (typeid (o) == typeid (cRecordAny)) {
         switch (ix) {
-    #define X(e)    case EO_##e: { c##e oo; oo.copy(o); r = x._export(q, oo); } break;
+    #define X(e, f)    case EO_##e: { c##e oo; oo.copy(o); r = x._export(q, oo); } break;
         X_EXPORTABLE_OBJECTS
     #undef X
         default:
@@ -346,7 +347,7 @@ QString cExport::exportObject(QSqlQuery& q, cRecord &o, eEx __ex)
     }
     else {
         switch (ix) {
-    #define X(e)    case EO_##e: r = x._export(q, *o.reconvert<c##e>()); break;
+    #define X(e, f)    case EO_##e: r = x._export(q, *o.reconvert<c##e>()); break;
         X_EXPORTABLE_OBJECTS
     #undef X
         default:

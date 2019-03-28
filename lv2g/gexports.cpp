@@ -54,7 +54,7 @@ void cExportsWidget::start()
     QString r;
     cExport e;
     if (ix < cExport::exportableObjects().size()) {
-        r = e.exportObjects(ix);
+        r = e.exportTable(ix);
     }
     else {
         QString s = pUi->comboBoxTable->currentText();

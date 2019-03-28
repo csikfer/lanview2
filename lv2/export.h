@@ -7,20 +7,27 @@
 
 #define EXPORT_INDENT_SIZE  4
 
+enum eExportPotential {
+    EXPORT_NOT    = 0,
+    EXPORT_TABLE  = 1,
+    EXPORT_OBJECT = 2,
+    EXPORT_ANY    = EXPORT_TABLE | EXPORT_OBJECT
+};
+
 #define X_EXPORTABLE_OBJECTS \
-    X(ParamType) \
-    X(SysParam) \
-    X(Service) \
-    X(QueryParser) \
-    X(IfType) \
-    X(TableShape) \
-    X(MenuItem) \
-    X(EnumVal) \
-    X(ServiceVarType) \
-    X(ServiceVar)
+    X(ParamType,    EXPORT_ANY) \
+    X(SysParam,     EXPORT_ANY) \
+    X(Service,      EXPORT_ANY) \
+    X(QueryParser,  EXPORT_TABLE) \
+    X(IfType,       EXPORT_ANY) \
+    X(TableShape,   EXPORT_ANY) \
+    X(MenuItem,     EXPORT_TABLE) \
+    X(EnumVal,      EXPORT_ANY) \
+    X(ServiceVarType,EXPORT_ANY) \
+    X(ServiceVar,   EXPORT_ANY)
 
 enum eExportableObjects {
-#define X(e)       EO_##e,
+#define X(e, f)       EO_##e,
     X_EXPORTABLE_OBJECTS
 #undef X
 };
@@ -35,6 +42,7 @@ protected:
     QString divert;
     QStringList exportedNames;
     static QStringList _exportableObjects;
+    static QList<int>  _exportPotentials;
 
     /// Egy tábla kiexportálása
     /// @param q
@@ -109,11 +117,12 @@ protected:
     QString lineEndBlock(const QString& s, const QString& b);
     QString hostService(QSqlQuery& q, qlonglong _id);
 public:
-    static const QStringList& exportableObjects();
-    static bool isExportable(const QString& name) { return exportableObjects().contains(name); }
-    static bool isExportable(const cRecord& o)    { return isExportable(o.tableName()); }
-    QString exportObjects(const QString& name, eEx __ex = EX_NOOP);
-    QString exportObjects(int ix, eEx __ex = EX_NOOP);
+    static const QStringList exportableObjects();
+    static int isExportable(int ix)              { return isContIx(_exportPotentials, ix) ? _exportPotentials[ix] : EXPORT_NOT; }
+    static int isExportable(const QString& name) { return isExportable(exportableObjects().indexOf(name));  }
+    static int isExportable(const cRecord& o)    { return isExportable(o.tableName()); }
+    QString exportTable(const QString& name, eEx __ex = EX_NOOP);
+    QString exportTable(int ix, eEx __ex = EX_NOOP);
     QString exportObject(QSqlQuery &q, cRecord& o, eEx __ex = EX_ERROR);
     QString ParamTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cParamType& o);

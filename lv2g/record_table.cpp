@@ -431,6 +431,13 @@ template <class V> void cRecordTableFilter::tSetValidator()
     }
 }
 
+void cRecordTableFilter::clearValidator()
+{
+    dialog.pLineEdit1->setValidator(nullptr);
+    dialog.pLineEdit2->setValidator(nullptr);
+    pValidator1 = nullptr;
+    pValidator2 = nullptr;
+}
 void cRecordTableFilter::setValidatorRegExp(const QString& _re)
 {
     QRegExp re(_re);
@@ -477,8 +484,7 @@ void cRecordTableFilter::setValidator(int i)
         break;
     case PT_TEXT:
     default:
-        pDelete(pValidator1);
-        pDelete(pValidator2);
+        clearValidator();
         break;
     }
 }
@@ -800,7 +806,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
 
 cRecordTableFODialog::~cRecordTableFODialog()
 {
-
+    ;
 }
 
 QStringList cRecordTableFODialog::where(QVariantList& qparams)
@@ -843,12 +849,13 @@ int cRecordTableFODialog::indexOf(cRecordTableOrd * _po)
 void cRecordTableFODialog::setGridLayoutOrder()
 {
     if (ords.isEmpty()) return;
+    QGridLayout *pGrid = pForm->gridLayout_Order;
     int row = 0;
     foreach (cRecordTableOrd *pOrd, ords) {
-        pForm->gridLayout_Order->addWidget(pOrd->pRowName, row, 0);
-        pForm->gridLayout_Order->addWidget(pOrd->pType,    row, 1);
-        pForm->gridLayout_Order->addWidget(pOrd->pUp,      row, 2);
-        pForm->gridLayout_Order->addWidget(pOrd->pDown,    row, 3);
+        pGrid->addWidget(pOrd->pRowName, row, 0);
+        pGrid->addWidget(pOrd->pType,    row, 1);
+        pGrid->addWidget(pOrd->pUp,      row, 2);
+        pGrid->addWidget(pOrd->pDown,    row, 3);
         pOrd->disableUp(row == 0);
         ++row;
     }
@@ -872,7 +879,10 @@ void cRecordTableFODialog::setFilterDialog()
     int i;
     while (0 < (i = pGrid->count())) {  // Clear grid layout
         QLayoutItem *p = pGrid->itemAt(i -1);
-        if (p != nullptr && p->widget() != nullptr) delete p->widget();
+        if (p != nullptr && p->widget() != nullptr) {
+            pGrid->removeItem(p);
+            delete p;
+        }
     }
     if (sCheckInverse.isEmpty()) {
         sCheckInverse = QObject::trUtf8("Fordított logika");
@@ -2617,18 +2627,23 @@ void cRecordTable::copy()
         case TEF_INTER: r = pTableModel()->toImport();  break;
         }
         break;
-    case TEW_ALL: {
-        int mr = pTableModel()->maxRows();
-        pTableModel()->_maxRows = MAXMAXROWS;
-        refresh(true);
-        switch (f) {
-        case TEF_CSV:   r = pTableModel()->toCSV();     break;
-        case TEF_HTML:  r = pTableModel()->toHtml();    break;
-        default:        EXCEPTION(EPROGFAIL);
+    case TEW_ALL:
+        if (f == TEF_INTER) {
+            r = cExport().exportTable(pTableShape->getName(_sTableName));
         }
-        pTableModel()->_maxRows = mr;
+        else {
+            int mr = pTableModel()->maxRows();
+            pTableModel()->_maxRows = MAXMAXROWS;
+            refresh(true);
+            switch (f) {
+            case TEF_CSV:   r = pTableModel()->toCSV();     break;
+            case TEF_HTML:  r = pTableModel()->toHtml();    break;
+            default:        EXCEPTION(EPROGFAIL);
+
+            }
+            pTableModel()->_maxRows = mr;
+        }
         break;
-    }
     }
     if (r.isEmpty()) {
         cMsgBox::warning(trUtf8("Nincs adat."), pWidget());

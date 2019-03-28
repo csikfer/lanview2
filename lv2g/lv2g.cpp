@@ -250,81 +250,54 @@ _GEX QPolygonF convertPolygon(const tPolygonF __pol)
     return pol;
 }
 
-const QColor& bgColorByEnum(const QString& __t, int e)
+template <class T> const T& enumCacheFunction(const QString& _t, int _e, int _fix,  QMap<QString, QVector<T> >& cache, const T& _def)
 {
-    static QMap<QString, QVector<QColor> > colorCache;
-    static const QColor defCol(Qt::white);
-    if (__t.isEmpty()) {
-        colorCache.clear();
-        return defCol;
+    if (_t.isEmpty()) { // Clear cache
+        cache.clear();
+        return _def;
     }
-
-    QMap<QString, QVector<QColor> >::const_iterator it = colorCache.find(__t);
-    if (it == colorCache.constEnd()) {
+    typename QMap<QString, QVector<T> >::const_iterator it = cache.find(_t);
+    int ix = _e + 1;
+    if (it == cache.constEnd()) {
         QSqlQuery q = getQuery();
-        const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
+        const cColEnumType *pType = cColEnumType::fetchOrGet(q, _t, EX_IGNORE);
         int n;
         if (pType == nullptr) {        // boolean ??
-            if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
+            if (_t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, _t);
             n = 3;
         }
         else {
             n = pType->enumValues.size() +1;
         }
-        QVector<QColor> v(n, defCol);
-        // for (int i = 0; i < n; i++) {
-        //     PDEB(VVERBOSE) << "BG Color default : " << __t << "#" << n << " = " << v[i].name() << endl;
-        // }
+        QVector<T> v(n, _def);
         for (int i = 0; i < n; i++) {
-            const cEnumVal& o = cEnumVal::enumVal(__t, i -1);
-            if (!o.isNull(cEnumVal::ixBgColor())) {
-                v[i] = QColor(o.getName(cEnumVal::ixBgColor()));
+            const cEnumVal& o = cEnumVal::enumVal(_t, i -1);
+            if (!o.isNull(_fix)) {
+                v[i] = QColor(o.getName(_fix));
             }
-            // PDEB(VVERBOSE) << "BG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
         }
-        colorCache[__t] = v;
-        return v[e +1];
+        it = cache.insert(_t, v);
     }
-    else {
-        return colorCache[__t][e +1];
+    if (isContIx(it.value(), ix)) {
+        return it.value().at(ix);
     }
+    PDEB(DERROR) << QString("Ivalid enum value %1, on %2").arg(_e).arg(_t) << endl;
+    return _def;
+
+}
+
+const QColor& bgColorByEnum(const QString& __t, int e)
+{
+    static QMap<QString, QVector<QColor> > colorCache;
+    static const QColor defCol(Qt::white);
+    return enumCacheFunction(__t, e, cEnumVal::ixBgColor(), colorCache, defCol);
 }
 
 const QColor& fgColorByEnum(const QString& __t, int e)
 {
     static QMap<QString, QVector<QColor> >   colorCache;
     static const QColor defCol(Qt::black);
-    if (__t.isEmpty()) {
-        colorCache.clear();
-        return defCol;
-    }
-
-    QMap<QString, QVector<QColor> >::const_iterator it = colorCache.find(__t);
-    if (it == colorCache.constEnd()) {
-        QSqlQuery q = getQuery();
-        const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
-        int n;
-        if (pType == nullptr) {        // boolean ??
-            if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
-            n = 3;
-        }
-        else {
-            n = pType->enumValues.size() +1;
-        }
-        QVector<QColor> v(n, defCol);
-        for (int i = 0; i < n; i++) {
-            const cEnumVal& o = cEnumVal::enumVal(__t, i -1);
-            if (!o.isNull(cEnumVal::ixFgColor())) {
-                v[i] = QColor(o.getName(cEnumVal::ixFgColor()));
-            }
-            PDEB(VVERBOSE) << "FG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
-        }
-        colorCache[__t] = v;
-        return v[e +1];
-    }
-    else {
-        return colorCache[__t][e +1];
-    }
+    return enumCacheFunction(__t, e, cEnumVal::ixFgColor(), colorCache, defCol);
 }
 
 const QFont& fontByEnum(const QString& __t, int _e)
