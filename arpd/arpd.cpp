@@ -52,9 +52,9 @@ void lv2ArpD::staticInit(QSqlQuery *pq)
     cDeviceArp::pPSLocal   = cService::service(*pq, _sLocal);
     cDeviceArp::pPSSnmp    = cService::service(*pq, _sSnmp);
     cDeviceArp::pPSSsh     = cService::service(*pq, _sSsh);
-    cDeviceArp::pPSArpProc = cService::service(*pq, "arp.proc");
-    cDeviceArp::pPSDhcpConf= cService::service(*pq, "dhcp.conf");
-    cDeviceArp::pPSDhcpLeases= cService::service(*pq, "dhcp.leases");
+    cDeviceArp::pPSArpProc = cService::service(*pq, "arp_proc");
+    cDeviceArp::pPSDhcpConf= cService::service(*pq, "dhcp_conf");
+    cDeviceArp::pPSDhcpLeases= cService::service(*pq, "dhcp_leases");
 }
 
 
