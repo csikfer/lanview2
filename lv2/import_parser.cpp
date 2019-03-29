@@ -14,12 +14,11 @@ bool importSrcOpen(QFile& f)
     if (f.exists()) return f.open(QIODevice::ReadOnly);
     QString fn = f.fileName();
     QDir    d(lanView::getInstance()->homeDir);
-    if (d.exists(fn)) {
-        f.setFileName(d.filePath(fn));
-        return f.open(QIODevice::ReadOnly);
+    if (!d.exists(fn)) {
+        EXCEPTION(ENOTFILE, -1, fn);
     }
-    EXCEPTION(ENOTFILE, -1, fn);
-    return false;   // A fordító szerint ez kell
+    f.setFileName(d.filePath(fn));
+    return f.open(QIODevice::ReadOnly);
 }
 
 int importParseText(QString text)

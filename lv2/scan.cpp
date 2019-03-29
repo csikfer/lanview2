@@ -37,42 +37,6 @@ cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
     return *this;
 }
 
-int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
-{
-    DBGFN();
-    QTextStream str(&__f);
-    str.readLine(); // Drop header
-    QString line;
-    int r = 0;
-    while ((line = str.readLine()).isEmpty() == false) {
-        QStringList fl = line.split(QRegExp("\\s+"));
-        QHostAddress addr(fl[0]);
-        QString em;
-        if (addr.isNull()) {
-            em = QObject::trUtf8("Invalid IP address: %1 ARP #%2 line : '%3'.").arg(fl[0]).arg(r).arg(line);
-            DWAR() << em << endl;
-            if (pEMsg != nullptr) *pEMsg = em;
-            return -1;
-        }
-        cMac mac(fl[3]);
-        if (mac.isEmpty()) {
-            // PDEB(VVERBOSE) << "Dropp NULL MAC..." << endl;
-            continue;
-        }
-        if (!mac) {
-            em = QObject::trUtf8("Invalid MAC address: %1 ARP #%2 line : '%3'.").arg(fl[3]).arg(r).arg(line);
-            DWAR() << em << endl;
-            if (pEMsg != nullptr) *pEMsg = em;
-            return -1;
-        }
-        // PDEB(VVERBOSE) << line << " : " << fl[0] << "/" << fl[3] << " : " << addr.toString() << "/" << mac.toString() << endl;
-        PDEB(INFO) << "insert(" << addr.toString() << QChar(',') << mac.toString() << ")" << endl;
-        insert(addr, mac);
-        ++r;
-    }
-    if (pEMsg != nullptr) *pEMsg = QObject::trUtf8("Pcessed %1 line(s).").arg(r);
-    return r;
-}
 int cArpTable::getByLocalProcFile(const QString& __f, QString *pEMsg)
 {
     _DBGFN() << "@(" << __f << QChar(',') << endl;
@@ -97,95 +61,6 @@ int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QS
     if (false == proc.waitForStarted(  2000)
      || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
     return getByProcFile(proc, pEMsg);
-}
-
-const QString& cArpTable::token(QIODevice& __f)
-{
-    static QString  tok;
-    char c;
-    tok.clear();
-    do {
-        if (!__f.getChar(&c)) return tok;
-        if (c == '#') { __f.readLine(); continue; } // Komment
-    } while (isspace(c));
-    tok = QChar(c);
-    if (strchr("()[];{}", c)) return tok;    // egy betűs tokenek
-    if (c == '"') {
-        tok.clear();
-        while (__f.getChar(&c) && c != '"') tok += QChar(c);
-        return tok;
-    }
-    do {
-        if (!__f.getChar(&c)) return tok;
-        if (c == '#') { __f.readLine(); return tok; }
-        if (isspace(c)) return tok;
-        if (strchr("()[];\"{}", c)) { __f.ungetChar(c); return tok; }
-        tok += QChar(c);
-    } while (true);
-}
-
-#define GETOKEN()   if ((tok = token(__f)).isEmpty()) break;
-#define CHKTOK(s)   if (tok != s) continue;
-
-/// Parse dhcp.comf file
-/// @param __f A fájl tartalma
-/// @param _hid host_service_id opcionális
-int cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
-{
-    //DBGFN();
-    static const QString _shost           = "host";
-    static const QString _shardware       = "hardware";
-    static const QString _sethernet       = "ethernet";
-    static const QString _sfixed_address  = "fixed-address";
-    static const QString _srange          = "range";
-    QTextStream str(&__f);
-    QString tok;
-    QVariant hId;
-    if (_hid != NULL_ID) hId = _hid;
-    int r = 0;
-    while (true) {
-        tok = token(__f);
-        if (tok.isEmpty()) return r;
-        if (tok == _shost) {
-            GETOKEN();  // név
-            GETOKEN();  CHKTOK("{");
-            GETOKEN();  CHKTOK(_shardware);
-            GETOKEN();  CHKTOK(_sethernet);
-
-            GETOKEN();  cMac    mac(tok);
-            if (mac.isEmpty()) continue;
-
-            GETOKEN();  CHKTOK(";");
-            GETOKEN();  CHKTOK(_sfixed_address);
-            GETOKEN();  QHostAddress addr(tok);
-            if (addr.isNull()) continue;
-
-            GETOKEN();  CHKTOK(";");
-            GETOKEN();  CHKTOK("}");
-
-            PDEB(VERBOSE) << "add : " << addr.toString() << " / " << mac.toString() << endl;
-
-            insert(addr, mac);
-            ++r;
-        }
-        else if (tok == _srange) {
-            QSqlQuery q = getQuery();
-            QString sb, se;
-            GETOKEN();  sb = tok;   QHostAddress b(tok);
-            GETOKEN();  se = tok;   QHostAddress e(tok);
-            if (b.isNull() || e.isNull() || b.protocol() != e.protocol()
-              || (b.protocol() == QAbstractSocket::IPv4Protocol && b.toIPv4Address() >= e.toIPv4Address())) {
-                DERR() << "Dynamic range : " << sb << " > " << se << endl;
-                QString m = QObject::trUtf8("Invalid dynamic range from %1 to %2, HostService : %3").arg(sb, se, cHostService::fullName(q, _hid, EX_IGNORE));
-                APPMEMO(q, m, RS_CRITICAL);
-                continue;
-            }
-            QString s = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
-            PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << s << endl;
-            ++r;
-        }
-    }
-    return -1;
 }
 
 /// @param __f File name, optional.
@@ -218,6 +93,26 @@ int cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const Q
     return getByDhcpdConf(proc, _hid);
 }
 
+int cArpTable::getByLocalDhcpdLeases(const QString& __f)
+{
+    //_DBGFN() << " @(" << __f << ")" << endl;
+    QFile dhcpdLease(__f.isEmpty() ? "/var/lib/dhcp/dhcpd.leases" : __f);
+    if (!dhcpdLease.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, dhcpdLease.fileName());
+    return getByDhcpdLease(dhcpdLease);
+}
+int cArpTable::getBySshDhcpdLeases(const QString& __h, const QString& __f, const QString& __ru)
+{
+    //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
+    QString     ru;
+    if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
+    QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
+    cmd += __f.isEmpty() ? "/var/lib/dhcp/dhcpd.leases" : __f;
+    QProcess    proc;
+    proc.start(cmd, QIODevice::ReadOnly);
+    if (false == proc.waitForStarted(  2000)
+     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
+    return getByDhcpdLease(proc);
+}
 
 QList<QHostAddress> cArpTable::operator[](const cMac& __a) const
 {
@@ -270,6 +165,185 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
         (*this) << arp;
     } while (arp.next(__q));
     return *this;
+}
+
+// protected
+
+int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
+{
+    DBGFN();
+    QTextStream str(&__f);
+    str.readLine(); // Drop header
+    QString line;
+    int r = 0;
+    while ((line = str.readLine()).isEmpty() == false) {
+        QStringList fl = line.split(QRegExp("\\s+"));
+        QHostAddress addr(fl[0]);
+        QString em;
+        if (addr.isNull()) {
+            em = QObject::trUtf8("Invalid IP address: %1 ARP #%2 line : '%3'.").arg(fl[0]).arg(r).arg(line);
+            DWAR() << em << endl;
+            if (pEMsg != nullptr) *pEMsg = em;
+            return -1;
+        }
+        cMac mac(fl[3]);
+        if (mac.isEmpty()) {
+            // PDEB(VVERBOSE) << "Dropp NULL MAC..." << endl;
+            continue;
+        }
+        if (!mac) {
+            em = QObject::trUtf8("Invalid MAC address: %1 ARP #%2 line : '%3'.").arg(fl[3]).arg(r).arg(line);
+            DWAR() << em << endl;
+            if (pEMsg != nullptr) *pEMsg = em;
+            return -1;
+        }
+        // PDEB(VVERBOSE) << line << " : " << fl[0] << "/" << fl[3] << " : " << addr.toString() << "/" << mac.toString() << endl;
+        PDEB(INFO) << "insert(" << addr.toString() << QChar(',') << mac.toString() << ")" << endl;
+        insert(addr, mac);
+        ++r;
+    }
+    if (pEMsg != nullptr) *pEMsg = QObject::trUtf8("Pcessed %1 line(s).").arg(r);
+    return r;
+}
+
+const QString& cArpTable::token(QIODevice& __f)
+{
+    static QString  tok;
+    char c;
+    tok.clear();
+    do {
+        if (!__f.getChar(&c)) return tok;
+        if (c == '#') { __f.readLine(); continue; } // Komment
+    } while (isspace(c));
+    tok = QChar(c);
+    if (strchr("()[];{}", c)) return tok;    // egy betűs tokenek
+    if (c == '"') {
+        tok.clear();
+        while (__f.getChar(&c) && c != '"') tok += QChar(c);
+        return tok;
+    }
+    do {
+        if (!__f.getChar(&c)) return tok;
+        if (c == '#') { __f.readLine(); return tok; }
+        if (isspace(c)) return tok;
+        if (strchr("()[];\"{}", c)) { __f.ungetChar(c); return tok; }
+        tok += QChar(c);
+    } while (true);
+}
+
+#define GETOKEN()   if ((tok = token(__f)).isEmpty()) break;
+#define CHKTOK(s)   if (tok != s) continue;
+
+/// Parse dhcp.comf file
+/// @param __f A fájl tartalma
+/// @param _hid host_service_id opcionális
+int cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
+{
+    //DBGFN();
+    static const QString _shost           = "host";
+    static const QString _shardware       = "hardware";
+    static const QString _sethernet       = "ethernet";
+    static const QString _sfixed_address  = "fixed-address";
+    static const QString _srange          = "range";
+    QString tok;
+    QVariant hId;
+    if (_hid != NULL_ID) hId = _hid;
+    int r = 0;
+    while (true) {
+        tok = token(__f);
+        if (tok.isEmpty()) return r;
+        if (tok == _shost) {
+            GETOKEN();  // név
+            GETOKEN();  CHKTOK("{");
+            GETOKEN();  CHKTOK(_shardware);
+            GETOKEN();  CHKTOK(_sethernet);
+
+            GETOKEN();  cMac    mac(tok);
+            if (mac.isEmpty()) continue;
+
+            GETOKEN();  CHKTOK(";");
+            GETOKEN();  CHKTOK(_sfixed_address);
+            GETOKEN();  QHostAddress addr(tok);
+            if (addr.isNull()) continue;
+
+            GETOKEN();  CHKTOK(";");
+            GETOKEN();  CHKTOK("}");
+
+            PDEB(VERBOSE) << "add : " << addr.toString() << " / " << mac.toString() << endl;
+
+            insert(addr, mac);
+            ++r;
+        }
+        else if (tok == _srange) {
+            QSqlQuery q = getQuery();
+            QString sb, se;
+            GETOKEN();  sb = tok;   QHostAddress b(tok);
+            GETOKEN();  se = tok;   QHostAddress e(tok);
+            if (b.isNull() || e.isNull() || b.protocol() != e.protocol()
+              || (b.protocol() == QAbstractSocket::IPv4Protocol && b.toIPv4Address() >= e.toIPv4Address())) {
+                DERR() << "Dynamic range : " << sb << " > " << se << endl;
+                QString m = QObject::trUtf8("Invalid dynamic range from %1 to %2, HostService : %3").arg(sb, se, cHostService::fullName(q, _hid, EX_IGNORE));
+                APPMEMO(q, m, RS_CRITICAL);
+                continue;
+            }
+            QString s = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
+            PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << s << endl;
+            ++r;
+        }
+    }
+    return -1;
+}
+
+int cArpTable::getByDhcpdLease(QIODevice& __f)
+{
+    int r = 0;
+    while (!__f.atEnd()) {
+        QString line = QString(__f.readLine()).trimmed();
+        if (line.isEmpty()) continue;
+        QRegExp firstLine("lease\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*\\{");   // Is Begin Block ?
+        QHostAddress addr;
+        cMac         mac;
+        if (!firstLine.exactMatch(line)) {
+            PDEB(WARNING) << "Dropped line : " << quotedString(line) << endl;
+            continue;
+        }
+        addr.setAddress(firstLine.cap(1));
+        if (addr.isNull()) {
+            PDEB(WARNING) << "Invalid IP address, line : "  << quotedString(line) << endl;
+            continue;
+        }
+        eTristate active = TS_NULL;
+        while (!__f.atEnd()) {
+            QString line = QString(__f.readLine()).trimmed();
+            if (line.isEmpty()) continue;
+            if (line == "}") break;                             // Is En Of Block
+            if (active == TS_FALSE) continue;                   // Inactive : Scan End Of Block
+            if (active == TS_TRUE && mac.isValid()) continue;   // Ready    : Scan End Of Block
+            QRegExp stateLine("binding\\s+state\\s+(\\w+)\\s*;");   // State ?
+            if (stateLine.exactMatch(line)) {
+                if (stateLine.cap(1) == QString("active")) {
+                    active = TS_TRUE;
+                }
+                else {
+                    active = TS_FALSE;
+                }
+            }
+            QRegExp macLine("hardware\\s+ethernet\\s+([a-fA-F\\d:]+)\\s*;");    // MAC ?
+            if (macLine.exactMatch(line)) {
+                mac.set(macLine.cap(1));
+                if (mac.isEmpty()) {
+                    PDEB(INFO) << "Invalid MAC address, line : "  << quotedString(line) << endl;
+                    active = TS_FALSE;
+                    continue;
+                }
+            }
+        }
+        if (active == TS_TRUE && mac.isValid()) {
+            insert(addr, mac);
+            ++r;
+        }
+    }
+    return r;
 }
 
 /**********************************************************************************************/

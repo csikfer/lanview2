@@ -274,7 +274,7 @@ int importParse(eImportParserStat _st)
 
 class cArpServerDef {
 public:
-    enum eType { UNKNOWN, SNMP, DHCPD_LOCAL, DHCPD_SSH,  PROC_LOCAL, PROC_SSH  };
+    enum eType { UNKNOWN, SNMP, DHCPD_CONF_LOCAL, DHCPD_CONF_SSH,  PROC_LOCAL, PROC_SSH, DHCPD_LEASES_LOCAL, DHCPD_LEASES_SSH  };
     /// A lekérdezés típusa
     enum eType      type;
     /// A szerver címe
@@ -522,10 +522,12 @@ void cArpServerDef::updateArpTable(QSqlQuery& q)
             at.getBySnmp(snmp);
             break;
         }
-    case DHCPD_LOCAL:   if (firstTime) at.getByLocalDhcpdConf(file);                          break;
-    case DHCPD_SSH:     if (firstTime) at.getBySshDhcpdConf(server.toString(), file);         break;
-    case PROC_LOCAL:    at.getByLocalProcFile(file);                                          break;
-    case PROC_SSH:      at.getBySshProcFile(server.toString(), file);                         break;
+    case DHCPD_CONF_LOCAL:  if (firstTime) at.getByLocalDhcpdConf(file);                          break;
+    case DHCPD_CONF_SSH:    if (firstTime) at.getBySshDhcpdConf(server.toString(), file);         break;
+    case DHCPD_LEASES_LOCAL:at.getByLocalDhcpdLeases(file);                                       break;
+    case DHCPD_LEASES_SSH:  at.getBySshDhcpdLeases(server.toString());                            break;
+    case PROC_LOCAL:        at.getByLocalProcFile(file);                                          break;
+    case PROC_SSH:          at.getBySshProcFile(server.toString(), file);                         break;
     default: EXCEPTION(EPROGFAIL);
     }
     firstTime = false;
@@ -1614,7 +1616,7 @@ static inline cEnumVal& actEnum()
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
-%token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T
+%token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T LEASES_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T TERM_T NEXT_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
@@ -2481,11 +2483,15 @@ arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
         | ADD_T ARP_T SERVER_T ips BY_T SSH_T PROC_T FILE_T str_z ';'
                 { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::PROC_SSH, sp2s($4), sp2s($9))); }
         | ADD_T ARP_T SERVER_T ips BY_T SSH_T DHCPD_T CONFIG_T str_z ';'
-                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_SSH, sp2s($4), sp2s($9))); }
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_CONF_SSH, sp2s($4), sp2s($9))); }
+        | ADD_T ARP_T SERVER_T ips BY_T SSH_T DHCPD_T LEASES_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LEASES_SSH, sp2s($4), sp2s($9))); }
         | ADD_T ARP_T LOCAL_T BY_T PROC_T FILE_T str_z ';'
                 { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::PROC_LOCAL, QString(), sp2s($7))); }
         | ADD_T ARP_T LOCAL_T BY_T DHCPD_T CONFIG_T str_z ';'
-                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LOCAL, QString(), sp2s($7))); }
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_CONF_LOCAL, QString(), sp2s($7))); }
+        | ADD_T ARP_T LOCAL_T BY_T DHCPD_T LEASES_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LEASES_LOCAL, QString(), sp2s($7))); }
         | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->updateArpTable(qq()); }
         | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; }
         ;
@@ -3164,7 +3170,7 @@ static const struct token {
     TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
     TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
     TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
-    TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
+    TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(LEASES)
     TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM) TOK(NEXT)
     TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
     TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)

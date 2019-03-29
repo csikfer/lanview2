@@ -54,6 +54,7 @@ void lv2ArpD::staticInit(QSqlQuery *pq)
     cDeviceArp::pPSSsh     = cService::service(*pq, _sSsh);
     cDeviceArp::pPSArpProc = cService::service(*pq, "arp.proc");
     cDeviceArp::pPSDhcpConf= cService::service(*pq, "dhcp.conf");
+    cDeviceArp::pPSDhcpLeases= cService::service(*pq, "dhcp.leases");
 }
 
 
@@ -93,9 +94,11 @@ const cService   *cDeviceArp::pPSSnmp      = nullptr;
 /// Protokol (SSH) azonosító objektum pointere
 /// ARP lekérdezés módja SSH-n keresztül egy távoli állomány felolvasása
 const cService   *cDeviceArp::pPSSsh       = nullptr;
-/// ARP lekérdezés módja a DHCP konfig állomány felolvasása
+/// ARP mode : read DHCPD config
 const cService   *cDeviceArp::pPSDhcpConf  = nullptr;
-/// ARP lekérdezés módja a proc fájlrendszer arp állományának a felolvasása
+/// ARP mode : read DHCPD config
+const cService   *cDeviceArp::pPSDhcpLeases  = nullptr;
+/// ARP mode : read /proc/arp file
 const cService   *cDeviceArp::pPSArpProc   = nullptr;
 
 
@@ -110,7 +113,7 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         snmpDev().open(__q, *pSnmp);
     }
     else {
-        if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
+        if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService() || *pPSDhcpLeases == primeService()) {
             pFileName = new QString();
             *pFileName = feature(_sFile);
         }
@@ -146,6 +149,16 @@ int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
         }
         else if (*pPSSsh == protoService()) {
             r = at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser, hostServiceId());
+        }
+        else EXCEPTION(EDATA);
+    }
+    else if (*pPSDhcpLeases == primeService()) {
+        setType = ST_QUERY;    // DHCP: dhcpd.leases fájl
+        if    (*pPSLocal == protoService()) {
+            r = at.getByLocalDhcpdLeases(*pFileName);
+        }
+        else if (*pPSSsh == protoService()) {
+            r = at.getBySshDhcpdLeases(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
         }
         else EXCEPTION(EDATA);
     }

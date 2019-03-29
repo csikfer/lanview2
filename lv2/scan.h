@@ -17,6 +17,8 @@ public:
     int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), QString *pEMsg = nullptr);
     int getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
     int getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
+    int getByLocalDhcpdLeases(const QString& __f = QString());
+    int getBySshDhcpdLeases(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
     cArpTable& getFromDb(QSqlQuery& __q);
     QList<QHostAddress> operator[](const cMac& __a) const;
     cMac operator[](const QHostAddress& __a) const { return QMap<QHostAddress, cMac>::operator [](__a); }
@@ -25,6 +27,7 @@ public:
 protected:
     int getByProcFile(QIODevice& __f, QString *pEMsg = nullptr);
     int getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
+    int getByDhcpdLease(QIODevice& __f);
     const QString& token(QIODevice& __f);
 };
 

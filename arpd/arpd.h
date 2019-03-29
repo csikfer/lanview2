@@ -43,6 +43,7 @@ public:
     static const cService   *pPSSnmp;
     static const cService   *pPSSsh;
     static const cService   *pPSDhcpConf;
+    static const cService   *pPSDhcpLeases;
     static const cService   *pPSArpProc;
 };
 
