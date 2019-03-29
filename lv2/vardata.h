@@ -113,20 +113,38 @@ protected:
     /// @param _p1 A feltétel első paramétere.
     /// @param _p2 A feltétel második paramétere.
     /// @param _inverse Az eredményt invertálni kell, ha igaz.
-    /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
-    /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható egész számmá.
-    eTristate checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse);
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható egész számmá akkor TS_NULL.
+    eTristate checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo = false);
     /// Egy valós típusú értékre a megadott feltétel alkalmazása
     /// @param val A viszgálandó érték
     /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
     /// @param _p1 A feltétel első paramétere.
     /// @param _p2 A feltétel második paramétere.
     /// @param _inverse Az eredményt invertálni kell, ha igaz.
-    /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
-    /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható számmá.
-    eTristate checkRealValue(double val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
-    eTristate checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható számmá akkor TS_NULL.
+    eTristate checkRealValue(double val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo = false);
+    /// Egy idő intervallum típusú értékre a megadott feltétel alkalmazása.
+    /// A feltétel paramétere megadható egész számként, ekkor az ezredmásodpercben értendő, vagy az időintervallumoknál elfogadott sztringként.
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható akkor TS_NULL.
+    eTristate checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo = false);
+    /// Egy enumerációs típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható egész számmá akkor TS_NULL.
     eTristate checkEnumValue(int ix, const QStringList &evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
+    /// String hozzáadása a state_msg mezőhöz.
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);
         if (!msg.isEmpty()) msg += "\n";

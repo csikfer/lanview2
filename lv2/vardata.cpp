@@ -613,7 +613,7 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
 int cServiceVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
 {
     int rs = RS_ON;
-    if (TS_FALSE == checkIntervalValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
+    if (TS_TRUE != checkIntervalValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
@@ -629,7 +629,7 @@ int cServiceVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
 
 int cServiceVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
 {
-    if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
+    if (TS_TRUE != checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
@@ -646,7 +646,7 @@ int cServiceVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
 
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
 {
-    if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
+    if (TS_TRUE != checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
@@ -698,9 +698,9 @@ int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
     return RS_UNREACHABLE;
 }
 
-eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse)
+eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo)
 {
-    if (ft == NULL_ID || ft == FT_NO) return TS_TRUE;
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
     bool ok1 = true, ok2 = true;
     qlonglong p1 = 0, p2 = 0;
     eTristate r = TS_NULL;
@@ -754,9 +754,9 @@ eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString 
     return _inverse ? inverse(r) : r;
 }
 
-eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse)
+eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo)
 {
-    if (ft == NULL_ID || ft == FT_NO) return TS_TRUE;
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
     bool ok1 = true, ok2 = true;
     eTristate r = TS_NULL;
     double p1 = 0.0;
@@ -799,9 +799,9 @@ eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_
     return _inverse ? inverse(r) : r;
 }
 
-eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse)
+eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo)
 {
-    if (ft == NULL_ID || ft == FT_NO) return TS_TRUE;
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
     bool ok1 = true, ok2 = true;
     qlonglong p1 = 0, p2 = 0;
     eTristate r = TS_NULL;
@@ -866,7 +866,7 @@ eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QSt
 
 eTristate cServiceVar::checkEnumValue(int ix, const QStringList& evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse)
 {
-    if (ft == NULL_ID || ft == FT_NO) return TS_TRUE;
+    if (ft == NULL_ID || ft == FT_NO) return TS_FALSE;
     bool ok1 = true, ok2 = true;
     int p1 = 0, p2 = 0;
     eTristate r = TS_NULL;
