@@ -700,7 +700,7 @@ int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 
 eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse)
 {
-    if (ft == NULL_ID) return TS_NULL;
+    if (ft == NULL_ID || ft == FT_NO) return TS_NULL;
     bool ok1 = true, ok2 = true;
     qlonglong p1 = 0, p2 = 0;
     eTristate r = TS_NULL;
@@ -756,7 +756,7 @@ eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString 
 
 eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse)
 {
-    if (ft == NULL_ID) return TS_NULL;
+    if (ft == NULL_ID || ft == FT_NO) return TS_NULL;
     bool ok1 = true, ok2 = true;
     eTristate r = TS_NULL;
     double p1 = 0.0;
