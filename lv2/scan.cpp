@@ -1883,6 +1883,9 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     *pi = row.cmac;
     pi->addIpAddress(row.addr, cDynAddrRange::isDynamic(q, row.addr), "By LLDP");
     rHost.setId(_sNodeType, enum2set(NT_HOST, NT_AP));
+    if (row.clocal.isEmpty() == false) {   // SN
+        rHost.setName(_sSerialNumber, row.clocal);
+    }
     cError *pe = rHost.tryInsert(q);
     if (pe != nullptr) {
         QString se = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.").arg(row.pmac, row.addr.toString(), rHost.getName());
@@ -1890,12 +1893,6 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         HEREINW(em, se + pe->longMsg(), RS_WARNING);
         pDelete(pe);
         return false;
-    }
-    if (row.clocal.isEmpty() == false) {   // SN
-        QString oldSn = execSqlTextFunction(q, "get_str_node_param", rHost.getId(), _sSerialNumber);
-        if (oldSn.isEmpty()) {
-            execSqlFunction(q, "set_str_node_param", rHost.getId(), row.clocal, _sSerialNumber);
-        }
     }
     expInfo(lPrefix + QObject::trUtf8("Inserted AP (HP) : %1").arg(rHost.getName()));
     rPort.clone(*pi);

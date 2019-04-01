@@ -1451,66 +1451,61 @@ static void setNodePlace(QStringList nodes, qlonglong place_id)
     }
 }
 
-static void setNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype, const QString& __val)
+static void setNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype, const QString& __name, const QVariant& __val)
 {
-    // Type
-    cParamType pt;
-    pt.setByName(qq(), __ptype);
-    eParamType tt = (eParamType)pt.getId(_sParamTypeType);
-    // Check/convert value
-    QString value = cParamType::paramToString(tt, __val);
+    const cParamType& pt = cParamType::paramType(__ptype);
     // node
-    cPatch n;   // Közös ős
+    cPatch n;   // Node közös ős
     n.setByName(qq(), __node);
-    n.ports.fetch(qq());        // a fetchPorts() nem jó, cak a patch portokat olvasná
+    n.ports.fetch(qq());        // a fetchPorts() nem jó, csak a patch portokat olvasná
+    cPortParam pp;
+    pp._toReadBack = RB_NO;
+    pp.setName(__name);
+    pp.setId(_sParamTypeId, pt.getId());
+    pp.set(_sParamValue, __val);
     foreach (QString pn, _ports) {
-        cNPort *pp= n.ports.get(pn);
-        execSqlFunction(qq(), "set_str_port_param", pp->getId(), value, __ptype);
+        cNPort *p= n.ports.get(pn);
+        pp.setId(_sPortId, p->getId());
+        pp.replace(qq());
     }
 }
 
-static void delNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype)
+static void delNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __name)
 {
-    // Type
-    qlonglong tid = cParamType().getIdByName(qq(), __ptype);
-    // node
-    cPatch n;   // Közös ős
+    cPatch n;   // Node közös ős
     n.setByName(qq(), __node);
     n.ports.fetch(qq());        // a fetchPorts() nem jó, cak a patch portokat olvasná
     cPortParam pp;
-    QBitArray  where = pp.mask(_sParamTypeId, _sPortId);
+    QBitArray  where = pp.mask(_sPortParamName, _sPortId);
+    pp.setName(__name);
     foreach (QString pn, _ports) {
-        pp.setId(_sParamTypeId, tid);
         pp.setId(_sPortId,      n.ports.get(pn)->getId());
         pp.remove(qq(), false, where, EX_ERROR);
     }
 }
 
-static void setNodeParam(const QStringList& __nodes, const QString& __ptype, const QString& __val)
+static void setNodeParam(const QStringList& __nodes, const QString& __ptype, const QString& __name, const QVariant& __val)
 {
-    // Type
-    cParamType pt;
-    pt.setByName(qq(), __ptype);
-    eParamType tt = (eParamType)pt.getId(_sParamTypeType);
-    // Check/convert value
-    QString value = cParamType::paramToString(tt, __val);
-    // nodes
+    const cParamType& pt = cParamType::paramType(__ptype);
+    cNodeParam np;
+    np._toReadBack = RB_NO;
+    np.setName(__name);
+    np.setId(_sParamTypeId, pt.getId());
+    np.set(_sParamValue, __val);
     foreach (QString nn, __nodes) {
         qlonglong nid = cPatch().getIdByName(qq(), nn);
-        execSqlFunction(qq(), "set_str_node_param", nid, value, __ptype);
+        np.setId(_sNodeId, nid);
+        np.replace(qq());
     }
 }
 
-static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
+static void delNodesParam(const QStringList& __nodes, const QString& __name)
 {
-    // Type
-    qlonglong tid = cParamType().getIdByName(qq(), __ptype);
-    // node
     cNodeParam np;
-    QBitArray  where = np.mask(_sParamTypeId, _sNodeId);
+    np.setName(__name);
+    QBitArray  where = np.mask(_sNodeParamName, _sNodeId);
     foreach (QString nn, __nodes) {
         qlonglong nid = cPatch().getIdByName(qq(), nn);
-        np.setId(_sParamTypeId, tid);
         np.setId(_sNodeId,      nid);
         np.remove(qq(), false, where, EX_ERROR);
     }
@@ -2923,9 +2918,10 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
         | SET_T NODE_T str SERIAL_T NUMBER_T str ';'    { cNode::setSeralNumber(qq(), sp2s($3), sp2s($6)); }
         | SET_T NODE_T str INVENTORY_T NUMBER_T str ';' { cNode::setInventoryNumber(qq(), sp2s($3), sp2s($6)); }
-        | SET_T NODE_T str PORTS_T strs PARAM_T str str ';'
-                                                { setNodePortsParam(sp2s($3), slp2sl($5), sp2s($7), sp2s($8)); }
-        | SET_T NODE_T strs PARAM_T str str ';' { setNodeParam(slp2sl($3), sp2s($5), sp2s($6)); }
+        | SET_T NODE_T str PORTS_T strs PARAM_T str str '=' value ';'
+                                                { setNodePortsParam(sp2s($3), slp2sl($5), sp2s($7), sp2s($8), vp2v($10)); }
+        | SET_T NODE_T strs PARAM_T str str '=' value ';'
+                                                { setNodeParam(slp2sl($3), sp2s($5), sp2s($6), vp2v($8)); }
         | SET_T PLACE_T place_id NODE_T strs ';'{ setNodePlace(slp2sl($5), $3); }
         | SET_T PLACE_T place_id ';'            { globalPlaceId = $3; }
         | CLEAR_T PLACE_T ';'                   { globalPlaceId = NULL_ID; }
