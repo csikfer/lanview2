@@ -126,6 +126,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- - - - - - - - - - - - - - -
+
+UPDATE port_params SET param_type_id = param_type_name2id('boolean')
+    WHERE param_type_id = param_type_name2id('query_mac_tab') OR param_type_id = param_type_name2id('link_is_invisible_for_LLDP')
+       OR param_type_id = param_type_name2id('suspected_uplink');
+
+UPDATE node_params SET param_type_id = param_type_name2id('date')
+    WHERE param_type_id = param_type_name2id('battery_changed');
+
+DELETE FROM param_types
+    WHERE param_type_name = 'search_domain'
+       OR param_type_name = 'query_mac_tab' OR param_type_name = 'link_is_invisible_for_LLDP'
+       OR param_type_name = 'suspected_uplink'
+       OR param_type_name = 'battery_changed';
+
 -- ----------------------------
 
 SELECT set_db_version(1, 22);
