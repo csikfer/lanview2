@@ -106,9 +106,6 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
 {
     _DBGFN() << hostService.fullName(__q, EX_IGNORE) << endl;
     QString msg;
-    static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
-    static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);
-    static const qlonglong linkIsInvisibleForLLDPTypeId = cParamType().getIdByName(__q, _sLinkIsInvisibleForLLDP);
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lesz
     if (protoServiceId() == NIL_SERVICE_ID && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
@@ -137,9 +134,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         np.fetchParams(__q);
         // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
-        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
+        eTristate queryFlag = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
-        eTristate suspFlag  = np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE);
+        eTristate suspFlag  = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
         if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
             PDEB(INFO) << trUtf8("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName(), tristate2string(suspFlag), tristate2string(queryFlag)) << endl;
             continue;
@@ -211,7 +208,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 }
                 else {                                                                  // No information about LLDP
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
-                    eTristate f = host().ports[ix]->getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE);
+                    eTristate f = host().ports[ix]->getBoolParam(_sLinkIsInvisibleForLLDP, EX_IGNORE);
                     if (f == TS_TRUE) continue;
                     msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());

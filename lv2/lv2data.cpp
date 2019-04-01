@@ -1419,24 +1419,10 @@ int cNPort::delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, 
     return  n;
 }
 
-
-QString  cNPort::getTextParam(qlonglong _typeId, eEx __ex) const
+eTristate cNPort::getBoolParam(const QString& name, eEx __ex) const
 {
-    const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == nullptr) return QString();
-    return ppp->getName(_sParamValue);
-}
-
-qlonglong cNPort::getIntParam(qlonglong _typeId, eEx __ex) const
-{
-    const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
-    if (ppp == nullptr) return NULL_ID;
-    return ppp->getId(_sParamValue);
-}
-
-eTristate cNPort::getBoolParam(qlonglong _typeId, eEx __ex) const
-{
-    return str2tristate(getTextParam(_typeId, __ex), __ex);
+    const cPortParam *ppp = params.get(name, __ex);
+    return ppp == nullptr ? TS_NULL : str2tristate(ppp->getName(_sParamValue), __ex);
 }
 
 bool portLessThanByIndex(const cNPort * pp1, const cNPort * pp2)

@@ -893,9 +893,7 @@ public:
     /// Port paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cPortParam, cNPort>   params;
     ///
-    QString  getTextParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
-    qlonglong getIntParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
-    eTristate getBoolParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+    eTristate getBoolParam(const QString &name, eEx __ex = EX_ERROR) const;
 protected:
     ///
     static qlonglong _tableoid_nports;
