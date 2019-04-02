@@ -343,7 +343,10 @@ cFeatures& cFeatures::merge(const cFeatures& _o, const QString& _cKey)
             val = _o.value(key);
         }
         if (val == "!") remove(key);
-        else            insert(key, val);
+        else {
+            if (val.count() == val.count(QChar('!'))) val.chop(1);
+            insert(key, val);
+        }
     }
     return *this;
 }

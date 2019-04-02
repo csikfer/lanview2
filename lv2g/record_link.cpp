@@ -24,9 +24,9 @@ void cRecordLink::init()
     pTableView = nullptr;
     // A read-only flag eket újra ki kell értékelni! (most mind true)
     isReadOnly = pTableShape->getBool(_sTableShapeType, TS_READ_ONLY);
-    isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
-    isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
-    isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
+    isNoDelete = isReadOnly || linkType == LT_LOGICAL  || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
+    isNoInsert = isReadOnly || linkType != LT_PHISICAL || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
+    isReadOnly = isReadOnly || linkType != LT_PHISICAL || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
 
     // Az alapértelmezett gombok:
     buttons << DBT_SPACER;
@@ -168,7 +168,9 @@ void cRecordLink::edit(bool _similar, eEx __ex)
 void cRecordLink::modifyByIndex(const QModelIndex & index)
 {
     (void)index;
-    edit(true);
+    if (linkType == LT_PHISICAL) {
+        edit(true);
+    }
 }
 
 
