@@ -1558,8 +1558,11 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
     static const QString _sHostservice = "hostservice";
     static const QString _sHostService = "host_service";
     if (pOk != nullptr) *pOk = true;
-    QString v = feature(name, EX_IGNORE);
-    if (v.isEmpty() == false) return v;
+    QString v;
+    v = feature(name, EX_IGNORE);                   // feature parameter ?
+    if (!v.isEmpty()) return v;
+    v = cSysParam::getTextSysParam(q, name, _sNul); // System parameter ?
+    if (!v.isEmpty()) return v;
     QStringList sl = name.split(QChar('.'));
     if (sl.size() > 1) {
         if (0 == sl.first().compare("parent", Qt::CaseInsensitive)) {
@@ -1590,6 +1593,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         return QString();
     }
     else {
+        if (0 == name.compare(_sHomeDir,      Qt::CaseInsensitive)) return lanView::getInstance()->homeDir;
         if (0 == name.compare(_sHostService,  Qt::CaseInsensitive)) return hostService.getName();
         if (0 == name.compare(_sHostservice,  Qt::CaseInsensitive)) return hostService.getName();
         if (0 == name.compare(_sService,      Qt::CaseInsensitive)) return service()->getName();
@@ -1623,6 +1627,9 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         if (0 == name.compare(_sHostServiceId,Qt::CaseInsensitive))return QString::number(hostServiceId());
         if (0 == name.compare(_sNodeId,       Qt::CaseInsensitive))return QString::number(nodeId());
         if (0 == name.compare(_sServiceId,    Qt::CaseInsensitive))return QString::number(serviceId());
+
+        v = getEnvVar(name.toStdString().c_str());      // Environment variable ?
+        if (!v.isEmpty()) return v;
 
         if (pOk == nullptr) EXCEPTION(EDATA, 1, name);
         *pOk = false;

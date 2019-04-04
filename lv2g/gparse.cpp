@@ -305,7 +305,7 @@ void cParseWidget::parseQPClicked()
             }
         }
     } CATCHS(pe);
-    pUi->textEditSrc->setPlainText(qp.getText());
+    pUi->textEditSrc->setPlainText(qp.getCommands());
     if (pe != nullptr) {
         cErrorMessageBox::messageBox(pe, this);
         pDelete(pe);

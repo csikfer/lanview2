@@ -1061,7 +1061,7 @@ cQueryParser::cQueryParser() : cRecord()
     pListRExp = nullptr;
     pInspector = nullptr;
     pVarMap    = nullptr;
-    pText      = nullptr;
+    pCommands      = nullptr;
     pParserThread = nullptr;
     slave = false;
     _set(cQueryParser::descr());
@@ -1123,8 +1123,8 @@ int cQueryParser::prep(cError *& pe)
         return pParserThread->startParser(pe);
     }
     else if (pVarMap != nullptr) {
-        pDelete(pText);
-        pText = new QString(cmd);
+        pDelete(pCommands);
+        pCommands = new QString(cmd);
     }
     else EXCEPTION(EPROGFAIL);
     return REASON_OK;
@@ -1242,22 +1242,23 @@ int cQueryParser::delByServiceName(QSqlQuery &q, const QString &__n, bool __pat)
 QString cQueryParser::getParValue(const QString& name, const QStringList& args)
 {
     bool ok;
-    int i = name.toUInt(&ok);
+    int i = int(name.toUInt(&ok));
+    QString r;
     if (ok) {
         if (i >= args.size()) EXCEPTION(EDATA, i, args.join(_sCommaSp));
-        return args.at(i);
+        r = args.at(i);
     }
     else {
         if (pInspector != nullptr) {
             QSqlQuery q = getQuery();
-            return pInspector->getParValue(q, name);
+            r = pInspector->getParValue(q, name);
         }
         else if (pVarMap != nullptr) {
-            return (*pVarMap)[name];
+            r = (*pVarMap)[name];
         }
         else EXCEPTION(EPROGFAIL);
-        return _sNul;
     }
+    return r;
 }
 
 QString cQueryParser::substitutions(const QString& _cmd, const QStringList& args)
@@ -1298,8 +1299,8 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
             return pParserThread->push(cmd, pe);
         }
     }
-    else if (pVarMap != nullptr && pText != nullptr) {
-        *pText += cmd + "\n";
+    else if (pVarMap != nullptr && pCommands != nullptr) {
+        *pCommands += cmd + "\n";
         return REASON_OK;
     }
     else EXCEPTION(EPROGFAIL);

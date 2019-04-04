@@ -342,8 +342,16 @@ class cImportParseThread;
 class LV2SHARED_EXPORT cQueryParser : public cRecord {
     CRECORD(cQueryParser);
 public:
+    /// Egy rekord beszúrása
+    /// @param q
+    /// @param _sid A szolgáltatás azonosító (ID)
+    /// @param _ty Típus neve ('prep', 'parse', 'post')
+    /// @param _cs Nagybetű érzékenység (true : nagybetű érzékeny)
+    /// @param _re A reguláris kifejezés
+    /// @param _cmd Parancs
+    /// @param _seq Sorrend vagy prioritás
     static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, bool _cs, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
-    void setInspector(cInspector *pInsp);       /// Inspector mod, közvetlen végrehajtás
+    void setInspector(cInspector *pInsp);       ///< Inspector mod, közvetlen végrehajtás
     /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
     /// A konténer a behelyettesítésekhez egy változó listát ad, mivel ilyenkor pInspector értéke NULL, így az azon keresztüli behelyettesítések nem elérhetőek.
     void setMaps(tStringMap *pVM);
@@ -356,9 +364,9 @@ public:
     /// @param force Akkor is beolvassa a rekordokat, ha a konténerek léteznek, és _sid nem változott.
     int load(QSqlQuery& q, qlonglong _sid = NULL_ID, bool force = true, bool thread = true);
     int delByServiceName(QSqlQuery &q, const QString &__n, bool __pat);
-    /// Közvetett végrehajtás esetén a végrehalytandó parancsoka szövegét adja vissza.
+    /// Közvetett végrehajtás esetén a végrehalytandó parancsok szövegét adja vissza.
     /// Közvetett végrehajtás esetén pText nem lehet NULL, és pParserThread -nek az értéke NULL.
-    QString getText() { CHKNULL(pText); return *pText; }
+    QString getCommands() { CHKNULL(pCommands); return *pCommands; }
     cQueryParser *newChild(cInspector * _isp);
 protected:
     QString getParValue(const QString& name, const QStringList &args);
@@ -372,7 +380,7 @@ protected:
     cInspector          *pInspector;        ///< Tulajdonos pointere, ha egy szálban fut az interpreter
     cImportParseThread  *pParserThread;     ///< Az interpreter szál pointere, vagy NULL
     tStringMap          *pVarMap;           ///< Változó lista, ha az interpreter nem egy szálban fut, és csak közvetlen végrehajtás van.
-    QString             *pText;             ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerólnek, egyébként null.
+    QString             *pCommands;             ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerólnek, egyébként null.
 };
 
 #endif // SRVDATA
