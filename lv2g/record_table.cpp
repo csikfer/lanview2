@@ -1952,7 +1952,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     isReadOnly =  ENUM2SET(TS_READ_ONLY) & shapeType;
     shapeType &= ~ENUM2SET(TS_READ_ONLY);
     isReadOnly = isReadOnly || false == pRecDescr->isUpdatable();
-    isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
+    isNoModify = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
 
@@ -2486,8 +2486,11 @@ void cRecordTable::init()
     if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {
         buttons << DBT_SPACER << DBT_RECEIPT;
     }
-    if (isReadOnly == false) {
-        buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
+    if (!isReadOnly && !(isNoDelete && isNoInsert && isNoModify)) {
+        buttons << DBT_BREAK << DBT_SPACER;
+        if (!isNoDelete) buttons << DBT_DELETE;
+        if (!isNoInsert) buttons << DBT_INSERT;
+        if (!isNoModify) buttons << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
 

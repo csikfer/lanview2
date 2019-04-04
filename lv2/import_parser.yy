@@ -2979,7 +2979,7 @@ qpari   : cases str str str_z ';'   { cQueryParser::_insert(qq(), ivars[_sServic
         | PREP_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPrep, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         | POST_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPost, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         ;
-cases   : CASE_T bool_               { $$ = $2; }
+cases   : CASE_T bool_              { $$ = $2; }
         |                           { $$ = false; }
         ;
 replaces: iprange

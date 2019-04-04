@@ -17,7 +17,9 @@ GUI "indalarm" {
         TITLE "Események","events";
         SHAPE "alarms_tree" {
             PARAM "alarms";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
+            FEATURES  {
+                "shape.table_shape_type" = "!simple,tree";
+            }
             TITLE "Riasztások (fa)",@;
         }
         OWN "olalarm" {
@@ -89,46 +91,90 @@ GUI "lv2gui" {
             TITLE "Hálózati elemek",@;
             SHAPE "nodes" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.model_name.setOfValue:shape.model_number.setOfValue:shape.os_name.setOfValue:shape.os_version.setOfValue:";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue";
+                    "shape.model_number.setofvalue";
+                    "shape.os_name.setofvalue";
+                    "shape.os_version.setofvalue";
+                }
                 TITLE "Hálózati végpontok",@;
                 TOOL TIP "Hálózati végpontok táblája, alapértelmezett szűrés nélkül.";
             }
             SHAPE "switchs" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='switch' = ANY (node_type):shape.model_name.setOfValue='switch' = ANY (node_type):shape.model_number.setOfValue='switch' = ANY (node_type):shape.os_name.setOfValue='switch' = ANY (node_type):shape.os_version.setOfValue='switch' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'switch' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'switch' = ANY (node_type)";
+                    "shape.os_name.setofvalue" = "'switch' = ANY (node_type)";
+                    "shape.os_version.setofvalue" = "'switch' = ANY (node_type)";
+                    "shape.refine" = "'switch' = ANY (node_type)";
+                }
                 TITLE "Switch-ek",@;
                 TOOL TIP "Switch-ek táblája.";
             }
             SHAPE "servers" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='server' = ANY (node_type):shape.model_name.setOfValue='server' = ANY (node_type):shape.model_number.setOfValue='server' = ANY (node_type):shape.os_name.setOfValue='server' = ANY (node_type):shape.os_varsion.setOfValue='server' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'server' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'server' = ANY (node_type)";
+                    "shape.os_name.setofvalue" = "'server' = ANY (node_type)";
+                    "shape.os_varsion.setofvalue" = "'server' = ANY (node_type)";
+                    "shape.refine" = "'server' = ANY (node_type)";
+                }
                 TITLE "Szerverek",@;
                 TOOL TIP "Szerverek listája.";
             }
             SHAPE "workstations" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='workstation' = ANY (node_type):shape.model_name.setOfValue='workstation' = ANY (node_type):shape.model_number.setOfValue='workstation' = ANY (node_type):shape.os_name.setOfValue='workstation' = ANY (node_type):shape.os_version.setOfValue='workstation' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'workstation' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'workstation' = ANY (node_type)";
+                    "shape.os_name.setofvalue" = "'workstation' = ANY (node_type)";
+                    "shape.os_version.setofvalue" = "'workstation' = ANY (node_type)";
+                    "shape.refine" = "'workstation' = ANY (node_type)";
+                }
                 TITLE "Munkaállomások táblázat",@;
             }
             SHAPE "printers" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='printer' = ANY (node_type):shape.model_name.setOfValue='printer' = ANY (node_type):shape.model_number.setOfValue='printer' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'printer' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'printer' = ANY (node_type)";
+                    "shape.refine" = "'printer' = ANY (node_type)";
+                }
                 TITLE "Nyomtatók",@;
             }
             SHAPE "aps" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='ap' = ANY (node_type):shape.model_name.setOfValue='ap' = ANY (node_type):shape.model_number.setOfValue='ap' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'ap' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'ap' = ANY (node_type)";
+                    "shape.refine" = "'ap' = ANY (node_type)";
+                }
                 TITLE "AP-k"," AP-k";
             }
             SHAPE "displays" {
                 PARAM "snmpdevices";
-                FEATURES ":multi:shape.refine='display' = ANY (node_type):shape.model_name.setOfValue='display' = ANY (node_type):shape.model_number.setOfValue='display' = ANY (node_type):";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'display' = ANY (node_type)";
+                    "shape.model_number.setofvalue" = "'display' = ANY (node_type)";
+                    "shape.refine" = "'display' = ANY (node_type)";
+                }
                 TITLE "Monitorok, kijelzők",@;
             }
         }
         SHAPE "places_t" {
             PARAM "places";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
+            FEATURES  {
+                "shape.table_shape_type" = "!simple,tree";
+            }
             TITLE "Helyek, helyiségek (fa)",@;
         }
         SHAPE "places" {
@@ -145,7 +191,9 @@ GUI "lv2gui" {
         }
         SHAPE "all_service_var" {
             PARAM "service_vars";
-            FEATURES ":shape.host_service_id.table_hide=false:";
+            FEATURES  {
+                "shape.host_service_id.table_hide" = "false";
+            }
             TITLE "Szolgáltatás változók teljes lista",@;
         }
         SHAPE "query_parsers" {
@@ -153,11 +201,17 @@ GUI "lv2gui" {
         }
         SHAPE "host_services_t" {
             PARAM "host_services";
-            FEATURES ":multi:shape.table_shape_type=!simple,tree:";
+            FEATURES  {
+                "multi";
+                "shape.table_shape_type" = "!simple,tree";
+            }
             TITLE "Szolgáltatás példányok (fa)",@;
         }
         SHAPE "host_services" {
-            FEATURES ":multi:shape.node_id.table_hide=false:";
+            FEATURES  {
+                "multi";
+                "shape.node_id.table_hide" = "false";
+            }
             TITLE "Szolgáltatás példányok (tábla)",@;
         }
         SHAPE "subnets" {
@@ -180,7 +234,9 @@ GUI "lv2gui" {
         }
         SHAPE "alarms_tree" {
             PARAM "alarms";
-            FEATURES ":shape.table_shape_type=!simple,tree:";
+            FEATURES  {
+                "shape.table_shape_type" = "!simple,tree";
+            }
             TITLE "Riasztások (fa)",@;
         }
         SHAPE "app_errs" {
@@ -249,6 +305,25 @@ GUI "lv2gui" {
         SHAPE "iftypes" {
             TITLE "Port típusok",@;
         }
+        SHAPE "all_node_params" {
+            PARAM "node_params";
+            FEATURES  {
+                "shape.node_id.dialog_hide" = "!!!";
+                "shape.node_id.table_hide" = "!!!";
+            }
+            TITLE "Node paraméterek","Node paraméter";
+            TOOL TIP "A node paraméterek teljes listája.";
+        }
+        SHAPE "all_port_params" {
+            PARAM "port_params";
+            FEATURES  {
+                "shape.port_id.dialog_hide" = "!!!";
+                "shape.port_id.table_hide" = "!!!";
+                "shape.port_id.view.func" = "port_id2full_name";
+            }
+            TITLE "Port paraméterek",@;
+            TOOL TIP "A port paraméterek teljes listája.";
+        }
     }
     MENU "internals" {
         TITLE "Belső vezérlő adatok","internals";
@@ -289,7 +364,11 @@ GUI "lv2gui" {
         }
         SHAPE "menus_tab" {
             PARAM "menu_items";
-            FEATURES ":shape.table_shape_type=!tree:";
+            FEATURES  {
+                "shape.button.copy";
+                "shape.table_shape_type" = "!tree";
+                "shape.upper_menu_item_id.table_hide" = "false";
+            }
             TITLE "GUI menük",@;
         }
         MENU "languages" {
@@ -1110,7 +1189,10 @@ TABLE SHAPE "alarm_messages" "Figyelmeztető üzenetek szövege" {
 TABLE SHAPE "alarms" "Riasztások (tábla)" {
     TITLE "Riasztási események","Riasztási esemény","alarms";
     TYPE "owner";
-    FEATURES ":button.copy:bg_color=last_status,noalarm,true:";
+    FEATURES  {
+        "bg_color" = "last_status,noalarm,true";
+        "button.copy";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "indalarm";
     EDIT RIGHTS "system";
@@ -1272,7 +1354,12 @@ TABLE SHAPE "app_errs" "Applikáció hiba napló" {
 TABLE SHAPE "app_memos" "Applikáció napló" {
     TITLE "app_memos",@,@;
     TYPE "simple";
-    FEATURES ":dialog.height=13:bg_color=importance:report:";
+    FEATURES  {
+        "bg_color" = "importance";
+        "button.copy";
+        "dialog.height" = "13";
+        "report";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "system";
@@ -1347,6 +1434,7 @@ TABLE SHAPE "app_memos" "Applikáció napló" {
 TABLE SHAPE "arp_logs" "ARP lekérdezés napló." {
     TITLE "arp_logs",@,@;
     TYPE "simple", "read_only";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "system";
@@ -1396,22 +1484,22 @@ TABLE SHAPE "arp_logs" "ARP lekérdezés napló." {
     FIELD "date_of" ORD desc, no, asc;
     FIELD ORD SEQUENCE "date_of";
 }
-TABLE "arps_shape" SHAPE "arps" "ARP tábla" {
-    TITLE "arps",@,@;
-    TYPE "simple", "read_only";
+TABLE SHAPE "arps" "ARP tábla" {
+    TITLE "MAC - IP cím párok","MAC - IP cím pár";
+    TYPE "simple";
     FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
-    EDIT RIGHTS "operator";
-    DELETE RIGHTS "operator";
-    INSERT RIGHTS "operator";
+    EDIT RIGHTS "system";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "system";
     ADD FIELD "ipaddress" "ipaddress" {
         TITLE "IP","IP cím";
-        FLAG "read_only", "HTML";
+        FLAG "read_only", "HTML", "raw";
     }
     ADD FIELD "hwaddress" "hwaddress" {
         TITLE "MAC","MAC cím";
-        FLAG "read_only";
+        FLAG "read_only", "raw";
     }
     ADD FIELD "set_type" "set_type" {
         TITLE "set_type",@;
@@ -1433,21 +1521,19 @@ TABLE "arps_shape" SHAPE "arps" "ARP tábla" {
         TITLE "note",@;
         FLAG "read_only";
     }
-    ADD FIELD "port_by_ipa" "port_by_ipa" {
-        TITLE "By IP","Port ai IP alapján";
+    ADD FIELD "ipaddress" AS "port_by_ip" {
+        TITLE "By IP","Port(ok) az IP alapján";
+        FEATURES ":view.func=ip2full_port_name:";
         FLAG "read_only";
     }
-    ADD FIELD "node_by_hwa" "node_by_hwa" {
-        TITLE "host By MAC","Host a MAC alapján";
-        FLAG "read_only";
-    }
-    ADD FIELD "ports_by_hwa" "ports_by_hwa" {
-        TITLE "Port(s) By MAC","Portok a MAC alapján";
+    ADD FIELD "hwaddress" AS "port_by_hwa" {
+        TITLE "By MAC","Port(ok) a MAC alapján";
+        FEATURES ":view.func=mac2full_port_name:";
         FLAG "read_only";
     }
     FIELD "ipaddress" ORD asc, no, desc;
-    FIELD "hwaddress", "first_time", "last_time" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "ipaddress", "hwaddress", "first_time", "last_time";
+    FIELD "hwaddress", "first_time", "last_time", "port_by_ip", "port_by_hwa" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "ipaddress", "hwaddress", "first_time", "last_time", "port_by_ip", "port_by_hwa";
 }
 TABLE SHAPE "db_errs" "Adatbázis hiba napló" {
     TITLE "db_errs",@,@;
@@ -1628,6 +1714,7 @@ TABLE SHAPE "fkey_types" "Távoli kulcs típusok" {
 TABLE SHAPE "groups" "felhasználói csoportok" {
     TITLE "Felhasználói csoportok","Feljasználói csoport","groups","Csoportok tagjai","Coportoknak nem tagjai";
     TYPE "group";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "admin";
@@ -1660,7 +1747,10 @@ TABLE SHAPE "groups" "felhasználói csoportok" {
 TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
     TITLE "Hálózati interfészek és portok","Hálózati interfész vagy passzív port","Aktív port vagy interfész";
     TYPE "tree", "owner", "child";
-    FEATURES ":button.copy:bg_color=port_stat:";
+    FEATURES  {
+        "bg_color" = "port_stat";
+        "button.copy";
+    }
     INHERIT TYPE "listed_rev";
     INHERIT TABLE NAMES "nports";
     VIEW RIGHTS "viewer";
@@ -1753,7 +1843,12 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
 TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     TITLE "host_service_logs",@,@;
     TYPE "simple", "read_only";
-    FEATURES ":button.copy:snmpdevices.owner=node_id:bg_color=new_state:alarms.owner=host_service_id,@:";
+    FEATURES  {
+        "alarms.owner" = "host_service_id,@";
+        "bg_color" = "new_state";
+        "button.copy";
+        "snmpdevices.owner" = "node_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "system";
@@ -1830,7 +1925,11 @@ TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
 TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (táblázat)" {
     TITLE "host_services",@,@;
     TYPE "owner";
-    FEATURES ":button.copy:snmpdevices.owner=node_id:bg_color=host_service_state,disabled:";
+    FEATURES  {
+        "bg_color" = "host_service_state,disabled";
+        "button.copy";
+        "snmpdevices.owner" = "node_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -1866,7 +1965,10 @@ TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (tábláza
     ADD FIELD "noalarm_flag" {
         TITLE "*Al.tiltáa","noalarm_flag";
         TOOL TIP "Riasztás engedélyezése, vagy teljes vagy időpont szerinti tiltása.";
-        FEATURES ":batch_edit_fields=noalarm_from,noalarm_to:color:";
+        FEATURES  {
+            "batch_edit_fields" = "noalarm_from,noalarm_to";
+            "color";
+        }
         FLAG "batch_edit", "bg_color", "fg_color", "image";
     }
     ADD FIELD "host_service_state" {
@@ -1909,7 +2011,10 @@ TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (tábláza
     }
     ADD FIELD "superior_host_service_id" {
         TITLE "Sup.","Felsőbb szintű példány";
-        FEATURES ":refine=service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id:filter:";
+        FEATURES  {
+            "filter";
+            "refine" = "service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id";
+        }
         FLAG "batch_edit";
     }
     ADD FIELD "check_cmd" {
@@ -1998,6 +2103,7 @@ TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (tábláza
 TABLE SHAPE "iftypes" "Port típusok" {
     TITLE "iftypes",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "system";
@@ -2146,7 +2252,9 @@ TABLE SHAPE "languages" {
     }
     ADD FIELD "flag_image" {
         TITLE "Zászló név","A zászló képének a neve";
-        FEATURES ":refine='flag' = ANY  (usabilityes):";
+        FEATURES  {
+            "refine" = "'flag' = ANY  (usabilityes)";
+        }
     }
     ADD FIELD "flag_image" AS "flag_image_image" "A zászló képe" {
         TITLE "Zászló";
@@ -2222,6 +2330,7 @@ TABLE SHAPE "localizations" {
 TABLE "log_links_shape" SHAPE "log_links" "Logikai linkek" {
     TITLE "Logikai linkek";
     TYPE "link", "read_only";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -2252,6 +2361,7 @@ TABLE "log_links_shape" SHAPE "log_links" "Logikai linkek" {
 TABLE "mactab_shape" SHAPE "mactab" "Port címtábla" {
     TITLE "mactab",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "admin";
@@ -2321,6 +2431,7 @@ TABLE "mactab_shape" SHAPE "mactab" "Port címtábla" {
 TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     TITLE "mactab_logs",@,@;
     TYPE "simple", "read_only";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -2335,7 +2446,9 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     }
     ADD FIELD "hwaddress" AS "hwaddress_node" {
         TITLE "MAC node","Node név a MAC alapján";
-        FEATURES ":view.expr=mac2node_name(?\\:\\:macaddr):";
+        FEATURES  {
+            "view.expr" = "mac2node_name(?::macaddr)";
+        }
     }
     ADD FIELD "reason" "reason" {
         TITLE "reason",@;
@@ -2572,43 +2685,54 @@ TABLE SHAPE "menu_items" "Menu elemek" {
         TITLE "menu_item_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
     }
-    FIELD "app_name", "item_sequence_number" ORD asc, no, desc;
+    FIELD "app_name", "upper_menu_item_id", "item_sequence_number" ORD asc, no, desc;
     FIELD "menu_item_name", "menu_item_type", "menu_param" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "app_name", "item_sequence_number", "menu_item_name", "menu_param", "menu_item_type";
+    FIELD ORD SEQUENCE "app_name", "upper_menu_item_id", "item_sequence_number", "menu_item_name", "menu_param", "menu_item_type";
 }
 TABLE SHAPE "node_params" "Eszköz paraméterek" {
     TITLE "Eszköz paraméterek","Az eszközhöz rendelt paraméter","node_params";
-    TYPE "child";
+    TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
-    ADD FIELD "node_param_id" "node_param_id" {
-        TITLE "node_param_id",@;
+    ADD FIELD "node_param_id" {
+        TITLE "ID","Numerikus egyedi azonosító";
         FLAG "table_hide", "dialog_hide", "read_only";
     }
-    ADD FIELD "param_type_id" "param_type_id" {
-        TITLE "Típus",@;
+    ADD FIELD "node_param_name" {
+        TITLE "Név","Paraméter neve";
     }
-    ADD FIELD "node_id" "node_id" {
-        TITLE "node_id",@;
+    ADD FIELD "node_id" {
+        TITLE "Node","Hálózati eszköz";
         FLAG "table_hide", "read_only";
     }
-    ADD FIELD "param_value" "param_value" {
+    ADD FIELD "param_type_id" {
+        TITLE "Típus",@;
+    }
+    ADD FIELD "param_value" {
         TITLE "Érték",@;
     }
-    ADD FIELD "flag" "flag" {
+    ADD FIELD "node_param_note" {
+        TITLE "Megj.","Megjegyzés";
+    }
+    ADD FIELD "flag" {
         TITLE "flag",@;
         FLAG "table_hide", "dialog_hide";
     }
-    FIELD "param_type_id", "param_value" ORD asc, no, desc;
-    FIELD ORD SEQUENCE "param_type_id", "param_value";
+    FIELD "node_param_name", "node_id", "param_type_id" ORD asc, no, desc;
+    FIELD "param_value" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "node_param_name", "node_id", "param_type_id", "param_value";
 }
 TABLE "node_port_vlans" SHAPE "node_port_vlan" {
     TITLE "VLAN kiosztás","VLAN / port";
     TYPE "child", "read_only";
-    FEATURES ":snmpdevices.owner=node_id:bg_color=vlan_stat:";
+    FEATURES  {
+        "bg_color" = "vlan_stat";
+        "snmpdevices.owner" = "node_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -2667,21 +2791,30 @@ TABLE SHAPE "nodes" "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     }
     ADD FIELD "node_type" {
         TITLE "Típus","Az eszköz típusa";
-        FEATURES ":column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:";
+        FEATURES  {
+            "autoset" =  {
+                "host" = "host,node";
+            }
+            "collision" =  {
+                "host" = "node";
+                "node" = "host";
+            }
+            "column" = "2";
+            "default" = "host";
+            "hide" = "patch,snmp";
+        }
         FLAG "batch_edit", "HTML";
         DEFAULT VALUE "{node}";
         EDIT RIGHTS "admin";
     }
     ADD FIELD "os_name" {
         TITLE NULL,"Operációs rendszer vagy firmware neve";
-        FEATURES ":column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:";
         FLAG "batch_edit", "HTML";
         DEFAULT VALUE "{node}";
         EDIT RIGHTS "admin";
     }
     ADD FIELD "os_version" {
         TITLE NULL,"Operációs rendszer vagy firmware verziója";
-        FEATURES ":column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:";
         FLAG "batch_edit", "HTML";
         DEFAULT VALUE "{node}";
         EDIT RIGHTS "admin";
@@ -2764,6 +2897,7 @@ TABLE SHAPE "nports" "Passzív portok (Csak dialógus!)" {
 TABLE SHAPE "param_types" "Paraméter típus leírók" {
     TITLE "param_types",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "admin";
@@ -2775,15 +2909,19 @@ TABLE SHAPE "param_types" "Paraméter típus leírók" {
     }
     ADD FIELD "param_type_name" "param_type_name" {
         TITLE "Paraméter típus név",@;
+        FLAG "HTML";
     }
     ADD FIELD "param_type_note" "param_type_note" {
         TITLE "Megjegyzés",@;
+        FLAG "HTML";
     }
     ADD FIELD "param_type_type" "param_type_type" {
         TITLE "Adat típus",@;
+        FLAG "HTML";
     }
     ADD FIELD "param_type_dim" "param_type_dim" {
         TITLE "Dimanzió",@;
+        FLAG "HTML";
     }
     FIELD "param_type_id", "param_type_name", "param_type_note", "param_type_type", "param_type_dim" ORD asc, no, desc;
     FIELD ORD SEQUENCE "param_type_id", "param_type_name", "param_type_note", "param_type_type", "param_type_dim";
@@ -2791,7 +2929,12 @@ TABLE SHAPE "param_types" "Paraméter típus leírók" {
 TABLE SHAPE "patchs" "Pach panelek és fali csatlakozók" {
     TITLE "Pach panelek és fali csatlakozók","Pach panel vagy fali csatlakozó","patchs";
     TYPE "owner";
-    FEATURES ":button.copy:insert=cPatchDialog:modify=cPatchDialog:report:";
+    FEATURES  {
+        "button.copy";
+        "insert" = "cPatchDialog";
+        "modify" = "cPatchDialog";
+        "report";
+    }
     INHERIT TYPE "only";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -2953,6 +3096,7 @@ TABLE "patchs" SHAPE "phsnodes" "Hálózati elem (aktív, passzív és csatlakoz
 TABLE SHAPE "place_groups" "Hely csoportok, kategóriák és zónák" {
     TITLE "Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna","place_groups","Csoport tagja(i)","Coportoknak nem tagja(i)";
     TYPE "group";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -2981,7 +3125,11 @@ TABLE SHAPE "place_groups" "Hely csoportok, kategóriák és zónák" {
 TABLE SHAPE "places" "Helyiségek (tábla)" {
     TITLE "Helyek, helyiségek","Hely, helyiség","places","Csoportoknak tagja","Csoportoknak nem tagja";
     TYPE "member";
-    FEATURES ":map=get_parent_image:button.copy:report:";
+    FEATURES  {
+        "button.copy";
+        "map" = "get_parent_image";
+        "report";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3066,7 +3214,10 @@ TABLE "places" SHAPE "places_topol" "Helyek fa és a helységben lévő objektum
 TABLE SHAPE "port_in_mactab" {
     TITLE "port_in_mactab",@,@;
     TYPE "simple", "read_only";
-    FEATURES ":hostports.owner=port_id:snmpdevices.owner=node_id:";
+    FEATURES  {
+        "hostports.owner" = "port_id";
+        "snmpdevices.owner" = "node_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3117,37 +3268,48 @@ TABLE SHAPE "port_in_mactab" {
 }
 TABLE SHAPE "port_params" "Port paraméterek" {
     TITLE "Port paraméterek","A porthoz rendelt paraméter","port_params";
-    TYPE "child";
+    TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
-    ADD FIELD "port_param_id" "port_param_id" {
-        TITLE "port_param_id",@;
+    ADD FIELD "port_param_id" {
+        TITLE "ID","Numerikus egyedi azonosító";
         FLAG "table_hide", "dialog_hide", "read_only";
     }
-    ADD FIELD "param_type_id" "param_type_id" {
-        TITLE "Típus",@;
+    ADD FIELD "port_param_name" {
+        TITLE "Név","Paraméter neve";
     }
-    ADD FIELD "port_id" "port_id" {
-        TITLE "port_id",@;
+    ADD FIELD "port_id" {
+        TITLE "Port",@;
         FLAG "table_hide", "read_only";
     }
-    ADD FIELD "param_value" "param_value" {
+    ADD FIELD "param_type_id" {
+        TITLE "Típus",@;
+    }
+    ADD FIELD "param_value" {
         TITLE "Érték",@;
     }
-    ADD FIELD "flag" "flag" {
+    ADD FIELD "port_param_note" {
+        TITLE "Megj.","Megjegyzés";
+    }
+    ADD FIELD "flag" {
         TITLE "flag",@;
         FLAG "table_hide", "dialog_hide";
     }
-    FIELD "param_type_id", "param_value" ORD asc, no, desc;
-    FIELD ORD SEQUENCE "param_type_id", "param_value";
+    FIELD "port_param_name", "param_type_id", "param_value" ORD asc, no, desc;
+    FIELD "port_id" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "port_param_name", "port_id", "param_type_id", "param_value";
 }
 TABLE SHAPE "portvars" {
     TITLE "portvars",@,@;
     TYPE "child";
-    FEATURES ":vlan_list_by_host.owner=vlan_id:bg_color=var_state,disabled:";
+    FEATURES  {
+        "bg_color" = "var_state,disabled";
+        "vlan_list_by_host.owner" = "vlan_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3223,7 +3385,10 @@ TABLE SHAPE "port_vlans" {
     INSERT RIGHTS "operator";
     ADD FIELD "port_id" {
         TITLE "Port",@;
-        FEATURES ":view.func=port_id2full_name:filter=port.node:";
+        FEATURES  {
+            "filter" = "port.node";
+            "view.func" = "port_id2full_name";
+        }
     }
     ADD FIELD "vlan_id" AS "vlan_id_raw" {
         TITLE "ID","VLAN (802.11q) ID";
@@ -3314,6 +3479,7 @@ TABLE SHAPE "pports" "Pach panel és fali csatlakozó portok" {
 TABLE SHAPE "query_parsers" "Lekérdezés értelmezések" {
     TITLE "query_parsers",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
     EDIT RIGHTS "system";
@@ -3350,6 +3516,7 @@ TABLE SHAPE "query_parsers" "Lekérdezés értelmezések" {
 TABLE SHAPE "selects" "Minta tár" {
     TITLE "Minta tár","Minta","selects";
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
     EDIT RIGHTS "system";
@@ -3399,23 +3566,24 @@ TABLE SHAPE "services" {
     }
     ADD FIELD "service_name" {
         TITLE "Név","Szolgáltatás neve";
+        FLAG "HTML";
     }
     ADD FIELD "service_type_id" {
         TITLE "Típus","Típus azonosító";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "port" {
         TITLE "Port","Port ";
     }
     ADD FIELD "superior_service_mask" {
         TITLE "Sup.minta","Superior szerviz név minta (regexp)";
+        FLAG "batch_edit";
     }
     ADD FIELD "check_cmd" {
         TITLE "Parancs","Ellenőrző parancs";
     }
     ADD FIELD "features" {
         TITLE "Modosítók","Egyéb modosítók";
-        FLAG "huge";
     }
     ADD FIELD "disabled" {
         TITLE NULL,"Minden példánya letiltva";
@@ -3425,27 +3593,27 @@ TABLE SHAPE "services" {
     ADD FIELD "max_check_attempts" {
         TITLE "Próba","Maximális próbálkozások száma";
         FEATURES ":spinbox=1,10:";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "normal_check_interval" {
         TITLE "Norm.Int.","Normál időintervallum";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "retry_check_interval" {
         TITLE "Újra","Újra próbálkozás időintervalluma";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "timeperiod_id" {
         TITLE "Időszak","Időszak azonosító";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "flapping_interval" {
         TITLE "Leng.","Lengés ellenőrzés időintervallum";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "flapping_max_change" {
         TITLE "Lengés szám","Maximális lengések száma";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "deleted" {
         TITLE "Törölve",@;
@@ -3454,15 +3622,15 @@ TABLE SHAPE "services" {
     }
     ADD FIELD "offline_group_ids" {
         TITLE "Off-line","Riasztandók csoportjai (Off-line)";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "online_group_ids" {
         TITLE "on-line","Riasztandók csoportjai (on-line)";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "heartbeat_time" {
         TITLE "Ritmus","Szívritmus";
-        FLAG "batch_edit";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "service_note" {
         TITLE "Megjegyzés",@;
@@ -3474,6 +3642,7 @@ TABLE SHAPE "services" {
 TABLE SHAPE "service_types" "Szolgáltatás típusok" {
     TITLE "service_types",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "admin";
@@ -3493,7 +3662,11 @@ TABLE SHAPE "service_types" "Szolgáltatás típusok" {
 TABLE SHAPE "service_vars" {
     TITLE "service_vars",@,@;
     TYPE "simple";
-    FEATURES ":copy:report:bg_color=var_state,disabled:";
+    FEATURES  {
+        "bg_color" = "var_state,disabled";
+        "copy";
+        "report";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3514,6 +3687,7 @@ TABLE SHAPE "service_vars" {
     ADD FIELD "service_var_value" {
         TITLE "Érték","A változó aktuális értéke";
         FLAG "HTML";
+        EDIT RIGHTS "admin";
     }
     ADD FIELD "service_var_type_id" "service_var_type_id" {
         TITLE "service_var_type_id",@;
@@ -3522,10 +3696,12 @@ TABLE SHAPE "service_vars" {
     ADD FIELD "var_state" {
         TITLE "Állapot",@;
         FLAG "HTML";
+        EDIT RIGHTS "admin";
     }
     ADD FIELD "raw_value" {
         TITLE "eredeti","Az eredeti beolvasott érték";
-        FLAG "read_only", "HTML";
+        FLAG "HTML";
+        EDIT RIGHTS "admin";
     }
     ADD FIELD "last_time" {
         TITLE "Frissítva","Utolsó frissítés időpontja";
@@ -3572,6 +3748,7 @@ TABLE SHAPE "service_vars" {
 TABLE SHAPE "service_var_types" {
     TITLE "Szervíz változó típusok","service_var_types",@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3595,6 +3772,7 @@ TABLE SHAPE "service_var_types" {
     }
     ADD FIELD "service_var_type" {
         TITLE "Altípus",@;
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "plausibility_type" {
         TITLE "Hihető","Hihetőség vizsgálat típusa";
@@ -3645,7 +3823,11 @@ TABLE SHAPE "service_var_types" {
 TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     TITLE "Aktív és passzív hálózati elemek","Aktív vagy passzív hálózati elem","Aktív SNMP eszköz";
     TYPE "owner";
-    FEATURES ":button.copy:report:bg_color=node_stat:";
+    FEATURES  {
+        "bg_color" = "node_stat";
+        "button.copy";
+        "report";
+    }
     INHERIT TYPE "listed_rev";
     INHERIT TABLE NAMES "nodes";
     VIEW RIGHTS "viewer";
@@ -3679,7 +3861,9 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     }
     ADD FIELD "place_id" AS "place_groups" {
         TITLE "Hely cs.","place_groups";
-        FEATURES ":view.expr=array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND place_group_id  > 1),', '):";
+        FEATURES  {
+            "view.expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND place_group_id  > 1),', ')";
+        }
         FLAG "dialog_hide", "read_only", "HTML";
     }
     ADD FIELD "serial_number" {
@@ -3758,7 +3942,10 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
 TABLE SHAPE "subnets" "Alhálózatok" {
     TITLE "subnets",@,@;
     TYPE "owner";
-    FEATURES ":vlans.owner=vlan_id:button.copy:";
+    FEATURES  {
+        "button.copy";
+        "vlans.owner" = "vlan_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3800,6 +3987,7 @@ TABLE SHAPE "subnets" "Alhálózatok" {
 TABLE SHAPE "sys_params" "Rendszer paraméterek" {
     TITLE "sys_params",@,@;
     TYPE "simple";
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
     EDIT RIGHTS "system";
@@ -4320,7 +4508,11 @@ TABLE SHAPE "users" "felhasználók" {
 TABLE SHAPE "vlan_list_by_host" {
     TITLE "VLAN/Host","VLAN - Host";
     TYPE "child", "read_only";
-    FEATURES ":snmpdevices.owner=node_id:id=vlan_id:vlans.owner=vlan_id:";
+    FEATURES  {
+        "id" = "vlan_id";
+        "snmpdevices.owner" = "node_id";
+        "vlans.owner" = "vlan_id";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";

@@ -105,6 +105,7 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
     mSqlErrType   = QSqlError::NoError;
     mDataLine     = -1;
     mDataPos      = -1;
+    slBackTrace   = cBackTrace();
     circulation();
 }
 
@@ -127,6 +128,7 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
     mSqlErrType   = QSqlError::NoError;
     mDataLine     = -1;
     mDataPos      = -1;
+    slBackTrace   = cBackTrace();
     circulation();
 }
 
@@ -170,7 +172,6 @@ void cError::exception(void)
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
-    slBackTrace = cBackTrace();
     throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");

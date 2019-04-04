@@ -1200,12 +1200,12 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
 /*        if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
             return munin(q, runMsg);
-        }*/
-        else {
+        }
+        else { */
             int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
             if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
             return parse(ec, *pProcess);
-        }
+/*        } */
     }
     else {
         PDEB(VVERBOSE) << " * NOOP *" << endl;
