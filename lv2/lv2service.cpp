@@ -1594,6 +1594,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
     }
     else {
         if (0 == name.compare(_sHomeDir,      Qt::CaseInsensitive)) return lanView::getInstance()->homeDir;
+        if (0 == name.compare(_sBinDir,       Qt::CaseInsensitive)) return lanView::getInstance()->binPath;
         if (0 == name.compare(_sHostService,  Qt::CaseInsensitive)) return hostService.getName();
         if (0 == name.compare(_sHostservice,  Qt::CaseInsensitive)) return hostService.getName();
         if (0 == name.compare(_sService,      Qt::CaseInsensitive)) return service()->getName();
