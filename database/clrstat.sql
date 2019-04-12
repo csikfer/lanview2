@@ -3,7 +3,7 @@ ALTER SEQUENCE user_events_user_event_id_seq RESTART WITH 1;
 DELETE FROM alarms;
 ALTER SEQUENCE alarms_alarm_id_seq RESTART WITH 1;
 DELETE FROM app_errs;
-ALTER SEQUENCE app_ers_applog_id_seq RESTART WITH 1;
+ALTER SEQUENCE app_errs_applog_id_seq RESTART WITH 1;
 DELETE FROM app_memos;
 ALTER SEQUENCE app_memos_app_memo_id_seq RESTART WITH 1;
 DELETE FROM arp_logs;

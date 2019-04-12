@@ -14,6 +14,7 @@
 #include "object_dialog.h"
 #include "snmpdevquery.h"
 #include "translator.h"
+#include "changeswitch.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
@@ -73,6 +74,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         SETINTWIN("deducepatch",INT_DEDUCEPATCH,cDeducePatch)
         SETINTWIN("snmpdquery", INT_SNMPDQUERY, cSnmpDevQuery)
         SETINTWIN("translator", INT_TRANSLATOR, cTranslator)
+        SETINTWIN("changeswitch",INT_CHANGESWITCH,cChangeSwitch)
 #undef SETINTWIN
 #undef _SETINTWIN
         else {
@@ -156,21 +158,22 @@ void cMenuAction::initRecordTable()
 
 A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
 A jelenleg implementállt lehetőségek:
-| Típus név  | Konstans név   | Objektum név    | Funkció                     |
-|------------|----------------|-----------------|-----------------------------|
-| setup      | INT_SETUP      | cSetupWidget    | Alapbeállítások megadása    |
-| gsetup     | INT_GSETUP     | cGSetupWidget   | Megjelenítési beállítások   |
-| parser     | INT_PARSER     | cParseWidget    | A parser hvása              |
-| export     | INT_EXPORT     | cExportsWidget  | Táblák (objektumok) exportja|
-| olalarm    | INT_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
-| errcodes   | INT_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
-| hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
-| findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
-| workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
-| deducepatch| INT_DEDUCEPATCH| cDeducePatch    | Fali kábel fefedező         |
-| snmpdquery | INT_SNMPDQUERY | cSnmpDevQuery   | SNMP insert/refresh         |
-| enumedit   | INT_ENUMEDIT   | cEnumValsEdit   | Enumerációk                 |
-| translator | INT_TRANSLATOR | cTranslator     | Nyelvi szövegek, fordítás   |
+| Típus név   | Konstans név    | Objektum név    | Funkció                      |
+|-------------|-----------------|-----------------|------------------------------|
+| setup       | INT_SETUP       | cSetupWidget    | Alapbeállítások megadása     |
+| gsetup      | INT_GSETUP      | cGSetupWidget   | Megjelenítési beállítások    |
+| parser      | INT_PARSER      | cParseWidget    | A parser hvása               |
+| export      | INT_EXPORT      | cExportsWidget  | Táblák (objektumok) exportja |
+| olalarm     | INT_OLALARM     | cOnlineAlarm    | OnLine riasztások            |
+| errcodes    | INT_ERRCODES    | cErrcodesWidget | API hibakódok listája        |
+| hsop        | INT_HSOP        | cHSOperate      | host-services állapot man.   |
+| findmac     | INT_FINDMAC     | cFindByMac      | MAC keresés                  |
+| workstation | INT_WORKSTATION | cWorkstation    | Munkaállomás új/modosít      |
+| deducepatch | INT_DEDUCEPATCH | cDeducePatch    | Fali kábel fefedező          |
+| snmpdquery  | INT_SNMPDQUERY  | cSnmpDevQuery   | SNMP insert/refresh          |
+| enumedit    | INT_ENUMEDIT    | cEnumValsEdit   | Enumerációk                  |
+| translator  | INT_TRANSLATOR  | cTranslator     | Nyelvi szövegek, fordítás    |
+| changeswitch| INT_CHANGESWITCH| cChangeSwitch   | Switch csere, linkek másolása|
  */
 void cMenuAction::initInt()
 {
@@ -189,10 +192,10 @@ void cMenuAction::initInt()
     CREATEINTWIN(INT_SNMPDQUERY, cSnmpDevQuery);
     CREATEINTWIN(INT_ENUMEDIT,   cEnumValsEdit);
     CREATEINTWIN(INT_TRANSLATOR, cTranslator);
+    CREATEINTWIN(INT_CHANGESWITCH, cChangeSwitch);
 #undef CREATEINTWIN
     default:
         EXCEPTION(EPROGFAIL);
-        break;
     }
     connect(pIntSubObj,      SIGNAL(closeIt()),   this, SLOT(removeIt()));
     connect(pIntSubObj->pSubWindow,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));

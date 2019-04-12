@@ -164,7 +164,7 @@ int cPhsLink::unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare
     }
     QString where = w1 + " OR " + w2;
     if (__s != ES_NC) {
-        where = "port_shared = '" + portShare((int)__s) + "' AND (" + where + ")";
+        where = "port_shared = '" + portShare(int(__s)) + "' AND (" + where + ")";
     }
     QString sql = "DELETE FROM " + descr().fullTableNameQ() + " WHERE " + where;
     execSql(q, sql);

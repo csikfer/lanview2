@@ -220,11 +220,11 @@ class LV2SHARED_EXPORT cMac {
     qlonglong toLongLong() const            { return val; }
     /// A val adattag értékével tér vissza, mely a MAC bináris ábrázolása 64 bitre kiegészyítve 0 bitekkel.
     /// De a val értékét nem ellenörzi.
-    qlonglong toULongLong() const           { return (qulonglong)val; }
+    qulonglong toULongLong() const          { return qulonglong(val); }
     /// Ha a val adattag értéke 0, akkor true-val tér vissza
     bool isEmpty() const                    { return val == 0LL; }
     ///
-    static bool isValid(qlonglong v)        { return (v != 0) && ((v   & ~mask) == 0LL); }
+    static bool isValid(qlonglong v)        { return (v > 0) && (v < mask); }
     /// Ha a MAC 64 bites ábrázolásában (val adattag) a fölösleges bitek bármelyike nem nulla,
     /// vagy a szám értéke nulla, akkor false-val tér vissza, egyébként true-val.
     bool isValid() const                    { return isValid(val); }
@@ -260,7 +260,7 @@ class LV2SHARED_EXPORT cMac {
     bool  operator<(const cMac& __mac) const  { return val < __mac.val; }
 };
 
-inline static uint qHash(const cMac& mac) { return (uint)qHash(mac.toULongLong()); }
+inline static uint qHash(const cMac& mac) { return uint(qHash(mac.toULongLong())); }
 /* ============================================================================================= */
 /*!
   Két IPV6 címet bitenként össze és-sel. és az eredménnyel tér vissza
@@ -491,10 +491,6 @@ public:
     Egy constans referenciát ad vissza az objektum maszk adatára.
      */
     const int&          mask() const { return second; }
-    /*!
-    Egy constans referenciát ad vissza az objektum adat tartalmára.
-     */
-        operator const QPair<QHostAddress, int>&() const { return *((QPair<QHostAddress, int> *)this); }
     /*!
       Az IPV4 címtartomány maszk értékéhez tartozó 32 bites maszkkal tér vissza.
      */

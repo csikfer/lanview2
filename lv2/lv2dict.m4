@@ -358,6 +358,7 @@ STRDEF(Patchs,"patchs")
  dnl place_id
 STRDEF(Nodes,"nodes")
  STRDEF(NodeStat, "node_stat")
+  STRDEF(Notifswitch, "notifswitch") dnl enum type name
   STRDEF(On, "on")
   STRDEF(Recovered, "recovered")
   dnl STRDEF(Warning, "warning")
@@ -1024,6 +1025,7 @@ STRDEF(Selects, "selects")
   dnl similar regexp regexpi oui
  STRDEF(Choice, "choice")
   __SDEF(ProCurve)
+  __SDEF(OfficeConnect)
   __SDEF(ProCurveWeb)
   __SDEF(3Com)
   __SDEF(Cisco)

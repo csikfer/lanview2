@@ -1813,6 +1813,8 @@ public:
     /// Hasonló a remove metódushoz, de a hiba esetén a hiba objektum pointerével tér vissza, ha volt kizárás.
     /// Ha nem volt hiba akkor a visszaadott érték a NULL pointer.
     cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), eTristate __tr = TS_NULL);
+    ///
+    int removeById(QSqlQuery& __q, qlonglong __id);
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
     virtual bool checkData();

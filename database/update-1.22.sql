@@ -344,3 +344,15 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Javítás !!!! 2019.04.11. !!!!
+ALTER TYPE errtype ADD VALUE 'Info';
+COMMENT ON TYPE errtype IS
+'Hiba sújossága
+Fatal   Fatal error
+Error   Error
+Warning Warning
+Ok      Ok (Info)
+Info    Info only (Not used by errors table)
+';
+

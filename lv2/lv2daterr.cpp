@@ -37,7 +37,7 @@ DEFAULTCRECDEF(cDbErr, _sDbErrs)
 /// @param func A hibával kapcsolatbahozható metódus neve
 /// @return Ha létrejött egy új rekord, akkor 0, ha csak egy régebbi azonos rekord lett modsítva, akkor a "reapeat" mező új értéke
 /// @exception Ha a művelet sikertelen.
-void cDbErr::insertNew(QSqlQuery& q, const QString& type, const QString& msg, int code, const QString& table, const QString& func)
+void cDbErr::insertNew(QSqlQuery& q, const QString& type, const QString& msg, qlonglong code, const QString& table, const QString& func)
 {
     cDbErr  r;
     r.setId(_sErrorId, cDbErrType().getIdByName(q, type));
@@ -49,7 +49,7 @@ void cDbErr::insertNew(QSqlQuery& q, const QString& type, const QString& msg, in
     r.insert(q, EX_ERROR);  // Ha csak a reapeat mezőt inkrementálja, akkor nincs rekord visszaolvasás!
 }
 
-void cDbErr::insertNew(const QString& type, const QString& msg, int code, const QString& table, const QString& func)
+void cDbErr::insertNew(const QString& type, const QString& msg, qlonglong code, const QString& table, const QString& func)
 {
     QSqlQuery *pq = newQuery();
     insertNew(*pq, type, msg, code,  table, func);

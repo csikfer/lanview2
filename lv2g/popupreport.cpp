@@ -285,7 +285,7 @@ QFile *cFileDialog::trgFile(QString &fileName, const QString& filter, QWidget *p
 
 bool cFileDialog::textToFile(QString &fileName, const QString &text, QWidget * par)
 {
-    QFile *pFile = trgFile(fileName, sInpFileFilter, par);
+    QFile *pFile = trgFile(fileName, sHtmFileFilter, par);
     if (pFile == nullptr) return false;
     QByteArray b = text.toUtf8();
     bool r = b.size() == pFile->write(b);

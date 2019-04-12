@@ -1705,15 +1705,18 @@ int cInterface::fetchByMac(QSqlQuery& q, const cMac& a)
     return completion(q);
 }
 
-bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
+int cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
-    clear();
+    int r = 0;
     QString sql = "SELECT interfaces.* FROM interfaces JOIN ip_addresses USING(port_id) WHERE address = ?";
     if (execSql(q, sql, a.toString())) {
+        r = q.size();
         set(q);
-        return true;
     }
-    return false;
+    else {
+        clear();
+    }
+    return r;
 }
 
 int cInterface::fetchVlans(QSqlQuery& q)

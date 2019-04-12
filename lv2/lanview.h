@@ -493,5 +493,17 @@ private slots:
     void destroy_mq(QObject *p);
 };
 
+enum eErrorType {
+    ET_FATAL, ET_ERROR, ET_WARNING, ET_OK, ET_INFO
+};
+
+EXT_ const QString sET_;
+EXT_ const QString sET_Fatal;
+EXT_ const QString sET_Error;
+EXT_ const QString sET_Warning;
+EXT_ const QString sET_Ok;
+EXT_ const QString sET_Info;
+EXT_ int errtype(const QString& s, eEx __ex);
+EXT_ const QString& errtype(int e, eEx __ex);
 
 #endif // LANVIEW_H

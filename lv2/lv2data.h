@@ -1004,8 +1004,8 @@ public:
     /// Beolvas egy objektumot/rekordot a IP cím alapján
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett cím
-    /// @return true, ha beolvasott egy rekordot, ill. false, ha nem atálta a megadott címet.
-    bool fetchByIp(QSqlQuery& q, const QHostAddress& a);
+    /// @return A találatok száma, ha nulla, akkor az objektum üres lessz, egyébként az első rekorddal lessz feltöltve.
+    int fetchByIp(QSqlQuery& q, const QHostAddress& a);
     /// Feltölti a vlans konténert
     int fetchVlans(QSqlQuery& q);
     /// Feltölti at addresses konténert.

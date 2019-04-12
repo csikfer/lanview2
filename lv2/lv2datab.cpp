@@ -3972,6 +3972,40 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eT
     return pe;
 }
 
+int cRecord::removeById(QSqlQuery& __q, qlonglong __id)
+{
+    QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(tableName(), idName());
+    switch (_toReadBack) {
+    case RB_DEFAULT:    // ?
+    case RB_YES:
+        sql += " RETURNING *";
+        break;
+    default:
+        break;
+    }
+    if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
+    __q.bindValue(0, __id);
+    _EXECSQL(__q);
+    int r = __q.numRowsAffected();
+    if (r != 1) return false;
+
+    switch (_toReadBack) {
+    case RB_NO_ONCE:
+        _toReadBack = _toReadBackDefault;
+        break;
+    case RB_DEFAULT:    // ?
+    case RB_YES:
+        set(__q);
+        break;
+    case RB_ID:
+        setId(__id);
+        break;
+    default:
+        break;
+    }
+    return r;
+}
+
 bool cRecord::checkData()
 {
     int i;

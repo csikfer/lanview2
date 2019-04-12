@@ -271,6 +271,8 @@ lanView::lanView()
                 dbOpenPost(*pQuery);
                 // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
                 cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
+                // Tábla használja, de nics objektumként ledefiniálva
+                cColEnumType::checkEnum(*pQuery, "errtype", errtype, errtype);
                 setSelfObjects();
             }
         }
@@ -852,7 +854,7 @@ bool lanView::isAuthorized(enum ePrivilegeLevel pl)
 
 bool lanView::isAuthorized(const QString& pl)
 {
-    return isAuthorized((enum ePrivilegeLevel)privilegeLevel(pl));
+    return isAuthorized(ePrivilegeLevel(privilegeLevel(pl)));
 }
 
 
@@ -956,7 +958,7 @@ QString scramble(const QString& _s)
     qsrand(32572345U);
     foreach (QChar c, _s) {
         ushort u = c.unicode();
-        u ^= (ushort)qrand();
+        u ^= ushort(qrand());
         r += QChar(u);
     }
     return r;
@@ -1125,7 +1127,7 @@ cExportQueue *cExportQueue::init(bool fromInterpret)
 
 void cExportQueue::destroy_mq(QObject *p)
 {
-    QString tn = threadName((QThread *)p);
+    QString tn = threadName(static_cast<QThread *>(p));
     QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
     if (it == intMap.end()) {
         // Ettöl a sortol megkergül a fordító :-O
@@ -1135,4 +1137,40 @@ void cExportQueue::destroy_mq(QObject *p)
         delete it.value();
         intMap.remove(tn);
     }
+}
+
+const QString sET_       = "errtype";
+const QString sET_Fatal  = "Fatal";
+const QString sET_Error  = "Error";
+const QString sET_Warning= "Warning";
+const QString sET_Ok     = "Ok";
+const QString sET_Info   = "Info";
+
+/// Hiba típus konverziók
+/// A string konstansok nem kerültek a szótárba,
+/// mert nagy kezdőbetűvel lettek létrehozva (még a project elején)
+/// A konvenció szerinti modosításuk túl sok PLSQL függvényt érintene,
+/// így viszont ütköznek a nevek más nem nagy betüs szavakkal a szótárban.
+int errtype(const QString& s, eEx __ex)
+{
+    if (0 == s.compare(sET_Fatal,   Qt::CaseInsensitive)) return ET_FATAL;
+    if (0 == s.compare(sET_Error,   Qt::CaseInsensitive)) return ET_ERROR;
+    if (0 == s.compare(sET_Warning, Qt::CaseInsensitive)) return ET_WARNING;
+    if (0 == s.compare(sET_Ok,      Qt::CaseInsensitive)) return ET_OK;
+    if (0 == s.compare(sET_Info,    Qt::CaseInsensitive)) return ET_INFO;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, s);
+    return ENUM_INVALID;
+}
+
+const QString& errtype(int e, eEx __ex)
+{
+    switch (e) {
+    case ET_FATAL:      return sET_Fatal;
+    case ET_ERROR:      return sET_Error;
+    case ET_WARNING:    return sET_Warning;
+    case ET_OK:         return sET_Ok;
+    case ET_INFO:       return sET_Info;
+    default:    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    }
+    return _sNul;
 }

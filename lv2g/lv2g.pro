@@ -45,7 +45,8 @@ SOURCES += \
     popupreport.cpp \
     gexports.cpp \
     pickers.cpp \
-    translator.cpp
+    translator.cpp \
+    changeswitch.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -83,7 +84,8 @@ HEADERS +=\
     popupreport.h \
     gexports.h \
     pickers.h \
-    translator.h
+    translator.h \
+    changeswitch.h
 
 FORMS += \
     column_filter.ui \
@@ -115,7 +117,8 @@ FORMS += \
     rplace_ed.ui \
     port_ed.ui \
     datetimedialog.ui \
-    translator.ui
+    translator.ui \
+    changeswitch.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

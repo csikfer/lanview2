@@ -88,7 +88,7 @@ void cHSORow::staticInit()
         QSqlQuery q = getQuery();
         pPlaceType   = cColEnumType::fetchOrGet(q, "placetype");
         pNoAlarmType = cColEnumType::fetchOrGet(q, "noalarmtype");
-        pNotifSwitch = cColEnumType::fetchOrGet(q, "notifswitch");
+        pNotifSwitch = cColEnumType::fetchOrGet(q, _sNotifswitch);
     }
 }
 
