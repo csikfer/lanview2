@@ -268,12 +268,18 @@ lanView::lanView()
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED ? EX_ERROR : EX_IGNORE))) {
                 pQuery = newQuery();
-                dbOpenPost(*pQuery);
-                // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
-                cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
-                // Tábla használja, de nics objektumként ledefiniálva
-                cColEnumType::checkEnum(*pQuery, "errtype", errtype, errtype);
-                setSelfObjects();
+                try {
+                    dbOpenPost(*pQuery);
+                    setSelfObjects();
+                    // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
+                    cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
+                    // Tábla használja, de nics objektumként ledefiniálva
+                    cColEnumType::checkEnum(*pQuery, "errtype", errtype, errtype);
+                } CATCHS(nonFatal);
+                if (nonFatal != nullptr) {
+                    pDelete(pQuery);
+                    pDb->close();
+                }
             }
         }
         // Language

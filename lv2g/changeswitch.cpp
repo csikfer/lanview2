@@ -1,50 +1,117 @@
 #include "changeswitch.h"
 
+cCheckBoxListLayout::cCheckBoxListLayout(QBoxLayout::Direction dir, QWidget *par)
+    : QBoxLayout(dir, par)
+{
+    setMargin(0);
+    setSpacing(0);
+    _endStretch = false;
+}
+
+void cCheckBoxListLayout::clear()
+{
+    dropEndStrech();
+    while (true) {
+        int n = count();
+        if (n == 0) break;
+        delete takeAt(n -1);
+    }
+}
+
+QCheckBox * cCheckBoxListLayout::addCheckBox(QCheckBox * pcb)
+{
+    bool f = dropEndStrech();
+    addWidget(pcb);
+    if (f) setEndStrech();
+    return pcb;
+}
+
+QCheckBox * cCheckBoxListLayout::addCheckBox(const QString& text, Qt::CheckState state, bool tristate)
+{
+    QCheckBox *pcb = new QCheckBox(text);
+    pcb->setTristate(tristate);
+    pcb->setCheckState(state);
+    return addCheckBox(pcb);
+}
+
+void cCheckBoxListLayout::addCheckBoxs(const QStringList& items, Qt::CheckState state, bool tristate)
+{
+    foreach (QString s, items) {
+        addCheckBox(s, state, tristate);
+    }
+}
+
+bool cCheckBoxListLayout::setEndStrech()
+{
+    if (_endStretch) return false;
+    _endStretch = true;
+    addStretch();
+    return true;
+}
+
+bool cCheckBoxListLayout::dropEndStrech()
+{
+    if (!_endStretch) return false;
+    QLayoutItem *pi = takeAt(count() -1);
+    if (pi == nullptr || pi->spacerItem() == nullptr) {
+        EXCEPTION(EPROGFAIL);
+    }
+    delete pi;
+    _endStretch = false;
+    return true;
+}
+
+QCheckBox * cCheckBoxListLayout::at(int ix)
+{
+    static const char sCheckBox[] = "QCheckBox";
+    int n = size();
+    // PDEB(VERBOSE) << QString("cCheckBoxListLayout::at(%1); n = %2").arg(ix).arg(n) << endl;
+    if (ix < 0 || ix >= n) {
+        EXCEPTION(ENOINDEX, ix);
+    }
+    QWidget *p = itemAt(ix)->widget();
+    if (p == nullptr || !p->inherits(sCheckBox)) {
+        EXCEPTION(EDATA);
+    }
+    return qobject_cast<QCheckBox *>(p);
+}
+
+void cCheckBoxListLayout::setAllCheckState(Qt::CheckState state)
+{
+    bool f = dropEndStrech();
+    int i, n = size();
+    for (i = 0; i < n; ++i) {
+        at(i)->setCheckState(state);
+    }
+    if (f) setEndStrech();
+}
+
+/* ************************************************************** */
+
 template <class P>  QString paramToString(const P *p) {
     return QString("%1 = %2").arg(p->getName(), p->getName(_sParamValue));
 }
 
-static void setChecked(QListWidget *p, Qt::CheckState f)
-{
-    int i, n = p->count();
-    for (i = 0; i < n; ++i) {
-        QListWidgetItem *pi = p->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL,i, p->objectName());
-        pi->setCheckState(f);
-    }
-}
-
-static bool isChecked(QListWidget *p, int ix)
-{
-    if (p == nullptr) return false;
-    QListWidgetItem *pi = p->item(ix);
-    if (pi == nullptr) return false;
-    return pi->checkState() == Qt::Checked;
-}
-
-template <class P> QListWidget * paramsWidget(const QList<P *>& params, QListWidget *_cbl = nullptr)
+template <class P> cCheckBoxListLayout * paramsWidget(const QList<P *>& params, cCheckBoxListLayout *_cbl = nullptr)
 {
     QString s;
-    QListWidget * checkBoxList = _cbl;
+    cCheckBoxListLayout * checkBoxList = _cbl;
     if (checkBoxList != nullptr) checkBoxList->clear();
 
     if (!params.isEmpty()) {
         if (checkBoxList == nullptr) {
-            checkBoxList = new QListWidget;
-            checkBoxList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+            checkBoxList = new cCheckBoxListLayout;
         }
         int n = params.size();
         for (int i = 0; i < n; ++i) {
             s = paramToString(params.at(i));
-            QListWidgetItem *pi = new QListWidgetItem(s, checkBoxList);
-            pi->setFlags(pi->flags() | Qt::ItemIsUserCheckable);
-            pi->setCheckState(Qt::Checked);
+            checkBoxList->addCheckBox(s, Qt::Checked);
         }
     }
     return checkBoxList;
 }
 
-static QListWidget * servicesWidget(QSqlQuery& q, qlonglong nid, qlonglong pid, QList<qlonglong>& idList, QListWidget *_cbl = nullptr)
+static cCheckBoxListLayout * servicesWidget(QSqlQuery& q, qlonglong nid, qlonglong pid, QList<qlonglong>& idList, cCheckBoxListLayout *_cbl = nullptr)
 {
     static const QString sql =
             "SELECT host_service_id, srv.service_name || '(' || pri.service_name || ':' || pro.service_name || ')' AS name"
@@ -54,7 +121,7 @@ static QListWidget * servicesWidget(QSqlQuery& q, qlonglong nid, qlonglong pid, 
             " JOIN services AS pro ON proto_service_id = pro.service_id"
             " WHERE node_id = ? AND port_id = ?"
             " ORDER BY srv.service_name ASC";
-    QListWidget * checkBoxList = _cbl;
+    cCheckBoxListLayout * checkBoxList = _cbl;
     if (checkBoxList != nullptr) checkBoxList->clear();
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, nid);
@@ -62,27 +129,21 @@ static QListWidget * servicesWidget(QSqlQuery& q, qlonglong nid, qlonglong pid, 
     if (!q.exec()) SQLQUERYERR(q);
     if (q.first()) {
        if (checkBoxList == nullptr) {
-           checkBoxList = new QListWidget;
-           checkBoxList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+           checkBoxList = new cCheckBoxListLayout;
        }
        do {
            idList << q.value(0).toLongLong();
            QString s = q.value(1).toString();
-           QListWidgetItem *pi = new QListWidgetItem(s, checkBoxList);
-           pi->setFlags(pi->flags() | Qt::ItemIsUserCheckable);
-           pi->setCheckState(Qt::Checked);
+           checkBoxList->addCheckBox(s, Qt::Checked);
        } while (q.next());
     }
     return checkBoxList;
 }
 
-static QListWidget * oneCheckBox(const QString& s)
+static cCheckBoxListLayout * oneCheckBox(const QString& s)
 {
-    QListWidget * checkBoxList = new QListWidget;
-    checkBoxList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    QListWidgetItem *pi = new QListWidgetItem(s, checkBoxList);
-    pi->setFlags(pi->flags() | Qt::ItemIsUserCheckable);
-    pi->setCheckState(Qt::Checked);
+    cCheckBoxListLayout * checkBoxList = new cCheckBoxListLayout;
+    checkBoxList->addCheckBox(s, Qt::Checked);
     return checkBoxList;
 }
 
@@ -130,6 +191,7 @@ cCSRow::cCSRow(QSqlQuery& q, cChangeSwitch *par, int _r, cNPort *_ps, cNPort *_p
     : QObject (par)
 {
     QString s;
+    QWidget *pW;
     checkBoxDelLnk = checkBoxDelPar = checkBoxDelSrv = nullptr;
     checkBoxCpyLnk = checkBoxCpyPar = checkBoxCpySrv = nullptr;
     pLnkDel = pLnkCpy = nullptr;
@@ -146,19 +208,25 @@ cCSRow::cCSRow(QSqlQuery& q, cChangeSwitch *par, int _r, cNPort *_ps, cNPort *_p
         // port param(s)
         if (!pSrc->params.isEmpty()) {
             checkBoxCpyPar = paramsWidget(pSrc->params);
-            pTableWidget->setCellWidget(row, CIX_CPY_PAR, checkBoxCpyPar);
+            pW = new QWidget;
+            pW->setLayout(checkBoxCpyPar->layout());
+            pTableWidget->setCellWidget(row, CIX_CPY_PAR, pW);
         }
         // link
         pLnkCpy = link(q, pSrc);
         if (pLnkCpy != nullptr) {
             s = linkToString(q, pLnkCpy);
             checkBoxCpyLnk = oneCheckBox(s);
-            pTableWidget->setCellWidget(row, CIX_CPY_LNK, checkBoxCpyLnk);
+            pW = new QWidget;
+            pW->setLayout(checkBoxCpyLnk->layout());
+            pTableWidget->setCellWidget(row, CIX_CPY_LNK, pW);
         }
         // servce(s)
         checkBoxCpySrv = servicesWidget(q, pParent->nidSrc, pSrc->getId(), hsIdCpyList);
         if (checkBoxCpySrv != nullptr) {
-            pTableWidget->setCellWidget(row, CIX_CPY_SRV, checkBoxCpySrv);
+            pW = new QWidget;
+            pW->setLayout(checkBoxCpySrv->layout());
+            pTableWidget->setCellWidget(row, CIX_CPY_SRV, pW);
         }
     }
     if (pTrg != nullptr) {
@@ -167,24 +235,30 @@ cCSRow::cCSRow(QSqlQuery& q, cChangeSwitch *par, int _r, cNPort *_ps, cNPort *_p
         // port param(s)
         if (!pTrg->params.isEmpty()) {
             checkBoxDelPar = paramsWidget(pTrg->params);
-            pTableWidget->setCellWidget(row, CIX_DEL_PAR, checkBoxDelPar);
+            pW = new QWidget;
+            pW->setLayout(checkBoxDelPar->layout());
+            pTableWidget->setCellWidget(row, CIX_DEL_PAR, pW);
         }
         // link
         pLnkDel = link(q, pTrg);
         if (pLnkDel != nullptr) {
             s = linkToString(q, pLnkDel);
             checkBoxDelLnk = oneCheckBox(s);
-            pTableWidget->setCellWidget(row,  CIX_DEL_LNK, checkBoxDelLnk);
+            pW = new QWidget;
+            pW->setLayout(checkBoxDelLnk->layout());
+            pTableWidget->setCellWidget(row,  CIX_DEL_LNK, pW);
         }
         // service(s)
         checkBoxDelSrv = servicesWidget(q, pParent->nidTrg, pTrg->getId(), hsIdDelList);
         if (checkBoxDelSrv != nullptr) {
-            pTableWidget->setCellWidget(row, CIX_DEL_SRV, checkBoxDelSrv);
+            pW = new QWidget;
+            pW->setLayout(checkBoxDelSrv->layout());
+            pTableWidget->setCellWidget(row, CIX_DEL_SRV, pW);
         }
     }
     if (checkBoxCpyLnk != nullptr && checkBoxDelLnk != nullptr) {
-        connect(checkBoxCpyLnk, SIGNAL(itemChanged(QListWidgetItem *)), this, SLOT(on_checkBoxCpyLink_chenged(QListWidgetItem *)));
-        connect(checkBoxDelLnk, SIGNAL(itemChanged(QListWidgetItem *)), this, SLOT(on_checkBoxDelLink_changed(QListWidgetItem *)));
+        connect(checkBoxCpyLnk->layout(), SIGNAL(itemChanged(QListWidgetItem *)), this, SLOT(on_checkBoxCpyLink_chenged(QListWidgetItem *)));
+        connect(checkBoxDelLnk->layout(), SIGNAL(itemChanged(QListWidgetItem *)), this, SLOT(on_checkBoxDelLink_changed(QListWidgetItem *)));
     }
 }
 
@@ -196,17 +270,17 @@ cCSRow::~cCSRow()
 void cCSRow::setChecked(int col, bool _f)
 {
     Qt::CheckState f = _f ? Qt::Checked : Qt::Unchecked;
-    QListWidget *plw = nullptr;
+    cCheckBoxListLayout *pl = nullptr;
     switch (col) {
-    case cCSRow::CIX_CPY_LNK:   plw = checkBoxCpyLnk;   break;
-    case cCSRow::CIX_CPY_SRV:   plw = checkBoxCpySrv;   break;
-    case cCSRow::CIX_CPY_PAR:   plw = checkBoxCpyPar;   break;
-    case cCSRow::CIX_DEL_LNK:   plw = checkBoxDelLnk;   break;
-    case cCSRow::CIX_DEL_SRV:   plw = checkBoxDelSrv;   break;
-    case cCSRow::CIX_DEL_PAR:   plw = checkBoxDelPar;   break;
+    case cCSRow::CIX_CPY_LNK:   pl = checkBoxCpyLnk;   break;
+    case cCSRow::CIX_CPY_SRV:   pl = checkBoxCpySrv;   break;
+    case cCSRow::CIX_CPY_PAR:   pl = checkBoxCpyPar;   break;
+    case cCSRow::CIX_DEL_LNK:   pl = checkBoxDelLnk;   break;
+    case cCSRow::CIX_DEL_SRV:   pl = checkBoxDelSrv;   break;
+    case cCSRow::CIX_DEL_PAR:   pl = checkBoxDelPar;   break;
     }
-    if (plw != nullptr) {
-        ::setChecked(plw, f);
+    if (pl != nullptr) {
+        pl->setAllCheckState(f ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -214,12 +288,11 @@ void cCSRow::setChecked(int col, bool _f)
 void cCSRow::save(QSqlQuery& q)
 {
     int i, n;
-//    QTableWidgetItem *pi;
     if (pTrg != nullptr) {
         // Delete Port param(s)
         n = pTrg->params.size();
         for (i = 0; i < n; ++i) {
-            if (isChecked(checkBoxDelPar, i)) {
+            if (checkBoxDelPar->checkState(i) == Qt::Checked) {
                 setCheckBoxColor(CIX_DEL_PAR, i, ET_FATAL);
                 switch(pTrg->params.at(i)->remove(q, false, QBitArray(), EX_ERROR)) {
                 case 0:  setCheckBoxColor(CIX_DEL_PAR, i, ET_WARNING); break;
@@ -231,7 +304,7 @@ void cCSRow::save(QSqlQuery& q)
         // Delete service(s)
         n = hsIdDelList.size();
         for (i = 0; i < n; ++i) {
-            if (isChecked(checkBoxDelSrv, i)) {
+            if (checkBoxDelSrv->checkState(i) == Qt::Checked) {
                 setCheckBoxColor(CIX_DEL_SRV, i, ET_FATAL);
                 cHostService hs;
                 hs._toReadBack = RB_NO;
@@ -244,8 +317,10 @@ void cCSRow::save(QSqlQuery& q)
         }
         // Delet link
         if (pLnkDel != nullptr) {
-            if (checkBoxDelLnk == nullptr) EXCEPTION(EPROGFAIL);
-            if (isChecked(checkBoxDelLnk, 0)) {
+            if (checkBoxDelLnk == nullptr) {
+                EXCEPTION(EPROGFAIL);
+            }
+            if (checkBoxDelLnk->checkState(0) == Qt::Checked) {
                 setCheckBoxColor(CIX_DEL_LNK, 0, ET_FATAL);
                 pLnkDel->_toReadBack = RB_NO;
                 switch(pLnkDel->remove(q, false, QBitArray(), EX_ERROR)) {
@@ -261,7 +336,7 @@ void cCSRow::save(QSqlQuery& q)
             // Move port param(s)
             n = pSrc->params.size();
             for (i = 0; i < n; ++i) {
-                if (isChecked(checkBoxCpyPar, i)) {
+                if (checkBoxCpyPar->checkState(i) == Qt::Checked) {
                     setCheckBoxColor(CIX_CPY_PAR, i, ET_FATAL);
                     cPortParam& pp = *pSrc->params.at(i);
                     pp._toReadBack = RB_NO;
@@ -276,7 +351,7 @@ void cCSRow::save(QSqlQuery& q)
             // Move port service(s)
             n = hsIdCpyList.size();
             for (i = 0; i < n; ++i) {
-                if (isChecked(checkBoxCpySrv, i)) {
+                if (checkBoxCpySrv->checkState(i) == Qt::Checked) {
                     setCheckBoxColor(CIX_CPY_SRV, i, ET_FATAL);
                     cHostService hs;
                     hs._toReadBack = RB_NO;
@@ -292,15 +367,21 @@ void cCSRow::save(QSqlQuery& q)
             }
             // Move link
             if (pLnkCpy != nullptr) {
-                if (checkBoxCpyLnk == nullptr) EXCEPTION(EPROGFAIL);
-                if (isChecked(checkBoxCpyLnk, 0)) {
+                if (checkBoxCpyLnk == nullptr) {
+                    EXCEPTION(EPROGFAIL);
+                }
+                if (checkBoxCpyLnk->checkState(0) == Qt::Checked) {
                     setCheckBoxColor(CIX_CPY_LNK, 0, ET_FATAL);
                     pLnkCpy->_toReadBack = RB_NO;
                     pLnkCpy->setId(_sPortId1, pid);
-                    switch(pLnkCpy->update(q, false, pLnkCpy->mask(_sPortId1), QBitArray(), EX_ERROR)) {
-                    case 0:  setCheckBoxColor(CIX_CPY_LNK, 0, ET_WARNING); break;
-                    case 1:  setCheckBoxColor(CIX_CPY_LNK, 0, ET_OK);      break;
-                    default: setCheckBoxColor(CIX_CPY_LNK, 0, ET_ERROR);   break;
+                    pLnkCpy->clearId();
+                    int re = pLnkCpy->replace(q);
+                    switch(re) {
+                    case R_UPDATE:
+                    case R_INSERT:
+                        setCheckBoxColor(CIX_CPY_LNK, 0, ET_OK);      break;
+                    default:
+                        setCheckBoxColor(CIX_CPY_LNK, 0, ET_ERROR);   break;
                     }
                 }
             }
@@ -308,29 +389,17 @@ void cCSRow::save(QSqlQuery& q)
     }
 }
 
-void cCSRow::on_checkBoxCpyLnk_changed(QListWidgetItem *_pi)
+void cCSRow::on_checkBoxCpyLnk_togled(bool f)
 {
-    if (_pi != checkBoxCpyLnk->item(0)) EXCEPTION(EPROGFAIL);
-    bool f = _pi->checkState() == Qt::Checked;
-    if (f && checkBoxDelLnk != nullptr) {
-        QListWidgetItem *pi = checkBoxDelLnk->item(0);
-        if (pi == nullptr) {
-            EXCEPTION(EPROGFAIL);
-        }
-        pi->setCheckState(Qt::Checked);
+    if (f && checkBoxDelLnk != nullptr && checkBoxDelLnk->checkState(0) != Qt::Checked) {
+        checkBoxDelLnk->setCheckState(0, Qt::Checked);
     }
 }
 
-void cCSRow::on_checkBoxDelLnk_changed(QListWidgetItem *_pi)
+void cCSRow::on_checkBoxDelLnk_togled(bool f)
 {
-    if (_pi != checkBoxDelLnk->item(0)) EXCEPTION(EPROGFAIL);
-    bool f = _pi->checkState() == Qt::Unchecked;
-    if (f && checkBoxCpyLnk != nullptr) {
-        QListWidgetItem *pi = checkBoxCpyLnk->item(0);
-        if (pi == nullptr) {
-            EXCEPTION(EPROGFAIL);
-        }
-        pi->setCheckState(Qt::Unchecked);
+    if (!f && checkBoxCpyLnk != nullptr && checkBoxCpyLnk->checkState(0) != Qt::Unchecked) {
+        checkBoxDelLnk->setCheckState(0, Qt::Unchecked);
     }
 }
 
@@ -375,38 +444,6 @@ const QString cChangeSwitch::sIxNote = QObject::trUtf8("A művelet csak akkor v�
 const QString cChangeSwitch::iconUnchecked = "://icons/close.ico";
 const QString cChangeSwitch::iconChecked   = "://icons/ok.ico";
 
-bool cChangeSwitch::setHeaderIcon(int col)
-{
-    bool r = headerIconState[col] = !headerIconState.at(col);
-    QIcon icon(r ? iconUnchecked : iconChecked);
-    QTableWidgetItem *pi = pUi->tableWidget->horizontalHeaderItem(col);
-    pi->setIcon(icon);
-    return  r;
-}
-
-bool cChangeSwitch::setListIcon(enum eList e)
-{
-    bool r = listIconState[e] = !listIconState.at(e);
-    QIcon icon(r ? iconUnchecked : iconChecked);
-    switch (e) {
-    case EL_CPY_SRV:
-        pUi->toolButtonCpySrv->setIcon(icon);
-        break;
-    case EL_CPY_PAR:
-        pUi->toolButtonCpyPar->setIcon(icon);
-        break;
-    case EL_DEL_SRV:
-        pUi->toolButtonDelSrv->setIcon(icon);
-        break;
-    case EL_DEL_PAR:
-        pUi->toolButtonDelPar->setIcon(icon);
-        break;
-    default:
-        EXCEPTION(EPROGFAIL);
-    }
-    return r;
-}
-
 cChangeSwitch::cChangeSwitch(QMdiArea * par)
     : cIntSubObj (par)
     , state(ES_INSUFF)
@@ -428,6 +465,11 @@ cChangeSwitch::cChangeSwitch(QMdiArea * par)
     , pSaver(nullptr)
 {
     pUi->setupUi(this);
+
+    checkBoxCpySrv = new cCheckBoxListLayout(QBoxLayout::TopToBottom, pUi->widgetCpySrv);
+    checkBoxDelSrv = new cCheckBoxListLayout(QBoxLayout::TopToBottom, pUi->widgetDelSrv);
+    checkBoxCpyPar = new cCheckBoxListLayout(QBoxLayout::TopToBottom, pUi->widgetCpyPar);
+    checkBoxDelPar = new cCheckBoxListLayout(QBoxLayout::TopToBottom, pUi->widgetDelPar);
 
     static const QString sqlFilt = "'switch' = ANY (node_type)";
     pSelNodeSrc = new cSelectNode(
@@ -485,6 +527,39 @@ cChangeSwitch::~cChangeSwitch()
     delete pq;
 }
 
+bool cChangeSwitch::setHeaderIcon(int col)
+{
+    bool r = headerIconState[col] = !headerIconState.at(col);
+    QIcon icon(r ? iconUnchecked : iconChecked);
+    QTableWidgetItem *pi = pUi->tableWidget->horizontalHeaderItem(col);
+    pi->setIcon(icon);
+    return  r;
+}
+
+bool cChangeSwitch::setListIcon(enum eList e)
+{
+    bool r = listIconState[e] = !listIconState.at(e);
+    QIcon icon(r ? iconUnchecked : iconChecked);
+    switch (e) {
+    case EL_CPY_SRV:
+        pUi->toolButtonCpySrv->setIcon(icon);
+        break;
+    case EL_CPY_PAR:
+        pUi->toolButtonCpyPar->setIcon(icon);
+        break;
+    case EL_DEL_SRV:
+        pUi->toolButtonDelSrv->setIcon(icon);
+        break;
+    case EL_DEL_PAR:
+        pUi->toolButtonDelPar->setIcon(icon);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    return r;
+}
+
+
 void cChangeSwitch::setButtons(bool chk)
 {
     if (chk) {
@@ -504,8 +579,8 @@ void cChangeSwitch::setButtons(bool chk)
     }
     switch (state) {
     case ES_INSUFF:
-    case ES_ERROR:
     case ES_RUN_SAVER:
+    case ES_SAVED:
         pUi->pushButtonCopy->setDisabled(true);
         pUi->pushButtonRefresh->setDisabled(true);
         break;
@@ -515,14 +590,14 @@ void cChangeSwitch::setButtons(bool chk)
         break;
     case ES_DATA_READY:
         pUi->pushButtonCopy->setDisabled(false);
-        pUi->pushButtonRefresh->setDisabled(true);
+        pUi->pushButtonRefresh->setDisabled(false);
         break;
     }
     bool ready = state == ES_DATA_READY;
-    pUi->toolButtonCpySrv->setEnabled(ready || pUi->listWidgetCpySrv->count() > 0);
-    pUi->toolButtonCpyPar->setEnabled(ready || pUi->listWidgetCpyPar->count() > 0);
-    pUi->toolButtonDelSrv->setEnabled(ready || pUi->listWidgetDelSrv->count() > 0);
-    pUi->toolButtonDelPar->setEnabled(ready || pUi->listWidgetDelPar->count() > 0);
+    pUi->toolButtonCpySrv->setEnabled(ready || checkBoxCpySrv->size() > 0);
+    pUi->toolButtonCpyPar->setEnabled(ready || checkBoxCpyPar->size() > 0);
+    pUi->toolButtonDelSrv->setEnabled(ready || checkBoxDelSrv->size() > 0);
+    pUi->toolButtonDelPar->setEnabled(ready || checkBoxDelPar->size() > 0);
     bool run = state == ES_RUN_SAVER;
     pSelNodeSrc->setDisabled(run);
     pSelNodeTrg->setDisabled(run);
@@ -536,10 +611,10 @@ void cChangeSwitch::clear()
         delete rows.takeFirst();
     }
     pUi->tableWidget->setRowCount(0);
-    pUi->listWidgetCpyPar->clear();
-    pUi->listWidgetCpySrv->clear();
-    pUi->listWidgetDelPar->clear();
-    pUi->listWidgetDelSrv->clear();
+    checkBoxCpyPar->clear();
+    checkBoxCpySrv->clear();
+    checkBoxDelPar->clear();
+    checkBoxDelSrv->clear();
     srvCpyIdList.clear();
     srvDelIdList.clear();
 }
@@ -549,11 +624,13 @@ void cChangeSwitch::refreshTables()
     if (state != ES_SRC_READY) return;
     int row, ix, ixSrc, ixTrg, off, maxIx;
     clear();
-    if (pNodeSrc == nullptr || pNodeTrg == nullptr) EXCEPTION(EPROGFAIL);
+    if (pNodeSrc == nullptr || pNodeTrg == nullptr) {
+        EXCEPTION(EPROGFAIL);
+    }
 
     off = offsTrg - offsSrc;
-    ix    = std::min(minIxSrc, minIxTrg + off);
-    maxIx = std::min(maxIxSrc, maxIxTrg + off);
+    ix    = std::min(minIxSrc, minIxTrg) - std::abs(off);
+    maxIx = std::max(maxIxSrc, maxIxTrg) + std::abs(off);
     for (row = 0; ix <= maxIx ; ++ix) {
         ixSrc = ix;
         ixTrg = ix - off;
@@ -566,10 +643,10 @@ void cChangeSwitch::refreshTables()
     }
     pUi->tableWidget->resizeColumnsToContents();
     pUi->tableWidget->resizeRowsToContents();
-    (void)servicesWidget(*pq, nidSrc, NULL_ID, srvCpyIdList, pUi->listWidgetCpySrv);
-    (void)servicesWidget(*pq, nidTrg, NULL_ID, srvDelIdList, pUi->listWidgetDelSrv);
-    (void)paramsWidget(pNodeSrc->params, pUi->listWidgetCpyPar);
-    (void)paramsWidget(pNodeTrg->params, pUi->listWidgetDelPar);
+    servicesWidget(*pq, nidSrc, NULL_ID, srvCpyIdList, checkBoxCpySrv)->setEndStrech();
+    servicesWidget(*pq, nidTrg, NULL_ID, srvDelIdList, checkBoxDelSrv)->setEndStrech();
+    paramsWidget(pNodeSrc->params, checkBoxCpyPar)->setEndStrech();
+    paramsWidget(pNodeTrg->params, checkBoxDelPar)->setEndStrech();
     state = ES_DATA_READY;
     setButtons(false);
     return;
@@ -579,13 +656,10 @@ void cChangeSwitch::refreshTables()
 void cChangeSwitch::save(QSqlQuery& q)
 {
     int i, n;
-    QListWidgetItem *pi;
     // Del assigned node param(s)
     n = pNodeTrg->params.size();
     for (i = 0; i < n; ++i) {
-        pi = pUi->listWidgetDelPar->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL);
-        if (pi->checkState() == Qt::Checked) {
+        if (checkBoxDelPar->checkState(i) == Qt::Checked) {
             emit doSetListCellColor(EL_DEL_PAR, i, ET_FATAL);
             cNodeParam& par = *pNodeTrg->params.at(i);
             par._toReadBack = RB_NO;
@@ -599,9 +673,7 @@ void cChangeSwitch::save(QSqlQuery& q)
     // Del assigned node service(s)
     n = srvDelIdList.size();
     for (i = 0; i < n; ++i) {
-        pi = pUi->listWidgetDelSrv->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL);
-        if (pi->checkState() == Qt::Checked) {
+        if (checkBoxDelSrv->checkState(i) == Qt::Checked) {
             emit doSetListCellColor(EL_DEL_SRV, i, ET_FATAL);
             cHostService hs;
             hs._toReadBack = RB_NO;
@@ -615,9 +687,7 @@ void cChangeSwitch::save(QSqlQuery& q)
     // Move assigned param(s)
     n = pNodeSrc->params.size();
     for (i = 0; i < n; ++i) {
-        pi = pUi->listWidgetCpyPar->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL);
-        if (pi->checkState() == Qt::Checked) {
+        if (checkBoxCpyPar->checkState(i) == Qt::Checked) {
             emit doSetListCellColor(EL_CPY_PAR, i, ET_FATAL);
             cNodeParam& par = *pNodeSrc->params.at(i);
             par._toReadBack = RB_NO;
@@ -632,9 +702,7 @@ void cChangeSwitch::save(QSqlQuery& q)
     // Del assigned node service(s)
     n = srvCpyIdList.size();
     for (i = 0; i < n; ++i) {
-        pi = pUi->listWidgetCpySrv->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL);
-        if (pi->checkState() == Qt::Checked) {
+        if (checkBoxCpySrv->checkState(i) == Qt::Checked) {
             emit doSetListCellColor(EL_CPY_SRV, i, ET_FATAL);
             cHostService hs;
             hs._toReadBack = RB_NO;
@@ -676,7 +744,7 @@ void cChangeSwitch::on_spinBoxOffsetSrc_valueChanged(int arg1)
 {
     switch (state) {
     case ES_INSUFF:
-    case ES_ERROR:
+    case ES_SAVED:
         break;
     case ES_SRC_READY:
     case ES_DATA_READY:
@@ -693,7 +761,7 @@ void cChangeSwitch::on_spinBoxOffsetTrg_valueChanged(int arg1)
 {
     switch (state) {
     case ES_INSUFF:
-    case ES_ERROR:
+    case ES_SAVED:
         break;
     case ES_SRC_READY:
     case ES_DATA_READY:
@@ -708,8 +776,14 @@ void cChangeSwitch::on_spinBoxOffsetTrg_valueChanged(int arg1)
 
 void cChangeSwitch::on_selNodeSrc_nodeIdChanged(qlonglong nid)
 {
-    if (state == ES_RUN_SAVER) {
-        EXCEPTION(EPROGFAIL);
+    switch (state) {
+    case ES_RUN_SAVER:
+        return;
+    case ES_SAVED:
+        state = ES_INSUFF;
+        break;
+    default:
+        break;
     }
     QString e;
     pDelete(pNodeSrc);
@@ -745,8 +819,14 @@ discard_node_old:
 
 void cChangeSwitch::on_selNodeTrg_nodeIdChanged(qlonglong nid)
 {
-    if (state == ES_RUN_SAVER) {
-        EXCEPTION(EPROGFAIL);
+    switch (state) {
+    case ES_RUN_SAVER:
+        return;
+    case ES_SAVED:
+        state = ES_INSUFF;
+        break;
+    default:
+        break;
     }
     QString e;
     pDelete(pNodeTrg);
@@ -800,13 +880,19 @@ void cChangeSwitch::on_tableWidgetHHeader_clicked(int sect)
 
 void cChangeSwitch::on_pushButtonRefresh_clicked()
 {
-    if (state == ES_SRC_READY) refreshTables();
+    if (state == ES_SRC_READY || state == ES_DATA_READY) {
+        refreshTables();
+    }
 }
 
 void cChangeSwitch::on_pushButtonCopy_clicked()
 {
-    if (state != ES_DATA_READY) EXCEPTION(EPROGFAIL, state, trUtf8("Invalid state."));
-    if (pSaver != nullptr) EXCEPTION(EPROGFAIL, 0, trUtf8("Rerun thread?"));
+    if (state != ES_DATA_READY) {
+        EXCEPTION(EPROGFAIL, state, trUtf8("Invalid state."));
+    }
+    if (pSaver != nullptr) {
+        EXCEPTION(EPROGFAIL, 0, trUtf8("Rerun thread?"));
+    }
     static const QString msg = trUtf8("A művelet nem visszavonható! Valóban végrehajtja a változtatásokat ?");
     int r = QMessageBox::warning(this, dcViewShort(DC_WARNING), msg, QMessageBox::Ok, QMessageBox::Cancel);
     if (r != QMessageBox::Ok) return;
@@ -817,82 +903,87 @@ void cChangeSwitch::on_pushButtonCopy_clicked()
     pSaver->start();
 }
 
-void cChangeSwitch::setChecked(enum eList e, QListWidget *p)
+void cChangeSwitch::setChecked(enum eList e)
 {
     Qt::CheckState f = setListIcon(e) ? Qt::Checked : Qt::Unchecked;
-    int i, n = p->count();
-    for (i = 0; i < n; ++i) {
-        QListWidgetItem *pi = p->item(i);
-        if (pi == nullptr) EXCEPTION(EPROGFAIL, e, p->objectName());
-        pi->setCheckState(f);
+    cCheckBoxListLayout *p = nullptr;
+    switch (e) {
+    case EL_CPY_SRV:    p = checkBoxCpySrv; break;
+    case EL_CPY_PAR:    p = checkBoxCpyPar; break;
+    case EL_DEL_SRV:    p = checkBoxDelSrv; break;
+    case EL_DEL_PAR:    p = checkBoxDelPar; break;
+    default:            EXCEPTION(EPROGFAIL);
     }
+    p->setAllCheckState(f);
 }
 
 void cChangeSwitch::on_toolButtonCpySrv_clicked()
 {
-    setChecked(EL_CPY_SRV, pUi->listWidgetCpySrv);
+    setChecked(EL_CPY_SRV);
 }
 
 void cChangeSwitch::on_toolButtonDelSrv_clicked()
 {
-    setChecked(EL_DEL_SRV, pUi->listWidgetDelSrv);
+    setChecked(EL_DEL_SRV);
 }
 
 void cChangeSwitch::on_toolButtonCpyPar_clicked()
 {
-    setChecked(EL_CPY_PAR, pUi->listWidgetCpyPar);
+    setChecked(EL_CPY_PAR);
 }
 
 void cChangeSwitch::on_toolButtonDelPar_clicked()
 {
-    setChecked(EL_DEL_PAR, pUi->listWidgetDelPar);
+    setChecked(EL_DEL_PAR);
 }
 
 void cChangeSwitch::on_saver_finished()
 {
-    if (pSaver == nullptr) EXCEPTION(EPROGFAIL);
+    if (pSaver == nullptr) {
+        return;
+    }
     if (pSaver->pe == nullptr) {
         pDelete(pNodeSrc);
         pDelete(pNodeTrg);
         nidSrc = nidTrg = NULL_ID;
-        state = ES_INSUFF;
+        state = ES_SAVED;
     }
     else {
         cErrorMessageBox::messageBox(pSaver->pe, this);
         state = ES_DATA_READY;
     }
     pDelete(pSaver);
-    setButtons();
+    setButtons(false);
 }
 
 void cChangeSwitch::setTableCellColor(int row, int col, int ix, int ec)
 {
     QWidget *pw = pUi->tableWidget->cellWidget(row, col);
-    if (pw != nullptr && pw->inherits("QListWidget")) {
-        QListWidget *plw = qobject_cast<QListWidget *>(pw);
-        QListWidgetItem *pi = plw->item(ix);
-        if (pi == nullptr) {
-            EXCEPTION(EPROGFAIL,0, trUtf8("Invalid index in cell: row = %1, col = %2, ix = %3").arg(row).arg(col).arg(ix));
+    if (pw != nullptr) {
+        QLayout *pl = pw->layout();
+        static const char checkBoxListLayout[] = "cCheckBoxListLayout";
+        if (pl != nullptr && pl->inherits(checkBoxListLayout)) {
+            cCheckBoxListLayout *cbl = qobject_cast<cCheckBoxListLayout *>(pl);
+            QCheckBox * cb = cbl->at(ix);
+            enumSetBgColor(cb, sET_, ec);
+            return;
         }
-        pi->setBackgroundColor(bgColorByEnum(sET_, ec));
     }
-    else {
-        EXCEPTION(EPROGFAIL,0, trUtf8("Invalid cell: row = %1, col = %2").arg(row).arg(col));
-    }
+    // EXCEPTION(EPROGFAIL,0, trUtf8("Invalid cell: row = %1, col = %2").arg(row).arg(col));
 }
 
 void cChangeSwitch::setListCellColor(int lt, int row, int ec)
 {
-    QListWidgetItem *pi = nullptr;
+    cCheckBoxListLayout *p = nullptr;
     switch (lt) {
-    case EL_CPY_PAR:    pi = pUi->listWidgetCpyPar->item(row);  break;
-    case EL_CPY_SRV:    pi = pUi->listWidgetCpySrv->item(row);  break;
-    case EL_DEL_PAR:    pi = pUi->listWidgetDelPar->item(row);  break;
-    case EL_DEL_SRV:    pi = pUi->listWidgetDelSrv->item(row);  break;
+    case EL_CPY_PAR:    p = checkBoxCpyPar;  break;
+    case EL_CPY_SRV:    p = checkBoxCpySrv;  break;
+    case EL_DEL_PAR:    p = checkBoxDelPar;  break;
+    case EL_DEL_SRV:    p = checkBoxDelSrv;  break;
     default:            break;
     }
-    if (pi == nullptr) {
+    if (p == nullptr) {
         EXCEPTION(EPROGFAIL);
     }
-    pi->setBackgroundColor(bgColorByEnum(sET_, ec));
+    enumSetBgColor(p->at(row), sET_, ec);
 }

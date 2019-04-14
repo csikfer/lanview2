@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1314</width>
-    <height>985</height>
+    <width>812</width>
+    <height>575</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -379,7 +379,7 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayoutPorts">
        <item>
         <widget class="QLabel" name="labelLinkPorts">
@@ -413,8 +413,8 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QWidget" name="">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,1">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
@@ -440,22 +440,12 @@
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="listWidgetCpySrv">
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="alternatingRowColors">
-           <bool>true</bool>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::NoSelection</enum>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetCpySrv" native="true"/>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
-       <layout class="QVBoxLayout" name="verticalLayout_5">
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,1">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
@@ -481,17 +471,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="listWidgetCpyPar">
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="alternatingRowColors">
-           <bool>true</bool>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::NoSelection</enum>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetCpyPar" native="true"/>
         </item>
        </layout>
       </widget>
@@ -500,8 +480,8 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QWidget" name="">
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
@@ -527,22 +507,12 @@
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="listWidgetDelSrv">
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="alternatingRowColors">
-           <bool>true</bool>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::NoSelection</enum>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetDelSrv" native="true"/>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
@@ -568,17 +538,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="listWidgetDelPar">
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="alternatingRowColors">
-           <bool>true</bool>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::NoSelection</enum>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetDelPar" native="true"/>
         </item>
        </layout>
       </widget>

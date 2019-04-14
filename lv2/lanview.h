@@ -468,7 +468,8 @@ EXT_ bool callFromInterpreter();
 
 EXT_ enum eImportParserStat importParserStat;
 
-/// Egy opcionális Queue az interpreter által hívott funkciókhoz, ha van szöveges kimenet.
+/// Egy opcionális Queue az interpreter által hívott funkciókhoz,
+/// vagy külön szálban futó folyamatokhoz, ha van szöveges kimenet.
 /// A Queue-ban stringek helyezhetőek el, soremeléssel nem lezárt sorok, ill. paragrafusok.
 class LV2SHARED_EXPORT cExportQueue : public QObject, protected QQueue<QString>, QMutex {
     Q_OBJECT
@@ -486,6 +487,10 @@ public:
     QString pop();
     static QString toText(bool fromInterpret, bool _clr = false);
     /// Létrehozza az objeltum példányt, ha már létezett, akkor a példányt elötte törli.
+    /// @param fromInterpret Ha értéke true, akkor egy az interpreterhez rendelt példány létrehozása,
+    ///  vagy ha értéke false, akkor egy szálhoz (thread) rendelt példány létrehozása,
+    ///  a metódust a szálban kell hívni.
+    /// @return A létrehozott példány pointere.
     static cExportQueue *init(bool fromInterpret);
 signals:
     void ready();

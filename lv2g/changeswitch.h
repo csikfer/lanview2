@@ -6,6 +6,27 @@
 #include "lv2widgets.h"
 #include <QStandardItemModel>
 
+class cCheckBoxListLayout : public QBoxLayout
+{
+    Q_OBJECT
+public:
+    cCheckBoxListLayout(QBoxLayout::Direction dir = QBoxLayout::TopToBottom, QWidget *par = nullptr);
+    void clear();
+    QCheckBox * addCheckBox(QCheckBox * pcb);
+    QCheckBox * addCheckBox(const QString& text, Qt::CheckState state = Qt::Unchecked, bool tristate = false);
+    void addCheckBoxs(const QStringList& items, Qt::CheckState state = Qt::Unchecked, bool tristate = false);
+    int size() { int r = count(); if (_endStretch) --r; return r; }
+    bool setEndStrech();
+    bool dropEndStrech();
+    QLayout * layout() { return static_cast<QLayout *>(this); }
+    QCheckBox * at(int ix);
+    Qt::CheckState checkState(int ix) { return at(ix)->checkState(); }
+    void setCheckState(int ix, Qt::CheckState state) { at(ix)->setCheckState(state); }
+    void setAllCheckState(Qt::CheckState state);
+protected:
+    bool    _endStretch;
+};
+
 #if defined(LV2G_LIBRARY)
 #include "ui_changeswitch.h"
 
@@ -37,22 +58,22 @@ public:
 
     cNPort *            pSrc;       ///< source port object pointer
     cPhsLink *          pLnkCpy;    ///< Másolandó fizikai link
-    QListWidget *       checkBoxCpyPar;
-    QListWidget *       checkBoxCpyLnk;
+    cCheckBoxListLayout *checkBoxCpyPar;
+    cCheckBoxListLayout *checkBoxCpyLnk;
     QList<qlonglong>    hsIdCpyList;
-    QListWidget *       checkBoxCpySrv;
+    cCheckBoxListLayout *checkBoxCpySrv;
 
     cNPort *            pTrg;       ///< Target port object pointer
     cPhsLink *          pLnkDel;    ///< Cél eszköz törlendő fizikai link
-    QListWidget *       checkBoxDelPar;
-    QListWidget *       checkBoxDelLnk;
+    cCheckBoxListLayout *checkBoxDelPar;
+    cCheckBoxListLayout *checkBoxDelLnk;
     QList<qlonglong>    hsIdDelList;
-    QListWidget *       checkBoxDelSrv;
+    cCheckBoxListLayout *checkBoxDelSrv;
 protected:
     void setItem(const QString& txt, int col);
     void setItem(qlonglong n, int col);
     // QCheckBox * checkBox(int col, const QString& s, bool checked, bool ro);
-    QListWidget * checkBoxList(int cix) {
+    cCheckBoxListLayout * checkBoxsLayout(int cix) {
         switch (cix) {
         case CIX_CPY_PAR:   return checkBoxCpyPar;
         case CIX_CPY_SRV:   return checkBoxCpySrv;
@@ -62,8 +83,8 @@ protected:
         EXCEPTION(EPROGFAIL);
     }
 protected slots:
-    void on_checkBoxCpyLnk_changed(QListWidgetItem *_pi);
-    void on_checkBoxDelLnk_changed(QListWidgetItem *_pi);
+    void on_checkBoxCpyLnk_togled(bool f);
+    void on_checkBoxDelLnk_togled(bool f);
     void setCheckBoxColor(int cix, int ix, int col);
 };
 
@@ -95,7 +116,7 @@ public:
     ~cChangeSwitch();
     static const enum ePrivilegeLevel rights;
 protected:
-    enum eState { ES_INSUFF, ES_SRC_READY, ES_DATA_READY, ES_RUN_SAVER, ES_ERROR} state;
+    enum eState { ES_INSUFF, ES_SRC_READY, ES_DATA_READY, ES_RUN_SAVER, ES_SAVED} state;
     enum eList  { EL_CPY_SRV, EL_CPY_PAR, EL_DEL_SRV, EL_DEL_PAR, LIST_NUMBER };
     void clear();
     void setButtons(bool chk = true);
@@ -103,9 +124,13 @@ protected:
     static bool filteringPorts(QList<cNPort *> &ports);
     bool setHeaderIcon(int col);
     bool setListIcon(enum eList e);
-    void setChecked(enum eList e, QListWidget *p);
+    void setChecked(enum eList e);
     void save(QSqlQuery& q);
     Ui::changeSwitch *  pUi;
+    cCheckBoxListLayout*checkBoxCpySrv;
+    cCheckBoxListLayout*checkBoxDelSrv;
+    cCheckBoxListLayout*checkBoxCpyPar;
+    cCheckBoxListLayout*checkBoxDelPar;
     QSqlQuery *         pq;
     cSelectNode *       pSelNodeSrc;
     cSelectNode *       pSelNodeTrg;
