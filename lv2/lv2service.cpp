@@ -1217,17 +1217,24 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
 enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
 {
     _DBGFN() <<  name() << endl;
+    enum eNotifSwitch r = RS_INVALID;
     switch (inspectorType & IT_METHOD_MASK) {
 //  case IT_METHOD_CUSTOM:
-    case IT_METHOD_CARRIED: return RS_STAT_SETTED;
+    case IT_METHOD_CARRIED:
+        r = RS_STAT_SETTED;
+        break;
 //  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
-    case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
+    case IT_METHOD_NAGIOS:
+        r = parse_nagios(_ec, text);
+        break;
     case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
-    case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
+    case IT_METHOD_QPARSE:
+        r = parse_qparse(_ec, text);
+        break;
     default:
         EXCEPTION(ENOTSUPP, inspectorType, name());
     }
-    return RS_INVALID;
+    return r;
 }
 
 enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)

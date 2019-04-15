@@ -4972,26 +4972,25 @@ cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
         _pWidget = pTableWidget;
     }
     int rows = 0;
+    pTableWidget->horizontalHeader()->setStretchLastSection(true);
     pTableWidget->setColumnCount(2);
+    QStringList head;
+    head << trUtf8("Név") << trUtf8("Érték");
+    pTableWidget->setHorizontalHeaderLabels(head);
     Qt::ItemFlags flagConst = Qt::ItemIsEnabled;
     Qt::ItemFlags flagEdit  = Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
     QTableWidgetItem *pi;
-    pi = new QTableWidgetItem(trUtf8("Név"));
-    pi->setFlags(flagConst);
-    pTableWidget->setItem(0,0,pi);
-    pi = new QTableWidgetItem(trUtf8("Érték"));
-    pi->setFlags(flagConst);
-    pTableWidget->setItem(0,1,pi);
     foreach (QString n, map.keys()) {
         rows++;
         pTableWidget->setRowCount(rows);
         pi = new QTableWidgetItem(n);
         pi->setFlags(flagConst);
-        pTableWidget->setItem(rows -1,0,pi);
+        pTableWidget->setItem(rows -1, 0, pi);
         pi = new QTableWidgetItem(map[n]);
         pi->setFlags(flagEdit);
-        pTableWidget->setItem(rows -1,1,pi);
+        pTableWidget->setItem(rows -1, 1, pi);
     }
+    pTableWidget->resizeColumnsToContents();
     connect(pTableWidget, SIGNAL(cellChanged(int,int)), this, SLOT(changed(int,int)));
 }
 
@@ -5018,6 +5017,6 @@ void cStringMapEdit::clicked(int id)
 void cStringMapEdit::changed(int row, int column)
 {
     if (column != 1) return;
-    QString n = pTableWidget->takeItem(row, 0)->text();
-    map[n] = pTableWidget->takeItem(row, 1)->text();
+    QString n = pTableWidget->item(row, 0)->text();
+    map[n] = pTableWidget->item(row, 1)->text();
 }

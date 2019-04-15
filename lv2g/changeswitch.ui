@@ -410,6 +410,9 @@
       </layout>
      </widget>
      <widget class="QSplitter" name="splitter_2">
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -477,6 +480,9 @@
       </widget>
      </widget>
      <widget class="QSplitter" name="splitter">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>

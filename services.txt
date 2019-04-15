@@ -514,10 +514,7 @@ SERVICE "snmpvars" {
 SERVICE "soniwall_arp" {
     SUPERIOR SERVICE MASK "parser";
     COMMAND "$homedir/bin/fwarp.sh";
-    FEATURES  {
-        "method" = "qparse, carried";
-        "timing" = "timed";
-    }
+    FEATURES ":method=qparse:timing=timed:";
     NORMAL CHECK INTERVAL 600;
     RETRY CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
