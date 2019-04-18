@@ -685,8 +685,7 @@ int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
 int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
     qlonglong hbt = heartbeat(q, EX_ERROR);
-    if (lastLast.isNull() || isNull(_ixServiceVarValue)
-     || (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime()))) {
+    if (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime())) {
         setId(_ixVarState, _st);
         clear(_ixServiceVarValue);
         update(q, false, updateMask);

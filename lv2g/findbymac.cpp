@@ -230,7 +230,7 @@ void cFindByMac::hit_find()
 {
     QString sMac = pUi->comboBoxMAC->currentText();
     QString text = htmlReportByMac(*pq, sMac);
-    pUi->textEdit->setHtml(text);
+    pUi->textEdit->append(text);
 }
 
 void cFindByMac::hit_explore()
@@ -242,7 +242,7 @@ void cFindByMac::hit_explore()
     QString swName = pUi->comboBoxSw->currentText();
     cSnmpDevice sw;
     if (ip.isNull() || !mac.isValid() || !sw.fetchByName(q, swName)) {
-        pUi->textEdit->setHtml(htmlError(trUtf8("Hibás adatok.")));
+        pUi->textEdit->append(htmlError(trUtf8("Hibás adatok.")));
         return;
     }
     pThread = new cFBMExpThread(mac, ip, sw, this);
@@ -290,7 +290,7 @@ void cFindByMac::on_pushButtonFindIp_clicked()
 {
     QString sIp = pUi->comboBoxIP->currentText();
     QString text = htmlReportByIp(*pq, sIp);
-    pUi->textEdit->setHtml(text);
+    pUi->textEdit->append(text);
 }
 
 void cFindByMac::on_pushButtonNMap_clicked()

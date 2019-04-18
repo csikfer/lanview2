@@ -356,3 +356,7 @@ Ok      Ok (Info)
 Info    Info only (Not used by errors table)
 ';
 
+-- Javítás !!!! 2019.04.16. !!!!
+
+DROP TABLE IF EXISTS object_syntaxs;
+

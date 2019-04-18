@@ -263,7 +263,7 @@ QString titleNode(QSqlQuery &q, const cRecord& n)
 // Hiányos, kéne használni a tableShape rekordot
 tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle, qlonglong flags)
 {
-    QString text;
+    QString s, text;
     QString title;
     cPatch *po   = nodeToOrigin(q, &_node);
     cPatch& node = *(po == nullptr ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
@@ -280,11 +280,22 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     else {
         title = _sTitle.arg(node.getName(), tablename);
     }
+/*  Nagyon lassú...
+    QHostInfo hi = QHostInfo::fromName(node.getName());
+    if (!hi.addresses().isEmpty()) {
+        s.clear();
+        foreach (QHostAddress a, hi.addresses()) {
+            s += a.toString() + _sCommaSp;
+        }
+        s.chop(_sCommaSp.size());
+        text += htmlInfo(QObject::trUtf8("IP cím(ek) a (DNS) név alapján : %1 .").arg(s));
+    }
+*/
     if (!isPatch) {
         text += htmlInfo(QObject::trUtf8("Típus jelzők : %1").arg(node.getName(_sNodeType)));
         text += htmlInfo(QObject::trUtf8("Állapota : %1").arg(node.getName(_sNodeStat)));
     }
-    QString s = _node.getNote();
+    s = _node.getNote();
     if (!s.isEmpty()) text += htmlInfo(QObject::trUtf8("Megjegyzés : %1").arg(s));
     qlonglong pid = _node.getId(_sPlaceId);
     if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
