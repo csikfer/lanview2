@@ -6,13 +6,14 @@
 
 const enum ePrivilegeLevel cExportsWidget::rights = PL_OPERATOR;
 
-static const QString _sGUI = "GUI";
+static const QString sGUI = "GUI";
+static const QString sSRV = "SRV.";
 
 enum eExport {
     E_PRAM_TYPES, E_SYS_PARAMS, E_SERVICES, E_QUERY_PARSERS, E_IF_TYPES,
     E_TABLE_SHAPE, E_MENU_ITEMS, E_ENUM_VALS,
     E_SERVICE_VAR_TYPES, E_SERVICE_VARS,
-    E_GUI
+    E_GUI, E_SRV
 };
 
 cExportsWidget::cExportsWidget(QMdiArea *par)
@@ -23,7 +24,7 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
     isStop  = false;
     QSqlQuery q = getQuery();
     QStringList ol = cExport::exportableObjects();
-    ol << _sGUI;
+    ol << sGUI << sSRV;
     pUi->setupUi(this);
     pUi->comboBoxTable->addItems(ol);
     pUi->pushButtonStop->hide();    // Not working
@@ -58,10 +59,17 @@ void cExportsWidget::start()
     }
     else {
         QString s = pUi->comboBoxTable->currentText();
-        if (_sGUI == s) {
+        if (sGUI == s) {
             r  = e.MenuItems(EX_IGNORE);
             r += e.EnumVals(EX_IGNORE);
             r += e.TableShapes(EX_IGNORE);
+        }
+        else if (sSRV == s) {
+            r  = e.ServiceTypes(EX_IGNORE);
+            r += e.Services(EX_IGNORE);
+            r += e.ParamTypes(EX_IGNORE);
+            r += e.ServiceVarTypes(EX_IGNORE);
+            r += e.QueryParsers(EX_IGNORE);
         }
         else {
             EXCEPTION(EPROGFAIL);
@@ -80,8 +88,11 @@ void cExportsWidget::save()
 void cExportsWidget::changedName(const QString& tn)
 {
     QString t;
-    if (tn == _sGUI) {
+    if (tn == sGUI) {
         t = trUtf8("Teljes GUI export (MenuItems + EnumVals + TableShapes).");
+    }
+    else if (tn == sSRV) {
+        t = trUtf8("Szervíz objektumok export (SericeTypes + Services + ServiceVarTypes + ...).");
     }
     else {
         QSqlQuery q = getQuery();

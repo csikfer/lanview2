@@ -5,6 +5,26 @@
 #include "guidata.h"
 #include "vardata.h"
 
+template <typename IX> qlonglong getColDefaultInterval(const QString& tableName, IX ix)
+{
+    const cRecStaticDescr *pRecDescr = cRecStaticDescr::get(tableName);
+    bool ok;
+    const cColStaticDescr& colDescr = (*pRecDescr)[ix];
+    QString sDef = colDescr.colDefault;
+    qlonglong r = parseTimeInterval(sDef, &ok);
+    return ok ? 0 : r;
+}
+
+template <typename IX> qlonglong getColDefaultInteger(const QString& tableName, IX ix)
+{
+    const cRecStaticDescr *pRecDescr = cRecStaticDescr::get(tableName);
+    bool ok;
+    const cColStaticDescr& colDescr = (*pRecDescr)[ix];
+    QString sDef = colDescr.colDefault;
+    qlonglong r = sDef.toLongLong(&ok);
+    return ok ? 0 : r;
+}
+
 #define EXPORT_INDENT_SIZE  4
 
 enum eExportPotential {
@@ -17,6 +37,7 @@ enum eExportPotential {
 #define X_EXPORTABLE_OBJECTS \
     X(ParamType,    EXPORT_ANY) \
     X(SysParam,     EXPORT_ANY) \
+    X(ServiceType,  EXPORT_ANY) \
     X(Service,      EXPORT_ANY) \
     X(QueryParser,  EXPORT_TABLE) \
     X(IfType,       EXPORT_ANY) \
@@ -137,6 +158,8 @@ public:
     QString _export(QSqlQuery &q, cMenuItem &o);
     QString EnumVals(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cEnumVal &o);
+    QString ServiceTypes(eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery &q, cServiceType &o);
     QString Services(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cService& o);
     QString ServiceVars(eEx __ex = EX_NOOP);

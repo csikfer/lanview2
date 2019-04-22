@@ -1,3 +1,28 @@
+// Act Language : Magyar; ( default : US English ; failower : Magyar)
+SERVICE TYPE  "check_service" "Szolgáltatás működésének az ellenörzése";
+SERVICE TYPE  "daemon" "Lekérdező app";
+SERVICE TYPE  "group" "Lekérdezés csoport";
+SERVICE TYPE  "life_contr" "Jelenlét érzékelés kontroller";
+    MESSAGE "Kontroller hiba" "A kontroller hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!" SERVICE TYPE "life_contr" "warning";
+    MESSAGE "Kritikus hiba." "Kontroller hiba, az érzékelők állpota ismeretlen. Nincs védelem!" SERVICE TYPE "life_contr" "critical";
+    MESSAGE "Nem elérhető." "A kontroller nem elérhető, az érzékelő adatok nem megbízhatóak. Nincs védelem!" SERVICE TYPE "life_contr" "unreachable";
+    MESSAGE "Kikapcsolva." "A kontroller nem üzemel, az érzékelők állapota ismeretlen. Nincs védelem!" SERVICE TYPE "life_contr" "down";
+    MESSAGE "Billeg" "A kontroller ismételt hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!" SERVICE TYPE "life_contr" "flapping";
+    MESSAGE "Ismeretlen" "A kontroller állpota ismeretlen. Nincs védelem!" SERVICE TYPE "life_contr" "unknown";
+SERVICE TYPE  "life_sign" "Jelenlét érzékelés";
+    MESSAGE "Letíltva" "Az érzékelés letíltva, állapot ismeretlen" SERVICE TYPE "life_sign" "warning";
+    MESSAGE "Ismeretlen" "Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert" SERVICE TYPE "life_sign" "critical";
+    MESSAGE "Ismeretlen" "Az érzékelő ill. port állpota ismeretlen, nem elérhető, az eszköz jelenléte nem ismert" SERVICE TYPE "life_sign" "unreachable";
+    MESSAGE "Nincs jelen" "Az eszköz jelenléte nem érzékelhető" SERVICE TYPE "life_sign" "down";
+    MESSAGE "Billeg" "Az érzékelő ill. port állapota változó, billeg. A további riasztások letiltva." SERVICE TYPE "life_sign" "flapping";
+    MESSAGE "Ismeretlen" "Az érzékelő ill. port állpota ismeretlen, az eszköz jelenléte nem ismert" SERVICE TYPE "life_sign" "unknown";
+SERVICE TYPE  "link" "Link, kapcsolat, mutató(k)";
+SERVICE TYPE  "mode" "Mód azonosító";
+SERVICE TYPE  "protocol" "Protokol azonosító";
+SERVICE TYPE  "querying" "Lekérdező";
+SERVICE TYPE  "rule" "Szabály";
+SERVICE TYPE  "ticket" "Hiba jegy";
+SERVICE TYPE  "unmarked" "Jelöletlen";
 SERVICE "arp" "ARP tábla lekérdezése" {
     SUPERIOR SERVICE MASK "^arpd$";
     FEATURES ":timing=timed:";
@@ -250,17 +275,14 @@ SERVICE "lv2d" "Lanview2 super server" {
 }
 SERVICE "nil-1" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     FLAPPING INTERVAL 0;
-    FLAPPING MAX CHANGE 0;
     DISABLE;
 }
 SERVICE "nil-2" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     FLAPPING INTERVAL 0;
-    FLAPPING MAX CHANGE 0;
     DISABLE;
 }
 SERVICE "nil-3" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     FLAPPING INTERVAL 0;
-    FLAPPING MAX CHANGE 0;
     DISABLE;
 }
 SERVICE "nut" "Network Ups Tools" {
@@ -515,6 +537,7 @@ SERVICE "soniwall_arp" {
     SUPERIOR SERVICE MASK "parser";
     COMMAND "$homedir/bin/fwarp.sh";
     FEATURES ":method=qparse:timing=timed:";
+    MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 600;
     RETRY CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
@@ -601,7 +624,7 @@ SERVICE "UPS-MIB" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
-    TYPE "querying";
+    TYPE "link";
     OFF LINE GROUPS "admin";
 }
 SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
@@ -615,9 +638,162 @@ SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
 }
-SERVICE "win_dhcp_conf_parser" "Query Parser (inferior)" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
-    FEATURES ":timing=polling:method=parser:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
+PARAM "bigint" TYPE "integer";
+PARAM "boolean" TYPE "boolean";
+PARAM "bps" "Bitsebesség" TYPE "integer" "bps";
+PARAM "bytea" TYPE "bytea";
+PARAM "bytes" "Byte-ok" TYPE "integer" "Byte";
+PARAM "bytes_per_sec" "Bytes/sec" TYPE "real" "byte/s";
+PARAM "date" TYPE "date";
+PARAM "double precision" TYPE "real";
+PARAM "HPE Service SKU" TYPE "text";
+PARAM "inet" TYPE "inet";
+PARAM "interval" TYPE "interval";
+PARAM "minute" TYPE "integer" "minute";
+PARAM "node_name" TYPE "text";
+PARAM "override_mac" "?" TYPE "mac";
+PARAM "packets" TYPE "integer";
+PARAM "packets_per_sec" "packets/sec" TYPE "real" "pkt/s";
+PARAM "percent" TYPE "real" "%";
+PARAM "temp" "Hőmérséklet" TYPE "real" "°C";
+PARAM "text" TYPE "text";
+PARAM "time" TYPE "time";
+PARAM "timestamp" TYPE "datetime";
+PARAM "voltage" TYPE "real" "V";
+SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
+    TYPE "bytes_per_sec", "bytes" "COUNTER";
+    PLAUSIBILITY "no";
+    CRITICAL "no";
+    WARNING "no";
+}
+SERVICE VAR TYPE "ifmtu" "MTU" {
+    TYPE "bytes" "GAUGE";
+    PLAUSIBILITY "interval" "48", "10240";
+}
+SERVICE VAR TYPE "ifoutoctets" "Output bytes" {
+    TYPE "bytes" "GAUGE";
+}
+SERVICE VAR TYPE "ifpacks" "Input/output packets" {
+    TYPE "packets_per_sec", "packets" "COUNTER";
+}
+SERVICE VAR TYPE "ifpacks-err" "Input/output error/discard packets" {
+    TYPE "packets_per_sec", "packets" "COUNTER";
+    CRITICAL "big" "1.0";
+    WARNING "big" "0.0001";
+}
+SERVICE VAR TYPE "ifspeed" "Ethernet port átviteli sebessége" {
+    TYPE "bps" "GAUGE";
+    PLAUSIBILITY "big" "1";
+}
+SERVICE VAR TYPE "ifspeed-10g" "Ethernet 10G port átviteli sebessége" {
+    TYPE "bps" "GAUGE";
+    PLAUSIBILITY "big" "1";
+    CRITICAL "litle" "4294967295";
+}
+SERVICE VAR TYPE "ifspeed-fast" "Fast ethernet port átviteli sebessége" {
+    TYPE "bps" "GAUGE";
+    PLAUSIBILITY "big" "1";
+    CRITICAL "litle" "100000000";
+}
+SERVICE VAR TYPE "ifspeed-gig" "Ethernet gigabit port átviteli sebessége" {
+    TYPE "bps" "GAUGE";
+    PLAUSIBILITY "big" "1";
+    CRITICAL "litle" "1000000000";
+}
+SERVICE VAR TYPE "runtime" "Egy lkérdezést futásának az ideje" {
+    TYPE "interval" "GAUGE";
+    CRITICAL "big" "00:00:30";
+    WARNING "big" "00:00:10";
+}
+SERVICE VAR TYPE "runtime-slow" "Egy lassú lekérdezést futásának az ideje" {
+    TYPE "interval" "GAUGE";
+    PLAUSIBILITY "big" "00:00:01";
+    CRITICAL "big" "00:01:00";
+    WARNING "big" "00:00:30";
+}
+SERVICE VAR TYPE "temp-core" "CPU/SOC core temp." {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "5", "110";
+    CRITICAL "big" "75";
+    WARNING INVERSE "interval" "10", "60";
+}
+SERVICE VAR TYPE "temp-indoor" "Beltéri hőmérséklet" {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "5", "50";
+    CRITICAL INVERSE "interval" "10", "40";
+    WARNING INVERSE "interval" "18", "30";
+}
+SERVICE VAR TYPE "upsAdvBatteryRunTimeRemaining" "service : PoweNet-MIB" {
+    TYPE "interval", "bigint" "COMPUTE";
+    PLAUSIBILITY "litle" "1 day";
+    CRITICAL "litle" "00:02:00";
+    WARNING "litle" "00:10:00";
+    FEATURES ":rpn=10 *:";
+}
+SERVICE VAR TYPE "upsBatteryStatus" "service : UPS-MIB" {
+    TYPE "text", "bigint" "GAUGE";
+    CRITICAL INVERSE "interval" "1", "3";
+    WARNING INVERSE "equal" "batteryNormal";
+    FEATURES  {
+        "enumeration" = "!,unknown,batteryNormal,batteryLow,batteryDepleted";
+    }
+}
+SERVICE VAR TYPE "upsBatteryTemperature" "service : UPS-MIB" {
+    TYPE "temp", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "0", "100";
+    CRITICAL INVERSE "interval" "10", "40";
+    WARNING INVERSE "interval" "15", "30";
+}
+SERVICE VAR TYPE "upsBatteryVoltage" "service : UPS-MIB" {
+    TYPE "voltage", "bigint" "COMPUTE";
+    PLAUSIBILITY "interval" "24", "60";
+    CRITICAL INVERSE "interval" "48", "58";
+    WARNING INVERSE "interval" "50", "57";
+    FEATURES ":rpn=10 /:";
+}
+SERVICE VAR TYPE "upsEstimatedChargeRemaining" "service : UPS-MIB" {
+    TYPE "percent", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "-1", "101";
+    CRITICAL "litle" "15";
+    WARNING "litle" "50";
+}
+SERVICE VAR TYPE "upsEstimatedMinutesRemaining" "service : UPS-MIB" {
+    TYPE "interval", "minute" "COMPUTE";
+    PLAUSIBILITY "litle" "1 day";
+    CRITICAL "litle" "00:02:00";
+    WARNING "litle" "00:10:00";
+    FEATURES ":rpn=60 * 1000 *:";
+}
+SERVICE VAR TYPE "upsInputVoltage" "service : UPS-MIB" {
+    TYPE "voltage", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "100", "400";
+    CRITICAL INVERSE "big" "200", "250";
+    WARNING INVERSE "interval" "210", "240";
+}
+SERVICE VAR TYPE "upsOutputPercentLoad" "service : UPS-MIB" {
+    TYPE "percent", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "-1", "120";
+    CRITICAL "big" "95";
+    WARNING "big" "80";
+}
+SERVICE VAR TYPE "upsOutputVoltage" "service : UPS-MIB" {
+    TYPE "voltage", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "100", "400";
+    CRITICAL INVERSE "big" "200", "250";
+    WARNING INVERSE "interval" "210", "240";
+}
+DELETE QUERY PARSER "win_dhcp_conf";
+QUERY PARSER "win_dhcp_conf" {
+     "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)" "REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;";
+     "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)" "REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;";
+     "Dhcp\\s+Server\\s+\\\\+([\\wqd\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)" "REPLACE ARP $2 MAC(\"$3\") config $host_service_id $$note$$$4$$note$$;";
+}
+DELETE QUERY PARSER "temp.owget";
+QUERY PARSER "temp.owget" {
+     "^\\s*(\\d+\\.?\\d*)\\s*$" "SET HOST SERVICE $host_service_id VAR $varname = $1;  SET HOST SERVICE $host_service_id STATE #state;";
+     "(.+)" "SET HOST SERVICE $host_service_id VAR $varnames = REPLACE \"$1\"/\"\\s+\"/\", \"/;  SET HOST SERVICE $host_service_id STATE #state;";
+}
+DELETE QUERY PARSER "soniwall_arp";
+QUERY PARSER "soniwall_arp" {
+     "^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\s+(\\w+)\\s+([A-F\\d:]{17})\\s+(.+)" "REPLACE ARP $1 $3 \"query\" $host_service_id  \"$2 $4\" ;";
 }

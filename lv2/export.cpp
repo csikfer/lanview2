@@ -661,6 +661,49 @@ QString cExport::_export(QSqlQuery &q, cEnumVal &o)
 }
 
 /* ---------------------------------------------------------------------------------------- */
+QString cExport::ServiceTypes(eEx __ex)
+{
+    cServiceType o;
+    QString r;
+    r  =  langComment();
+    r += sympleExport(o, o.toIndex(_sServiceTypeName), __ex);
+    return r;
+}
+
+QString cExport::_export(QSqlQuery &q, cServiceType& o)
+{
+    static const QString sServiceType = "SERVICE TYPE ";
+    QString r = line(head(sServiceType, o) + _sSemicolon);
+    cAlarmMsg am;
+    am.setId(_sServiceTypeId, o.getId());
+    bool f = am.fetch(q, false, am.mask(_sServiceTypeId), am.iTab(_sStatus));
+    if (f) {
+        tRecordList<cAlarmMsg>  aml;
+        do {
+            aml << am;
+        } while (am.next(q));
+        actIndent++;
+        for (int i = 0; i < aml.size(); ++i) {
+            cAlarmMsg *pam = aml.at(i);
+            pam->fetchText(q);
+            QString l = "MESSAGE "
+                    + escaped(pam->getText(cAlarmMsg::LTX_SHORT_MSG))
+                    + _sSp
+                    + escaped(pam->getText(cAlarmMsg::LTX_MESSAGE))
+                    + _sSp
+                    + sServiceType
+                    + escaped(o.getName())
+                    + _sSp
+                    + escaped(pam->getName(_sStatus))
+                    + _sSemicolon;
+            r += line(l);
+        }
+        actIndent--;
+    }
+    return r;
+}
+
+/* ---------------------------------------------------------------------------------------- */
 
 QString cExport::Services(eEx __ex)
 {
@@ -671,8 +714,12 @@ QString cExport::Services(eEx __ex)
 QString cExport::_export(QSqlQuery &q, cService& o)
 {
     QString r;
-    // static const qlonglong      flapIval   = 30 * 60 * 1000;   // 30 min
-    // static const qlonglong      flapMax    = 15;
+    static qlonglong      flapIval   = NULL_ID;
+    static qlonglong      flapMax    = NULL_ID;
+    if (flapIval == NULL_ID) {
+        flapIval = getColDefaultInterval(_sServices, _sFlappingInterval);
+        flapMax  = getColDefaultInteger(_sServices, _sFlappingMaxChange);
+    }
     qlonglong id = o.getId();
     if (id == TICKET_SERVICE_ID || id == NIL_SERVICE_ID) {
         // Fix id, nem lehet exportálni, ill. inmportálni.
@@ -688,8 +735,8 @@ QString cExport::_export(QSqlQuery &q, cService& o)
         b += paramLine(q, "NORMAL CHECK INTERVAL", o[_sNormalCheckInterval]);
         b += paramLine(q, "HEARTBEAT TIME",        o[_sHeartbeatTime]);
         b += paramLine(q, "RETRY CHECK INTERVAL",  o[_sRetryCheckInterval]);
-        b += paramLine(q, "FLAPPING INTERVAL",     o[_sFlappingInterval]/*,   flapIval*/);
-        b += paramLine(q, "FLAPPING MAX CHANGE",   o[_sFlappingMaxChange]/*,  flapMax*/);
+        b += paramLine(q, "FLAPPING INTERVAL",     o[_sFlappingInterval],   flapIval);
+        b += paramLine(q, "FLAPPING MAX CHANGE",   o[_sFlappingMaxChange],  flapMax);
         b += paramLine(q, "TYPE",                  o[_sServiceTypeId],      UNMARKED_SERVICE_TYPE_ID);
         b += paramLine(q, "ON LINE GROUPS",        o[_sOnLineGroupIds],     cColStaticDescrArray::emptyVariantList);
         b += paramLine(q, "OFF LINE GROUPS",       o[_sOffLineGroupIds],    cColStaticDescrArray::emptyVariantList);

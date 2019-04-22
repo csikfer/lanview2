@@ -411,6 +411,10 @@ GUI "lv2gui" {
             PARAM "snmpdquery";
             TITLE "SNMP beszúr/frissít",@;
         }
+        OWN "changeswitch" {
+            TITLE "Switch csere",@;
+            TOOL TIP "Switch csere:\nA fizikai linkek, és port paraméterek másolása";
+        }
     }
 }
 // Act Language : Magyar; ( default : US English ; failower : Magyar)
@@ -1198,7 +1202,7 @@ TABLE SHAPE "alarms" "Riasztások (tábla)" {
     EDIT RIGHTS "system";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "system";
-    // RIGHT SHAPE "user_events","host_service_logs";
+    // RIGHT SHAPE "user_events","host_service_logs","alarm_service_vars";
     ADD FIELD "alarm_id" "alarm_id" {
         TITLE "ID","Riasztás egyedi azonosító kódja";
         FLAG "read_only";
@@ -1238,6 +1242,51 @@ TABLE SHAPE "alarms" "Riasztások (tábla)" {
     FIELD "begin_time" ORD desc, no, asc;
     FIELD "end_time" ORD no, asc, desc;
     FIELD ORD SEQUENCE "begin_time", "end_time";
+}
+TABLE SHAPE "alarm_service_vars" {
+    TITLE "alarm_service_vars",@;
+    TYPE "child", "read_only";
+    FEATURES  {
+        "bg_color" = "var_state";
+        "copy";
+        "report";
+    }
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "system";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "system";
+    ADD FIELD "alarm_service_var_id" {
+        TITLE "ID",@;
+        FLAG "table_hide";
+    }
+    ADD FIELD "alarm_id" {
+        TITLE "ID",@;
+        FLAG "table_hide";
+    }
+    ADD FIELD "service_var_id" {
+        TITLE "service_var_id",@;
+        FLAG "table_hide";
+    }
+    ADD FIELD "service_var_value" {
+        TITLE "Érték","Érték a riasztáskor";
+    }
+    ADD FIELD "var_state" {
+        TITLE "Állapot","Állapot a riasztáskor";
+    }
+    ADD FIELD "state_msg" {
+        TITLE "state_msg",@;
+        FLAG "huge";
+    }
+    ADD FIELD "raw_value" {
+        TITLE "raw_value",@;
+    }
+    ADD FIELD "service_var_id" AS "service_var_type" {
+        TITLE "Típus","Változó típusa";
+        FEATURES  {
+            "view_func" = "service_var_type_name FROM service_var_types WHERE service_var_type_id = ?";
+        }
+    }
 }
 TABLE SHAPE "app_errs" "Applikáció hiba napló" {
     TITLE "app_errs",@,@;
@@ -1691,9 +1740,9 @@ TABLE SHAPE "fkey_types" "Távoli kulcs típusok" {
     TYPE "simple", "read_only";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
     ADD FIELD "fkey_type_id" "fkey_type_id" {
         TITLE "fkey_type_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
@@ -2637,9 +2686,9 @@ TABLE SHAPE "menu_items" "Menu elemek" {
     TYPE "tree";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
     ADD FIELD "menu_item_name" "menu_item_name" {
         TITLE "menu_item_name",@;
     }
@@ -2990,12 +3039,16 @@ TABLE SHAPE "patchs" "Pach panelek és fali csatlakozók" {
 TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     TITLE "Fizikai linkek","Fizikai link, patch";
     TYPE "link";
-    FEATURES ":button.copy:";
+    FEATURES ":button.copy:report:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
+    ADD FIELD "phs_link_id" {
+        TITLE "ID","Rekord azonosító";
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
     ADD FIELD "node_name1" {
         TITLE "Linked","Linked elem";
     }
@@ -3038,9 +3091,24 @@ TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     ADD FIELD "phs_link_note" {
         TITLE "Megjegyzés",@;
     }
+    ADD FIELD "create_time" {
+        TITLE "Létrehozva",@;
+    }
+    ADD FIELD "create_user_id" {
+        TITLE "Létrehozta",@;
+    }
+    ADD FIELD "modify_time" {
+        TITLE "Javítva",@;
+    }
+    ADD FIELD "modify_user_id" {
+        TITLE "Javította",@;
+    }
+    ADD FIELD "forward" AS "forwared" {
+        TITLE "F.","\"Irány\"";
+    }
     FIELD "port_name1", "port_index1", "phs_link_type1" ORD asc, no, desc;
-    FIELD "node_name1", "port_tag1", "node_name2", "port_name2", "port_index2", "port_tag2", "phs_link_type2" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "node_name1", "port_index1", "port_name1", "phs_link_type1", "node_name2", "port_name2", "port_index2", "phs_link_type2", "port_tag1", "port_tag2";
+    FIELD "node_name1", "port_tag1", "node_name2", "port_name2", "port_index2", "port_tag2", "phs_link_type2", "create_time", "create_user_id", "modify_time", "modify_user_id" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "node_name1", "port_index1", "port_name1", "phs_link_type1", "node_name2", "port_name2", "port_index2", "phs_link_type2", "port_tag1", "port_tag2", "create_time", "create_user_id", "modify_time", "modify_user_id";
 }
 TABLE "patchs" SHAPE "phsnodes" "Hálózati elem (aktív, passzív és csatlakozók)" {
     TITLE "phsnodes",@,@;
@@ -3477,38 +3545,45 @@ TABLE SHAPE "pports" "Pach panel és fali csatlakozó portok" {
     FIELD ORD SEQUENCE "port_index", "port_name", "port_tag", "port_note";
 }
 TABLE SHAPE "query_parsers" "Lekérdezés értelmezések" {
-    TITLE "query_parsers",@,@;
+    TITLE "query_parsers",@;
     TYPE "simple";
-    FEATURES ":button.copy:";
+    FEATURES ":button.copy:report:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
-    ADD FIELD "query_parser_id" "query_parser_id" {
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
+    ADD FIELD "query_parser_id" {
         TITLE "query_parser_id",@;
-        FLAG "table_hide", "dialog_hide", "read_only";
+        FLAG "table_hide", "read_only";
     }
-    ADD FIELD "query_parser_note" "query_parser_note" {
-        TITLE "query_parser_note",@;
-    }
-    ADD FIELD "service_id" "service_id" {
+    ADD FIELD "service_id" {
         TITLE "service_id",@;
+        FLAG "HTML";
     }
-    ADD FIELD "parse_type" "parse_type" {
+    ADD FIELD "parse_type" {
         TITLE "parse_type",@;
+        FLAG "HTML";
     }
-    ADD FIELD "item_sequence_number" "item_sequence_number" {
+    ADD FIELD "item_sequence_number" {
         TITLE "item_sequence_number",@;
+        FLAG "HTML";
     }
-    ADD FIELD "case_sensitive" "case_sensitive" {
+    ADD FIELD "case_sensitive" {
         TITLE "case_sensitive",@;
+        FLAG "HTML";
     }
-    ADD FIELD "regular_expression" "regular_expression" {
+    ADD FIELD "regular_expression" {
         TITLE "regular_expression",@;
+        FLAG "HTML";
     }
-    ADD FIELD "import_expression" "import_expression" {
+    ADD FIELD "import_expression" {
         TITLE "import_expression",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "query_parser_note" {
+        TITLE "query_parser_note",@;
+        FLAG "HTML";
     }
     FIELD "service_id", "item_sequence_number" ORD asc, no, desc;
     FIELD ORD SEQUENCE "service_id", "item_sequence_number";
@@ -3519,18 +3594,15 @@ TABLE SHAPE "selects" "Minta tár" {
     FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
     ADD FIELD "select_id" "select_id" {
         TITLE "select_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
     }
     ADD FIELD "select_type" "select_type" {
         TITLE "Típus","A minta típusa/célja";
-    }
-    ADD FIELD "select_note" "select_note" {
-        TITLE "Megjegyzés",@;
     }
     ADD FIELD "precedence" "precedence" {
         TITLE "Sorrend",@;
@@ -3547,9 +3619,12 @@ TABLE SHAPE "selects" "Minta tár" {
     ADD FIELD "features" "features" {
         TITLE "Egyébb paraméterek",@;
     }
-    FIELD "select_type" ORD asc, no, desc;
-    FIELD "select_note", "precedence", "pattern", "pattern_type", "choice", "features" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "select_type", "select_note", "precedence", "pattern", "pattern_type", "choice", "features";
+    ADD FIELD "select_note" "select_note" {
+        TITLE "Megjegyzés",@;
+    }
+    FIELD "select_type", "precedence" ORD asc, no, desc;
+    FIELD "pattern", "pattern_type", "choice", "features", "select_note" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "select_type", "precedence", "pattern", "pattern_type", "choice", "features", "select_note";
 }
 TABLE SHAPE "services" {
     TITLE "Szolgáltatások","Szolgáltatás";
@@ -3993,21 +4068,25 @@ TABLE SHAPE "sys_params" "Rendszer paraméterek" {
     EDIT RIGHTS "system";
     DELETE RIGHTS "system";
     INSERT RIGHTS "system";
-    ADD FIELD "sys_param_id" "sys_param_id" {
-        TITLE "sys_param_id","Egyedi azonosító (ID)";
+    ADD FIELD "sys_param_id" {
+        TITLE "ID","Egyedi azonosító (ID)";
         FLAG "table_hide", "read_only";
     }
-    ADD FIELD "sys_param_name" "sys_param_name" {
+    ADD FIELD "sys_param_name" {
         TITLE "Név","Rendszer paraméter neve";
+        FLAG "HTML";
     }
-    ADD FIELD "sys_param_note" "sys_param_note" {
-        TITLE "Megjegyzés",@;
-    }
-    ADD FIELD "param_type_id" "param_type_id" {
+    ADD FIELD "param_type_id" {
         TITLE "Típus","A paraméter típusa";
+        FLAG "HTML";
     }
-    ADD FIELD "param_value" "param_value" {
+    ADD FIELD "param_value" {
         TITLE "Érték","A rendszer paraméter értéke";
+        FLAG "HTML";
+    }
+    ADD FIELD "sys_param_note" {
+        TITLE "Megjegyzés",@;
+        FLAG "HTML";
     }
     FIELD "sys_param_name" ORD asc, no, desc;
     FIELD "param_type_id" ORD no, asc, desc;
@@ -4343,12 +4422,12 @@ TABLE "online_alarm_unacks" SHAPE "uaalarms" "Nem nyugtázott riasztások" {
 }
 TABLE SHAPE "unusual_fkeys" "Nem tipikus távoli kulcsok" {
     TITLE "unusual_fkeys",@,@;
-    TYPE "simple";
+    TYPE "simple", "read_only";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
     ADD FIELD "unusual_fkey_id" "unusual_fkey_id" {
         TITLE "unusual_fkey_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
@@ -4582,6 +4661,7 @@ TABLE SHAPE "vlans" "VLAN-ok" {
 }
 SET table_shapes["alarms"].right_shape_ids += ID TABLE SHAPE ("user_events");
 SET table_shapes["alarms"].right_shape_ids += ID TABLE SHAPE ("host_service_logs");
+SET table_shapes["alarms"].right_shape_ids += ID TABLE SHAPE ("alarm_service_vars");
 SET table_shapes["groups"].right_shape_ids += ID TABLE SHAPE ("users");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("ip_addresses");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("port_params");
