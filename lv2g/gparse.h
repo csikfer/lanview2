@@ -13,12 +13,15 @@ namespace Ui {
 }
 #endif
 
+/// @class cParseWidget
+/// A parser és/vagy query parser hívása (tab) widget
 class  LV2GSHARED_EXPORT cParseWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
     cParseWidget(QMdiArea *par);
     ~cParseWidget();
+    /// Minimális jogosultsági szint az eléréséhez.
     static const enum ePrivilegeLevel rights;
 private:
     Ui::GParseWidget *pUi;

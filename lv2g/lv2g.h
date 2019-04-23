@@ -10,44 +10,126 @@
 /*!
 @page GUIAPI A LanvWie API GUI modulja
 Külön könyvtárba kerültek a LanView2 rendszer GUI-t támogató osztályai, ill. funkciói.
-A könyvtár a következő osztályokat valósítja meg:\n
-@section modells Model osztályok
+
+GUI alkalmazásokban a lanView helyett annak leszármazotját az lv2Gui objektumot (vagy leszármazottját)
+kell példányosítani, a program inicializálásához. Szintén érdemes lecserélni az alapértelmezett
+QApplication::notify() metódust, mivel alapesetben a Qt nem támogatja a kizárások kezekését.
+A fentiek miatt nem a QApplication példányosításával indítjuk a programunkat, hanem a cLv2GQAll osztály
+példányosításával (ami a QApplication leszármazottja, és fellüldefiniálja a notify() metódust. Lássd: a lv2gui.cpp fájlt.
+
+A könyvtár a következő elemeket valósítja meg:\n
+@section modells Model osztályok (Fej állomány : lv2models.h )
 - cStringListModel  String lista megjelenítése és kezelése
+- cStringListDecModel Dekorált string lista model
 - cPolygonTableModel Polygon táblázatos megjelenítése
-- cRecordListModel Rekord lista megjelenítése, minden rekordot egy string (név) azonosít
-- cRecordTableModel
-- cRecordTreeModel
+- cRecordListModel Rekord lista megjelenítése, minden rekordot a neve azonosít
+- cZoneListModel    Zónák megjelenítése, lista model
+- cPlacesInZoneModel Helyiség nevek egy megadott zónában, lista model
+- cEnumListModel Egy enumerációs típus elemeinek a dekorált lista modelje
+- cRecFieldSetOfValueModel Lista model, egy mező eddigi értékei alapján
+- cResourceIconsModel Lista modell
+Adattáblák megjelenítése (külön fejállományben).
+- cRecordTableModel Adattábla táblázatos megjelenítés a cTableShape alapján
+- cRecordTreeModel  Adattábla fa megjelenítés a cTableShape alapján
 @section validators Validátor osztályok
 - cIntValidator Validator egy numerikus egész típusú mezőhöz.
 - cRealValidator Validator egy numerikus típusú mezőhöz.
 - cMacValidator Validator egy MAC típusú mezőhöz.
 - cINetValidator Input validátor a INET adattípushoz. Csak a hoszt cím van engedélyezve.
 - cCidrValidator Input validátor a CIDR adattípushoz. (hálózati cím tartomány)
-@section vidgets Widget-ek. Mezők meglenítése, szerkesztése
-- cImageWindow Egy képet megjelenítő ablak.
-- cFieldEditBase Bázis objektum, egy mező megjelenítéséhez, ill. adattartalmának a szerkesztéséhez.
-- cSetWidget Egy set típusú (enumerációs tömb) adatmező megjelenítése, ill. szerkesztésére.
-- cEnumRadioWidget Egy enumerációs (vagy bool) adatmező megjelenítése, ill. szerkesztésére.
-- cEnumComboWidget Egy enumerációs (vagy bool) adatmező megjelenítése, ill. szerkesztésére.
+- cItemDelegateValidator
+@section widgets Widget-ek, ill. widget kezelő osztályok. Mezők meglenítése, szerkesztése
+Widgetek:
+- cImageWidget Egy képet megjelenítő widget.
+- cLineWidget Egy soros editor + egy NULL toolButton.
+- cComboLineWidget Egy comboBox + egy NULL toolButton
+- cROToolButton Engedélyezetten inaktív toolButton
+- cStringMapEdit
+
+Widget(ek)et kezelő osztályok
+- cSelectLanguage Nyelv kiválasztása
+- cSelectPlace Helyiség kiválasztása
+- cSelectNode Eszköz kiválasztása
+- cSelectLinkedPort
+- cSelectVlan
+- cSelectSubNet
+
+Az adat mező widgetek, cFieldEditBase és leszármazottai.
+- cNullWidget "Nincs elegendő jogosultsága"
+- cSetWidget Egy set típusú (enumerációs tömb)
+- cEnumRadioWidget Egy enumerációs (vagy bool)
+- cEnumComboWidget Egy enumerációs (vagy bool)
 - cFieldLineWidget Szöveges mező, egy sorban.
-- cArrayWidget Egy tömb típusú adatmező megjelenítése és módosítása.
-- cPolygonWidget Egy tömb adatmező megjelenítése és módosítása.
-- cFKeyWidget Egy távoli kulcs mező megjelenítése, és szerkesztése.
-- cTimeWidget Egy időpont megjelenítése ill. szerkesztése.
-- cDateWidget Egy dátun megjelenítése ill. szerkesztése.
-- cDateTimeWidget Egy dátun, és idópont megjelenítése ill. szerkesztése.
-- cIntervalWidget Egy intervallum
-- cBinaryWidget
+- cFieldSpinBoxWidget spinBox
+- cArrayWidget Egy tömb típusú adatmező
+- cPolygonWidget Egy polygon
+- cFKeyWidget Egy távoli kulcs mező
+- cTimeWidget Egy időpont
+- cDateWidget Egy dátum
+- cDateTimeWidget Egy dátum, és idópont
+- cIntervalWidget Egy idő intervallum
+- cBinaryWidget Bináris adat
+- cFKeyArrayWidget Távoli kulcsok tömb
+- cColorWidget Szín
+- cFontFamilyWidget Font család (név)
+- cFontAttrWidget Font attributumok
+- cLTextWidget  Nyelvi szöveg
+- cFeatureWidget    Feature mező
+
 @section guihigh Magasabb szintű GUI API osztályok
+- cDialogButtons
 - cRecordTable
-- cRecordTableColumn
-- cRecordTableFODialog
-- cRecordTableFilter
-- cRecordTableOrd
-- cRecordDialogBase
+- cRecordTree
+- cRecordLink
 - cRecordDialog
 - cRecordDialogTab
-- cDialogButtons
+
+A cIntSubObj bázisosztály és leszármazottai:
+- cSetupWidget
+- cGSetupWidget
+- cParseWidget
+- cExportsWidget
+- cOnlineAlarm
+- cErrcodesWidget
+- cHSOperate
+- cFindByMac
+- cWorkstation
+- cDeducePatch
+- cSnmpDevQuery
+- cEnumValsEdit
+- cTranslator
+- cChangeSwitch
+
+@section enumdec Enumerációs típusokhoz kapcsolt dekorációt támogató függvények
+Az enumerációs típusokhoz, illetve a típus értékeihez rendelt dekorációs paraméterek lekérdezését végzik.
+Az adatokat a memóriába pufferelik, csökkentendő az adatbázis műveletek számát. Emiatt ha változás történik,
+akkor az csak a program újraindítása után érvényesül.
+- const QColor& bgColorByEnum(const QString& __t, int e)
+- const QColor& bgColorByBool(const QString& _tn, const QString& _fn, int e)
+- const QColor& dcBgColor(int id)
+- const QColor& fgColorByEnum(const QString& __t, int e)
+- const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e)
+- const QColor& dcFgColor(int id)
+- const QFont& fontByEnum(const QString& __t, int _e)
+- const QFont& fontByEnum(const cEnumVal& ev)
+- const QFont& dcFont(int id)
+- void enumSetColor(QWidget *pW, const QString& _t, int id)
+- void enumSetBgColor(QWidget *pW, const QString& _t, int id)
+- void enumSetFgColor(QWidget *pW, const QString& _t, int id)
+- void dcSetColor(  QWidget *pW, int id)
+- void dcSetBgColor(QWidget *pW, int id)
+- void dcSetFbColor(QWidget *pW, int id)
+- void enumSetD(QWidget *pW, const cEnumVal& ev, int id = NULL_IX)
+- void enumSetD(QWidget *pW, const QString& _t, int id)
+- void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcId)
+- void dcSetD(QWidget *pW, int id)
+- void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds)
+- void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds, qlonglong ff, int dcId)
+- void dcSetShort(W *pW, int id)
+- QVariant enumRole(const cEnumVal& ev, int role, int e)
+- QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
+- QVariant dcRole(int id, int role)
+
 
 */
 #include "lanview.h"

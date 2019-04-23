@@ -15,6 +15,7 @@ class  LV2GSHARED_EXPORT cExportsWidget : public cIntSubObj
 public:
     cExportsWidget(QMdiArea *par);
     ~cExportsWidget();
+    /// Minimális jogosultsági szint az eléréséhez.
     static const enum ePrivilegeLevel rights;
     QString fileName;
 private:

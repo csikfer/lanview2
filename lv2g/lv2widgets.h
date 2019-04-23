@@ -134,7 +134,7 @@ signals:
 };
 
 /// \brief The cComboLineWidget class
-/// Egy soros editor6 COMBObOX + egy NULL toolButton
+/// Egy comboBox + egy NULL toolButton
 class LV2GSHARED_EXPORT cComboLineWidget : public QWidget {
     Q_OBJECT
 public:
@@ -250,6 +250,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
 };
 
+/*
 class LV2GSHARED_EXPORT cValidRTButton : public cROToolButton {
     Q_OBJECT
 public:
@@ -263,7 +264,7 @@ public slots:
     void setState(QValidator::State _vst);
     void setStateOff();
 };
-
+*/
 enum eFieldWidgetType {
     FEW_UNKNOWN = -1,   ///< ismeretlen/inicializálatlan/hibajelzés
     FEW_SET     =  0,   ///< cSetWidget

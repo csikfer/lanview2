@@ -84,9 +84,9 @@ protected:
     int    _privilegeLevel;
 };
 
-/// @typedef cGroupUser
+/// @typedef tGroupUser
 /// Az objektum típus a groups/users táblák közötti kapcsoló táblát kezeli
 /// Nem cRecord típusú objektum. De adattagként tartalmaza a cUser és cGroup objektumokat.
-typedef tGroup<cGroup, cUser> cGroupUser;
+typedef tGroup<cGroup, cUser> tGroupUser;
 
 #endif // LV2USER_H

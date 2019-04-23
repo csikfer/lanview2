@@ -7,11 +7,14 @@
 #include "lv2g.h"
 #include "ui_gsetup.h"
 
+/// @class cGSetupWidget
+/// Program GUI setup (tab) widget
 class LV2GSHARED_EXPORT cGSetupWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
     cGSetupWidget(QMdiArea *par);
+    /// Minimális jogosultsági szint az eléréséhez.
     static const enum ePrivilegeLevel rights;
 protected:
     void applicate();

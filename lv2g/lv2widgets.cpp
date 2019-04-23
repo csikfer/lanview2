@@ -208,7 +208,7 @@ void cComboLineWidget::on_ComboBox_textChanged(const QString& s)
     changed(val);
 }
 
-/* **************************************** cImageWindows **************************************** */
+/* **************************************** cImageWidget **************************************** */
 
 cImageWidget::cImageWidget(QWidget *__par)
     : QScrollArea(__par)
@@ -346,7 +346,7 @@ void cROToolButton::mouseReleaseEvent(QMouseEvent *e)
 {
     (void)e;
 }
-
+/*
 QIcon cValidRTButton::unknown;
 QIcon cValidRTButton::invalid;
 QIcon cValidRTButton::intermediate;
@@ -379,6 +379,7 @@ void cValidRTButton::setStateOff()
     setChecked(false);
     setIcon(unknown);
 }
+*/
 
 /* ********************************************************************************************
    ************************************** cFieldEditBase **************************************

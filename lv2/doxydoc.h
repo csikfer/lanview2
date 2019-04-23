@@ -8,7 +8,7 @@
 @mainpage LanView2 API
 @author Csiki Ferenc <csikfer@gmail.com>
 @section A LanView API Inicializálása, a lanView osztály
-Az API-nak hasonlóan a Qt-ben a QApplication osztályhoz van egy „globálisan” objektuma,
+Az API-nak hasonlóan a Qt-ben a QApplication osztályhoz van egy „globális” objektuma,
 amit egy példányban mindig létre kell hozni. A példány létrehozásakor inicializáljuk az API-t,
 és ez a példány teszi lehetővé pl. az adatbázis elérését is.
 Bár a lanview osztály példányosítható, de praktikusan egy leszármazottját használjuk mely
@@ -33,7 +33,7 @@ akkor az ilyenkor használatos try { … } blokkban használhatjuk a CATCHS() ma
 @section cDebug Nyomkövetés, a cDebug osztály
 A cDebug osztállyal közvetlenül álltalában nem találkozunk, azt a lanView osztály inicializálja ill. példányosítja.
 Használata pedig makrókon keresztül történik.
-Minden a cDebug-on keresztül kiírt üzenetet a cDebug egy fejléccel lát el, mely hasonló a syslog üzenetekhez,
+Minden a cDebug osztályon keresztül kiírt üzenetet a cDebug egy fejléccel lát el, mely hasonló a syslog üzenetekhez,
 de elötte tartalmaz egy típus azonosítót, ami egy fix 8 karakter hosszú hexa szám, ami további szűrésre ad hehetőséget,
 továbbá ha a program több szálú, akkor a fejléc tartalmazza az üzenetet küldő szál nevét is.
 A cDebug lehetőséget biztosít GUI program esetén az üzenetek elfogására egy signal-on keresztül, ha azt a GUI-ban meg akarjuk jeleníteni.
@@ -43,7 +43,7 @@ A cdebug.h tartalmaz néhány függvényt, ami hasznos lehet egy adat megjelení
 
 @section others Az API saját egyéb adat típusai.
 Lásd a lv2types.h .
-- eTristate Három állapotú kapcsoló.
+- eTristate Három állapotú kapcsoló, ill. boolean típus kiegészítve a NULL értékkel.
 - cMac  Ethernet cím (MAC)
 - netAddress Hálózati címtartomány (IP/mask)
 - netAddressList    Hálózati címtartományok konténere
@@ -72,12 +72,16 @@ pointere nem statikus. Az osztály természetesen nem egyenértékű a konkréta
 specifikus (az adatbázisból nem kiovasható) tulajdonságai hiányoznak.
 
 @subsection crectmpl További sablonok
-- tRecordList   A cRcord leszármazottak konténere
+- tRecordList   Egy list típusú konténer, melynek elemei egy cRecord leszármazott objektumok.
 - tOwnRecords   Egy cRecord leszármaott objektum tulajdonában lévő objektumok konténere
 - tGroup        A csoport és tagság kapcsoló tábla kezelő sablon
 - cGroupAny     Hasonló a tGroup osztályhoz, de a group - member objektumok típusa a cRecordAny
 
 @section User Felhasználók kezelése.
+Fejállomány: lv2user.h
+- cUser Felhasználók (users tábla)
+- cGroup Felhasználói csoportok (groups tábla)
+- tGroupUser A csoport kezelést segítő osztály.
 
 @section location Helyek helyiségek zónák, ...
 Az eszközök helyének beazonosítására szolgáló obketumok:
@@ -92,7 +96,7 @@ cPatch -> cNode -> cSnmpDevice.
 A portokat szintén három tábla irja le: nports, pports, interfaces, melyekkel megfeleltethető az
 azonos származási sort alkotó három API osztály: cNPort, cPPort, cInterface.
 
-A hálózati elemek és portok relációja viszont nem ennyire egyenes, az ős a cNPort, és ebbűl származik a cPPort és a cInterface is.
+A hálózati elemek és portok relációja viszont nem ennyire egyenes, az ős a cNPort, és ebből származik a cPPort és a cInterface is.
 A patchs rekord ill. cPatch osztálynak (patch panelek és fali, vagy egyébb csatlakozók) csak pporsts ill. cPPort elemei lehetnek,
 és ez a port típus csak a cPatch osztályhoz rendelhető.
 A másik 2-2 objektum típus szabadon összerendelhető.
@@ -106,7 +110,20 @@ A hálózati elemek kapcsolódását kezelő obkeltumok (lásd: lv2link.h)
 - cMacTab   A switch címtáblák lekérdezésének eredménye. Közvetve ad információt a topológiáról.
 
 @section service Szolgáltatások
-Lásd: srvdata.h
+Szolgáltatásokkal, lekérdezésekkel, és riasztásokkal kapcsolatos osztályok.
+Fejállomány: srvdata.h
+- cService
+- cServiceType
+- cHostService
+- cUserEvent
+- cAlarm
+- cAlarmMsg
+- cQueryParser
+- cImport
+- cArp
+- cDynAddrRange
+- cMacTab
+- cOui
 
 @section inspector Szolgáltatások kezelése, a cInspector osztály.
 A cInspector osztály lekérdező programokban a host-services rekordok alapján épít fel a lekérdezéshez
@@ -116,64 +133,7 @@ a virtuális metódusokon keresztül. Egy cIspector objektum működését mind�
 (vagyis egy hostt_services rekord) és az általuk hivatkozott cService objektumok (services rekordok)
 határozzák meg. Kulcs szerepük van ebben még a features mezőknek is.
 
-@subsection windhcpconf Egy példa a windows szerver DHCP konfigurációjának a lekérdezéséhez.
-A lekérdezést az lv2d nevű APP Windows-os változata hajthatja végre. A példában a lekérdezés a
-netsh parancs hívásával valósul meg.
-A sükséges services definíciók (lásd: import_srv.txt fájlt, a példa ezzel nem azonos, kimaradtak a példa
-szempontjából irreleváns paraméterek):
-~~~~~~~~~~
-SERVICE lv2d "Lanview2 super server" {
-    NIL;
-    SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
-    FEATURES ":superior:timing=passive:logrot=500M,8:";
-    NORMAL CHECK INTERVAL  300;
-}
-
-SERVICE "win.dhcp.conf.parser" "DHCP konfiguráció a netsh-n keresztül; Fordító" {
-    FEATURES ":timing=polling:method=parser:";
-}
-
-SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
-    FEATURES ":timing=polling:method=qparse:comment=#:";
-    CMD "netsh dhcp server \\\\$node dump all";
-}
-
-QUERY PARSER "win.dhcp.conf.parser" {
-    CASE NO
-        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+iprange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
-        $ipar$REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 "$1".dhcp;$ipar$;
-    CASE NO
-        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+excluderange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
-        $ipar$REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 "$1".dhcp;$ipar$;
-    CASE NO
-        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+reservedip\s+([\d\.\:]+)\s+([\dA-F]+)\s+(.*)$rexp$
-        $ipar$REPLACE ARP $2 MAC("$3") config $host_service_id $$note$$$4$$note$$;$ipar$;
-}
-
-HOST SERVICE "win-lv2".lv2d {
-    FEATURES ":timing=polling:";
-}
-HOST SERVICE "win-lv2"."win.dhcp.conf.parser" {
-    SUPERIOR SERVICE "win-lv2".lv2d;
-}
-HOST SERVICE "win-dhcp-1"."win.dhcp.conf" {
-    SUPERIOR SERVICE "win-lv2"."win.dhcp.conf.parser";
-    FEATURES ":timing=polling:";
-}
-HOST SERVICE "win-dhcp-2"."win.dhcp.conf" {
-    SUPERIOR SERVICE "win-lv2"."win.dhcp.conf.parser";
-    FEATURES ":timing=polling:";
-}
-~~~~~~~~~~
-A fenti példában a "win-lv2" nevű gép futtatj az lv2d appot, időzítés nélkül (idítás után egyszer elvégzi a feladatát majd kilép).
-A "win.dhcp.conf.parser" definiálja a módszert a lekérdezéshez a query_parser rekord definíciókkal együtt.
-A konkrét lekérdezés az utolsó két bejegyzés, két DHCP serverre, a win-dhcp-1 és win-decp-2 nevű szerver lekérdezése.
-Mivel a "win.dhcp.conf"-ben szerepel a gép név mint a netsh paraméter, ezért itt a lekérdezendő szerver nevének
-anonosnak kell lennie a Windows host névvel.
-
 @section timeper Idő intervallumok
-
-@section alarm A riasztási rendszer
 
 @section GUI GUI elemek
 Az lv2 modul csak az adatbázis elérését biztosító osztályokat tartalmazza. A konkrét GUI funkciók az lv2g modulban találhatóak.

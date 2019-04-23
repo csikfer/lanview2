@@ -15,12 +15,15 @@ namespace Ui {
 
 class cLogLevelDialog;
 
+/// @class cSetupWidget
+/// Program setup (tab) widget
 class LV2GSHARED_EXPORT cSetupWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
     cSetupWidget(QMdiArea *par);
     ~cSetupWidget();
+    /// Minimális jogosultsági szint az eléréséhez.
     static const enum ePrivilegeLevel rights;
 private:
     Ui::SetupWidget *pUi;
