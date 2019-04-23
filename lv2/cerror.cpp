@@ -167,6 +167,10 @@ void cError::circulation()
 
 void cError::exception(void)
 {
+    if (mDropAll) {
+//      delete this;
+        throw _no_init_;
+    }
     QString m = QObject::trUtf8("throw this : %1").arg(msg());
     if (cDebug::getInstance() != nullptr) {
         PDEB(EXCEPT) << m << endl;

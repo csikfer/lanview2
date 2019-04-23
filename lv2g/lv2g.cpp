@@ -241,7 +241,7 @@ bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
 }
 
 
-_GEX QPolygonF convertPolygon(const tPolygonF __pol)
+_GEX QPolygonF convertPolygon(const tPolygonF& __pol)
 {
     QPolygonF   pol;
     foreach (QPointF p, __pol) {

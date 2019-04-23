@@ -228,19 +228,57 @@ public:
     cLv2GQApp(int& argc, char ** argv);
     ~cLv2GQApp();
     /// Az újra definiált notify() metódus.
-    /// Az esetleges kizárásokat is elkapja.
+    /// Az esetleges kizárásokat is elkapja, az eredeti metódus hívását egy try blokkba helyezi.
+    /// Hiba ill. kizárás esetén egyrészt a cError::mDropAll statikus adattagot igazra állítja,
+    /// majd megjeleníti a hibát egy hiba ablakban, feltéve, hogy a hibakód nem eError::EOK ,
+    /// Ezután hívja az QAplication::exit() metódust a hiba koddal.
+    /// Ha az cError::mDropAll igazra van állítva, akkor a hiba esetén a cError objektum pointer helyett
+    /// a kizárás a _no_init_ (dummy) objektummal történik (a hiba objektum el lessz dobva),
+    /// A notify() a _no_init_ hiba objektum elkapásakor nem csinál semmit, mivel ekkor már egy
+    /// megjelenített hiba után vagyunk, a kilépés fázisában.
     virtual bool notify(QObject * receiver, QEvent * event);
 };
 
-_GEX QPolygonF convertPolygon(const tPolygonF __pol);
+/// Egy tPoligonF típusú objektumnak QPolygonF objektummá konvertálása.
+/// A QPolygonF osztályt a Qt a GUI modulban tartalmazza, így az az lv2
+/// számára nem elérhető, igy helyette a tPoliginF típust használja.
+_GEX QPolygonF convertPolygon(const tPolygonF& __pol);
 
+/// Egy enumerációs típus egy értékéhez rendelt háttérszín lekérdezése.
+/// A színeket puffereli, így változás esetén azok nem frissülnek.
+/// Az alapértelmezett szín a fehér.
+/// @param __t Az enumerációs típus neve
+/// @param e Az enumerációs érték indexxe (0,1,...)
+/// @return az értékhez rendelt szín
 _GEX const QColor& bgColorByEnum(const QString& __t, int e);
+
+/// Egy bool típusú mező értékeihez rendelt háttérszín lekérdezése.
+/// A színeket puffereli, így változás esetén azok nem frissülnek.
+/// Az alapértelmezett szín a fehér.
+/// @param _tn A boolean típusú mezőt tartalmazó tábla neve
+/// @param _fn A boolean típusú mező neve
+/// @param e 0: false, 1: true
+/// @return az értékhez rendelt szín
 inline const QColor& bgColorByBool(const QString& _tn, const QString& _fn, int e)
 {
     return bgColorByEnum(mCat(_tn, _fn), e);
 }
 
+/// Egy enumerációs típus egy értékéhez rendelt karakterszín lekérdezése.
+/// A színeket puffereli, így változás esetén azok nem frissülnek.
+/// Az alapértelmezett szín a fekete.
+/// @param __t Az enumerációs típus neve
+/// @param e Az enumerációs érték indexxe (0,1,...)
+/// @return az értékhez rendelt szín
 _GEX const QColor& fgColorByEnum(const QString& __t, int e);
+
+/// Egy bool típusú mező értékeihez rendelt karakterszín lekérdezése.
+/// A színeket puffereli, így változás esetén azok nem frissülnek.
+/// Az alapértelmezett szín a fekete.
+/// @param _tn A boolean típusú mezőt tartalmazó tábla neve
+/// @param _fn A boolean típusú mező neve
+/// @param e 0: false, 1: true
+/// @return az értékhez rendelt szín
 inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e)
 {
     return fgColorByEnum(mCat(_tn, _fn), e);
