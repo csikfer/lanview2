@@ -414,12 +414,16 @@ class LV2SHARED_EXPORT cDebug {
     static bool pDeb(qlonglong mask);
     static bool __pDeb(qlonglong mask);
     /// Az aktuális debug objektum, fő szálához tartozó debugStream objektumának a pointerével tér vissza
+    /// @sa cout(void)
+    ///
     /// @throw cError*  Feltételezi, hogy van cDebug objektum (cDebug::instance != NULL).
     ///                 Valamint mCout nem NULL pointer.
     ///                 Ellenkerő esetben dob egy kizárást (hibakód : EPROGFAIL)
     static debugStream * pCout(void);
     /// Az aktuális debug objektum egy debugStream objektumának a referenciájával tér vissza.
-    /// Ha a fő szálban vagyunk, akkor a fő szálhoz tartozó objektum referenciával @sa _cout(void)
+    /// @sa pCout(void)
+    ///
+    /// Ha a fő szálban vagyunk, akkor a fő szálhoz tartozó objektum referenciával.
     /// Ha nem a fő szálban vagyunk, akkor megkeresi a szálhoz tartozó debugStream objektumot, ill.
     /// létrehozza azt, ha még nem létezik, és azzal tér vissza.
     /// Ha nem létezik a szálak debugStream objektumainak a tárolója (mThreadStreamsMap == NULL),

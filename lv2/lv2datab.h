@@ -572,8 +572,6 @@ protected:
     int                 _flagIndex;
     ///
     int                 _textIdIndex;
-    // / A tábla tulajdonságát leíró adatrekord kerül ide beolvasásra
-    // QSqlRecord          _tableRecord;
     /// A tábla oszlopainak tulajdonságait leíró adatrekordok kerülnek ide beolvasásra.
     QList<QSqlRecord>   _columnRecords;
     /// Az adattábla oszlopait leíró objektumok listája
@@ -583,7 +581,7 @@ protected:
     /// Az objektumban a Primary Key-hez rendelt mezőkkel azonos indexű bitek 1-be vannak állítva.
     /// Ha nincs Primary Key, akkor nincs egyes bit a tömbben.
     QBitArray           _primaryKeyMask;
-    /// Egy egyedi kulcsot definiáló mask, ami vagy csak a név mezőt tartalmazza, vagy azon mezőket is, amikkel együtt a név mez egyedi lessz.
+    /// Egy egyedi kulcsot definiáló mask, ami vagy csak a név mezőt tartalmazza, vagy azon mezőket is, amikkel együtt a név mező egyedi lessz.
     /// Ha nincs név mező, vagy több ilyen maszk is lehetséges, akkor nem lessz egyes bit a tömbben
     QBitArray           _nameKeyMask;
     /// A Lista elemei hasonlóak az _primaryKeyMask-hoz, de az Egyedi kulcsokhoz tartozó
@@ -597,8 +595,8 @@ protected:
     QBitArray           _protectedForRewriting;
     /// Ha származtatott tábláról van szó (az adatbázisban), akkor az ős tábla rekord leíróinak a pointerei
     QVector<const cRecStaticDescr *>  _parents;
-    /// Inicializálja az objektumot.
-    /// @exception cError* Hiba esetén dob egy kizárást-
+    /// Inicializálja az objektumot. Beolvassa a tábla tulajdonságait.
+    /// @exception cError* Hiba esetén dob egy kizárást
     /// @param _t SQL tábla neve
     /// @param _s SQL tábla séma név, opcionális, ha nincs megadva, akkor a séma neve 'public'
     void _set(const QString& __t, const QString& __s = QString());
@@ -621,13 +619,15 @@ public:
     /// @param _t SQL tábla neve
     /// @param _s SQL tábla schema név, opcionális
     /// @param find_only Ha true, akkor csak a konténerben keres, na nem találja az objektumot, akkor NULL-al tér vissza.
-    /// @exception cError * Ha _setReCallCnt értéke nagyobb vagy egyenlő mint 10, és objektumot kellene kreálni, akkor dob egy kizárást.
+    /// @exception cError* Ha _setReCallCnt értéke nagyobb vagy egyenlő mint 10, és objektumot kellene kreálni, akkor dob egy kizárást.
+    ///     Ha find_only értéke false és nem tudja létrehozni az objektumot, akkor szintén kizárást dob.
     static const cRecStaticDescr *get(const QString& _t, const QString& _s = QString(), bool find_only = false);
     /// Egy objektum "beszerzése". Ha a _recDescrMap, vagy a _recDescCache konténerben megtalálja az objektumot, akkor a pointerével tér vissza.
     /// Ha nem, akkor létrehozza, inicializálja, beteszi a _recDescCache konténerbe, és a pointerrel tér vissza.
     /// @param _oid a tábla OID-je
     /// @param find_only Ha true, akkor NULL pointerrel tér vissza
     /// @exception cError * Ha _setReCallCnt értéke nagyobb vagy egyenlő mint 10, és objektumot kellene kreálni, akkor dob egy kizárást.
+    ///     Ha find_only értéke false és nem tudja létrehozni az objektumot, akkor szintén kizárást dob.
     static const cRecStaticDescr *get(qlonglong _oid, bool find_only = false);
     /// A tábla esetén megnézi, hogy létezik-e a rekord ID-t névvé konvertáló függvény.
     /// Ha létezik, akkor a nevével tér vissza. Ha nem, akkor megkísérli megkreálni.
@@ -709,10 +709,25 @@ public:
     /// A teljes mező névvel (tábla és ha szükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param _c (rövid) mező név
     QString fullColumnNameQ(const QString& _c) const { return mCat(fullTableNameQ(), dQuoted(_c)); }
-    ///
+    /// A megjelölt mező nevek listájának a lekérdezése
+    /// @param mask Minden olyan mező megjelölt, melynek indexével azonos indexű bit értéke true.
+    /// @return A megjelölt mező nevek listálya a rekordban elfoglalt sorrendnek megfelelően.
+    /// @exception cError* Ha a mask-ban olyan true értékű bit is van, melynek az indexe nem mező index
     QStringList columnNames(QBitArray mask) const;
+    /// A megjelölt mező nevek listájának a lekérdezése
+    /// @param ixs Minden olyan mező megjelölt, melynek indexe szerepel a tömbben.
+    /// @return A megjelölt mező nevek listálya a megadott sorrendben
+    /// @exception cError* Ha a ixs-ban olyan értéket tartalmaz mely nem mező index
     QStringList columnNames(tIntVector ixs) const;
+    /// A megjelölt mező nevek listájának a lekérdezése, minden mezőnév kettős aposztófok között kerül a listába.
+    /// @param mask Minden olyan mező megjelölt, melynek indexével azonos indexű bit értéke true.
+    /// @return A megjelölt mező nevek listálya a rekordban elfoglalt sorrendnek megfelelően.
+    /// @exception cError* Ha a mask-ban olyan true értékű bit is van, melynek az indexe nem mező index
     QString columnNamesQ(QBitArray mask) const;
+    /// A megjelölt mező nevek listájának a lekérdezése, minden mezőnév kettős aposztófok között kerül a listába.
+    /// @param ixs Minden olyan mező megjelölt, melynek indexe szerepel a tömbben.
+    /// @return A megjelölt mező nevek listálya a megadott sorrendben
+    /// @exception cError* Ha a ixs-ban olyan értéket tartalmaz mely nem mező index
     QString columnNamesQ(tIntVector ixs) const;
     /// A tábla típusával tér vissza
     quint16 tableType() const                       { return _tableType; }
@@ -725,32 +740,32 @@ public:
     const QList<QBitArray>& uniques() const         { return _uniqueMasks; }
     /// Egy bit vektorral tér vissza, ahol minden bit true, mellyel azonos indexű mező autoincrement.
     const QBitArray& autoIncrement() const          { return _autoIncrement; }
-    /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int idIndex(enum eEx __ex = EX_ERROR) const     {
         if (__ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, QObject::trUtf8("Table %1 nothing ID field.").arg(fullTableName()));
         return _idIndex;
     }
-    /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int nameIndex(enum eEx __ex = EX_ERROR) const   {
         if (__ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, QObject::trUtf8("Table %1 nothing name field.").arg(fullTableName()));
         return _nameIndex;
     }
-    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int noteIndex(enum eEx __ex = EX_ERROR) const   {
         if (__ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, QObject::trUtf8("Table %1 nothing note field.").arg(fullTableName()));
         return _noteIndex;
     }
-    /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int deletedIndex(enum eEx __ex = EX_ERROR) const {
         if (__ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, QObject::trUtf8("Table %1 nothing delete field.").arg(fullTableName()));
         return _deletedIndex;
     }
-    /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az flag mező indexével tér vissza, ha nincs flag nevű mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int flagIndex(enum eEx __ex = EX_ERROR) const   {
         if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, QObject::trUtf8("Table %1 nothing flag field.").arg(fullTableName()));
         return _flagIndex;
     }
-    /// Az text_id mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az text_id mező indexével tér vissza, ha nincs text_id nevű mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int textIdIndex(enum eEx __ex = EX_ERROR) const   {
         if (__ex && !isIndex(_textIdIndex)) EXCEPTION(EFOUND, _textIdIndex, QObject::trUtf8("Object nothing text_id field.").arg(fullTableName()));
         return _textIdIndex;
@@ -786,26 +801,28 @@ public:
     /// @param 1 a keresett mező indexe (0,1,...).
     const cColStaticDescr& operator[](int __i) const                { return _columnDescrs[__i]; }
     /// Az id mező nevével tér vissza, ha van id mező, egyébként dob egy kizárást
-    /// @param __ex Ha értéke hamis és nincs id mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    /// @param __ex Ha értéke EX_IGNORE és nincs id mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& idName(enum eEx __ex = EX_ERROR) const   { return columnName(idIndex(__ex), __ex); }
     /// Az név mező nevével tér vissza, ha van név mező, egyébként dob egy kizárást
-    /// @param __ex Ha értéke hamis és nincs név mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    /// @param __ex Ha értéke EX_IGNORE és nincs név mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& nameName(enum eEx __ex = EX_ERROR) const { return columnName(nameIndex(__ex), __ex); }
     /// Az descr mező nevével tér vissza, ha van descr mező, egyébként dob egy kizárást
-    /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    /// @param __ex Ha értéke EX_IGNORE és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& noteName(enum eEx __ex = EX_ERROR) const { return columnName(noteIndex(__ex), __ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id.
-    /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke true, akkor dob egy kizárást,
+    /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást,
     /// Ha viszont __ex értéke false, és hiba van, vagy nincs ID akkor NULL_ID-vel tér vissza.
     qlonglong getIdByName(QSqlQuery& __q, const QString& __n, enum eEx __ex = EX_ERROR) const;
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id mező, egyébként dob egy kizárást.
-    /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke true, akkor dob egy kizárást,
+    /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást,
     /// Ha viszont __ex értéke false, és hiba van, vagy nincs ID akkor NULL_ID-vel tér vissza.
     qlonglong getIdByName( const QString& __n, enum eEx __ex = EX_ERROR) const
         { QSqlQuery *pq = newQuery(); qlonglong id = getIdByName(*pq, __n, __ex); delete pq; return id; }
-    /// A ID alapján visszaadja a rekord név mező értékét, feltéve, ha van név és id mező, egyébként dob egy kizárást.
+    /// A ID alapján visszaadja a rekord név mező értékét, feltéve, ha van név és id mező, egyébként dob egy kizárást,
+    /// ha __ex értéke nem EX_IGNORE.
     QString getNameById(QSqlQuery& __q, qlonglong __id, eEx ex = EX_ERROR) const;
-    /// A ID alapján visszaadja a rekord név mező értékét, feltéve, ha van név és id mező, egyébként dob egy kizárást.
+    /// A ID alapján visszaadja a rekord név mező értékét, feltéve, ha van név és id mező, egyébként dob egy kizárást,
+    /// ha __ex nem EX_IGNORE
     QString getNameById(qlonglong __id, enum eEx __ex = EX_ERROR) const
         { QSqlQuery *pq = newQuery(); QString n = getNameById(*pq, __id, __ex); delete pq; return n; }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott sorszámú bitet 1-be állítja.
@@ -838,6 +855,8 @@ public:
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 1-be állítja.
     /// Ha a megadott név bármelyike nem egy mező név, akkor dob egy kizárást.
     QBitArray mask(const QStringList& __nl, enum eEx __ex = EX_ERROR) const;
+    /// A bit tömb méretét igazítja a mezők számához, a hozzáadott bitek értéke hamis lesz.
+    /// Majd minden bit értékét az elenkezőjére váltja, és ezzel a tömbbel tér vissza.
     QBitArray inverseMask(const QBitArray& __m) const;
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 0-be állítja,
     /// a többit 1-be.
@@ -857,10 +876,12 @@ public:
     /// Megvizsgálja, hogy a mező értéke lehet-e NULL.
     /// @param __ix A mező indexe.
     /// @return true, ha a mező lehet NULL.
+    /// @exception cError* Ha az index nem lehet mező index
     bool isNullable(int __ix) const             { return (*this)[__ix].isNullable; }
     /// Megvizsgálja, hogy a mező értéke lehet-e NULL.
     /// @param __ix A mező neve.
     /// @return true, ha a mező lehet NULL.
+    /// @exception cError* Ha __nm nem egy mező neve
     bool isNullable(const QString& __nm) const  { return (*this)[__nm].isNullable; }
     /// Stringgé konvertálja az objektum adat tartalmát, többé-kevésbé egy SQL tábla CREATE parancs formájában.
     /// Nyomkövetési információkhoz.
@@ -880,14 +901,41 @@ protected:
 };
 TSTREAMO(cRecStaticDescr)
 
+/// Nyelvi szövegek kezelése
 class LV2SHARED_EXPORT cLangTexts {
 public:
+    /// Konstruktor
+    /// @param _par A tulajdonos objektum pointere
     cLangTexts(cRecord *_par);
+    /// Destruktor (üres)
     ~cLangTexts();
+    /// A megadott nyelvhez tartozó nyelvi szöveg lista betöltése a textMap konténerbe.
+    /// A tulajdonos rekordot, a szövegek számát nem ellenörzi.
+    /// @param _langName A nyelv neve
+    /// @param texts A nyelvi szövegek lista
+    /// @exception cError* Ha nincs ijen nyelv.
     void setTexts(const QString& _langName, const QStringList& texts);
+    /// A megadott nyelvhez tartozó nyelvi szöveg lista betöltése a textMap konténerbe.
+    /// A tulajdonos rekordot, a szövegek számát, és a nyelv létezését nem ellenörzi.
+    /// @param _langName A nyelv neve
+    /// @param texts A nyelvi szövegek lista
     void setTexts(int _langId, const QStringList& texts) { textMap[_langId] = texts; }
     // static QString tableName2textTypeName(const QString& _tn);
+    /// Nyelvi szöveg lista elmentése egy megadott text_id és nyelvhez.
+    /// Vagy, ha a po objektumban a text_id mező NULL, akkor egyben egy új ID létrehozása.
+    /// @param q Az adatbázis művelethez használt objektum
+    /// @param texts A mentendő nyelvi szöveg lista
+    /// @param po A tulajdonos rekord pointere, ami a szükséges text_id értéket tartalmazza, vagy ha
+    ///     az NULL, akkor az új ID ennek azobjektumnak a text_id mezőjébe lessz elmentve.
+    /// @param _lid A nyelv ID-je, ha értéke NULL_IX, akkor az aktuális nyelvhez lesz mentve a szöveg
     static void saveText(QSqlQuery& q, const QStringList& texts, cRecord *po, int _lid = NULL_IX);
+    /// Nyelvi szöveg lista elmentése egy megadott text_id és nyelvhez.
+    /// @param q Az adatbázis művelethez használt objektum
+    /// @param sTableName A tábla veve, melyhez a nyelvi szövegek tartoznak
+    /// @param pEnumType A nyelvi szövet a listában azonosító enumerációs típus
+    /// @param tid text_id érték
+    /// @param _lid A nyelvet azonosító ID
+    /// @param texts Nyelvi szöveg lista
     static void saveText(QSqlQuery& q, const QString& sTableName, const cColEnumType* pEnumType, qlonglong tid, int _lid, const QStringList &texts);
     void saveTexts(QSqlQuery& q);
     void loadTexts(QSqlQuery& q);
@@ -966,7 +1014,7 @@ cRecStaticDescr leíró objektumra. Ezen metódusok:schemaName(), tableName(),
 fullTableName(), fullTableNameQ(), columName(), columnNameQ(), fullColumName(), fullColumnNameQ(),
 isIndex(), toIndex(), chkIndex(), cols(), columnDescrs(), primaryKey(), uniques(), autoIncrement(), idIndex(),
 isName(), nameIndex(), nameName(), noteIndex(), deletedIndex(), isParent(), isUpdatable(),
-tableoid(), isNullable(), mask(), iTab()
+tableoid(), isNullable(), mask(), iTab(), stb.
 
 A cRecord objektum egy rekord adatait tartalmazhatja, a _fields adattagban, mely közvetlenül nem elérhető.
 A _fields egy QVarinatList konténer, és a rekord mezőinek értékét mindíg a táblában definiált sorrendben tartalmazza.
@@ -998,9 +1046,12 @@ objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt
   A MySQL-ben létező set típust a PostgreSQL nem támogatja, de helyette használható az enumerációs tömb. A tárolási típus a QStringList, a konverziókat
   pedig a cColStaticDescrSet osztály végzi. Hasonlóan az enumerációs típushoz a set típus használható string ill. string lista, és numerikus formában.
   Ebben az esetben egy enumerációs érték és az értéknek a definícióbeli sorszáma a numerikus értékben a megfelelő sorszámú bitjével egyenértékű.
+- Point\n
+  SQL típus a point
+  Tárolási típus a QPointF, az adatkonverziókat az cColStaticDescrPoint osztály végzi.
 - Poligon\n
   SQL típus a polygon.
-  A tárolási típus a tPolygonF, az adatkonverziókat az  cColStaticDescrPolygon osztály végzi.
+  A tárolási típus a tPolygonF, az adatkonverziókat az cColStaticDescrPolygon osztály végzi.
   @note Mivel a QPolygonF a Qt GUI modul része, ezért, ha az applikációnk nem GUI-val fordítottuk, ill. a QCoreApplication -t példányosítottuk a
   main() -ben, akkor a QPolygonF használatakor elszállhat a programunk. Ezért az lv2 modul a QPolygonF osztály helyett mindíg a tPolygonF template
   osztályt használja, a két tíous lényegében ekvivalens, de egymásba konvertálásuk nem automatikus.
@@ -1031,8 +1082,6 @@ objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt
 - Időintervallum\n
   SQL típusok az interval.
   A tárolási típus a qlonglong, az időintervallum ezredmásodpercben értendő, az adatkonverziókat az  cColStaticDescrInterval osztály végzi.
-  Nem támogatja az összes formátumát a PostgreSQL-beli időintervallumnak, csak a nap, óra, perc, másodperc adható meg (a másodperc mint lebegőpontos
-  érték).
 - Logikai\n
   SQL típus a boolean.
   A tárolási típus a bool, az adatkonverziókat az  cColStaticDescrBool osztály végzi.
@@ -1044,7 +1093,7 @@ Más mező adat típust nem támogat a cRecord osztály.
 A mező adatokhoz a set() és get() metódusokkal ill. az operator[]() -on keresztül tudunk hozzáférni.
 Van néhány speciális mező (nem kötelező, a rendszer ezeket csak akkor detektálja, ha azok megfelelnek a szabályoknak),
 ilyen az ID, a név, megjegyzés (note) mezők, melyeket a típus és a mező név végződése azonosít, valamint a deleted és flag mezők.
-Ezek némelyike esetén nem kell megadni a mező nevét vagy indexét: getId(), getName(), getNote(), setId(i), setName(n), SRB..
+Ezek némelyike esetén nem kell megadni a mező nevét vagy indexét: getId(), getName(), getNote(), setId(i), setName(n), Stb..
 És van néhány metódus, ami elvégez helyettünk néhány gyakoribb adat konverziót (az első paraéter a mezőt azonosítja, név, vagy index alapján):
 getId(const QString&), getName(const QString&), getBool(const QString&), getId(int), getName(int),
 getBool(int), view(int), setId(const QString&,qlonglong), setName(const QString&, const QString&), setId(int,qlonglong), setName(int, const QString&) stb..
@@ -1060,13 +1109,13 @@ További adatmanipuláló metódus a clear(), ami kiüríti az egész mező adat
 
 Egyszerű adatbázis műveletekre, adat beszúrására, módosítására használható metódusok: fetch(), rows(), completion(),
 fetchById(), setById() fetchByName(), setByName(), fetchTableOid(), getIdByName(), getNameById(), insert(), update(),
-remove(), delByName().
+remove(), delByName(), rewrite(), rewriteById() stb.
 És az SQL string összeállítását, és az adatbázis műveleteket segítő metódusok a: query(),
 first(), next(), getSetMap(), whereString().
 
 Az osztály állapot lekérdező metódusai: checkData(), isNull(), isNull(c), _isNull(), _isNull(), isEmpty(), isEmpty(),
 isEmpty_(), isIdent(), isModify_(), isNullId(), isNullName() ezen felül a _state adattag közvetlenül is elérhető.
-Van egy állapot lekérdezés, ami csak a cRecordAny osztály esetén ad nem „hamis” eredményt, ez az isFaceless().
+Van egy állapot lekérdezés, ami csak a cRecordAny osztály esetén adhat nem „hamis” eredményt, ez az isFaceless().
 
 A cRecord leszármazott osztályainál járulékos adattagok kezelését segítik a következő virtuális metóduaok, melyek
 a cRecord ősben üres függvényként vannak definiálva: toEnd(), toEnd(c), clearToEnd(). Ezen függvények
@@ -1078,7 +1127,8 @@ nem teljesen azonos az így létrehozott objektum, mivel a QObject is ős, és e
 támogatott, vagyis a QObject-hez tartozó tulajdonságok nem kerülnek az új objektumba.
 
 Ha nyomkövetéshez ki kell írni egy objektum értékét, akkor a toString(), ha a leíró objektumok tartalmát is látni
-akarjuk, akkor a toAllString() metódust használhatjuk, aminek az eredménye a kiírandó string. Az API nyomkövető
+akarjuk, akkor a toAllString() metódust használhatjuk, aminek az eredménye a kiírandó string, vagy ha csak egy
+ rövid azonosító szöveget szertnénk kiírni akkor használjuk az identifying() metódust. Az API nyomkövető
 (cDebug) esetén csak az objetumot kell megadni, a kiírt string a toString() metódus által generált string lesz.
 
 */
@@ -1110,6 +1160,7 @@ public:
     QBitArray _likeMask;
     /// The way to read the record when writing the record
     eToReadBack _toReadBack;
+    /// The way to read the record when writing the record default value
     eToReadBack _toReadBackDefault;
     /// Konstruktor.
     cRecord();
@@ -1120,11 +1171,11 @@ public:
     /// Tisztán virtuális függvény, konstruktorból nem hívható.
     /// A leszármazottakban implementált metódus az első hívás alkalmával inicializálja
     /// a minden objektum típushoz definiált statikus cRecStaticDescr típusú objektumot.
-    /// ld.: bool cRecStaticDescr::set(const QString& _t, const QString& _s)
+    /// @sa bool cRecStaticDescr::set(const QString& _t, const QString& _s)
     virtual const cRecStaticDescr&  descr() const = 0;
     /// Egy azonos típusú üres objektum allokálása
     virtual cRecord *newObj() const = 0;
-    /// Az objektum klónozása
+    /// Az objektum klónozása. Egy azonos típusú és adattartalmú objektum allokálása.
     virtual cRecord *dup() const = 0;
     // Virtuális metódusok
     /// A clear() metódus hívja visszatérés elött, elvégzendő a származtatott objektumokban még
@@ -1152,8 +1203,16 @@ public:
     /// @param __i A mező indexe
     /// @param pFeatures Egy opcionális features érték.
     virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = nullptr) const;
-    ///
+    /// A gyerek objektum(ok) konténerek kezelését segítő függvény.
+    /// @param __mask A lekért konténer azonosítóknak megfelelő bit maszk (set). Az alap metódus esetén csak a ENUM2SET(CV_LL_TEXT) értéknek van értelme,
+    ///   feltéve, hogy van a táblában text_id mező, ekkor a nyelvi szövegek konténrének a feltöltése ellenőrizhető a hívással.
+    /// @return Ha a megadott konténer azonosítokhoz tartozó valamelyik konténer fel van töltve, akkor true értékkel tér vissza.
+    /// @exception cError* Az alap metódusban (ha nincs fellüldefiniéálva) ha a rekord nem tartalmaz text_id mezőt, akkor mivel nincs ismert gyerek objektum,
+    /// igy konténer és konténer azonosító sem, a függvény kizárást dob.
     virtual bool isContainerValid(qlonglong __mask) const;
+    /// A gyerek objektum(ok) konténerek kezelését segítő függvény.
+    /// @exception cError* Az alap metódusban (ha nincs fellüldefiniéálva) ha a rekord nem tartalmaz text_id mezőt, akkor mivel nincs ismert gyerek objektum,
+    /// igy konténer és konténer azonosító sem, a függvény kizárást dob.
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
     /// Leellenőrzi, lehet-e mező (oszlop) index a paraméter.
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
@@ -1212,8 +1271,15 @@ public:
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     /// @param _c A kiegészítendő mező (oszlop) neve
     QString fullColumnNameQ(const QString& _c) const { return descr().fullColumnNameQ(_c); }
-    ///
+    /// A megjelölt mező nevek listájának a lekérdezése
+    /// @param mask Minden olyan mező megjelölt, melynek indexével azonos indexű bit értéke true.
+    /// @return A megjelölt mező nevek listálya a rekordban elfoglalt sorrendnek megfelelően.
+    /// @exception cError* Ha a mask-ban olyan true értékű bit is van, melynek az indexe nem mező index
     QStringList columnNames(QBitArray mask) const { return descr().columnNames(mask); }
+    /// A megjelölt mező nevek listájának a lekérdezése
+    /// @param ixs Minden olyan mező megjelölt, melynek indexe szerepel a tömbben.
+    /// @return A megjelölt mező nevek listálya a megadott sorrendben
+    /// @exception cError* Ha a ixs-ban olyan értéket tartalmaz mely nem mező index
     QStringList columnNames(tIntVector ixs) const { return descr().columnNames(ixs); }
     /// A tábla típusával tér vissza
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
@@ -1240,15 +1306,15 @@ public:
     /// Egy bit vektorral tér vissza, ahol minden bit true, mellyel azonos indexű mező autoincrement.
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     const QBitArray& autoIncrement() const          { return descr().autoIncrement(); }
-    /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int idIndex(enum eEx __ex = EX_ERROR) const     { return descr().idIndex(__ex); }
-    /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int nameIndex(enum eEx __ex = EX_ERROR) const   { return descr().nameIndex(__ex); }
-    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int noteIndex(enum eEx __ex = EX_ERROR) const   { return descr().noteIndex(__ex); }
-    /// Az deleted mező indexével tér vissza, ha nincs deleted, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az deleted mező indexével tér vissza, ha nincs deleted, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int deletedIndex(enum eEx __ex = EX_ERROR) const{ return descr().deletedIndex(__ex); }
-    /// Az 'flag' mező indexével tér vissza, ha nincs flag, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az 'flag' mező indexével tér vissza, ha nincs flag, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int flagIndex(enum eEx __ex = EX_ERROR) const   { return descr().flagIndex(__ex); }
     /// Ha bármelyik mező módosítható az adatbázisban, akkor true-val tér vissza.
     bool isUpdatable() const                    { return descr()._isUpdatable; }
@@ -1272,12 +1338,17 @@ public:
     /// Ha __ex értéke igaz, és az __m több elemet tartalmaz, mint az objektum mezőt, akkor dob egy kizárást, egyébként figyelmenkívül hagyja az
     /// extra biteket.
     cRecord& clear(const QBitArray& __m, enum eEx __ex = EX_ERROR);
-    /// A felsorolt nevű mezőkre hívja a clear(QString) metódust. Ha __ex igaz, és a listában olyan név van, ami nem mezőnév, dob egy kizárást,
+    /// A felsorolt nevű mezőkre hívja a clear(QString) metódust. Ha __ex nem EX_IGNORE, és a listában olyan név van, ami nem mezőnév, dob egy kizárást,
     /// ha hamis akkor a nevet figyelmenkívöl hagyja.
     cRecord& clear(const QStringList& __fl, enum eEx __ex = EX_ERROR) { return clear(mask(__fl, __ex)); }
-    ///
+    /// Törli az ID mezőt
+    /// @exception cEroro* Ha nincs ID mező.
     cRecord& clearId()      { return clear(idIndex()); }
+    /// Törli az név mezőt
+    /// @exception cEroro* Ha nincs név mező.
     cRecord& clearName()    { return clear(nameIndex()); }
+    /// Törli az megjegyzés mezőt
+    /// @exception cEroro* Ha nincs megjegyzés mező.
     cRecord& clearNote()    { return clear(noteIndex()); }
     /// Ha nincs rekord deszkriptor a status szerint, akkor true-val tér vissza.
     /// Csak a cRecordAny leszármazott osztály esetén lehet hamis. A leírót statikus adattagként tartalmazó leszármazottak esetén mindig false a
@@ -1322,6 +1393,8 @@ public:
     cRecord& set(const QString& __fn, const QVariant& __v) { return set(chkIndex(toIndex(__fn)), __v); }
     /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja.
     cRecord& set(const QSqlQuery& __q, int * __fromp = nullptr, int __size = -1)   { return set(__q.record(), __fromp, __size);   }
+    /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja, de csak azokat a mezőket
+    /// aktualizálja a beolvasott rekordból, melyek indexével megegyező indexű elem az mask-ban true értékű.
     cRecord& readBack(const QSqlQuery& __q, const QBitArray& msk);
     /// A megadott indexű mező értékének a lekérdezése. Az indexet ellenőrzi, ha nem megfelelő dob egy kizárást
     /// A mező értékére egy referenciát ad vissza, ez a referencia csak addig valós, amíg nem hajtunk végre
@@ -1364,7 +1437,7 @@ public:
     QString getName() const;
     /// Feltételezve, hogy a megadott indexű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(int __i, enum eEx __ex = EX_ERROR) const;
-    /// Feltételezve, hogy a megadott nevű mező egy MAC, annk értékével tér vissza.
+    /// Feltételezve, hogy a megadott nevű mező egy MAC, annak értékével tér vissza.
     cMac    getMac(const QString& __n, enum eEx __ex = EX_ERROR) const { return getMac(toIndex(__n, __ex), __ex); }
     /// Az megjegyzés/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getNote() const                        { return getName(noteIndex()); }
@@ -1408,33 +1481,52 @@ public:
     /// Az megjegyzés (note) mező értékét állítja be
     /// @param __n Az note mező új értéke, ha null stringet adunk át, akkor NULL lessz.
     cRecord& setNote(const QString& __n)            { return setName(noteIndex(), __n); }
-    ///
+    /// \brief A falg nevű (boolean típusú) mező értékének a beállítása
+    /// \param __f A beállítandó érték, opcionális, alapértelmezett érték a true.
+    /// \param __f A beállítandó érték
     cRecord& setBool(int __i, bool __f)             { return set(__i, QVariant(__f)); }
+    /// \brief Egy boolean típusú mező értékének a beállítása
+    /// \param __n A mező neve
+    /// \param __f A beállítandó érték
     cRecord& setBool(const QString& __n, bool __f)  { return set(__n, QVariant(__f)); }
+    /// \brief A falg nevű (boolean típusú) mező értékének a beállítása
+    /// \param __f A beállítandó érték, opcionális, alapértelmezett érték a true.
     cRecord& setFlag(bool __f = true)               { return setBool(descr()._flagIndex, __f); }
+    /// \brief A falg nevű (boolean típusú) mező értékének a beállítása igaz értékre
+    /// \param __f A beállítandó érték, opcionális, alapértelmezett érték a true.
     cRecord& setOn(int __i)                         { return setBool(__i, true); }
+    /// \brief Egy boolean típusú mező értékének a beállítása igaz értékre
+    /// \param __n A mező neve
     cRecord& setOn(const QString& __n)              { return setBool(__n, true); }
+    /// \brief A falg nevű (boolean típusú) mező értékének a beállítása hamis értékre
+    /// \param __f A beállítandó érték, opcionális, alapértelmezett érték a true.
     cRecord& setOff(int __i)                        { return setBool(__i, false); }
+    /// \brief Egy boolean típusú mező értékének a beállítása hamis értékre
+    /// \param __n A mező neve
     cRecord& setOff(const QString& __n)             { return setBool(__n, false); }
-    ///
+    /// \brief Egy MAC cím típusú mező értékének a beállítása
+    /// \param __i A mező indexe
+    /// \param __a A MAC cím, a mező új értéke.
+    /// \param __ex Ha értéke nem EX_IGNORE, akkor ha nincs ilyen indexű mező, vagy az nem MAC cím típusú, akkor kizárást dob.
     cRecord& setMac(int __i, const cMac& __a, enum eEx __ex = EX_ERROR);
+    /// \brief Egy MAC cím típusú mező értékének a beállítása
+    /// \param __n A mező neve
+    /// \param __a A MAC cím, a mező új értéke.
+    /// \param __ex Ha értéke nem EX_IGNORE, akkor ha nincs ilyen nevű mező, vagy az nem MAC cím típusú, akkor kizárást dob.
     cRecord& setMac(const QString& __n, const cMac& __a, enum eEx __ex = EX_ERROR)   { return setMac(toIndex(__n), __a, __ex); }
-    /// \brief setIp
-    /// Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
+    /// \brief Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
     /// \param __i  A mező indexe
     /// \param __a  A neállítandó IP cím
     /// \param __ex Ha értéke true (ez az alapértelmezés) akkor hiba esetén dob egy kizárást.
     /// \return Az obkeltum referenciával tér vissza
     cRecord& setIp(int __i, const QHostAddress& __a, enum eEx __ex = EX_ERROR);
-    /// \brief setIp
-    /// Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
+    /// \brief Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
     /// \param __n  A mező neve
     /// \param __a  A neállítandó IP cím
     /// \param __ex Ha értéke true (ez az alapértelmezés) akkor hiba esetén dob egy kizárást.
     /// \return Az obkeltum referenciával tér vissza
     cRecord& setIp(const QString& __n, const QHostAddress& __a, enum eEx __ex = EX_ERROR)   { return setIp(toIndex(__n), __a, __ex); }
-    /// \brief getBigInt
-    ///  Hasonló a getId-hez, de ha a mező érték NULL, akkor nem a NULL_ID-vel, hanem 0-val tér vissza.
+    /// \brief Hasonló a getId-hez, de ha a mező érték NULL, akkor nem a NULL_ID-vel, hanem 0-val tér vissza.
     /// \param __ix A mező indexe
     /// \return A mező numerikus értéke, NULL esetén 0LL.
     qlonglong getBigInt(int __ix) const {
@@ -1446,32 +1538,37 @@ public:
     /// \param __n A mező neve
     /// \return A mező numerikus értéke, NULL esetén 0LL.
     qlonglong getBigInt(const QString& __n) const { return getBigInt(toIndex(__n)); }
-    /// \brief setOn
-    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
+    /// \brief Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
     /// \param __ix A mező indexe
     /// \param __set A SET-ben beállítandó érték maszk
     /// \return Az objektum referenciával tér vissza.
     cRecord& setOn(int __ix, qlonglong __set) { return setId(__ix, getBigInt(__ix) | __set); }
-    /// \brief setOn
-    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
+    /// \brief Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
     /// \param __n A mező neve
     /// \param __set A SET-ben beállítandó érték maszk
     /// \return Az objektum referenciával tér vissza.
     cRecord& setOn(const QString& __n, qlonglong __set) { return setOn(toIndex(__n), __set); }
-    /// \brief enum2setOn
-    /// Set típusú mezőben (enumerációs tömb) egy enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \brief Set típusú mezőben (enumerációs tömb) egy enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
     /// \param __ix A mező indexe
     /// \param __e A hozzáadott enumerációs érték numerikus megfleelője ( a set numerikus értékében a bit indexe)
     /// \return Az objektum referenciával tér vissza.
     cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getBigInt(__ix) | enum2set(__e)); return *this; }
-    /// \brief enum2setOn
-    /// Set típusú mezőben (enumerációs tömb) két enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \brief Set típusú mezőben (enumerációs tömb) két enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
     /// \param __ix A mező indexe
     /// \param _e1 Az egyik hozzáadott enumerációs érték numerikus megfleelője
     /// \param _e2 A másik hozzáadott enumerációs érték numerikus megfleelője
     /// \return Az objektum referenciával tér vissza.
     cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getBigInt(__ix) | enum2set(_e1, _e2)); return *this; }
+    /// \brief Set típusú mezőben (enumerációs tömb) egy enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \param __n A mező neve
+    /// \param __e A hozzáadott enumerációs érték numerikus megfleelője ( a set numerikus értékében a bit indexe)
+    /// \return Az objektum referenciával tér vissza.
     cRecord& enum2setOn(const QString& __n, int __e)            { enum2setOn(toIndex(__n), __e); return *this; }
+    /// \brief Set típusú mezőben (enumerációs tömb) két enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \param __n A mező neve
+    /// \param _e1 Az egyik hozzáadott enumerációs érték numerikus megfleelője
+    /// \param _e2 A másik hozzáadott enumerációs érték numerikus megfleelője
+    /// \return Az objektum referenciával tér vissza.
     cRecord& enum2setOn(const QString& __n, int _e1, int _e2)   { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
     /// \brief setOff
     /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek törlése.
@@ -1547,14 +1644,15 @@ public:
     QBitArray areNull() const;
     /// Beszúr egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
     /// lesznek megadva, melyeknek nem NULL az értékük.
-    /// Ha sikeres volt az inzert, akkor az objektumot újra tölti, az adatbázisban keletkezett új rekord alapján.
-    /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg "INSERT ... RETURNING *"
+    /// Ha sikeres volt a művelet, akkor az objektumot feltételesen (lásd: _toReadBack adattag) újra tölti,
+    /// az adatbázisban keletkezett új rekord alapján.
+    /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg "INSERT ... RETURNING ..."
     /// Ha van név és deleted mező, és létezik egy azonos nevű de deleted = true rekord, akkor azt az
     /// update metódussal fellülírja. (teszelni kéne, hogy ez így valóban jól müködik-e)
     /// A saveText() metódus nem kerül meghívásra!
     /// @param __q Az inzert utasítás ezel az objektummal lesz kiadva
-    /// @param __ex Ha értéke true (ez az alapértelmezés), akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert
-    /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true ...
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert
+    /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke nem EX_IGNORE ...
     /// @return ha történt változás az adatbázisban, akkor true.
     virtual bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az insert() metódushoz. Ha az insert metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
@@ -1562,7 +1660,7 @@ public:
     /// Manti a nyelvi szövegeket is ha vannak éa a text paraméter true (saveText() metódust is hívja)
     cError *tryInsert(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
-    /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
+    /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     /// A nyelvi szövegeket nem modosítja! Nem hívja a saveText() metódust.
     virtual bool rewrite(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.

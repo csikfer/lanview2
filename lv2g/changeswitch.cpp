@@ -113,19 +113,20 @@ template <class P> cCheckBoxListLayout * paramsWidget(const QList<P *>& params, 
 
 static cCheckBoxListLayout * servicesWidget(QSqlQuery& q, qlonglong nid, qlonglong pid, QList<qlonglong>& idList, cCheckBoxListLayout *_cbl = nullptr)
 {
-    static const QString sql =
+    QString wp = pid == NULL_ID ? "IS NULL" : "= ?";
+    const QString sql = QString(
             "SELECT host_service_id, srv.service_name || '(' || pri.service_name || ':' || pro.service_name || ')' AS name"
             " FROM host_services AS hs"
             " JOIN services AS srv ON hs.service_id    = srv.service_id"
             " JOIN services AS pri ON prime_service_id = pri.service_id"
             " JOIN services AS pro ON proto_service_id = pro.service_id"
-            " WHERE node_id = ? AND port_id = ?"
-            " ORDER BY srv.service_name ASC";
+            " WHERE node_id = ? AND port_id %1"
+            " ORDER BY srv.service_name ASC").arg(wp);
     cCheckBoxListLayout * checkBoxList = _cbl;
     if (checkBoxList != nullptr) checkBoxList->clear();
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, nid);
-    q.bindValue(1, pid == NULL_ID ? QVariant() : QVariant(pid));
+    if (pid != NULL_ID) q.bindValue(1, pid);
     if (!q.exec()) SQLQUERYERR(q);
     if (q.first()) {
        if (checkBoxList == nullptr) {

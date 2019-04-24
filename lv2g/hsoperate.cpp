@@ -181,7 +181,7 @@ QTableWidgetItem * cHSORow::boolItem(int ix, const QString& tn, const QString& f
     bool     b = rec.value(ix).toBool();
     QString  s = langBool(b);
     QTableWidgetItem *pi = new QTableWidgetItem(s);
-    pi->setBackground(bgColorByBool(tn, fn, bool2boolVal(b)));
+    pi->setBackground(bgColorByBool(tn, fn, b));
     return pi;
 
 }

@@ -120,10 +120,10 @@ Az enumerációs típusokhoz, illetve a típus értékeihez rendelt dekorációs
 Az adatokat a memóriába pufferelik, csökkentendő az adatbázis műveletek számát. Emiatt ha változás történik,
 akkor az csak a program újraindítása után érvényesül.
 - const QColor& bgColorByEnum(const QString& __t, int e)
-- const QColor& bgColorByBool(const QString& _tn, const QString& _fn, int e)
+- const QColor& bgColorByBool(const QString& _tn, const QString& _fn, bool f)
 - const QColor& dcBgColor(int id)
 - const QColor& fgColorByEnum(const QString& __t, int e)
-- const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e)
+- const QColor& fgColorByBool(const QString& _tn, const QString& _fn, bool f)
 - const QColor& dcFgColor(int id)
 - const QFont& fontByEnum(const QString& __t, int _e)
 - const QFont& fontByEnum(const cEnumVal& ev)
@@ -274,11 +274,11 @@ _GEX const QColor& bgColorByEnum(const QString& __t, int e);
 /// Az alapértelmezett szín a fehér.
 /// @param _tn A boolean típusú mezőt tartalmazó tábla neve
 /// @param _fn A boolean típusú mező neve
-/// @param e 0: false, 1: true
+/// @param f A boolean érték
 /// @return az értékhez rendelt szín
-inline const QColor& bgColorByBool(const QString& _tn, const QString& _fn, int e)
+inline const QColor& bgColorByBool(const QString& _tn, const QString& _fn, bool f)
 {
-    return bgColorByEnum(mCat(_tn, _fn), e);
+    return bgColorByEnum(mCat(_tn, _fn), f ? 0 : 1);
 }
 
 /// Egy enumerációs típus egy értékéhez rendelt karakterszín lekérdezése.
@@ -296,9 +296,9 @@ _GEX const QColor& fgColorByEnum(const QString& __t, int e);
 /// @param _fn A boolean típusú mező neve
 /// @param e 0: false, 1: true
 /// @return az értékhez rendelt szín
-inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e)
+inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, bool f)
 {
-    return fgColorByEnum(mCat(_tn, _fn), e);
+    return fgColorByEnum(mCat(_tn, _fn), f ? 0 : 1);
 }
 
 /// Font az enumerációs típus és (numerikus) érték alapján.

@@ -11,6 +11,7 @@ A megjelenítéssel kapcsolatos adattáblákat kezelő objektumok.
 
 /// @enum eTableShapeType
 /// Tábla Shape típusok (set)
+/// @relates cTableShape
 enum eTableShapeType {
     TS_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
     TS_SIMPLE = 0,  ///< "simple'   Egyszerű
@@ -24,25 +25,28 @@ enum eTableShapeType {
     TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
     TS_READ_ONLY,   ///< "read_only" Nem modosítható
-    TS_UNKNOWN_PAD, ///< Dummy érték a CHKENU miatt (ne jelezzen hibát), további lehetséges értékek nem megengedettek az adatbázisban
+    /// Dummy érték a CHKENU miatt (ne jelezzen hibát, a tableShapeType() üres stringet ad vissza),
+    /// A további lehetséges értékek nem megengedettek az adatbázisban, csak az API használja.
+    TS_UNKNOWN_PAD,
     TS_IGROUP,      ///< "igroup"  Jobb oldali groupoknak, az aktuális bal rekord tagja
     TS_NGROUP,      ///< "ngroup"  Jobb oldali groupoknak, az aktuális bal rekord nem tagja
     TS_IMEMBER,     ///< "imember" Jobb oldali tagok, az aktuális bal csoportnak tagjai
     TS_NMEMBER      ///< "nmember" Jobb oldali tagok, az aktuális bal csoportnak nem tagjai
 };
-/// Konverziós függvény a eTableShapeType enumerációs típushoz
+/// Konverziós függvény a eTableShapeType enumerációs típushoz.
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TS_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int tableShapeType(const QString& n, enum eEx __ex = EX_ERROR);
-/// Konverziós függvény a eTableShapeType enumerációs típushoz
+/// Konverziós függvény a eTableShapeType enumerációs típushoz.  Az TS_UNKNOWN_PAD értéket nem konvertálja.
 /// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString&       tableShapeType(int e, enum eEx __ex = EX_ERROR);
 
 /// @enum eTableInheritType
-/// A tábla öröklés kezelése
+/// A tábla öröklés kezelése (nincs minden lehetőség implementálva)
+/// @relates cTableShape
 enum eTableInheritType {
     TIT_UNKNOWN = -1,   ///< Ismeretlen, csak hibajelzésre
     TIT_NO = 0,         ///< A tábla nem vesz rész öröklésben (nincs ős és leszármazott)
@@ -56,12 +60,12 @@ enum eTableInheritType {
 };
 /// Konverziós függvény a eTableInheritType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TIT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int tableInheritType(const QString& n, eEx __ex = EX_ERROR);
 /// Konverziós függvény a eTableInheritType enumerációs típushoz
 /// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString& tableInheritType(int e, eEx __ex = EX_ERROR);
 
@@ -75,37 +79,55 @@ enum eOrderType {
     OT_DEFAULT,     ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
     OT_NEXT         ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
 };
-/// Konverziós függvény a eOrderType enumerációs típushoz
+/// Konverziós függvény az eOrderType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
-/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy OT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy OT_UNKNOWN, ha ismeretlen a név.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ int orderType(const QString& n, eEx __ex = EX_ERROR);
-/// Konverziós függvény a eOrderType enumerációs típushoz
+/// Konverziós függvény az eOrderType enumerációs típushoz
 /// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
-/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ const QString&  orderType(int e, eEx __ex = EX_ERROR);
 
+/// @enum eFieldFlag
+/// A mező megjelenítésének attributumai.
+/// @relates cTableShapeField
 enum eFieldFlag {
     FF_UNKNOWN = -1,    ///< ismeretlen, csak hibajelzésre
     FF_TABLE_HIDE=  0,  ///< A táblázatos megjelenítésnél a mező rejtett
     FF_DIALOG_HIDE,     ///< A dialógusban (insert, modosít) a mező rejtett
-    FF_READ_ONLY,       ///<
+    FF_READ_ONLY,       ///< Csak olvasható, nem modosítható mező
     FF_PASSWD,          ///< A mező egy jelszó (tartlma rejtett)
-    FF_HUGE,            ///< A TEXT típusú mező több soros, enum-nal hosszú név megjelenítése
+    FF_HUGE,            ///< A TEXT típusú mező több soros, vagy enum-nal a hosszú név megjelenítése
     FF_BATCH_EDIT,      ///< A mező értéke csoportosan is beállítható
-    FF_BG_COLOR,
-    FF_FG_COLOR,
-    FF_FONT,
-    FF_TOOL_TIP,
+    FF_BG_COLOR,        ///< A mező egy háttérszín
+    FF_FG_COLOR,        ///< A mező egy karakterszín
+    FF_FONT,            ///< A mező egy font név
+    FF_TOOL_TIP,        ///< A ToolTip megjelenítése enumerációs típus esetén
     FF_HTML,            ///< HTML (szűkített) táblában megjelenítendő
-    FF_RAW,
-    FF_IMAGE
+    FF_RAW,             ///< A mező tartalma eredeti formában történő megjelenítése
+    FF_IMAGE            ///< Megjelenítés képként
 };
 
+/// Konverziós függvény az eFieldFlag enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy FF_UNKNOWN, ha ismeretlen a név.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);
+/// Konverziós függvény az eFieldFlag enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ const QString& fieldFlag(int e, eEx __ex = EX_ERROR);
 
+/// @enum eManuItemType
+/// A menu elem típusok.
+/// @related cMenuItem
 enum eManuItemType {
     MT_UNKNOWN = -1,
     MT_SHAPE = 0,
@@ -114,7 +136,17 @@ enum eManuItemType {
     MT_MENU
 };
 
+/// Konverziós függvény az eManuItemType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy MI_UNKNOWN, ha ismeretlen a név.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ int menuItemType(const QString& n, eEx __ex = EX_ERROR);
+/// Konverziós függvény az eManuItemType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ const QString& menuItemType(int e, eEx __ex = EX_ERROR);
 
 
@@ -130,6 +162,7 @@ class LV2SHARED_EXPORT cTableShape : public cRecord {
     CRECORD(cTableShape);
     FEATURES(cTableShape)
 public:
+    /// Szöveg azonosítók
     enum eTextIndex {
         LTX_TABLE_TITLE = 0,    ///< Title of the table
         LTX_DIALOG_TITLE,       ///< Title of the dialog
@@ -143,7 +176,9 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
 
+    /// Egy table_shapes rekord beszúrása.
     virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    /// Egy table_shapes rekord beszúrása, vagy fellülírása név szerint, ha már létezik
     virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q, bool raw = false);
@@ -151,6 +186,9 @@ public:
     /// Az adatokat az adatbázisban nem tárolja el, feltételezi, hogy az adattábla neve ismert.
     /// Ha a tábla nem létezik, akkor dob egy kizárást.
     bool setDefaults(QSqlQuery &q, bool _disable_tree = false);
+    /// A title típusú (LTX_TABLE_TITLE, LTX_DIALOG_TITLE, LTX_DIALOG_TAB_TITLE, LTX_MEMBER_TITLE) beállítása.
+    /// A maximum 4 értéket az indexek sorrendjében állítja be. Ha egy tömb elem értéke "@", akkor annak
+    /// értéke az index szerinti előző értékkel azonos, az első érték nem lehet "@".
     void setTitle(const QStringList& _tt);
     /// Egy érték beállítása a megadott nevű mező leírójában
     /// @param _fn A mező neve a (megjelenítendő) táblában.
@@ -166,17 +204,26 @@ public:
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
     bool fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, eEx __ex = EX_ERROR);
+    /// A felsorolt nevű mezőkre az összes rendezési lehetőséget beállítja.
     bool setAllOrders(QStringList& _ord, eEx __ex = EX_ERROR);
+    /// A felsorolt nevű mezőkre a megadott nevű rendezési lehetőséget beállítja.
     bool setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex = EX_ERROR);
     /// A mazők megjelenítésési sorrendjének a megváltoztatása
     /// @param _fnl A felsorolt nevű mezők sorrendjének a megadása
     /// @param last Az utolsó sorszám, melyhez tartozó mező sorrrendje nem változik, ill. ahonnan folytatjuk a sorszámozást.
-    /// @param __ex Ha olyan mező nevet adunk meg, ami nem létezik, dob egy kizárást.
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor ha olyan mező nevet adunk meg, ami nem létezik, dob egy kizárást.
     /// @return Hiba esetén false, egyébként true.
     bool setFieldSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
+    /// A mazők rendezési sorrendjének a megváltoztatása
+    /// @param _fnl A felsorolt nevű mezők rendezési sorrendjének a megadása
+    /// @param last Az utolsó sorszám, melyhez tartozó mező sorrrendje nem változik, ill. ahonnan folytatjuk a sorszámozást.
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor ha olyan mező nevet adunk meg, ami nem létezik, dob egy kizárást.
+    /// @return Hiba esetén false, egyébként true.
     bool setOrdSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
+    /// A hivatkozott (tábla név a table_name nevű mezőben) tábla leírójával tér vissza.
+    /// @exception cError* Ha nincs ijen tábla.
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
     /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
     /// @param _name  Az oszlop ill. a leíró neve neve
@@ -245,25 +292,54 @@ enum eFontAttr {
     FA_BOOLD, FA_ITALIC, FA_UNDERLINE, FA_STRIKEOUT
 };
 
+
 enum eBoolVal {
     BE_TYPE = -1, BE_FALSE = 0, BE_TRUE
 };
-
-inline static int str2boolVal(const QString& val)
-{ return val.isEmpty() ? BE_TYPE : val == _sFalse ? BE_FALSE : val == _sTrue ? BE_TRUE : NULL_IX; }
-inline static int bool2boolVal(bool b) { return b ? BE_TRUE : BE_FALSE; }
+inline int bool2boolVal(bool b) { return b ? BE_TRUE : BE_FALSE; }
 
 
 /// @class cEnumVal
-/// @brief Enumerációs értékekhez opcionálisan tartozó beszédesebb szövegeket tartalmazó tábla.
+/// @brief Enumerációs értékekhez opcionálisan tartozó beszédesebb szövegeket,
+/// valamint a dekorációs lehetőségeket tartalmazó táblát (enum_vals) reprezentáló osztály.
+/// A legtőbb művelethet az előre beolvasott teljes táblát használja, így csökkentbóve az adatbázis műveletek számát,
+/// ezért a legtöbb esetben az enum_vals táblában eszközölt változtatások csak a program újraindításakor jutnak érvényre.
+/// @sa
+/// - const QColor& bgColorByEnum(const QString& __t, int e)
+/// - const QColor& bgColorByBool(const QString& _tn, const QString& _fn, bool f)
+/// - const QColor& dcBgColor(int id)
+/// - const QColor& fgColorByEnum(const QString& __t, int e)
+/// - const QColor& fgColorByBool(const QString& _tn, const QString& _fn, bool f)
+/// - const QColor& dcFgColor(int id)
+/// - const QFont& fontByEnum(const QString& __t, int _e)
+/// - const QFont& fontByEnum(const cEnumVal& ev)
+/// - const QFont& dcFont(int id)
+/// - void enumSetColor(QWidget *pW, const QString& _t, int id)
+/// - void enumSetBgColor(QWidget *pW, const QString& _t, int id)
+/// - void enumSetFgColor(QWidget *pW, const QString& _t, int id)
+/// - void dcSetColor(QWidget *pW, int id)
+/// - void dcSetBgColor(QWidget *pW, int id)
+/// - void dcSetFbColor(QWidget *pW, int id)
+/// - void enumSetD(QWidget *pW, const cEnumVal& ev, int id = NULL_IX)
+/// - void enumSetD(QWidget *pW, const QString& _t, int id)
+/// - void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcId)
+/// - void dcSetD(QWidget *pW, int id)
+/// - void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds)
+/// - void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds, qlonglong ff, int dcId)
+/// - void dcSetShort(W *pW, int id)
+/// - QVariant enumRole(const cEnumVal& ev, int role, int e)
+/// - QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
+/// - QVariant dcRole(int id, int role)
+///
 class LV2SHARED_EXPORT cEnumVal : public cRecord {
     CRECORD(cEnumVal);
 public:
+    /// Nyelvi szöveg indexek
     enum eTextIndex {
-        LTX_VIEW_LONG = 0,
-        LTX_VIEW_SHORT,
-        LTX_TOOL_TIP,
-        LTX_NUMBER
+        LTX_VIEW_LONG = 0,  ///< hosszú név
+        LTX_VIEW_SHORT,     ///< rövid név
+        LTX_TOOL_TIP,       ///< ToolTip (help)
+        LTX_NUMBER          ///< Nyelvi szöveg mezők száma
     };
     /// Konstruktor, az alapértelmezett értékek beállításával (type)
     cEnumVal(const QString _tn);
@@ -370,40 +446,59 @@ public:
     STATICIX(cEnumVal, FontAttr)
 };
 
+/// @enum eDataCharacter
+/// Alap dekorációhoz kapcsolódó enumerációs konstansok.
 enum eDataCharacter {
-    DC_INVALID = -1,
-    DC_HEAD    = 0,
-    DC_DATA,
-    DC_ID,
-    DC_NAME,
-    DC_PRIMARY,
-    DC_KEY,
-    DC_FNAME,
-    DC_DERIVED,
-    DC_TREE,
-    DC_FOREIGN,
-    DC_NULL,
-    DC_DEFAULT,
-    DC_AUTO,
-    DC_INFO,
-    DC_WARNING,
-    DC_ERROR,
-    DC_NOT_PERMIT,
-    DC_HAVE_NO,
-    DC_TEXT,
-    DC_QUESTION
+    DC_INVALID = -1,    ///< Ismeretlen, csak hibajelzésre
+    DC_HEAD    = 0,     ///< Fejléc, cím
+    DC_DATA,            ///< normál adat
+    DC_ID,              ///< ID, numerikus egyedi rekord azonosító
+    DC_NAME,            ///< Név, szöveges rekord azonosító
+    DC_PRIMARY,         ///< Elsődleges kulcs mező
+    DC_KEY,             ///< Kulcs mező
+    DC_FNAME,           ///< Hivatkozott rekord név mező értéke
+    DC_DERIVED,         ///< Hivatkozott rekord név (nincs név mező)
+    DC_TREE,            ///< Saját táblára mutató távoli kulcs
+    DC_FOREIGN,         ///< Távoli kulcs mező
+    DC_NULL,            ///< NULL érték
+    DC_DEFAULT,         ///< Alapértelmezett érték
+    DC_AUTO,            ///< Automatikus érték
+    DC_INFO,            ///< Információ
+    DC_WARNING,         ///< Figyelmeztetés
+    DC_ERROR,           ///< Hiba
+    DC_NOT_PERMIT,      ///< nem engedélyezett
+    DC_HAVE_NO,         ///< Az adat nem létezik
+    DC_TEXT,            ///< Nyelvi szöveg
+    DC_QUESTION         ///< Kérdés
 };
 
+
+/// Konverziós függvény az dataCharacter enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy DC_UNKNOWN, ha ismeretlen a név.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ int dataCharacter(const QString& n, eEx __ex = EX_ERROR);
+/// Konverziós függvény az dataCharacter enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams.
+/// @exception cError Ha nem konvertálható az érték, és __ex értéke nem EX_IGNORE.
 EXT_ const QString& dataCharacter(int e, eEx __ex = EX_ERROR);
 
+/// A datacharacter (eDataCharacter) enumerációs értékhez rendelt rövid névvel (LTX_VIEW_SHORT) tér vissza.
+/// Ha az adatbázis nincs nyiva, akkor az enumerációs érték nevével.
+/// @param id Az enumeráció numerikus értéke
 EXT_ QString dcViewShort(int id);
-static inline QString dcViewLong(int id)  { return cEnumVal::viewLong( _sDatacharacter, id, dataCharacter(id)); }
+/// A datacharacter (eDataCharacter) enumerációs értékhez rendelt hosszú névvel (LTX_VIEW_LONG) tér vissza.
+/// @param id Az enumeráció numerikus értéke
+inline QString dcViewLong(int id)  { return cEnumVal::viewLong( _sDatacharacter, id, dataCharacter(id)); }
 
 class LV2SHARED_EXPORT cMenuItem : public cRecord {
     CRECORD(cMenuItem);
     FEATURES(cMenuItem)
 public:
+    /// Nyelvi szöveg indexek
     enum eTextIndex {
         LTX_MENU_TITLE = 0,
         LTX_TAB_TITLE,
