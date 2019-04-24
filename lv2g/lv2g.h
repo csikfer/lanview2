@@ -101,6 +101,21 @@ A cIntSubObj bázisosztály és leszármazottai:
 - cChangeSwitch
 
 @section enumdec Enumerációs típusokhoz kapcsolt dekorációt támogató függvények
+Az enumerációs típusoknak kettős szerepe van a rendszerben. Azon túl, hogy egy adat típust reprezentálnak,
+rajtuk keresztűl valósul meg a GUI dekorációs funkciói: háttér és karakter szín, font család és attributumok,
+ikonok.
+
+Az enumerációkat leíró ill. kezelő osztályok (nem a GUI könvtár része):
+- cColEnumType  Az SQL enumerációs típus leírója
+- cEnumVal  A dekorációs adatokat tartalmazó rekordot reprezentáló osztály
+
+A rendszer használ egy típust, aminek csak dekorációs szerepe van, ez a datacharacter.
+Ez egy az SQL-ben is megjelenő ill. deklarált típus, de mint adat típusnak nincs szerepe.
+Továbbá a bool típusú mezőknél is megadhatóak dekorációs paraméterek. Ebben az esetben
+egy hipotetikus enumerációs típuson keresztűl, melynek a neve a tábla és mező névből
+képződik: <tábla név>.<mező név> pl.: 'services.disabled'. Ezek, mint SQL típusok nem léteznek,
+így az ennek megfeleltethető cColEnumType típusú objektum sem.
+
 Az enumerációs típusokhoz, illetve a típus értékeihez rendelt dekorációs paraméterek lekérdezését végzik.
 Az adatokat a memóriába pufferelik, csökkentendő az adatbázis műveletek számát. Emiatt ha változás történik,
 akkor az csak a program újraindítása után érvényesül.
@@ -129,8 +144,6 @@ akkor az csak a program újraindítása után érvényesül.
 - QVariant enumRole(const cEnumVal& ev, int role, int e)
 - QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
 - QVariant dcRole(int id, int role)
-
-
 */
 #include "lanview.h"
 #include "lv2g_global.h"
@@ -143,7 +156,6 @@ akkor az csak a program újraindítása után érvényesül.
 #include <QtWidgets>
 
 class lv2g;
-class lv2gDesign;
 class cMainWindow;
 
 class LV2GSHARED_EXPORT lv2g : public lanView {
@@ -179,7 +191,9 @@ public:
 };
 
 // Icon from resouce
+/// Az resource-ban elérhető ikonok mappa neve
 _GEX const QString iconBaseName;
+/// Az resource-ban elérhető ikonok listája
 _GEX const QStringList& resourceIconList();
 _GEX int indexOfResourceIcon(const QString& _s);
 inline QString resourceIconPath(const QString& s) { return s.isEmpty() ? s : iconBaseName + s; }
@@ -189,6 +203,9 @@ inline QIcon resourceIcon(int ix)                 { QString s = resourceIconPath
 template <typename K> QVariant resourceIcon2Variant(const K& k) { QString s = resourceIconPath(k); return s.isEmpty() ? QVariant() : QVariant(QIcon(s)); }
 inline QVariant string2variant(const QString& s)  { return s.isEmpty() ? QVariant() : QVariant(s); }
 
+/// A mező típusához (ID, név, távoli kulcs, stb. ) rendelhető datacharacter értéket adja meg
+/// @param __d A rekord leíró objektum
+/// @param __ix A mező indexe
 _GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
 
 
@@ -387,12 +404,20 @@ template <class W> void dcSetShort(W *pW, int id) {
     pW->setText(cEnumVal::viewShort(_sDatacharacter, id, dataCharacter(id)));
 }
 
-/// Model data() metódusában hhasználható függvény, az enumerációs objektum alapján adja vissza az adatot
-/// @param ev At enumerációs értékhez tartozó objektum.
+/// Model data() metódusában használható függvény, az enumerációs objektum alapján adja vissza az adatot
+/// @param ev Az enumerációs értékhez tartozó objektum.
 /// @param role A data() metódus role paramétere
 /// @param e Az enumeráció numerikus értéke, ha ismert (gyorsabb, ha meg van adva)
 _GEX QVariant enumRole(const cEnumVal& ev, int role, int e = NULL_IX);
+/// Model data() metódusában használható függvény, az enumerációs objektum alapján adja vissza az adatot
+/// @param _t At enumerációs típus neve
+/// @param id Az enumerációs érték (numerikus)
+/// @param role A data() metódus role paramétere
+/// @param dData Az alapértelmezett megjelenítendő szüveg
 _GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
+/// Model data() metódusában használható függvény, a datacharacter enumerációs objektum alapján adja vissza az adatot
+/// @param id Az enumerációs érték (numerikus)
+/// @param role A data() metódus role paramétere
 _GEX QVariant dcRole(int id, int role);
 
 _GEX QString condAddJoker(const QString& pat);

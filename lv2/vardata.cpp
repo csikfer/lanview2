@@ -276,7 +276,9 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
         if (ok) return setValue(q, rwd, state, rawChanged);
     }   break;
     case PT_INTERVAL: {
-        qlonglong rwi = parseTimeInterval(_rawVal.toString(), &ok);
+        qlonglong rwi;
+        if (variantIsInteger(_rawVal)) rwi = _rawVal.toLongLong(&ok);
+        else                           rwi = parseTimeInterval(_rawVal.toString(), &ok);
         if (ok) return setValue(q, rwi, state, rawChanged);
     }   break;
     case PT_TEXT:
