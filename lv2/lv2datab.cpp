@@ -903,24 +903,26 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
-    QString s;
+    QVariant r;
+    QVariantList vl;
+    QStringList sl;
     switch (eColType) {
-    case FT_INTEGER_ARRAY: {    // egész tömb
-        QVariantList vl = _f.toList();
-        return integerListToSql(vl);
-    }
-    case FT_REAL_ARRAY:  {
-        QVariantList vl = _f.toList();
-        return doubleListToSql(vl);
-    }
-    case FT_TEXT_ARRAY: {
-        QStringList sl = _f.toStringList();
-        return stringListToSql(sl);
-    }
+    case FT_INTEGER_ARRAY:     // egész tömb
+        vl = _f.toList();
+        r = integerListToSql(vl);
+        break;
+    case FT_REAL_ARRAY:
+        vl = _f.toList();
+        r = doubleListToSql(vl);
+        break;
+    case FT_TEXT_ARRAY:
+        sl = _f.toStringList();
+        r = stringListToSql(sl);
+        break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    return QVariant();  // Csak hogy ne legyen warning...
+    return r;
 }
 /**
 A megadott értéket konvertálja a tárolási típussá, ami :\n
@@ -1096,7 +1098,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
     else if (variantIsInteger(r)) {
         qlonglong i = r.toLongLong();
         r  = enumType().enum2str(i, EX_IGNORE);
-        ok = enumType().checkEnum(i);
+        ok = enumType().checkEnum(int(i));
     }
     else if (!r.convert(QMetaType::QString) || !enumType().check(r.toString())) {
         ok = false;
@@ -1478,7 +1480,7 @@ QVariant  cColStaticDescrAddr::toSql(const QVariant& _f) const
 }
 
 /// A mező adat letárolása.
-/// MAC tíous esetén cMac típusú adat lessz a QVariant értékbe letárolva.
+/// MAC típus esetén cMac típusú adat lessz a QVariant értékbe letárolva.
 /// Más címek esetén pedig netAddress objektum.
 QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
 {
@@ -3171,6 +3173,17 @@ void cRecord::fieldsCopy(QSqlQuery& __q, QString *pName, const QBitArray& __m)
     delete pOld;
 }
 
+qlonglong cRecord::getIdByName(QSqlQuery& __q, const QString& __n, enum eEx __ex) const
+{
+    return descr().getIdByName(__q, __n, __ex);
+}
+
+qlonglong cRecord::getIdByName(const QString& __n, enum eEx __ex) const
+{
+    QSqlQuery q = getQuery();
+    return getIdByName(q, __n, __ex);
+}
+
 
 cRecord& cRecord::set(const QSqlRecord& __r, int* _fromp, int __size)
 {
@@ -3697,15 +3710,6 @@ bool cRecord::next(QSqlQuery& __q)
 
 }
 
-int cRecord::existId(QSqlQuery& q, qlonglong __id) const
-{
-    QString sql = QString("SELECT COUNT(*) FROM %1 WHERE %2 = ?").arg(fullTableNameQ(), dQuoted(idName()));
-    bool ok = execSql(q, sql, __id);
-    int  n = 0;
-    if (ok) n = q.value(0).toInt(&ok);
-    return ok ? n : -1;
-}
-
 bool cRecord::existByNameKey(QSqlQuery& __q, eEx __ex) const
 {
     QBitArray m = nameKeyMask() & areNull();
@@ -3972,7 +3976,7 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eT
     return pe;
 }
 
-int cRecord::removeById(QSqlQuery& __q, qlonglong __id)
+bool cRecord::removeById(QSqlQuery& __q, qlonglong __id)
 {
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(tableName(), idName());
     switch (_toReadBack) {
@@ -3987,7 +3991,8 @@ int cRecord::removeById(QSqlQuery& __q, qlonglong __id)
     __q.bindValue(0, __id);
     _EXECSQL(__q);
     int r = __q.numRowsAffected();
-    if (r != 1) return false;
+    if (r == 0) return false;
+    if (r != 1) EXCEPTION(EDBDATA, __id, tableName());
 
     switch (_toReadBack) {
     case RB_NO_ONCE:
@@ -4003,7 +4008,7 @@ int cRecord::removeById(QSqlQuery& __q, qlonglong __id)
     default:
         break;
     }
-    return r;
+    return true;
 }
 
 bool cRecord::checkData()
@@ -4171,27 +4176,34 @@ bool cRecord::isEmpty(int _ix) const
         return get(_ix).toList().isEmpty();
     }
     switch (colDescr(_ix).eColType) {
-    case cColStaticDescr::FT_INTEGER:
+//  case cColStaticDescr::FT_INTEGER:
     case cColStaticDescr::FT_INTERVAL:
         return getId(_ix) == 0;
-    case cColStaticDescr::FT_REAL:
-        return get(_ix).toDouble() == 0.0;
+//  case cColStaticDescr::FT_REAL:
+//      return get(_ix).toDouble() == 0.0;
+    case cColStaticDescr::FT_INTEGER_ARRAY:
+    case cColStaticDescr::FT_REAL_ARRAY:
+        return get(_ix).toList().isEmpty();
+    case cColStaticDescr::FT_TEXT_ARRAY:
+    case cColStaticDescr::FT_SET:
+        return get(_ix).toStringList().isEmpty();
     case cColStaticDescr::FT_POLYGON:
         return get(_ix).value<tPolygonF>().isEmpty();
     case cColStaticDescr::FT_TEXT:
-    case cColStaticDescr::FT_ENUM:
+//  case cColStaticDescr::FT_ENUM:
     case cColStaticDescr::FT_BINARY:
         return getName(_ix).isEmpty();
     case cColStaticDescr::FT_BOOLEAN:
         return getBool(_ix);
-//  case cColStaticDescr::FT_MAC:
+    case cColStaticDescr::FT_MAC:
+        return getMac(_ix).isEmpty();
 //  case cColStaticDescr::FT_INET:
 //  case cColStaticDescr::FT_CIDR:
 //  case cColStaticDescr::FT_TIME:
 //  case cColStaticDescr::FT_DATE:
 //  case cColStaticDescr::FT_DATE_TIME:
     }
-    return true;
+    return false;
 }
 
 QString cRecord::identifying(bool t) const
@@ -4378,10 +4390,11 @@ bool cRecord::fetchText(QSqlQuery& _q, bool __force)
     return !pTextList->isEmpty();
 }
 
-void cRecord::saveText(QSqlQuery& _q)
+bool cRecord::saveText(QSqlQuery& _q)
 {
-    if (pTextList == nullptr) return;
+    if (pTextList == nullptr) return false;
     cLangTexts::saveText(_q, *pTextList, this);
+    return true;
 }
 
 

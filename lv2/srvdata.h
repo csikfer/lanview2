@@ -83,15 +83,17 @@ public:
     /// A port_id mező kitöltése a port név alapján. A metódus számít rá, hogy a node_id mező már ki van töltve.
     void setPort(QSqlQuery& q, const QString& __p) { setId(_sPortId, cNPort().getPortIdByName(q, __p, getId(_sNodeId))); }
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
+    /// Csak a disabled, host_service_state és hard_state mezőket olvassa vissza
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __st A szolgáltatással kapcsolatos művelet eredménye. Nem az új status, azt a set_service_stat()
     ///             határozza majd meg a mostani eredmény és az előélet alapján.
     /// @param __note Egy megjegyzés, ami, bele kerül a log rekordba, ha van változás, ill. ha keletkezik üzenet,
     ///             akkor abba is.
     /// @param __did Daemon host_service_id, opcionális
-    /// @return Az objektum referenciája, aktualizálva az aktuális rekord értékkel.
+    /// @param _resetIfDeleted Ha nem találja a rekordot, akkor kiad egy lanView::getInstance()->reSet(); hívást, ha a deleted mező true lessz úgyszintén.
+    /// @return Az objektum referenciája, aktualizálva a visszaolvasott mező értékkel.
     ///         Ha (már) nem létezik a megadott szolgáltzatás példány, akkor nem dob kizárást, hanem a 'deleted' mezőt true-ra állítja,
-    ///         ezzel jelezve, hogy a példány már nem létezik.
+    ///         ezzel is jelezve, hogy a példány már nem létezik.
     /// @exception Bármilyen egyéb hiba esetén dob egy kizázást cError * -al.
     cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong elapsed = NULL_ID, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Törli az aktuális rekord (ID alapján) állapot mezőit.

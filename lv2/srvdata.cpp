@@ -244,8 +244,15 @@ int cHostService::setStateMaxTry = NULL_IX;
 
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong elapsed, qlonglong __did, bool _resetIfDeleted)
 {
+    tIntVector readBackFieldIxs;
+    QString readBackFields;
     if (setStateMaxTry < 0) {
         setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
+        readBackFieldIxs << toIndex(_sDisabled) << toIndex(_sHostServiceState) << toIndex(_sHardState);
+        foreach (int ix, readBackFieldIxs) {
+            readBackFields += columnNameQ(ix) + _sCommaSp;
+        }
+        readBackFields.chop(_sCommaSp.size());
     }
     if (elapsed >= 0) {
         cServiceVar srvVar;
@@ -269,30 +276,25 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     QString sql;
     if (__did != NULL_ID) {
         did = __did;
-        sql = QString("SELECT * FROM %1(?,?,?,?)");
+        sql = QString("SELECT %1 FROM %2(?,?,?,?)");
     }
     else {
-        sql = QString("SELECT * FROM %1(?,?,?)");
+        sql = QString("SELECT %1 FROM %2(?,?,?)");
     }
-    sql = sql.arg(_sSetServiceStat);
+    sql = sql.arg(readBackFields).arg(_sSetServiceStat);
     bool tf = trFlag(TS_NULL) == TS_TRUE;
     sFulName = toSqlName(sFulName);
     int cnt = 0;
     while (true) {
         if (tf) sqlBegin(__q, sFulName);
         int r = _execSql(__q, sql, getId(), __st, __note, did);
-        switch (r) {
-        case 0:         // Nincs adat ?!
+        if (r == 0) {   // Nincs adat ?!
+            if (tf) sqlRollback(__q, sFulName, EX_IGNORE);
             EXCEPTION(EENODATA, 0, trUtf8("SQL függvény: %1(%2,%3,%4,%5)")
                       .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
                       );
-        case 1:         // OK
-            set(__q);
-            if (tf) sqlCommit(__q, sFulName);
-            _DBGFNL() << toString() << endl;
-            break;
-        case -1:    // prepare error
-        case -2:    // exec error
+        }
+        if (r < 0) {    // prepare or exec error
             QSqlError le = __q.lastError();
             if (tf) sqlRollback(__q, sFulName);
             QString s = le.databaseText().split('\n').first();  // első sor
@@ -307,9 +309,20 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             }
             _SQLERR(le, EQUERY);    // no return
         }
-        break;
+        else if (r == 1) {
+            for (int i = 0; i < readBackFieldIxs.size(); ++i) {
+                setq(readBackFieldIxs.at(i), __q, i);
+            }
+            if (tf) sqlCommit(__q, sFulName);
+            _DBGFNL() << toString() << endl;
+            if (getBool(_sDisabled) && _resetIfDeleted) lanView::getInstance()->reSet();
+            break;
+        }
+        else {
+            EXCEPTION(EPROGFAIL);
+        }
     }
-    return *this;   // To avoid a warning message
+    return *this;
 }
 
 cHostService& cHostService::clearState(QSqlQuery& __q)
@@ -338,19 +351,25 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
               "JOIN services USING(service_id) "
               "WHERE node_name LIKE ? "
                 "AND service_name LIKE ?";
-    int n = 0;
+    int n = -1;
+    int r = -1;
     if (execSql(q, sql, __hn, __sn)) {
         set(q);
         n = q.size();
-        if (n == 1 || __ex < EX_WARNING) return n;
+        if (n == 1 || __ex < EX_WARNING) r = n;
     }
     else {
-        if (__ex == EX_IGNORE) return 0;
+        if (__ex == EX_IGNORE) r = 0;
     }
-    QString e = trUtf8("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
-    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
-    else   { EXCEPTION(EFOUND, 0, e);    }
-    return -1;
+    if (r < 0) {
+        QString e = trUtf8("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
+        switch (n) {
+        case -1:    SQLQUERYERR(q);
+        case  0:    EXCEPTION(EFOUND, 0, e);
+        default:    EXCEPTION(AMBIGUOUS, n, e);
+        }
+    }
+    return n;
 }
 
 int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, eEx __ex)
@@ -378,19 +397,25 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString&
     }
     // QUERY
     sql += where;
-    int n = 0;
+    int n = -1;
+    int r = -1;
     if (execSql(q, sql, bind)) {
         set(q);
         n = q.size();
-        if (n == 1 || __ex < EX_WARNING) return n;
+        if (n == 1 || __ex < EX_WARNING) r = n;
     }
     else {
-        if (__ex == EX_IGNORE) return 0;
+        if (__ex == EX_IGNORE) r = 0;
     }
-    QString e = trUtf8("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
-    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
-    else   { EXCEPTION(EFOUND, 0, e);    }
-    return -1;
+    if (r < 0) {
+        QString e = trUtf8("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
+        switch (n) {
+        case -1:    SQLQUERYERR(q);
+        case  0:    EXCEPTION(EFOUND, 0, e);
+        default:    EXCEPTION(AMBIGUOUS, n, e);
+        }
+    }
+    return n;
 }
 
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, eEx __ex)
@@ -434,19 +459,25 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         bind  << __prin;
     }
     sql += where;
-    int n = 0;
+    int n = -1;
+    int r = -1;
     if (execSql(q, sql, bind)) {
         set(q);
         n = q.size();
-        if (n == 1 || __ex < EX_WARNING) return n;
+        if (n == 1 || __ex < EX_WARNING) r = n;
     }
     else {
-        if (__ex == EX_IGNORE) return 0;
+        if (__ex == EX_IGNORE) r = 0;
     }
-    QString e = trUtf8("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
-    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
-    else   { EXCEPTION(EFOUND, 0, e);    }
-    return -1;
+    if (r < 0) {
+        QString e = trUtf8("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
+        switch (n) {
+        case -1:    SQLQUERYERR(q);
+        case  0:    EXCEPTION(EFOUND, 0, e);
+        default:    EXCEPTION(AMBIGUOUS, n, e);
+        }
+    }
+    return n;
 }
 
 bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, eEx __ex)
@@ -1019,7 +1050,7 @@ eReasons cDynAddrRange::replace(QSqlQuery& q, const QHostAddress& b, const QHost
     else                    { sql += _sCommaQ; vl << subnetId; }
     sql += ")";
     execSql(q, sql, vl);
-    return (eReasons)reasons(q.value(0).toString());
+    return eReasons(reasons(q.value(0).toString()));
 }
 
 int cDynAddrRange::isDynamic(QSqlQuery &q, const QHostAddress& a)
@@ -1289,21 +1320,24 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 {
     _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
+    int r = R_ERROR;
     if (pInspector != nullptr) {
         if (pParserThread == nullptr) {
             if (0 == importParseText(cmd)) return REASON_OK;
             pe = importGetLastError();
-            return R_ERROR;
+            r = R_ERROR;
         }
         else {
-            return pParserThread->push(cmd, pe);
+            r = pParserThread->push(cmd, pe);
         }
     }
     else if (pVarMap != nullptr && pCommands != nullptr) {
         *pCommands += cmd + "\n";
-        return REASON_OK;
+        r = REASON_OK;
     }
-    else EXCEPTION(EPROGFAIL);
-    return R_ERROR;
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
+    return r;
 }
 

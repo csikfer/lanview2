@@ -1980,8 +1980,8 @@ user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3,
         | USER_T GROUP_T INSERT_T str str_z     { REPOBJ(pGroup, cGroup(), REPLACE_OFF, $4, $5); }
             ugrp_e                              { writeAndDel(pGroup); }
 //  Felhasználói csoportagság kezelése
-        | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
-        | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
+        | USER_T GROUP_T str ADD_T str ';'      { tGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
+        | USER_T GROUP_T str REMOVE_T str ';'   { tGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
         ;
 // Felhasználók tulajdonságai
 user_e  : ';'
@@ -2931,8 +2931,8 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
         | DISABLE_T USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), true); }
         | ENABLE_T  USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), true); }
         // Összes csoporttag letiltása/engedélyezése
-        | DISABLE_T USER_T str GROUP_T ';'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), true); }
-        | ENABLE_T  USER_T str GROUP_T ';'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), false); }
+        | DISABLE_T USER_T str GROUP_T ';'      { tGroupUser().disableMemberByGroup(qq(), sp2s($3), true); }
+        | ENABLE_T  USER_T str GROUP_T ';'      { tGroupUser().disableMemberByGroup(qq(), sp2s($3), false); }
         | DISABLE_T SERVICE_T str ';'           { cService().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), false); }
         | ENABLE_T  SERVICE_T str ';'           { cService().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), false); }
         | DISABLE_T HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $4).setBool(_sDisabled, true).update(qq(), false); }
