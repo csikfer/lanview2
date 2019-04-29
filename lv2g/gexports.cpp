@@ -60,9 +60,9 @@ void cExportsWidget::start()
     else {
         QString s = pUi->comboBoxTable->currentText();
         if (sGUI == s) {
-            r  = e.MenuItems(EX_IGNORE);
-            r += e.EnumVals(EX_IGNORE);
+            r  = e.EnumVals(EX_IGNORE);
             r += e.TableShapes(EX_IGNORE);
+            r += e.MenuItems(EX_IGNORE);
         }
         else if (sSRV == s) {
             r  = e.ServiceTypes(EX_IGNORE);

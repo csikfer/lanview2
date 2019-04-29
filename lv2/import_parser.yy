@@ -1610,7 +1610,7 @@ static inline cEnumVal& actEnum()
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
-%token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
+%token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T ICON_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T LEASES_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T TERM_T NEXT_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
@@ -1623,8 +1623,8 @@ static inline cEnumVal& actEnum()
 %token      DELEGATE_T STATE_T SUPERIOR_T TIME_T PERIODS_T LINE_T GROUP_T
 %token      USER_T DAY_T OF_T PERIOD_T PROTOCOL_T ALERT_T INTEGER_T FLOAT_T
 %token      DELETE_T ONLY_T STRING_T SAVE_T TYPE_T STEP_T EXCEPT_T
-%token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
-%token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
+%token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T PRIVATE_T PING_T
+%token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
 %token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T LANG_T
 %token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
@@ -2050,7 +2050,7 @@ ugrp_ps :
 ugrp_p  : NOTE_T str ';'                        { SETNOTE(pGroup, $2); }
         | RIGHTS_T rights ';'                   { pGroup->setName(_sGroupRights, *$2); delete $2; }
         | PLACE_T GROUP_T plg_id ';'            { pGroup->setId(_sPlaceGroupId, $3); }
-        | FEATURES_T features ';'               { pGroup->setName(_sFeatures); }
+        | FEATURES_T features                   { pGroup->setName(_sFeatures); }
         | CLEAR_T ';'                           { pGroup->clear(~pGroup->mask(_sGroupId, _sGroupName)); }
         | CLEAR_T usrgfns ';'                   { pGroup->clear(pGroup->mask(slp2sl($2))); }
         | COPY_T FROM_T str ';'                 { pGroup->fieldsCopy(cGroup().setByName(qq(), sp2s($3)), ~pGroup->mask(_sGroupId, _sGroupName));}
@@ -2552,7 +2552,7 @@ srv_ps  : srv_p
         ;
 srv_p   : SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
         | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
-        | FEATURES_T features ';'               { (*pService)[_sFeatures] = *$2; delete $2; }
+        | FEATURES_T features                   { (*pService)[_sFeatures] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4 * 1000; }
@@ -2595,7 +2595,7 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostService->set(_sPrimeServi
         | PORT_T str ';'                        { pHostService->setPort(qq(), *$2); delete $2; }
         | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostService->set(_sDelegateHostState, $4); }
         | COMMAND_T str ';'                     { pHostService->set(_sCheckCmd, *$2); delete $2; }
-        | FEATURES_T features ';'               { pHostService->set(_sFeatures, *$2); delete $2; }
+        | FEATURES_T features                   { pHostService->set(_sFeatures, *$2); delete $2; }
         | SUPERIOR_T SERVICE_T hsid ';'         { pHostService->set(_sSuperiorHostServiceId,  $3); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostService->set(_sMaxCheckAttempts, $4); }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { pHostService->set(_sNormalCheckInterval, sp2s($4)); }
@@ -2675,7 +2675,7 @@ vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParam
                                                   pServiceVarType->set(_sCriticalParam1,  $2->at(2));
                                                   pServiceVarType->set(_sCriticalParam2,  $2->at(3));
                                                   delete $2; }
-        | FEATURES_T features ';'               { pServiceVarType->setName(_sFeatures, sp2s($2)); }
+        | FEATURES_T features                   { pServiceVarType->setName(_sFeatures, sp2s($2)); }
         ;
 vtfilt  : str inverse                           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant()         << QVariant();  }
         | str inverse value                     { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant(vp2v($3)) << QVariant();}
@@ -2687,7 +2687,7 @@ inverse :                                       { $$ = false; }
 svars   :
         | svar svars
         ;
-svar    : FEATURES_T features ';'               { pServiceVar->setName(_sFeatures, sp2s($2)); }
+svar    : FEATURES_T features                   { pServiceVar->setName(_sFeatures, sp2s($2)); }
         | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2));
                                                   pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$2)); delete $2; }
         | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2)); delete $2;
@@ -2761,7 +2761,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         // title, dialog title, member title (group), not member title (group)
         | TITLE_T strs_zz  ';'              { pTableShape->setTitle(slp2sl($2)); }
         | READ_T ONLY_T bool_on ';'         { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $3); }
-        | FEATURES_T features ';'           { pTableShape->set(_sFeatures, sp2s($2)); }
+        | FEATURES_T features               { pTableShape->set(_sFeatures, sp2s($2)); }
         | AUTO_T REFRESH_T str ';'          { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
         | AUTO_T REFRESH_T int ';'          { pTableShape->setId(  _sAutoRefresh, 1000*$3 ); }  // sec->mSec !!
         | RIGHT_T SHAPE_T strs ';'          { pTableShape->addRightShape(*$3); delete $3; }
@@ -2778,7 +2778,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
-        | FIELD_T strs FEATURES_T features ';'  { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
+        | FIELD_T strs FEATURES_T features      { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
         | FIELD_T strs FLAG_T fflags ';'        { pTableShape->fsets(slp2sl($2), _sFieldFlags, $4); }
         | FIELD_T strs FLAG_T bool_ fflags ';'  { foreach (QString fn, *$2) {
                                                       cTableShapeField *pTS = pTableShape->shapeFields.get(fn);
@@ -2837,7 +2837,7 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
-        | FEATURES_T features ';'       { pTableShapeField->setName(_sFeatures, sp2s($2)); }
+        | FEATURES_T features           { pTableShapeField->setName(_sFeatures, sp2s($2)); }
         | FLAG_T fflags ';'             { pTableShapeField->setId(_sFieldFlags, $2); }
         | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
         | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
@@ -2859,6 +2859,7 @@ enump   : BACKGROUND_T COLOR_T str ';'  { actEnum().setName(_sBgColor, sp2s($3))
         | FONT_T ATTR_T strs ';'        { actEnum().addStringList(_sFontAttr, slp2sl($3)); }
         | VIEW_T strs_zz ';'            { actEnum().setView(slp2sl($2)); }
         | TOOL_T TIP_T str ';'          { actEnum().setText(cEnumVal::LTX_TOOL_TIP, sp2s($3)); }
+        | ICON_T str ';'                { actEnum().setName(_sIcon, sp2s($2)); }
         ;
 enumvals: enumval
         | enumval enumvals
@@ -2886,7 +2887,7 @@ miops   : miop miops
         |
         ;
 miop    : PARAM_T str ';'               { actMenuItem().setName(cMenuItem::ixMenuParam(), sp2s($2)); }
-        | FEATURES_T features ';'       { actMenuItem().setName(cMenuItem::ixFeatures(), sp2s($2)); }
+        | FEATURES_T features           { actMenuItem().setName(cMenuItem::ixFeatures(), sp2s($2)); }
         | TITLE_T strs_zz ';'           { actMenuItem().setTitle(slp2sl($2)); }
         | TOOL_T TIP_T str ';'          { actMenuItem().setText(cMenuItem::LTX_TOOL_TIP, sp2s($3)); }
         | WHATS_T THIS_T str ';'        { actMenuItem().setText(cMenuItem::LTX_WHATS_THIS, sp2s($3)); }
@@ -3156,7 +3157,7 @@ static const struct token {
 } yyTokenList[] = {
     TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
     TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
-    TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
+    TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS) TOK(ICON)
     TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(LEASES)
     TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM) TOK(NEXT)
     TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
@@ -3169,8 +3170,8 @@ static const struct token {
     TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
     TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
     TOK(DELETE) TOK(ONLY) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP) TOK(EXCEPT)
-    TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
-    TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
+    TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(PRIVATE) TOK(PING)
+    TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC)
     TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
     TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(LANG)
     TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
