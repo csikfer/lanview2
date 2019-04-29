@@ -115,6 +115,7 @@ int fieldFlag(const QString& n, eEx __ex)
     if (0 == n.compare(_sHTML,      Qt::CaseInsensitive)) return FF_HTML;
     if (0 == n.compare(_sRaw,       Qt::CaseInsensitive)) return FF_RAW;
     if (0 == n.compare(_sImage,     Qt::CaseInsensitive)) return FF_IMAGE;
+    if (0 == n.compare(_sNotext,    Qt::CaseInsensitive)) return FF_NOTEXT;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FF_UNKNOWN;
 }
@@ -135,6 +136,7 @@ const QString& fieldFlag(int e, eEx __ex)
     case FF_HTML:       return _sHTML;
     case FF_RAW:        return _sRaw;
     case FF_IMAGE:      return _sImage;
+    case FF_NOTEXT:     return _sNotext;
     default:            break;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);
@@ -355,9 +357,10 @@ int cTableShape::fetchFields(QSqlQuery& q, bool raw)
 {
     shapeFields.clear();
     cTableShapeField f;
-    int fix = f.toIndex(_sTableShapeId);
-    f.setId(fix, getId());
-    if (f.fetch(q, false, _bit(fix), f.iTab(_sFieldSequenceNumber))) {
+    int ixFF = f.ixFieldFlags();
+    int ixTS = f.ixTableShapeId();
+    f.setId(ixTS, getId());
+    if (f.fetch(q, false, _bit(ixTS), f.iTab(_sFieldSequenceNumber))) {
         do {
             shapeFields << f;
         } while (f.next(q));
@@ -375,15 +378,18 @@ int cTableShape::fetchFields(QSqlQuery& q, bool raw)
             foreach (QString sFF, p->colDescr(_sFieldFlags).enumType().enumValues) {
                 if (p->isFeature(sFF)) {
                     QString v = p->feature(sFF);
-                    if (v == "!")           p->enum2setOff(_sFieldFlags, fieldFlag(sFF));
-                    else if (v.isEmpty())   p->enum2setOn (_sFieldFlags, fieldFlag(sFF));
+                    if (v == "!")           p->enum2setOff(ixFF, fieldFlag(sFF));
+                    else if (v.isEmpty())   p->enum2setOn (ixFF, fieldFlag(sFF));
                     else switch (str2tristate(v, EX_IGNORE)) {
-                        case TS_TRUE:       p->enum2setOn (_sFieldFlags, fieldFlag(sFF)); break;
-                        case TS_FALSE:      p->enum2setOff(_sFieldFlags, fieldFlag(sFF)); break;
+                        case TS_TRUE:       p->enum2setOn (ixFF, fieldFlag(sFF)); break;
+                        case TS_FALSE:      p->enum2setOff(ixFF, fieldFlag(sFF)); break;
                         default:            break;
                     }
                 }
             }
+            bool image  = p->getBool(ixFF, FF_IMAGE);
+            bool notext = p->getBool(ixFF, FF_NOTEXT);
+            if (notext && !image) p->enum2setOff(ixFF, FF_NOTEXT);
         }
     }
     return shapeFields.count();

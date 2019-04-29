@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 22
+#define DB_VERSION_MINOR 23
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -974,20 +974,21 @@ enum eImportParserStat importParserStat = IPS_READY;
 
 bool callFromInterpreter()
 {
+    bool r = false;
     switch (importParserStat) {
-    case IPS_READY:                         // Nem fut az interpreter
-        return false;
-    case IPS_RUN:                           // A fő szálban fut az interpreter
-        if (isMainThread()) return true;    // Ez a fő szál
-        return false;                       // De ez nem a fő szál
+    case IPS_READY:                     // Nem fut az interpreter
+        break;
+    case IPS_RUN:                       // A fő szálban fut az interpreter
+        if (isMainThread()) r = true;   // Ez a fő szál
+        break;
     case IPS_THREAD:                        // Egy thread-ban fut az interpreter
-        if (isMainThread()) return false;   // De ez a fő szál
-        if (QThread::currentThread()->objectName() == _sImportParser) return true;
-        return false;                       // Ez egy másik szál
-    default:
-        EXCEPTION(EPROGFAIL);
-        return false;
+        if (isMainThread()) r = false;      // De ez a fő szál
+        else if (QThread::currentThread()->objectName() == _sImportParser) r = true;
+        break;
+//  default:
+//      EXCEPTION(EPROGFAIL);
     }
+    return r;
 }
 
 #define IMPQUEUEMAXWAIT 1000

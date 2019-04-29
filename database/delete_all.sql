@@ -1,36 +1,36 @@
 ﻿-- Delete all user data
 
-DELETE FROM alarms;
-DELETE FROM app_errs;
-DELETE FROM app_memos;
-DELETE FROM arp_logs;
-DELETE FROM dyn_ipaddress_logs;
-DELETE FROM host_service_logs;
-DELETE FROM host_service_noalarms;
-DELETE FROM imports;
-DELETE FROM mactab_logs;
+-- \i clrstat.sql
+
+TRUNCATE imports RESTART IDENTITY;
+TRUNCATE import_templates RESTART IDENTITY;
+TRUNCATE mactab_logs RESTART IDENTITY;
+TRUNCATE arps RESTART IDENTITY;
+TRUNCATE dyn_addr_ranges RESTART IDENTITY;
+TRUNCATE group_users RESTART IDENTITY;
+TRUNCATE mactab RESTART IDENTITY;
+TRUNCATE phs_links_table RESTART IDENTITY;
+TRUNCATE log_links_table RESTART IDENTITY;
+TRUNCATE lldp_links_table RESTART IDENTITY;
+
+DELETE FROM nports;
+ALTER SEQUENCE nports_port_id_seq RESTART WITH 1;
 DELETE FROM patchs;
-DELETE FROM phs_links_table;
+ALTER SEQUENCE patchs_node_id_seq RESTART WITH 1;
 DELETE FROM subnets;
+ALTER SEQUENCE subnets_subnet_id_seq RESTART WITH 1;
 DELETE FROM vlans;
-
-
-DELETE FROM arps;
-DELETE FROM dyn_addr_ranges;
 DELETE FROM host_services;
+ALTER SEQUENCE host_services_host_service_id_seq RESTART WITH 1;
 DELETE FROM images;
-DELETE FROM import_templates;
-DELETE FROM mactab;
-DELETE FROM lldp_links_table;
-DELETE FROM user_events;
-DELETE FROM db_errs;
-
-DELETE FROM group_users;
+ALTER SEQUENCE images_image_id_seq RESTART WITH 1;
 DELETE FROM groups;
+ALTER SEQUENCE graphs_graph_id_seq RESTART WITH 1;
 DELETE FROM users;
+ALTER SEQUENCE users_user_id_seq RESTART WITH 1;
 
 DELETE FROM places WHERE place_type = 'real';
-DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'none', 'office', 'schoolroom', 'student', 'technical_room');
+DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'office', 'schoolroom', 'student', 'technical_room');
 
 INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
     ( 0, 'system',  'system',           'system'  ),
@@ -56,3 +56,5 @@ INSERT INTO group_users ( group_id, user_id ) VALUES
     ( group_name2id('operator'), user_name2id('operator') ),
     ( group_name2id('operator'), user_name2id('admin') ),
     ( group_name2id('viewer'),   user_name2id('viewer') );
+
+

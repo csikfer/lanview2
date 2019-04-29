@@ -797,7 +797,7 @@ cIpAddress& cIpAddress::setAddress(const QHostAddress& __a, const QString& __t)
         (void)addrType(__t);  // check
         setName(_ixIpAddressType, __t);
     }
-    if (isNull(_ixIpAddressType)) setName(_ixIpAddressType, _sFixIp);
+//  if (isNull(_ixIpAddressType)) setName(_ixIpAddressType, _sFixIp);
     set(_ixAddress, QVariant::fromValue(netAddress(__a)));
     return *this;
 }
@@ -902,6 +902,7 @@ const QString& addrType(int __at, eEx __ex)
     case AT_PRIVATE:return _sPrivate;
     case AT_EXTERNAL:return _sExternal;
     case AT_JOINT:  return _sJoint;
+    case AT_MANUAL: return _sManual;
     default: if (__ex) EXCEPTION(EDATA, __at);
     }
     return _sNul;
@@ -915,6 +916,7 @@ int addrType(const QString& __at, eEx __ex)
     if (0 == __at.compare(_sPrivate, Qt::CaseInsensitive)) return AT_PRIVATE;
     if (0 == __at.compare(_sExternal,Qt::CaseInsensitive)) return AT_EXTERNAL;
     if (0 == __at.compare(_sJoint,   Qt::CaseInsensitive)) return AT_JOINT;
+    if (0 == __at.compare(_sManual,  Qt::CaseInsensitive)) return AT_MANUAL;
     if (__ex) EXCEPTION(EDATA, -1, __at);
     return ENUM_INVALID;
 }

@@ -574,7 +574,11 @@ void cWorkstation::setStatPortType(bool f, QStringList& sErrs, QStringList& sInf
     (void)isOk;
 }
 
-
+/// \brief Riport és hiba jelzés a megadott címre
+/// \param f    Ha értéke hamis, akkor a metódus nem csinál semmit.
+/// \param sErrs    Hiba sorok konténere
+/// \param sInfs    Riport sorok konténere
+/// \param isOk Ha hiba van, akkor értéke false lesz
 void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
     if (!f || pip == nullptr) return;
@@ -600,7 +604,8 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
         return;
     }
     cNode n;
-    if (pip->getId(_sIpAddressType) != AT_PRIVATE && n.fetchByIp(*pq, pip->address(), EX_IGNORE)) {
+    QHostAddress a = pip->address();
+    if (pip->getId(_sIpAddressType) != AT_PRIVATE && n.fetchByIp(*pq, a, EX_IGNORE)) {
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
             sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
             QString t = trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve.");

@@ -884,7 +884,7 @@ QVariant cEnumListModel::data(const QModelIndex &index, int role) const
     int row = index.row();
     if (!isContIx(enumVals, row)) return QVariant();
     if (row == 0 && nullType != NT_NOT_NULL) {
-        return enumRole(_sDatacharacter, nullType, role, _sNul);
+        return dcRole(nullType, role);
     }
     const cEnumVal& ev = *enumVals[row];
     int             e  = pType->str2enum(ev.getName());

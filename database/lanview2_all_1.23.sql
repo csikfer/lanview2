@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.6 (Ubuntu 10.6-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.6 (Ubuntu 10.6-0ubuntu0.18.04.1)
+-- Dumped from database version 10.7 (Ubuntu 10.7-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 11.1 (Ubuntu 11.1-1.pgdg16.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,20 +32,6 @@ CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
 
 
 ALTER PROCEDURAL LANGUAGE plperl OWNER TO lanview2;
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
 
 --
 -- Name: adminpack; Type: EXTENSION; Schema: -; Owner: 
@@ -99,11 +85,26 @@ CREATE TYPE public.addresstype AS ENUM (
     'external',
     'dynamic',
     'pseudo',
-    'joint'
+    'joint',
+    'manual'
 );
 
 
 ALTER TYPE public.addresstype OWNER TO lanview2;
+
+--
+-- Name: TYPE addresstype; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE public.addresstype IS 'IP address types:
+fixip   Fix ip address (automatic/DHCP).
+private Private IP address, non routing, separated.
+external    Expernal IP address.
+dynamic     Dinamic IP address (DHCP).
+pseudo      Not a real IP address.
+joint       Not a unique IP address (Cluster, ...).
+manual      Manually set address.';
+
 
 --
 -- Name: aggregatetype; Type: TYPE; Schema: public; Owner: lanview2
@@ -252,7 +253,8 @@ CREATE TYPE public.errtype AS ENUM (
     'Fatal',
     'Error',
     'Warning',
-    'Ok'
+    'Ok',
+    'Info'
 );
 
 
@@ -263,10 +265,11 @@ ALTER TYPE public.errtype OWNER TO lanview2;
 --
 
 COMMENT ON TYPE public.errtype IS 'Hiba sújossága
-Fatal   Fatális hiba
-Error   Sújos hiba
-Warning Figyelmeztetés, nincs kizárás
-Ok      Nem hiba, ''Info''
+Fatal   Fatal error
+Error   Error
+Warning Warning
+Ok      Ok (Info)
+Info    Info only (Not used by errors table)
 ';
 
 
@@ -327,7 +330,8 @@ CREATE TYPE public.fieldflag AS ENUM (
     'tool_tip',
     'HTML',
     'raw',
-    'image'
+    'image',
+    'notext'
 );
 
 
@@ -337,18 +341,21 @@ ALTER TYPE public.fieldflag OWNER TO lanview2;
 -- Name: TYPE fieldflag; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE public.fieldflag IS 'A mező tulajdonságok logokai (igen/nem):
-table_hide      A táblázatos megjelenítésnél a mező rejtett
-dialog_hide     A dialógusban (insert, modosít) a mező rejtett
-read_only       A mező nem szerkeszthető
-passwd          A mező egy jelszó (tartlma rejtett)
-huge            A TEXT típusú mező több soros
-batch_edit      A mező kötegelten modosítható
-bg_color        Háttér szín beállítása enum_vals szerint.
-fg_color        karakter szín beállítása enum_vals szerint.
-font            Font beállítása enum_vals szerint.
-tool_tip        Tool tip beállítása enum_vals szerint.
-';
+COMMENT ON TYPE public.fieldflag IS 'Field flags:
+table_hide      The field is hidden in the table.
+dialog_hide     The field is hidden in the dialog.
+read_only       The field is read only.
+passwd          The field is password.
+huge            Long text.
+batch_edit      The field modify Batch.
+bg_color        Set background color by enum_vals record.
+fg_color        Set character color by enum_vals record.
+font            Set font by enum_vals record.
+tool_tip        Show Tool tip text by enum_vals record.
+HTML            This field is visible in the HTML report.
+raw             Show raw value
+image           Display an image or icon
+notext          Hide text, but only if the image flag is exists.';
 
 
 --
@@ -1424,11 +1431,16 @@ CREATE FUNCTION public.alarm_notice() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    gids bigint[];
+    sup_alarm_pending boolean := false;
 BEGIN
-    IF NEW.superior_alarm_id IS NULL
-    OR NEW.host_service_id = 0 THEN -- ticket
-        -- on-line
+    IF NEW.host_service_id <> 0                 -- is not ticket alarm
+    AND NEW.superior_alarm_id IS NOT NULL THEN  -- sup. alarm is exists
+        IF (SELECT end_time FROM alarms WHERE alarm_id = NEW.superior_alarm_id) IS NULL THEN
+            sup_alarm_pending := true;  -- no events
+        END IF;
+    END IF; 
+    IF NOT sup_alarm_pending THEN
+        -- on-line events
         UPDATE user_events SET event_state = 'dropped'
             WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
                 AND event_state = 'necessary';
@@ -1441,7 +1453,7 @@ BEGIN
                         FROM host_services AS hs JOIN services AS s USING(service_id)
                         WHERE host_service_id = NEW.host_service_id)
         ) INSERT INTO user_events(user_id, alarm_id, event_type) SELECT user_id, NEW.alarm_id, 'notice'::usereventtype FROM uids;
-        -- off-line
+        -- off-line events
         WITH uids AS (
             SELECT DISTINCT user_id
                 FROM group_users
@@ -1450,7 +1462,12 @@ BEGIN
                         FROM host_services AS hs JOIN services AS s USING(service_id)
                         WHERE host_service_id = NEW.host_service_id)
         ) INSERT INTO user_events(user_id, alarm_id, event_type) SELECT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM uids;
-        
+    END IF;
+    -- save actual value for connecting service variables 
+    INSERT INTO alarm_service_vars(alarm_id, service_var_id, service_var_value, var_state, state_msg, raw_value)
+        SELECT NEW.alarm_id, service_var_id, service_var_value, var_state, state_msg, raw_value FROM service_vars WHERE host_service_id = NEW.host_service_id;
+    -- notify
+    IF NOT sup_alarm_pending THEN
         NOTIFY alarm;
     END IF;
     RETURN NEW;
@@ -1906,8 +1923,11 @@ DECLARE
     nulltd  timestamp := '2000-01-01 00:00';
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-       IF OLD.node_id = NEW.node_id AND
-         (OLD.superior_host_service_id IS NOT NULL AND NEW.superior_host_service_id IS NULL) THEN
+        IF OLD.node_id = - NEW.node_id THEN -- Temporary deletion of owner, no check
+            RETURN NEW;
+        END IF;
+        IF OLD.node_id = NEW.node_id AND
+          (OLD.superior_host_service_id IS NOT NULL AND NEW.superior_host_service_id IS NULL) THEN
             -- Update a superior akármi törlése miatt, több rekord törlésénél előfordulhat,
             -- hogy már nincs meg a node vagy port amire a node_id ill. a prort_id mutat.
             -- késöbb ez a rekord törölve lessz, de ha hibát dobunk, akkor semmilyen törlés nem lessz.
@@ -1995,7 +2015,8 @@ ALTER FUNCTION public.check_host_services() OWNER TO lanview2;
 COMMENT ON FUNCTION public.check_host_services() IS '
 A host_services rekord ellenörző trigger függvény:
 A rekord ID-t nem engedi modosítani.
-Ellenörzi, hogy a node_id valóban egy nodes vagy snmpdevices rekordot azonosít-e.
+Ellenörzi, hogy a node_id valóban egy nodes vagy snmpdevices rekordot azonosít-e,
+kivéve UPDATE esetén, ha a node_id mező előjelet vált (a node ideiglenes törlését jelzi).
 Ha port_id nem NULL, ellenörzi, hogy a node_id álltal azonosított objektum portja-e.
 Ellenörzi a noalarm_flag, noalarm_from és noalarm_to mezők konzisztenciáját. Ha a két
 időadat közöl valamelyik, felesleges, akkor törli azt, ha hiányos akkor kizárást generál.
@@ -2003,7 +2024,7 @@ Ha az idöadatok alapján a noalarm_flag már lejárt, akkor a noalarm_flag "off
 mindkét időadatot.
 Insert esetén, ha a superior_host_service_host_name értéke NULL, akkor egy find_superior() hívással
 megkísérli kitölteni azt.
-Ha ha a superior_host_service_host_name értéke nem NULL, és rekord beszúrás történt, vagy superior_host_service_host_name
+Ha a superior_host_service_host_name értéke nem NULL, és rekord beszúrás történt, vagy superior_host_service_host_name
 megváltozott, akkor ellenörzi, hogy megfelel-e a services.superior_service_mask -mintának a hivatkozott szervíz neve.
 ';
 
@@ -2107,6 +2128,9 @@ BEGIN
     IF NEW.hwaddress IS NULL THEN
         RETURN NEW;
     END IF;
+    IF TG_OP = 'UPDATE' AND OLD.node_id = - NEW.node_id THEN
+        RETURN NEW; -- No check
+    END IF;
     SELECT COUNT(*) INTO n FROM interfaces WHERE node_id <> NEW.node_id AND hwaddress = NEW.hwaddress;
     IF n > 0 THEN
         PERFORM error('IdNotUni', NEW.port_id, NEW.hwaddress::text, 'check_interface()', TG_TABLE_NAME, TG_OP);
@@ -2123,7 +2147,8 @@ ALTER FUNCTION public.check_interface() OWNER TO lanview2;
 -- Name: FUNCTION check_interface(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION public.check_interface() IS 'Különböző node_id esetén nem lehet két azonos MAC';
+COMMENT ON FUNCTION public.check_interface() IS 'Különböző node_id esetén nem lehet két azonos MAC.
+Ha a node_id előjelet vált, akkor nincs ellenörzés (node rekord ideiglenes törlése).';
 
 
 --
@@ -2140,7 +2165,7 @@ DECLARE
     snid bigint;
     cnt integer;
 BEGIN
-    RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
+    -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
     -- Az új rekordban van ip cím ?
     nip := NEW.ip_address_type IS NULL;
     IF nip THEN
@@ -2153,11 +2178,11 @@ BEGIN
     IF NEW.address IS NOT NULL THEN
         -- Check subnet_id
         IF NEW.subnet_id IS NOT NULL AND NOT (SELECT NEW.address << netaddr FROM subnets WHERE subnet_id = NEW.subnet_id) THEN
-            RAISE INFO 'Clear subnet id : %', NEW.subnet_id;
-            NEW.subnet_id := NULL;  -- Clear invalid subnet_id
+            PERFORM error('Params', NEW.subnet_id, 'subnet for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+            RETURN NULL;
         END IF;
         -- Nincs subnet (id), keresünk egyet
-        IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN
+        IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' AND NEW.ip_address_type <> 'private' THEN
             BEGIN
                 SELECT subnet_id INTO STRICT NEW.subnet_id FROM subnets WHERE netaddr >> NEW.address;
                 EXCEPTION
@@ -2166,7 +2191,7 @@ BEGIN
                     WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
                         PERFORM error('Ambiguous',-1, 'subnet address for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
             END;
-            RAISE INFO 'Set subnet id : %', NEW.subnet_id;
+            -- RAISE INFO 'Set subnet id : %', NEW.subnet_id;
         ELSIF NEW.ip_address_type = 'external'  THEN
             -- external típusnál mindíg NULL a subnet_id
             NEW.subnet_id := NULL;
@@ -2176,9 +2201,9 @@ BEGIN
             -- Azonos IP címek?
             FOR ipa IN SELECT * FROM ip_addresses WHERE NEW.address = address LOOP
                 IF ipa.ip_address_id <> NEW.ip_address_id THEN 
-                    IF ipa.ip_address_type = 'dynamic' THEN
+                    IF ipa.ip_address_type = 'dynamic' OR is_dyn_addr(NEW.address) THEN
                     -- Ütköző dinamikust töröljük.
-                        UPDATE ip_addresses SET address = NULL WHERE ip_address_id = ipa.ip_address_id;
+                        UPDATE ip_addresses SET address = NULL, ip_address_type = 'dynamic' WHERE ip_address_id = ipa.ip_address_id;
                     ELSIF ipa.ip_address_type = 'joint' AND (nip OR NEW.ip_address_type = 'joint') THEN
                     -- Ha közös címként van megadva a másik, ...
                         NEW.ip_address_type := 'joint';
@@ -2201,6 +2226,12 @@ BEGIN
         -- RAISE INFO 'IP address is NULL';
     END IF;
     -- RAISE INFO 'Return, NEW = %', NEW;
+    IF TG_OP = 'UPDATE' THEN 
+        IF NEW.ip_address_id <> OLD.ip_address_id THEN
+            PERFORM error('Constant', OLD.ip_address_id, 'ip_address_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+            RETURN NULL;
+        END IF;
+    END IF;
     RETURN NEW;
 END;
 $$;
@@ -2317,29 +2348,19 @@ ALTER FUNCTION public.check_phs_shared(bigint, public.portshare, public.phslinkt
 CREATE FUNCTION public.check_reference_node_id() RETURNS trigger
     LANGUAGE plperl
     AS $_X$
-    ($null, $inTable, $outTable) = @{$_TD->{args}};
-    if ((defined($null) && $null && !defined($_TD->{new}{node_id}))
-     || ($_TD->{new}{node_id} == $_TD->{old}{node_id})) { return; } # O.K.
-    if (!defined($inTable)) { $inTable = 'patchs'; }
+    ($inTable) = @{$_TD->{args}};
+    if ($_TD->{new}{node_id} ==   $_TD->{old}{node_id}) { return; } # No change, ok
+    if ($_TD->{new}{node_id} == - $_TD->{old}{node_id}) { return; } # Temporary deletion of owner, no check
     $rv = spi_exec_query('SELECT COUNT(*) FROM ' . $inTable .' WHERE node_id = ' . $_TD->{new}{node_id});
     $nn  = $rv->{rows}[0]->{count};
+    if ($nn == 1) { return; }
     if ($nn == 0) {
         spi_exec_query("SELECT error('InvRef', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
-        return "SKIP";
     }
-    if ($nn != 1) {
+    else {
         spi_exec_query("SELECT error('DataError', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
-        return "SKIP";
     }
-    if (defined($outTable) && $outTable) {
-        $rv = spi_exec_query('SELECT COUNT(*) FROM ONLY ' . $outTable .' WHERE node_id = ' . $_TD->{new}{node_id});
-        $nn  = $rv->{rows}[0]->{count};
-        if ($nn != 0) {
-            spi_exec_query("SELECT error('DataError', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
-            return "SKIP";
-        }
-    }
-    return;
+    return "SKIP";
 $_X$;
 
 
@@ -2350,10 +2371,10 @@ ALTER FUNCTION public.check_reference_node_id() OWNER TO lanview2;
 --
 
 COMMENT ON FUNCTION public.check_reference_node_id() IS 'Ellenőrzi, hogy a node_id mező valóban egy node rekordra mutat-e.
-Ha az opcionális első paraméter true, akkor megengedi a NULL értéket is.
-Ha megadjuk a második paramétert, akkor az a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a node rekordnak
-Ha a paraméter nincs megadva, akkor az összes node táblában keres (patchs)
-Ha megadjuk a harmadik paramétert akkor az itt megadott táblában nem szerepelhet a node_id (ONLY !!)';
+Ha a node_id érték nem változik, akkor nincs ellenörzés.
+Ha a node_id előjelet vált, akkor sincs ellenörzés, a node_id mindíg pozitív szám, a negatív értékekkel az a speciális eset van jelezve,
+ amikor a nodes rekordot snmpdevices rekordra vagy fordítva konvertáljuk, ebben az esetben a rekord ideiglenesen törölve lesz.
+A paraméter a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a node rekordnak';
 
 
 --
@@ -3514,23 +3535,19 @@ $_$;
 ALTER FUNCTION public.first_node_id2name(bigint[]) OWNER TO lanview2;
 
 --
--- Name: get_bool_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: get_bool_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION public.get_bool_node_param(pid bigint, tname text DEFAULT 'boolean'::text) RETURNS boolean
+CREATE FUNCTION public.get_bool_port_param(pid bigint, name text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    IF get_str_node_param(pid,tname)::boolean THEN
-        RETURN true;
-    ELSE
-        RETURN false;
-    END IF;
-END
+    RETURN cast_to_boolean(param_value) FROM port_params WHERE port_id = pid AND port_param_name = name;
+END;
 $$;
 
 
-ALTER FUNCTION public.get_bool_node_param(pid bigint, tname text) OWNER TO lanview2;
+ALTER FUNCTION public.get_bool_port_param(pid bigint, name text) OWNER TO lanview2;
 
 --
 -- Name: get_bool_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -3577,21 +3594,6 @@ vagy nincs több parent.';
 
 
 --
--- Name: get_int_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.get_int_node_param(pid bigint, tname text DEFAULT 'bigint'::text) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN get_str_node_param(pid,tname)::bigint;
-END
-$$;
-
-
-ALTER FUNCTION public.get_int_node_param(pid bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: get_int_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -3605,21 +3607,6 @@ $$;
 
 
 ALTER FUNCTION public.get_int_sys_param(pname text) OWNER TO lanview2;
-
---
--- Name: get_interval_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.get_interval_node_param(pid bigint, tname text DEFAULT 'interval'::text) RETURNS interval
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN get_str_node_param(pname,tname)::interval;
-END
-$$;
-
-
-ALTER FUNCTION public.get_interval_node_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
 -- Name: get_interval_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -3699,30 +3686,52 @@ vagy nincs több parent.';
 
 
 --
--- Name: get_str_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: get_text_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION public.get_str_node_param(pid bigint, tname text DEFAULT 'text'::text) RETURNS text
+CREATE FUNCTION public.get_text_node_param(nid bigint, tname text) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    res text;
-    type_id bigint;
+    v text;
 BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
+    SELECT param_value INTO v
+        FROM node_params
+        JOIN param_types USING(param_type_id)
+        WHERE param_type_name = tname AND node_id = nid;
     IF NOT FOUND THEN
         RETURN NULL;
     END IF;
-    SELECT param_value INTO res FROM node_params WHERE node_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        RETURN NULL;
-    END IF;
-    RETURN res;
+    RETURN v;
 END
 $$;
 
 
-ALTER FUNCTION public.get_str_node_param(pid bigint, tname text) OWNER TO lanview2;
+ALTER FUNCTION public.get_text_node_param(nid bigint, tname text) OWNER TO lanview2;
+
+--
+-- Name: get_text_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.get_text_port_param(pid bigint, tname text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v text;
+BEGIN
+    SELECT param_value INTO v
+        FROM port_params
+        JOIN param_types USING(param_type_id)
+        WHERE param_type_name = tname AND port_id = pid;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN v;
+END
+$$;
+
+
+ALTER FUNCTION public.get_text_port_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
 -- Name: get_text_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -4032,6 +4041,34 @@ $_$;
 
 
 ALTER FUNCTION public.int2dow(integer) OWNER TO lanview2;
+
+--
+-- Name: ip2full_port_name(inet); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.ip2full_port_name(ip inet) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    nn text[];
+BEGIN
+    nn = ARRAY(
+        SELECT node_name || ':' || port_name
+            FROM interfaces
+            JOIN ip_addresses USING(port_id)
+            JOIN nodes USING(node_Id)
+            WHERE address = ip
+            ORDER BY node_name ASC, port_name ASC
+        );
+    IF array_length(nn, 1) = 0 THEN
+        RETURN NULL;
+    END IF;
+    RETURN array_to_string(nn, ', ');
+END;
+$$;
+
+
+ALTER FUNCTION public.ip2full_port_name(ip inet) OWNER TO lanview2;
 
 --
 -- Name: is_content_arp(macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -4396,6 +4433,33 @@ $$;
 
 
 ALTER FUNCTION public.localization_texts(tid bigint, tft public.tablefortext) OWNER TO lanview2;
+
+--
+-- Name: mac2full_port_name(macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.mac2full_port_name(mac macaddr) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    nn text[];
+BEGIN
+    nn = ARRAY(
+        SELECT node_name || ':' || port_name
+            FROM interfaces
+            JOIN nodes USING(node_Id)
+            WHERE hwaddress = mac
+            ORDER BY node_name ASC, port_name ASC
+        );
+    IF array_length(nn, 1) = 0 THEN
+        RETURN NULL;
+    END IF;
+    RETURN array_to_string(nn, ', ');
+END;
+$$;
+
+
+ALTER FUNCTION public.mac2full_port_name(mac macaddr) OWNER TO lanview2;
 
 --
 -- Name: mac2node_name(macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -4912,6 +4976,188 @@ megosztás eredője. Ha több lehetséges link rekord van, akkor a legalacsonyab
 (ha van egy A és B, akkor az A-t),a többi rekordot a második paraméter modosításával kaphatjuk vissza.
 A hívás feltételezi, hogy az irányba eső port egy patch port.
 ';
+
+
+--
+-- Name: patchs; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.patchs (
+    node_id bigint NOT NULL,
+    node_name text NOT NULL,
+    node_note text,
+    node_type public.nodetype[],
+    place_id bigint DEFAULT 0,
+    features text,
+    deleted boolean DEFAULT false NOT NULL,
+    inventory_number text,
+    serial_number text,
+    model_number text,
+    model_name text,
+    location point
+);
+
+
+ALTER TABLE public.patchs OWNER TO lanview2;
+
+--
+-- Name: TABLE patchs; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.patchs IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
+
+
+--
+-- Name: COLUMN patchs.node_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.patchs.node_id IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
+
+
+--
+-- Name: COLUMN patchs.node_name; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.patchs.node_name IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
+
+
+--
+-- Name: COLUMN patchs.node_note; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.patchs.node_note IS 'Descrition of the node';
+
+
+--
+-- Name: COLUMN patchs.node_type; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.patchs.node_type IS 'A hálózati elem típusa, a patch típusú rekord esetén mindíg "patch", a trigger állítja be.';
+
+
+--
+-- Name: COLUMN patchs.place_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.patchs.place_id IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
+
+
+--
+-- Name: nodes; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.nodes (
+    node_stat public.notifswitch DEFAULT 'unknown'::public.notifswitch NOT NULL,
+    os_name text,
+    os_version text
+)
+INHERITS (public.patchs);
+
+
+ALTER TABLE public.nodes OWNER TO lanview2;
+
+--
+-- Name: TABLE nodes; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.nodes IS 'Passzív vagy aktív hálózati elemek táblája';
+
+
+--
+-- Name: COLUMN nodes.node_type; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
+
+
+--
+-- Name: COLUMN nodes.node_stat; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nodes.node_stat IS 'Az eszköz állapota.';
+
+
+--
+-- Name: COLUMN nodes.os_name; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nodes.os_name IS 'Operating system or firmware name';
+
+
+--
+-- Name: COLUMN nodes.os_version; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nodes.os_version IS 'Operating system or firmware version';
+
+
+--
+-- Name: snmpdevices; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.snmpdevices (
+    community_rd text DEFAULT 'public'::text NOT NULL,
+    community_wr text,
+    snmp_ver public.snmpver DEFAULT '2c'::public.snmpver NOT NULL,
+    sysdescr text,
+    sysobjectid text,
+    sysuptime bigint,
+    syscontact text,
+    sysname text,
+    syslocation text,
+    sysservices smallint,
+    vendorname text
+)
+INHERITS (public.nodes);
+
+
+ALTER TABLE public.snmpdevices OWNER TO lanview2;
+
+--
+-- Name: node2snmpdevice(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.node2snmpdevice(nid bigint) RETURNS public.snmpdevices
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    node  nodes;
+    ntype nodetype[];
+    snmpdev snmpdevices;
+BEGIN
+    SELECT * INTO node FROM ONLY nodes WHERE node_id = nid;
+    IF NOT FOUND THEN
+        PERFORM error('DataWarn', nid, 'node_id', 'node2snmpdevice()', 'nodes');
+    END IF;
+    UPDATE node_params   SET node_id = -nid WHERE node_id = nid;
+    UPDATE nports        SET node_id = -nid WHERE node_id = nid;
+    UPDATE host_services SET node_id = -nid WHERE node_id = nid;
+    DELETE FROM nodes WHERE node_id = nid;
+    ntype := array_append(node.node_type, 'snmp'::nodetype);
+    ntype := array_replace(ntype, 'node'::nodetype, 'host'::nodetype);
+    INSERT INTO
+        snmpdevices(node_id, node_name, node_note, node_type, place_id, features, deleted,
+            inventory_number, serial_number, model_number, model_name, location,
+            node_stat, os_name, os_version)
+        VALUES(nid, node.node_name, node.node_note, ntype, node.place_id, node.features, node.deleted,
+            node.inventory_number, node.serial_number, node.model_number, node.model_name, node.location,
+            node.node_stat, node.os_name, node.os_version)
+        RETURNING * INTO snmpdev;
+    UPDATE node_params   SET node_id = nid WHERE node_id = -nid;
+    UPDATE nports        SET node_id = nid WHERE node_id = -nid;
+    UPDATE host_services SET node_id = nid WHERE node_id = -nid;
+    RETURN snmpdev;
+END
+$$;
+
+
+ALTER FUNCTION public.node2snmpdevice(nid bigint) OWNER TO lanview2;
+
+--
+-- Name: FUNCTION node2snmpdevice(nid bigint); Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON FUNCTION public.node2snmpdevice(nid bigint) IS 'Egy létező nodes rekord konvertálása/mozgatása az snmpdefices táblába, a tulajdonában lévő objektumok megtartásával.';
 
 
 --
@@ -5583,143 +5829,127 @@ CREATE FUNCTION public.replace_arp(ipa inet, hwa macaddr, stp public.settype DEF
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    arp     arps;
-    noipa   boolean := false;
-    joint   boolean := false;
-    oip     ip_addresses;
-    net     cidr;
-    n       integer;
-    t       text;
+    arp     arps;               -- arps record
+    noipa   boolean := false;   -- Not found ip_address record
+    joint   boolean := false;   -- Is joint type ip address
+    oip     ip_addresses;       -- Found IP address record
+    n       integer;            -- record number
+    t       text;               -- Text for arps record (arp_note)
+    msg     text;               -- Text for ip_address record (ip_address_note), or other message
+    col     boolean := false;   -- Address collision
+    adt addresstype := 'fixip';
 BEGIN
-    RAISE INFO 'ARP : % - %; %', ipa, hwa, stp;
-    -- check / update ip_addresses table
-    BEGIN       -- IP -> Get old ip_addresses record
-        SELECT * INTO STRICT oip FROM ip_addresses WHERE address = ipa;
+    -- RAISE INFO 'ARP : % - %; %', ipa, hwa, stp;
+    -- check ip_addresses table (set: noipa and joint)
+    BEGIN       -- IP -> Get old () ip_addresses record
+        SELECT * INTO STRICT oip FROM ip_addresses WHERE address = ipa AND ip_address_type <> 'private'::addresstype;
+        joint := 'joint'::addresstype = oip.ip_address_type;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 noipa := true;
-                RAISE INFO 'No ip_addresses record.';
+                -- RAISE INFO 'No ip_addresses record.';
             WHEN TOO_MANY_ROWS THEN
-		RAISE INFO 'More ip_addresses record.';
-                IF 0 < COUNT(*) FROM ip_addresses WHERE address = ipa AND ip_address_type <> 'joint'::addresstype THEN
+		-- RAISE INFO 'More ip_addresses record.';
+                IF 0 < COUNT(*) FROM ip_addresses WHERE address = ipa AND NOT(ip_address_type = 'joint'::addresstype OR ip_address_type = 'private'::addresstype) THEN
                     PERFORM error('DataError', -1, 'address', 'replace_arp(' || ipa::text || ', ' || hwa::text || ')', 'ip_addresses');
                 END IF;
-                RAISE INFO 'ip_addresses records is all join.';
+                -- RAISE INFO 'ip_addresses records is all join.';
                 joint := true;
     END;
-    IF joint THEN    -- Check ip_addresses record if joint
-        IF 0 = COUNT(*) FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa AND hwaddress = hwa THEN
-	    -- not found, fake MAC ?
-	    IF 0 = COUNT(*) FROM ip_addresses JOIN port_params USING(port_id) JOIN param_types USING(param_type_id) WHERE param_type_name = 'override_mac' AND address = ipa AND cast_to_mac(param_value) = hwa THEN
-		t := 'IP address (join) missing : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
-		 || 'The existing IP address record ports names : '
-		 || ARRAY(SELECT ' ' || port_id2full_name(port_id) || ' / ' || hwaddress || ' '  FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa)::text;
-		RAISE WARNING 'Ticket : %', t; 
-		PERFORM ticket_alarm('critical', t, hsi);
-	    END IF;
-        END IF;
-    ELSIF stp = 'config' THEN  -- We assume this is fixip
-        IF noipa THEN   -- not found ip_addresses record
-            RAISE INFO 'Nothing address record (config) : %', ipa;
-            SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
-            GET DIAGNOSTICS n = ROW_COUNT;
-            IF n = 1 THEN   -- One record ?
-		t := 'Modify by config : ' || oip.ip_address_type  || ' -> fixip ; ' || oip.address || ' -> ' || ipa;
-		PERFORM error('DataWarn', oip.ip_address_id, t, 'replace_arp', 'ip_addresses');
-                DECLARE
-                    msg text;
-                    det text;
-                    hnt text;
-                BEGIN 
-                    UPDATE ip_addresses SET address = ipa, ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
-                EXCEPTION WHEN OTHERS THEN
-                    GET STACKED DIAGNOSTICS
-                        msg = MESSAGE_TEXT,
-                        det = PG_EXCEPTION_DETAIL,
-                        hnt = PG_EXCEPTION_HINT;
-                    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
-                      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
-                      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
-                    RAISE WARNING 'Ticket : %', t; 
-                    PERFORM ticket_alarm('critical', t, hsi);
-                END;
+    IF NOT noipa THEN
+        IF hwa <> hwaddress FROM interface WHERE port_id = oip.port_id THEN
+            IF oip.ip_address_type = 'dynamic' THEN
+                -- Delete outdated address
+                UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
+                INSERT INTO ip_address_logs(reason, daemon_id, ip_address_id, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
+                    VALUES('discard', hsi, oip.ip_address_id, 'dynamic', oip.port_id, oip.address, 'dynamic', oip.port_id);
+                noipa := true;
+            ELSE
+                col := true;
             END IF;
-        ELSE                -- Check ip_addresses record if not joint
-            RAISE INFO 'Address record (config) : % - %', ipa, port_id2full_name(oip.port_id);
-            IF hwa = hwaddress FROM interfaces WHERE port_id = oip.port_id THEN -- Check MAC
-                IF oip.ip_address_type = 'dynamic' THEN
-                    UPDATE ip_addresses SET ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
+        END IF;
+    END IF;
+    IF noipa THEN   -- ip_addresses record not found by IP address (ipa)
+        -- ip address record(s) by MAC
+        SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id)
+                WHERE hwaddress = hwa AND (ip_address_type = 'fixip'::addresstype OR ip_address_type = 'dynamic'::addresstype);
+        GET DIAGNOSTICS n = ROW_COUNT;
+        IF n = 1 AND (stp = 'config' OR oip.ip_address_type = 'dynamic') THEN
+            DECLARE
+                det text;
+                hnt text;
+            BEGIN 
+                IF stp = 'query' AND is_dyn_addr(ipa) IS NOT NULL THEN
+                    adt := 'dynamic';
                 END IF;
-            ELSE    -- ip address collision
-                t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
-                  || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
-                RAISE WARNING 'Ticket : %', t; 
+                t := 'Modify by config : ' || oip.ip_address_type  || ' -> ' || adt || '; ' || oip.address || ' -> ' || ipa;
+                msg := 'Modify by replace_arp(), service : ' || COALESCE(host_service_id2name(hsi), 'NULL') || ' ' || NOW()::text;
+                UPDATE ip_addresses SET ip_address_note = msg, address = ipa, ip_address_type = adt WHERE ip_address_id = oip.ip_address_id;
+                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
+                    VALUES('modify', msg, hsi, oip.ip_address_id, ipa, adt, oip.port_id, oip.address, oip.ip_address_type, oip.port_id);
+            EXCEPTION WHEN OTHERS THEN
+                GET STACKED DIAGNOSTICS
+                    msg = MESSAGE_TEXT,
+                    det = PG_EXCEPTION_DETAIL,
+                    hnt = PG_EXCEPTION_HINT;
+                t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
+                    || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
+                    || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
+                -- RAISE WARNING 'Ticket : %', t; 
                 PERFORM ticket_alarm('critical', t, hsi);
-            END IF;
+            END;
+        ELSE
+            DECLARE
+                pid bigint;
+            BEGIN
+                SELECT port_id INTO pid FROM interface WHERE hwaddress = hwa;
+                GET DIAGNOSTICS n = ROW_COUNT;
+                IF n = 1 THEN
+                    IF stp = 'query' AND is_dyn_addr(ipa) IS NOT NULL THEN
+                        adt := 'dynamic';
+                    END IF;
+                    t := 'Inser IP address (' || adt || ') record : port : ' || port_id2full_name(pid) || ' .';
+                    msg := 'Insert by replace_arp(), service : ' || COALESCE(host_service_id2name(hsi), 'NULL') || ' ' || NOW()::text;
+                    INSERT INTO ip_address(port_id, ip_address_note, address, ip_address_type) VALUES(pid, msg, ipa, adt);
+                END IF;
+            END;
         END IF;
-    ELSE    -- stp <> 'config' ( = 'query')
-        IF NOT noipa THEN
-	    RAISE INFO 'Address record (%) : % - %', stp, ipa, port_id2full_name(oip.port_id);
-	    IF hwa <> hwaddress FROM interfaces WHERE port_id = oip.port_id THEN
-		IF oip.ip_address_type = 'dynamic' THEN     -- Clear old dynamic IP
-		    RAISE INFO 'Delete address (%) : % - %', stp, port_id2full_name(oip.port_id), ipa;
-		    UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
-		    noipa := true;
-		ELSE
-		    t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
-		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
-		    RAISE WARNING 'Ticket : %', t; 
-		    PERFORM ticket_alarm('critical', t, hsi);
-		END IF;
-	    END IF;
-	END IF;
-	IF noipa THEN
-	    RAISE INFO 'Nothing address record (%) : %', stp, ipa;
-	    SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
-	    GET DIAGNOSTICS n = ROW_COUNT;
-	    RAISE INFO '% record by hwaddress', n;
-	    IF n = 1 THEN   -- One record ?
-		DECLARE
-		    msg text;
-		    det text;
-		    hnt text;
-		BEGIN
-		    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2full_name(oip.port_id);
-		    UPDATE ip_addresses SET address = ipa WHERE ip_address_id = oip.ip_address_id;
-		EXCEPTION WHEN OTHERS THEN
-		    GET STACKED DIAGNOSTICS
-			msg = MESSAGE_TEXT,
-			det = PG_EXCEPTION_DETAIL,
-			hnt = PG_EXCEPTION_HINT;
-		    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
-		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
-		      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
-		    RAISE WARNING 'Ticket : %', t; 
-		    PERFORM ticket_alarm('critical', t, hsi);
-		END;
-	    END IF;
-	END IF;
+    ELSIF col THEN  -- ip_addresses found by IP address (ipa) AND colision
+        t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+          || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
+        -- RAISE WARNING 'Ticket : %', t; 
+        PERFORM ticket_alarm('critical', t, hsi);
+    ELSE            -- ip_addresses found by IP address (ipa) AND NOT colision
+        IF stp = 'config' AND oip.ip_address_type = 'dynamic' THEN
+            DECLARE
+                sid bigint := NULL;
+            BEGIN
+                UPDATE ip_addresses SET ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
+                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
+                    VALUES('update', msg, hsi, oip.ip_address_id, ipa, 'fixip', oip.port_id, ipa, 'dynamic', oip.port_id);
+            END;
+        END IF;
     END IF;
     -- update arps table
-    RAISE INFO 'Get arps record : %', ipa;
+    -- RAISE INFO 'Get arps record : %', ipa;
     SELECT * INTO arp FROM arps WHERE ipaddress = ipa;
     IF NOT FOUND THEN
-        RAISE INFO 'Insert arps: % - %', ipa, hwa;
+        -- RAISE INFO 'Insert arps: % - %', ipa, hwa;
         INSERT INTO arps(ipaddress, hwaddress,set_type, host_service_id, arp_note) VALUES (ipa, hwa, stp, hsi, t);
         RETURN 'insert';
     ELSE
         IF arp.hwaddress = hwa THEN
 	    IF arp.set_type < stp THEN
-                RAISE INFO 'Update arps: % - %', ipa, hwa;
+                -- RAISE INFO 'Update arps: % - %', ipa, hwa;
 	        UPDATE arps SET set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP, arp_note = t WHERE ipaddress = arp.ipaddress;
 		RETURN 'update';
 	    ELSE
-                RAISE INFO 'Touch arps: % - %', ipa, hwa;
+                -- RAISE INFO 'Touch arps: % - %', ipa, hwa;
 	        UPDATE arps SET last_time = CURRENT_TIMESTAMP, arp_note = t WHERE ipaddress = arp.ipaddress;
 		RETURN 'found';
 	    END IF;
         ELSE
-            RAISE INFO 'Move arps: % - % -> %', ipa, arp.hwaddress, hwa;
+            -- RAISE INFO 'Move arps: % - % -> %', ipa, arp.hwaddress, hwa;
             UPDATE arps
                 SET hwaddress = hwa,  first_time = CURRENT_TIMESTAMP, set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP, arp_note = t
                 WHERE ipaddress = arp.ipaddress;
@@ -5860,49 +6090,65 @@ CREATE FUNCTION public.replace_mactab(pid bigint, mac macaddr, typ public.settyp
     AS $$
 DECLARE
     mt       mactab;
-    pdiid    bigint;
-    maxct    CONSTANT bigint    := get_int_sys_param('mactab_move_check_count');
-    mv       CONSTANT reasons   := 'move';
-    btm      CONSTANT timestamp := CURRENT_TIMESTAMP - get_interval_sys_param('mactab_move_check_interval');
 BEGIN
-    SELECT param_type_id INTO pdiid FROM param_types WHERE param_type_name = 'suspected_uplink';
-    IF NOT FOUND THEN
-         PERFORM error('NameNotFound', -1, 'suspected_uplink', 'replace_mactab(bigint,macaddr,settype,mactabstate[])', 'param_types');
-    END IF;
-    IF  cast_to_boolean(param_value, false) FROM port_params WHERE port_id = pid AND param_type_id = pdiid THEN
+    IF get_bool_port_param(pid, 'suspected_uplink') THEN
         RETURN 'discard';
     END IF;
     mst := current_mactab_stat(pid, mac, mst);
     SELECT * INTO mt FROM mactab WHERE hwaddress = mac;
-    IF NOT FOUND THEN
+    IF NOT FOUND THEN            -- NEW
         INSERT INTO mactab(hwaddress, port_id, mactab_state,set_type) VALUES (mac, pid, mst, typ);
         RETURN 'insert';
-    ELSE
-        IF mt.port_id = pid THEN
-            -- No changed, refresh state
-            RETURN mactab_changestat(mt, mst, typ, true);
-        ELSE
-            -- The old port not suspect and to many change
-            IF NOT cast_to_boolean(param_value, false) FROM port_params WHERE port_id = mt.port_id AND param_type_id = pdiid
-             AND maxct < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND hwaddress = mac AND reason = mv) THEN
-                IF (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = pid        AND reason = mv)
-                 < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv)
-                THEN    -- Nem az új pid a gyanús
+    ELSIF mt.port_id = pid THEN  -- No changed, refresh state
+        RETURN mactab_changestat(mt, mst, typ, true);
+    ELSIF get_bool_port_param(mt.port_id, 'suspected_uplink') THEN -- Move, old port is suspect: simple move
+        PERFORM mactab_move(mt, pid, mac, typ, mst);
+        RETURN 'move';
+    ELSE                        -- Move, check suspected uplink
+        DECLARE 
+            mactab_move_check_count    CONSTANT integer  := get_int_sys_param('mactab_move_check_count');
+            mactab_move_check_interval CONSTANT interval := get_interval_sys_param('mactab_move_check_interval');
+            begin_time      timestamp;
+            my_moved_cnt    integer;    -- moved my port
+            an_moved_cnt    integer;    -- moved other port
+        BEGIN
+            begin_time := NOW() - mactab_move_check_interval;
+            SELECT COUNT(*) INTO my_moved_cnt FROM mactab_logs
+                WHERE begin_time < date_of
+                  AND (port_id_old = pid OR port_id_new = pid)
+                  AND reason = 'move';
+            IF mactab_move_check_count < my_moved_cnt THEN
+                -- Suspect, which?
+                SELECT COUNT(*) INTO an_moved_cnt FROM mactab_logs
+                    WHERE begin_time < date_of
+                      AND (port_id_old = mt.port_id OR port_id_new = mt.port_id)
+                      AND reason = 'move';
+                IF my_moved_cnt < an_moved_cnt THEN
+                    -- another port is suspect
+                    PERFORM set_bool_port_param(mt.port_id, true, 'suspected_uplink');
                     PERFORM mactab_move(mt, pid, mac, typ, mst);
-                    INSERT INTO port_params(mt.port_id, param_type_id, param_value) VALUES (pid, pdiid, 't');
-                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv AND hwaddress = mac;
-                    RETURN 'modify';
-                ELSE
-                    INSERT INTO port_params(port_id, param_type_id, param_value) VALUES (pid, pdiid, 't');
-                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = pid        AND reason = mv AND hwaddress = mac;
+                    UPDATE mactab_logs SET be_void = true
+                        WHERE date_of > begin_time
+                          AND (port_id_old = mt.port_id OR port_id_new = mt.port_id)
+                          AND hwaddress = mac
+                          AND reason = 'restore';
                     RETURN 'restore';
+                ELSE
+                    -- my port is suspect
+                    PERFORM set_bool_port_param(pid, true, 'suspected_uplink');
+                    UPDATE mactab_logs SET be_void = true
+                        WHERE date_of > begin_time
+                          AND (port_id_old = pid OR port_id_new = pid)
+                          AND hwaddress = mac
+                          AND reason = 'move';
+                    RETURN 'discard';
                 END IF;
             ELSE
-                -- Egy másik porton jelent meg a MAC
+                -- Symple move
                 PERFORM mactab_move(mt, pid, mac, typ, mst);
-                RETURN mv;
+                RETURN 'move';
             END IF;
-        END IF;
+        END;
     END IF;
 END;
 $$;
@@ -6117,6 +6363,17 @@ CREATE FUNCTION public.service_type_id2name(bigint) RETURNS text
 ALTER FUNCTION public.service_type_id2name(bigint) OWNER TO lanview2;
 
 --
+-- Name: service_var_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.service_var_id2name(bigint) RETURNS text
+    LANGUAGE plpgsql
+    AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT service_var_name INTO name FROM service_vars WHERE service_var_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'service_var_id', 'service_var_id2name', 'service_vars'); END IF; RETURN name; END $_$;
+
+
+ALTER FUNCTION public.service_var_id2name(bigint) OWNER TO lanview2;
+
+--
 -- Name: service_var_type_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -6156,34 +6413,22 @@ $$;
 ALTER FUNCTION public.services_heartbeat(did bigint) OWNER TO lanview2;
 
 --
--- Name: set_bool_node_param(bigint, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_bool_node_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN set_str_node_param(pid, boolval::text, tname);
-END
-$$;
-
-
-ALTER FUNCTION public.set_bool_node_param(pid bigint, boolval boolean, tname text) OWNER TO lanview2;
-
---
 -- Name: set_bool_port_param(bigint, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION public.set_bool_port_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS public.reasons
+CREATE FUNCTION public.set_bool_port_param(pid bigint, val boolean, name text) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN set_str_port_param(pid, boolval::text, tname);
-END
+    INSERT INTO port_params(port_param_name, port_id, param_type_id, param_value)
+        VALUES (name, pid, param_type_name2id('boolean'), val::text)
+    ON CONFLICT ON CONSTRAINT port_params_port_param_name_port_id_key DO UPDATE
+        SET param_type_id = EXCLUDED.param_type_id, param_value = EXCLUDED.param_value;
+END;
 $$;
 
 
-ALTER FUNCTION public.set_bool_port_param(pid bigint, boolval boolean, tname text) OWNER TO lanview2;
+ALTER FUNCTION public.set_bool_port_param(pid bigint, val boolean, name text) OWNER TO lanview2;
 
 --
 -- Name: set_bool_sys_param(text, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -6272,36 +6517,6 @@ $$;
 ALTER FUNCTION public.set_image_hash_if_null() OWNER TO lanview2;
 
 --
--- Name: set_int_node_param(bigint, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_int_node_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN set_str_node_param(pname, intval::text, tname);
-END
-$$;
-
-
-ALTER FUNCTION public.set_int_node_param(pid bigint, intval bigint, tname text) OWNER TO lanview2;
-
---
--- Name: set_int_port_param(bigint, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_int_port_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN set_str_port_param(pname, intval::text, tname);
-END
-$$;
-
-
-ALTER FUNCTION public.set_int_port_param(pid bigint, intval bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: set_int_sys_param(text, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -6315,36 +6530,6 @@ $$;
 
 
 ALTER FUNCTION public.set_int_sys_param(pname text, intval bigint, tname text) OWNER TO lanview2;
-
---
--- Name: set_interval_node_param(bigint, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_interval_node_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN set_str_node_param(pid, ival::text, tname);
-END
-$$;
-
-
-ALTER FUNCTION public.set_interval_node_param(pid bigint, ival interval, tname text) OWNER TO lanview2;
-
---
--- Name: set_interval_port_param(bigint, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_interval_port_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN set_str_port_param(pid, ival::text, tname);
-END
-$$;
-
-
-ALTER FUNCTION public.set_interval_port_param(pid bigint, ival interval, tname text) OWNER TO lanview2;
 
 --
 -- Name: set_interval_sys_param(text, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -6489,10 +6674,11 @@ BEGIN
     -- Alarm ...
     alid := old_hs.act_alarm_log_id;
     -- RAISE INFO 'act_alarm_log_id = %', alid;
-    IF state = 'on'::notifswitch THEN        -- ok
+    IF hs.hard_state < 'warning'::notifswitch THEN        -- ok
         IF alid IS NOT NULL THEN   -- close act alarm
             -- RAISE INFO 'Close % alarms record for % service.', alid, hs.host_service_id;
             UPDATE alarms SET end_time = CURRENT_TIMESTAMP WHERE alarm_id = alid;
+            hs.last_alarm_log_id := alid;
             hs.act_alarm_log_id := NULL;
             aldo := 'close'::reasons;
         ELSE
@@ -6511,21 +6697,20 @@ BEGIN
                     RETURNING alarm_id INTO hs.act_alarm_log_id;
                 aldo := 'new'::reasons;
                 alid := hs.act_alarm_log_id;
-                hs.last_alarm_log_id := alid;
                 -- RAISE INFO 'New alarm_id = %', alid;
             ELSE
                 -- RAISE INFO 'New alarm discard';
                 aldo := 'discard'::reasons;
                 -- DELETE FROM alarms WHERE alarm_id = alid;    Hülyeség! alid = NULL
             END IF;
-        ELSE                    -- The alarm remains
+        ELSE                    -- not ok and there was an alarm
             IF na = 'on'::isnoalarm OR s.disabled OR hs.disabled THEN -- Alarm is disabled, or services is disabled
                 aldo := 'remove'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
                 -- RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
                 alid := NULL;
                 hs.last_alarm_log_id := NULL;
-            ELSIF old_hs.host_service_state < state THEN
+            ELSIF old_hs.host_service_state <> state THEN
                 UPDATE alarms SET
                         max_status  = greatest(hs.host_service_state, max_status),
                         last_status = hs.host_service_state,
@@ -6533,13 +6718,6 @@ BEGIN
                     WHERE alarm_id = alid;
                 aldo := 'modify'::reasons;
                 -- RAISE INFO 'Update alarm (alarm_id = %', alid;
-            ELSIF old_hs.host_service_state > state THEN
-                UPDATE alarms SET
-                        last_status = hs.host_service_state,
-                        superior_alarm_id = supaid
-                    WHERE alarm_id = alid;
-                aldo := 'modify'::reasons;
-                -- RAISE INFO 'Update alarm (2) (alarm_id = %', alid;
             ELSE
                 aldo := 'unchange'::reasons;
                 -- RAISE INFO 'Unchange alarm (alarm_id = %', alid;
@@ -6555,7 +6733,7 @@ BEGIN
             state_msg          = note,
             check_attempts     = hs.check_attempts,
             last_changed       = hs.last_changed,
-            act_alarm_log_id   = alid,
+            act_alarm_log_id   = hs.act_alarm_log_id,
             last_alarm_log_id  = hs.last_alarm_log_id,
             noalarm_flag       = hs.noalarm_flag,
             noalarm_from       = hs.noalarm_from,
@@ -6579,64 +6757,6 @@ $$;
 
 
 ALTER FUNCTION public.set_service_stat(hsid bigint, state public.notifswitch, note text, dmid bigint, forced boolean) OWNER TO lanview2;
-
---
--- Name: set_str_node_param(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_str_node_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    type_id bigint;
-BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
-    IF NOT FOUND THEN
-        RETURN 'notfound';
-    END IF;
-    IF 0 < COUNT(*) FROM node_params WHERE node_id = pid AND param_type_id = type_id AND param_value = txtval THEN
-        RETURN 'found';
-    END IF;
-    UPDATE node_params SET param_value = txtval WHERE node_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        INSERT INTO node_params(node_id, param_type_id, param_value) VALUES (pid, type_id, txtval);
-        RETURN 'insert';
-    END IF;
-    RETURN 'modify';
-END
-$$;
-
-
-ALTER FUNCTION public.set_str_node_param(pid bigint, txtval text, tname text) OWNER TO lanview2;
-
---
--- Name: set_str_port_param(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION public.set_str_port_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS public.reasons
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    type_id bigint;
-BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
-    IF NOT FOUND THEN
-        RETURN 'notfound';
-    END IF;
-    IF 0 < COUNT(*) FROM port_params WHERE port_id = pid AND param_type_id = type_id AND param_value = txtval THEN
-        RETURN 'found';
-    END IF;
-    UPDATE port_params SET param_value = txtval WHERE port_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        INSERT INTO port_params(port_id, param_type_id, param_value) VALUES (pid, type_id, txtval);
-        RETURN 'insert';
-    END IF;
-    RETURN 'modify';
-END
-$$;
-
-
-ALTER FUNCTION public.set_str_port_param(pid bigint, txtval text, tname text) OWNER TO lanview2;
 
 --
 -- Name: set_superior(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -7189,7 +7309,7 @@ DECLARE
     ar alarms;
     hs host_services;
     repi interval;
-    sid bigint := 0;
+    sid bigint := 0;    -- host_service_id : nil.ticket == node_id : nil == service_id : ticket
 BEGIN
     SELECT * INTO hs FROM host_services WHERE host_service_id = sid;
     IF NOT FOUND THEN
@@ -7205,7 +7325,7 @@ BEGIN
              VALUES               (  sid,           sid,     sid,         'Hiba jegy',       true)
              RETURNING * INTO hs;
     END IF;
-    IF 'on' = is_noalarm(hs.noalarm_flag, hs.noalarm_from, hs.noalarm_to) THEN
+    IF 'on' <> is_noalarm(hs.noalarm_flag, hs.noalarm_from, hs.noalarm_to) THEN
         repi := COALESCE(get_interval_sys_param('ticet_reapeat_time'), '14 days'::interval);
         SELECT * INTO ar FROM alarms
                     WHERE host_service_id = sid
@@ -7661,6 +7781,44 @@ COMMENT ON COLUMN public.alarm_messages.status IS 'Milyen állapothoz tartozik a
 
 
 --
+-- Name: alarm_service_vars; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.alarm_service_vars (
+    alarm_service_var_id bigint NOT NULL,
+    alarm_id bigint NOT NULL,
+    service_var_id bigint NOT NULL,
+    service_var_value text,
+    var_state public.notifswitch,
+    state_msg text,
+    raw_value text
+);
+
+
+ALTER TABLE public.alarm_service_vars OWNER TO lanview2;
+
+--
+-- Name: alarm_service_vars_alarm_service_var_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
+--
+
+CREATE SEQUENCE public.alarm_service_vars_alarm_service_var_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.alarm_service_vars_alarm_service_var_id_seq OWNER TO lanview2;
+
+--
+-- Name: alarm_service_vars_alarm_service_var_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+--
+
+ALTER SEQUENCE public.alarm_service_vars_alarm_service_var_id_seq OWNED BY public.alarm_service_vars.alarm_service_var_id;
+
+
+--
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
@@ -7945,213 +8103,6 @@ ALTER TABLE public.arp_logs_arp_log_id_seq OWNER TO lanview2;
 
 ALTER SEQUENCE public.arp_logs_arp_log_id_seq OWNED BY public.arp_logs.arp_log_id;
 
-
---
--- Name: nports; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.nports (
-    port_id bigint NOT NULL,
-    port_name text NOT NULL,
-    port_note text,
-    port_tag text,
-    iftype_id bigint DEFAULT 0,
-    node_id bigint NOT NULL,
-    port_index integer,
-    deleted boolean DEFAULT false,
-    flag boolean DEFAULT false
-);
-
-
-ALTER TABLE public.nports OWNER TO lanview2;
-
---
--- Name: TABLE nports; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE public.nports IS 'Passzív portok táblája, az összes port típus őse';
-
-
---
--- Name: COLUMN nports.port_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.port_id IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
-
-
---
--- Name: COLUMN nports.port_name; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.port_name IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
-
-
---
--- Name: COLUMN nports.port_note; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.port_note IS 'Description for network port';
-
-
---
--- Name: COLUMN nports.port_tag; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.port_tag IS 'Opcionális cimke ill. név.';
-
-
---
--- Name: COLUMN nports.iftype_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.iftype_id IS 'A típus leíró rekord azonosítója.';
-
-
---
--- Name: COLUMN nports.node_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.node_id IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';
-
-
---
--- Name: COLUMN nports.port_index; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
-
-
---
--- Name: COLUMN nports.deleted; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nports.deleted IS 'Ha igaz, akkor a port logikailag törölve lett.';
-
-
---
--- Name: interfaces; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.interfaces (
-    hwaddress macaddr,
-    port_ostat public.ifstatus DEFAULT 'unknown'::public.ifstatus NOT NULL,
-    port_astat public.ifstatus,
-    port_staple_id bigint,
-    dualface_type bigint,
-    ifdescr text,
-    last_changed timestamp without time zone,
-    port_stat public.notifswitch DEFAULT 'unknown'::public.notifswitch,
-    last_touched timestamp without time zone,
-    CONSTRAINT interfaces_check_mac CHECK ((NOT ((hwaddress = '00:00:00:00:00:00'::macaddr) OR (hwaddress = 'ff:ff:ff:ff:ff:ff'::macaddr))))
-)
-INHERITS (public.nports);
-
-
-ALTER TABLE public.interfaces OWNER TO lanview2;
-
---
--- Name: TABLE interfaces; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE public.interfaces IS 'Network Interfaces Table';
-
-
---
--- Name: COLUMN interfaces.port_index; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.interfaces.port_index IS 'SNMP port id, vagy port index, SNMP eszköz esetén az eszközön bellül egyedinek kell lennie.';
-
-
---
--- Name: COLUMN interfaces.port_staple_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.interfaces.port_staple_id IS 'Trönkölt vagy bridzselt port esetén a trönk ill. a bridzs port ID-je';
-
-
---
--- Name: COLUMN interfaces.dualface_type; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.interfaces.dualface_type IS 'Dualface port esetén a másik típus azonosító.';
-
-
---
--- Name: ip_addresses; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.ip_addresses (
-    ip_address_id bigint NOT NULL,
-    ip_address_note text,
-    address inet,
-    ip_address_type public.addresstype NOT NULL,
-    preferred integer,
-    subnet_id bigint,
-    port_id bigint NOT NULL,
-    flag boolean DEFAULT false
-);
-
-
-ALTER TABLE public.ip_addresses OWNER TO lanview2;
-
---
--- Name: TABLE ip_addresses; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE public.ip_addresses IS 'IP címek';
-
-
---
--- Name: COLUMN ip_addresses.address; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.ip_addresses.address IS 'Az IP cím (nem tartomány)';
-
-
---
--- Name: COLUMN ip_addresses.ip_address_type; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.ip_addresses.ip_address_type IS 'A cím típusa';
-
-
---
--- Name: COLUMN ip_addresses.preferred; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.ip_addresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
-
-
---
--- Name: COLUMN ip_addresses.port_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.ip_addresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
-
-
---
--- Name: arps_shape; Type: VIEW; Schema: public; Owner: lanview2
---
-
-CREATE VIEW public.arps_shape AS
- SELECT a.ipaddress,
-    a.hwaddress,
-    a.set_type,
-    a.host_service_id,
-    a.first_time,
-    a.last_time,
-    a.arp_note,
-    public.port_id2full_name(ip.port_id) AS port_by_ipa,
-    public.first_node_id2name(array_agg(ih.node_id)) AS node_by_hwa,
-    array_agg(public.port_id2name(ih.port_id)) AS ports_by_hwa
-   FROM ((public.arps a
-     LEFT JOIN public.interfaces ih USING (hwaddress))
-     LEFT JOIN public.ip_addresses ip ON ((ip.address = a.ipaddress)))
-  GROUP BY a.ipaddress, a.hwaddress, a.set_type, a.host_service_id, a.first_time, a.last_time, a.arp_note, ip.port_id;
-
-
-ALTER TABLE public.arps_shape OWNER TO lanview2;
 
 --
 -- Name: db_errors; Type: VIEW; Schema: public; Owner: lanview2
@@ -9210,6 +9161,190 @@ ALTER SEQUENCE public.imports_import_id_seq OWNED BY public.imports.import_id;
 
 
 --
+-- Name: nports; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.nports (
+    port_id bigint NOT NULL,
+    port_name text NOT NULL,
+    port_note text,
+    port_tag text,
+    iftype_id bigint DEFAULT 0,
+    node_id bigint NOT NULL,
+    port_index integer,
+    deleted boolean DEFAULT false,
+    flag boolean DEFAULT false
+);
+
+
+ALTER TABLE public.nports OWNER TO lanview2;
+
+--
+-- Name: TABLE nports; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.nports IS 'Passzív portok táblája, az összes port típus őse';
+
+
+--
+-- Name: COLUMN nports.port_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.port_id IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
+
+
+--
+-- Name: COLUMN nports.port_name; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.port_name IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
+
+
+--
+-- Name: COLUMN nports.port_note; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.port_note IS 'Description for network port';
+
+
+--
+-- Name: COLUMN nports.port_tag; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.port_tag IS 'Opcionális cimke ill. név.';
+
+
+--
+-- Name: COLUMN nports.iftype_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.iftype_id IS 'A típus leíró rekord azonosítója.';
+
+
+--
+-- Name: COLUMN nports.node_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.node_id IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';
+
+
+--
+-- Name: COLUMN nports.port_index; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
+
+
+--
+-- Name: COLUMN nports.deleted; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.nports.deleted IS 'Ha igaz, akkor a port logikailag törölve lett.';
+
+
+--
+-- Name: interfaces; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.interfaces (
+    hwaddress macaddr,
+    port_ostat public.ifstatus DEFAULT 'unknown'::public.ifstatus NOT NULL,
+    port_astat public.ifstatus DEFAULT 'unknown'::public.ifstatus NOT NULL,
+    port_staple_id bigint,
+    dualface_type bigint,
+    ifdescr text,
+    last_changed timestamp without time zone,
+    port_stat public.notifswitch DEFAULT 'unknown'::public.notifswitch NOT NULL,
+    last_touched timestamp without time zone,
+    CONSTRAINT interfaces_check_mac CHECK ((NOT ((hwaddress = '00:00:00:00:00:00'::macaddr) OR (hwaddress = 'ff:ff:ff:ff:ff:ff'::macaddr))))
+)
+INHERITS (public.nports);
+
+
+ALTER TABLE public.interfaces OWNER TO lanview2;
+
+--
+-- Name: TABLE interfaces; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.interfaces IS 'Network Interfaces Table';
+
+
+--
+-- Name: COLUMN interfaces.port_index; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.interfaces.port_index IS 'SNMP port id, vagy port index, SNMP eszköz esetén az eszközön bellül egyedinek kell lennie.';
+
+
+--
+-- Name: COLUMN interfaces.port_staple_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.interfaces.port_staple_id IS 'Trönkölt vagy bridzselt port esetén a trönk ill. a bridzs port ID-je';
+
+
+--
+-- Name: COLUMN interfaces.dualface_type; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.interfaces.dualface_type IS 'Dualface port esetén a másik típus azonosító.';
+
+
+--
+-- Name: ip_addresses; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.ip_addresses (
+    ip_address_id bigint NOT NULL,
+    ip_address_note text,
+    address inet,
+    ip_address_type public.addresstype NOT NULL,
+    preferred integer,
+    subnet_id bigint,
+    port_id bigint NOT NULL,
+    flag boolean DEFAULT false
+);
+
+
+ALTER TABLE public.ip_addresses OWNER TO lanview2;
+
+--
+-- Name: TABLE ip_addresses; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.ip_addresses IS 'IP címek';
+
+
+--
+-- Name: COLUMN ip_addresses.address; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.ip_addresses.address IS 'Az IP cím (nem tartomány)';
+
+
+--
+-- Name: COLUMN ip_addresses.ip_address_type; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.ip_addresses.ip_address_type IS 'A cím típusa';
+
+
+--
+-- Name: COLUMN ip_addresses.preferred; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.ip_addresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
+
+
+--
+-- Name: COLUMN ip_addresses.port_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.ip_addresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
+
+
+--
 -- Name: ip_address_cols; Type: VIEW; Schema: public; Owner: lanview2
 --
 
@@ -9224,6 +9359,48 @@ CREATE VIEW public.ip_address_cols AS
 
 
 ALTER TABLE public.ip_address_cols OWNER TO lanview2;
+
+--
+-- Name: ip_address_logs; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.ip_address_logs (
+    ip_addres_log_id bigint NOT NULL,
+    date_of timestamp without time zone DEFAULT now() NOT NULL,
+    reason public.reasons,
+    message text,
+    daemon_id bigint,
+    ip_address_id bigint,
+    address_new inet,
+    ip_address_type_new public.addresstype,
+    port_id bigint,
+    address_old inet,
+    ip_address_type_old public.addresstype
+);
+
+
+ALTER TABLE public.ip_address_logs OWNER TO lanview2;
+
+--
+-- Name: ip_address_logs_ip_addres_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
+--
+
+CREATE SEQUENCE public.ip_address_logs_ip_addres_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.ip_address_logs_ip_addres_log_id_seq OWNER TO lanview2;
+
+--
+-- Name: ip_address_logs_ip_addres_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+--
+
+ALTER SEQUENCE public.ip_address_logs_ip_addres_log_id_seq OWNED BY public.ip_address_logs.ip_addres_log_id;
+
 
 --
 -- Name: ipaddresses_ip_address_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
@@ -9363,70 +9540,6 @@ ALTER TABLE public.lldp_links OWNER TO lanview2;
 --
 
 COMMENT ON VIEW public.lldp_links IS 'Symmetric View Table for LLDP links';
-
-
---
--- Name: patchs; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.patchs (
-    node_id bigint NOT NULL,
-    node_name text NOT NULL,
-    node_note text,
-    node_type public.nodetype[],
-    place_id bigint DEFAULT 0,
-    features text,
-    deleted boolean DEFAULT false NOT NULL,
-    inventory_number text,
-    serial_number text,
-    model_number text,
-    model_name text,
-    location point
-);
-
-
-ALTER TABLE public.patchs OWNER TO lanview2;
-
---
--- Name: TABLE patchs; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE public.patchs IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
-
-
---
--- Name: COLUMN patchs.node_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.patchs.node_id IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
-
-
---
--- Name: COLUMN patchs.node_name; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.patchs.node_name IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
-
-
---
--- Name: COLUMN patchs.node_note; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.patchs.node_note IS 'Descrition of the node';
-
-
---
--- Name: COLUMN patchs.node_type; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.patchs.node_type IS 'A hálózati elem típusa, a patch típusú rekord esetén mindíg "patch", a trigger állítja be.';
-
-
---
--- Name: COLUMN patchs.place_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.patchs.place_id IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
 
 
 --
@@ -9820,55 +9933,6 @@ CREATE VIEW public.mactab_logs_shape AS
 
 
 ALTER TABLE public.mactab_logs_shape OWNER TO lanview2;
-
---
--- Name: nodes; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.nodes (
-    node_stat public.notifswitch,
-    os_name text,
-    os_version text
-)
-INHERITS (public.patchs);
-
-
-ALTER TABLE public.nodes OWNER TO lanview2;
-
---
--- Name: TABLE nodes; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE public.nodes IS 'Passzív vagy aktív hálózati elemek táblája';
-
-
---
--- Name: COLUMN nodes.node_type; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
-
-
---
--- Name: COLUMN nodes.node_stat; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nodes.node_stat IS 'Az eszköz állapota.';
-
-
---
--- Name: COLUMN nodes.os_name; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nodes.os_name IS 'Operating system or firmware name';
-
-
---
--- Name: COLUMN nodes.os_version; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN public.nodes.os_version IS 'Operating system or firmware version';
-
 
 --
 -- Name: mactab_shape; Type: VIEW; Schema: public; Owner: lanview2
@@ -10292,8 +10356,10 @@ ALTER TABLE public.named_port_vlans OWNER TO lanview2;
 
 CREATE TABLE public.node_params (
     node_param_id bigint NOT NULL,
-    param_type_id bigint NOT NULL,
+    node_param_name text NOT NULL,
+    node_param_note text,
     node_id bigint NOT NULL,
+    param_type_id bigint NOT NULL,
     param_value text,
     flag boolean DEFAULT false
 );
@@ -10305,7 +10371,7 @@ ALTER TABLE public.node_params OWNER TO lanview2;
 -- Name: TABLE node_params; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE public.node_params IS 'Nod extra paraméter értékek.';
+COMMENT ON TABLE public.node_params IS 'Node extra paraméter értékek.';
 
 
 --
@@ -10316,10 +10382,17 @@ COMMENT ON COLUMN public.node_params.node_param_id IS 'A paraméter érték egye
 
 
 --
--- Name: COLUMN node_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: COLUMN node_params.node_param_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN public.node_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
+COMMENT ON COLUMN public.node_params.node_param_name IS 'Paraméter neve.';
+
+
+--
+-- Name: COLUMN node_params.node_param_note; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.node_params.node_param_note IS 'Megjegyzés.';
 
 
 --
@@ -10330,6 +10403,13 @@ COMMENT ON COLUMN public.node_params.node_id IS 'A tulajdonos node rekordjának 
 
 
 --
+-- Name: COLUMN node_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.node_params.param_type_id IS 'A paraméter adat típusát definiáló param_types rekord azonosítója.';
+
+
+--
 -- Name: COLUMN node_params.param_value; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
@@ -10337,10 +10417,10 @@ COMMENT ON COLUMN public.node_params.param_value IS 'A parméter érték.';
 
 
 --
--- Name: node_params_node_param_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
+-- Name: node_params_node_param_id_seq1; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE public.node_params_node_param_id_seq
+CREATE SEQUENCE public.node_params_node_param_id_seq1
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10348,13 +10428,13 @@ CREATE SEQUENCE public.node_params_node_param_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.node_params_node_param_id_seq OWNER TO lanview2;
+ALTER TABLE public.node_params_node_param_id_seq1 OWNER TO lanview2;
 
 --
--- Name: node_params_node_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+-- Name: node_params_node_param_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE public.node_params_node_param_id_seq OWNED BY public.node_params.node_param_id;
+ALTER SEQUENCE public.node_params_node_param_id_seq1 OWNED BY public.node_params.node_param_id;
 
 
 --
@@ -10396,42 +10476,6 @@ ALTER TABLE public.nports_port_id_seq OWNER TO lanview2;
 --
 
 ALTER SEQUENCE public.nports_port_id_seq OWNED BY public.nports.port_id;
-
-
---
--- Name: object_syntaxs; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.object_syntaxs (
-    object_syntax_id bigint NOT NULL,
-    object_syntax_name text NOT NULL,
-    sentence text NOT NULL,
-    features text,
-    listed boolean DEFAULT false
-);
-
-
-ALTER TABLE public.object_syntaxs OWNER TO lanview2;
-
---
--- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
---
-
-CREATE SEQUENCE public.object_syntaxs_object_syntax_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.object_syntaxs_object_syntax_id_seq OWNER TO lanview2;
-
---
--- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
---
-
-ALTER SEQUENCE public.object_syntaxs_object_syntax_id_seq OWNED BY public.object_syntaxs.object_syntax_id;
 
 
 --
@@ -11107,8 +11151,10 @@ ALTER TABLE public.port_in_mactab OWNER TO lanview2;
 
 CREATE TABLE public.port_params (
     port_param_id bigint NOT NULL,
-    param_type_id bigint NOT NULL,
+    port_param_name text NOT NULL,
+    port_param_note text,
     port_id bigint NOT NULL,
+    param_type_id bigint NOT NULL,
     param_value text,
     flag boolean DEFAULT false
 );
@@ -11120,7 +11166,7 @@ ALTER TABLE public.port_params OWNER TO lanview2;
 -- Name: TABLE port_params; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE public.port_params IS 'Port extra paraméter értékek.';
+COMMENT ON TABLE public.port_params IS 'port extra paraméter értékek.';
 
 
 --
@@ -11131,10 +11177,17 @@ COMMENT ON COLUMN public.port_params.port_param_id IS 'A paraméter érték egye
 
 
 --
--- Name: COLUMN port_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: COLUMN port_params.port_param_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN public.port_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
+COMMENT ON COLUMN public.port_params.port_param_name IS 'Paraméter neve.';
+
+
+--
+-- Name: COLUMN port_params.port_param_note; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.port_params.port_param_note IS 'Megjegyzés.';
 
 
 --
@@ -11145,6 +11198,13 @@ COMMENT ON COLUMN public.port_params.port_id IS 'A tulajdonos port rekordjának 
 
 
 --
+-- Name: COLUMN port_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.port_params.param_type_id IS 'A paraméter adat típusát definiáló param_types rekord azonosítója.';
+
+
+--
 -- Name: COLUMN port_params.param_value; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
@@ -11152,10 +11212,10 @@ COMMENT ON COLUMN public.port_params.param_value IS 'A parméter érték.';
 
 
 --
--- Name: port_params_port_param_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
+-- Name: port_params_port_param_id_seq1; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE public.port_params_port_param_id_seq
+CREATE SEQUENCE public.port_params_port_param_id_seq1
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11163,13 +11223,13 @@ CREATE SEQUENCE public.port_params_port_param_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.port_params_port_param_id_seq OWNER TO lanview2;
+ALTER TABLE public.port_params_port_param_id_seq1 OWNER TO lanview2;
 
 --
--- Name: port_params_port_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+-- Name: port_params_port_param_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE public.port_params_port_param_id_seq OWNED BY public.port_params.port_param_id;
+ALTER SEQUENCE public.port_params_port_param_id_seq1 OWNED BY public.port_params.port_param_id;
 
 
 --
@@ -11355,9 +11415,9 @@ CREATE TABLE public.query_parsers (
     query_parser_note text,
     service_id bigint NOT NULL,
     parse_type public.parsertype DEFAULT 'parse'::public.parsertype,
-    item_sequence_number integer,
+    item_sequence_number integer NOT NULL,
     case_sensitive boolean DEFAULT false,
-    regular_expression text,
+    regular_expression text NOT NULL,
     import_expression text NOT NULL,
     CONSTRAINT check_expression CHECK ((((parse_type = 'parse'::public.parsertype) AND (regular_expression IS NOT NULL)) OR ((parse_type <> 'parse'::public.parsertype) AND (regular_expression IS NULL))))
 );
@@ -11667,28 +11727,6 @@ ALTER TABLE public.services_service_id_seq OWNER TO lanview2;
 
 ALTER SEQUENCE public.services_service_id_seq OWNED BY public.services.service_id;
 
-
---
--- Name: snmpdevices; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE public.snmpdevices (
-    community_rd text DEFAULT 'public'::text NOT NULL,
-    community_wr text,
-    snmp_ver public.snmpver DEFAULT '2c'::public.snmpver NOT NULL,
-    sysdescr text,
-    sysobjectid text,
-    sysuptime bigint,
-    syscontact text,
-    sysname text,
-    syslocation text,
-    sysservices smallint,
-    vendorname text
-)
-INHERITS (public.nodes);
-
-
-ALTER TABLE public.snmpdevices OWNER TO lanview2;
 
 --
 -- Name: subnets; Type: TABLE; Schema: public; Owner: lanview2
@@ -12444,6 +12482,13 @@ CREATE VIEW public.vlan_list_by_host AS
 ALTER TABLE public.vlan_list_by_host OWNER TO lanview2;
 
 --
+-- Name: alarm_service_vars alarm_service_var_id; Type: DEFAULT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.alarm_service_vars ALTER COLUMN alarm_service_var_id SET DEFAULT nextval('public.alarm_service_vars_alarm_service_var_id_seq'::regclass);
+
+
+--
 -- Name: alarms alarm_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
@@ -12626,6 +12671,13 @@ ALTER TABLE ONLY public.interfaces ALTER COLUMN flag SET DEFAULT false;
 
 
 --
+-- Name: ip_address_logs ip_addres_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.ip_address_logs ALTER COLUMN ip_addres_log_id SET DEFAULT nextval('public.ip_address_logs_ip_addres_log_id_seq'::regclass);
+
+
+--
 -- Name: ip_addresses ip_address_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
@@ -12671,7 +12723,7 @@ ALTER TABLE ONLY public.menu_items ALTER COLUMN menu_item_id SET DEFAULT nextval
 -- Name: node_params node_param_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY public.node_params ALTER COLUMN node_param_id SET DEFAULT nextval('public.node_params_node_param_id_seq'::regclass);
+ALTER TABLE ONLY public.node_params ALTER COLUMN node_param_id SET DEFAULT nextval('public.node_params_node_param_id_seq1'::regclass);
 
 
 --
@@ -12700,13 +12752,6 @@ ALTER TABLE ONLY public.nodes ALTER COLUMN deleted SET DEFAULT false;
 --
 
 ALTER TABLE ONLY public.nports ALTER COLUMN port_id SET DEFAULT nextval('public.nports_port_id_seq'::regclass);
-
-
---
--- Name: object_syntaxs object_syntax_id; Type: DEFAULT; Schema: public; Owner: lanview2
---
-
-ALTER TABLE ONLY public.object_syntaxs ALTER COLUMN object_syntax_id SET DEFAULT nextval('public.object_syntaxs_object_syntax_id_seq'::regclass);
 
 
 --
@@ -12755,7 +12800,7 @@ ALTER TABLE ONLY public.places ALTER COLUMN place_id SET DEFAULT nextval('public
 -- Name: port_params port_param_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY public.port_params ALTER COLUMN port_param_id SET DEFAULT nextval('public.port_params_port_param_id_seq'::regclass);
+ALTER TABLE ONLY public.port_params ALTER COLUMN port_param_id SET DEFAULT nextval('public.port_params_port_param_id_seq1'::regclass);
 
 
 --
@@ -12878,6 +12923,13 @@ ALTER TABLE ONLY public.snmpdevices ALTER COLUMN deleted SET DEFAULT false;
 
 
 --
+-- Name: snmpdevices node_stat; Type: DEFAULT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.snmpdevices ALTER COLUMN node_stat SET DEFAULT 'unknown'::public.notifswitch;
+
+
+--
 -- Name: subnets subnet_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
@@ -12968,6 +13020,14 @@ COPY public.alarm_messages (service_type_id, status, text_id) FROM stdin;
 
 
 --
+-- Data for Name: alarm_service_vars; Type: TABLE DATA; Schema: public; Owner: lanview2
+--
+
+COPY public.alarm_service_vars (alarm_service_var_id, alarm_id, service_var_id, service_var_value, var_state, state_msg, raw_value) FROM stdin;
+\.
+
+
+--
 -- Data for Name: alarms; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
@@ -13050,7 +13110,6 @@ COPY public.enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name
 2163	\N	\N	db_errs.acknowledged	\N	\N	\N	\N	2222	\N
 2164	true	\N	db_errs.acknowledged	\N	\N	\N	\N	2223	dialog-ok-2.ico
 2165	false	\N	db_errs.acknowledged	\N	\N	\N	\N	2224	\N
-2166	\N		settype	\N	\N	\N	\N	2225	\N
 1943	simple	\N	tableshapetype	\N	\N	\N	\N	72	\N
 1944	tree	\N	tableshapetype	\N	\N	\N	\N	73	\N
 1945	bare	\N	tableshapetype	\N	\N	\N	\N	74	\N
@@ -13070,14 +13129,10 @@ COPY public.enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name
 2103	true	\N	services.deleted	#babdb6	\N	\N	\N	1237	delete.ico
 1899	off	Engedélyezve	noalarmtype	#00ff00	\N	\N	\N	91	dialog-ok-2.ico
 2102	false	\N	services.deleted	\N	\N	\N	\N	1236	dialog-ok-2.ico
-2167	auto	\N	settype	\N	\N	\N	\N	2226	down.ico
-2168	query	\N	settype	\N	\N	\N	\N	2227	go-jump.ico
-2169	config	\N	settype	\N	\N	\N	\N	2228	edit-history.ico
 1879	operator	operátor	rights	#ffaa00	\N	\N	\N	97	\N
 1877	viewer	megfigyelő	rights	#aaff00	\N	\N	\N	98	\N
 1876	none	jogosulatlan	rights	#00ff00	\N	\N	\N	99	\N
 1896	real	Valós hely	placetype	\N	\N	\N	\N	100	\N
-2170	manual	\N	settype	\N	\N	\N	\N	2229	edit.ico
 1940	listed	\N	tableinherittype	\N	\N	\N	\N	102	\N
 1878	indalarm	rendész	rights	yellow	\N	\N	\N	103	\N
 1941	listed_rev	\N	tableinherittype	\N	\N	\N	\N	104	\N
@@ -13093,9 +13148,12 @@ COPY public.enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name
 2158	true	\N	host_services.deleted	\N	\N	\N	\N	2216	dialog-no-2.ico
 2159	false	\N	host_services.deleted	\N	\N	\N	\N	2217	dialog-ok-2.ico
 1954	Fatal	\N	errtype	#ad5e84	\N	\N	{bold,underline}	88	close.ico
+2166	\N	\N	settype	\N	\N	\N	\N	2225	\N
+2167	auto	\N	settype	\N	#888a85	\N	{italic}	2226	document-properties.ico
 2174	false	\N	service_vars.deleted	\N	\N	\N	\N	2233	dialog-ok-2.ico
 2106	true	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#ffa050	\N	\N	\N	1240	disable.ico
 1955	Error	\N	errtype	#ef2929	\N	\N	{bold}	89	emblem-important-red.ico
+2168	query	\N	settype	\N	\N	\N	\N	2227	system-search-4.ico
 1935	no	\N	tableinherittype	\N	\N	\N	\N	130	\N
 1936	only	\N	tableinherittype	\N	\N	\N	\N	131	\N
 1937	on	\N	tableinherittype	\N	\N	\N	\N	132	\N
@@ -13128,6 +13186,8 @@ COPY public.enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name
 2139	key	\N	datacharacter	\N	#5500ff	\N	\N	1191	\N
 2140	fname	\N	datacharacter	\N	#000000	\N	\N	1185	\N
 2141	derived	\N	datacharacter	\N	#005500	\N	{italic}	1183	\N
+2169	config	\N	settype	\N	#cc0000	\N	{bold}	2228	configure-2.ico
+2170	manual	\N	settype	\N	#cc0000	\N	{bold,underline}	2229	edit.ico
 2077	\N	\N	ifstatus	\N	\N	\N	\N	1211	\N
 2088	up	\N	ifstatus	#8ae234	\N	\N	{bold}	1222	network-ethernet-connected.ico
 2080	down	\N	ifstatus	#e9b96e	\N	\N	\N	1214	network-ethernet-disconnected.ico
@@ -13315,11 +13375,11 @@ COPY public.graphs (graph_id, graph_name, graph_note, graph_title, rrd_beat_id, 
 --
 
 COPY public.group_users (group_user_id, group_id, user_id) FROM stdin;
-28	0	1
-29	1	2
-30	2	3
-31	2	2
-32	4	4
+1	0	1
+2	1	2
+3	2	3
+4	2	2
+5	4	4
 \.
 
 
@@ -13425,6 +13485,14 @@ COPY public.imports (import_id, target_id, date_of, user_id, node_id, app_name, 
 --
 
 COPY public.interfaces (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag, hwaddress, port_ostat, port_astat, port_staple_id, dualface_type, ifdescr, last_changed, port_stat, last_touched) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ip_address_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
+--
+
+COPY public.ip_address_logs (ip_addres_log_id, date_of, reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old) FROM stdin;
 \.
 
 
@@ -13541,8 +13609,10 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 86	enum_vals	1	{group,group,NULL}
 87	enum_vals	1	{read_only,read_only,NULL}
 2246	table_shape_fields	1	{Ritk.,"A lekérdezések ritkítása",NULL,NULL}
+1390	table_shapes	1	{"MAC - IP cím párok","MAC - IP cím pár",NULL,NULL,NULL}
 2250	table_shape_fields	1	{Ver.,"Op.-rendszer vagy firmware verziója",NULL,NULL}
 1333	table_shape_fields	1	{App.,"A program neve",NULL,NULL}
+1361	table_shapes	1	{app_memos,app_memos,app_memos,NULL,NULL}
 93	enum_vals	1	{addresstype,addresstype,""}
 94	enum_vals	1	{"Fix IP","Fix IP",""}
 95	enum_vals	1	{"Lokális egyedi cím",private,"Lokális helyi cím. Csak néhány eszköz számára elérhető."}
@@ -13605,23 +13675,18 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1833	table_shapes	1	{portvars,portvars,portvars,NULL,NULL}
 89	enum_vals	1	{Error,Error,Hiba}
 1923	table_shape_fields	1	{NULL,Letiltva,"A változó letiltása.",NULL}
-1891	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+1932	table_shape_fields	1	{Altípus,Altípus,NULL,NULL}
 2206	table_shape_fields	1	{NULL,"Megjelenik a port állpotba","A változó állapotát örökli a port, amennyiben a tulajdonos szolgáltató példányhoz meg van adva port.",NULL}
-2251	table_shape_fields	1	{NULL,"Operációs rendszer vagy firmware neve",NULL,NULL}
-2252	table_shape_fields	1	{NULL,"Operációs rendszer vagy firmware verziója",NULL,NULL}
+1391	table_shape_fields	1	{IP,"IP cím",NULL,NULL}
 1889	table_shape_fields	1	{ID,"Egyedi azonosító (ID)",NULL,NULL}
-1893	table_shape_fields	1	{Port,"Port ",NULL,NULL}
-1895	table_shape_fields	1	{Parancs,"Ellenőrző parancs",NULL,NULL}
-1900	table_shape_fields	1	{Újra,"Újra próbálkozás időintervalluma",NULL,NULL}
-1898	table_shape_fields	1	{Próba,"Maximális próbálkozások száma",NULL,NULL}
+1896	table_shape_fields	1	{Modosítók,"Egyéb modosítók",NULL,NULL}
+1901	table_shape_fields	1	{Időszak,"Időszak azonosító",NULL,NULL}
 1235	enum_vals	1	{"","",false}
-2225	enum_vals	1	{settype,settype,""}
-2226	enum_vals	1	{auto,auto,NULL}
 2204	menu_items	1	{"SNMP beszúr/frissít","SNMP beszúr/frissít",NULL,NULL}
+2252	table_shape_fields	1	{NULL,"Operációs rendszer vagy firmware verziója",NULL,NULL}
 1590	table_shape_fields	1	{"Zászló név","A zászló képének a neve",NULL,NULL}
-2227	enum_vals	1	{query,query,NULL}
-2228	enum_vals	1	{config,config,NULL}
 1334	table_shape_fields	1	{Host,"A futtató szg. neve",NULL,NULL}
+1895	table_shape_fields	1	{Parancs,"Ellenőrző parancs",NULL,NULL}
 2230	enum_vals	1	{noalarmtype,noalarmtype,""}
 1173	enum_vals	1	{"","",false}
 1175	enum_vals	1	{true,true,""}
@@ -13636,7 +13701,7 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 237	table_shapes	2	{"LLDP linkek",NULL,NULL,NULL,NULL}
 2223	enum_vals	1	{igen,igen,""}
 2224	enum_vals	1	{nem,nem,""}
-2229	enum_vals	1	{manual,manual,NULL}
+1893	table_shape_fields	1	{Port,"Port ",NULL,NULL}
 2218	table_shape_fields	1	{Ikon,NULL,NULL,NULL}
 91	enum_vals	1	{Engedélyezve,off,NULL}
 288	table_shapes	1	{places_topol,places_topol,places_topol,NULL,NULL}
@@ -13666,17 +13731,18 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1918	table_shape_fields	1	{NULL,"Az állapotát örökli a szolgáltatás","A változó állapotát örökli a szolgáltatás.",NULL}
 1335	table_shape_fields	1	{PID,"Folyamat azonosító (PID)",NULL,NULL}
 1336	table_shape_fields	1	{P.ver.,"A progra verziószáma",NULL,NULL}
-1901	table_shape_fields	1	{Időszak,"Időszak azonosító",NULL,NULL}
-1903	table_shape_fields	1	{"Lengés szám","Maximális lengések száma",NULL,NULL}
-1483	table_shapes	1	{host_services,host_services,host_services,NULL,NULL}
-1899	table_shape_fields	1	{Norm.Int.,"Normál időintervallum",NULL,NULL}
+2225	enum_vals	1	{settype,settype,""}
 1904	table_shape_fields	1	{Törölve,Törölve,"Nem használt!",NULL}
-1890	table_shape_fields	1	{Név,"Szolgáltatás neve",NULL,NULL}
+1483	table_shapes	1	{host_services,host_services,host_services,NULL,NULL}
+1900	table_shape_fields	1	{Újra,"Újra próbálkozás időintervalluma",NULL,NULL}
+1891	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
 1892	table_shape_fields	1	{Típus,"Típus azonosító",NULL,NULL}
+1890	table_shape_fields	1	{Név,"Szolgáltatás neve",NULL,NULL}
 1894	table_shape_fields	1	{Sup.minta,"Superior szerviz név minta (regexp)",NULL,NULL}
+1898	table_shape_fields	1	{Próba,"Maximális próbálkozások száma",NULL,NULL}
 1897	table_shape_fields	1	{NULL,"Minden példánya letiltva",NULL,NULL}
-1896	table_shape_fields	1	{Modosítók,"Egyéb modosítók",NULL,NULL}
 1497	table_shape_fields	1	{Sup.,"Felsőbb szintű példány",NULL,NULL}
+1899	table_shape_fields	1	{Norm.Int.,"Normál időintervallum",NULL,NULL}
 2211	table_shape_fields	1	{usabilityes,usabilityes,NULL,NULL}
 1491	table_shape_fields	1	{Mód,"Módszer azonosító",NULL,NULL}
 1490	table_shape_fields	1	{Megj.,Megjegyzés,NULL,NULL}
@@ -13732,7 +13798,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 284	table_shapes	1	{"Aktív és passzív hálózati elemek","Aktív vagy passzív hálózati elem","Aktív SNMP eszköz",NULL,NULL}
 286	table_shapes	1	{param_types,param_types,param_types,NULL,NULL}
 287	table_shapes	1	{"Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna",place_groups,"Csoport tagja(i)","Coportoknak nem tagja(i)"}
-1496	table_shape_fields	1	{*Letiltva,"Minden példánya letiltva","A példány letiltása",NULL}
 1244	enum_vals	1	{"","",false}
 1246	enum_vals	1	{true,true,""}
 1245	enum_vals	1	{false,false,""}
@@ -13741,7 +13806,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1484	table_shape_fields	1	{Eszköz,"Eszköz (node)",NULL,NULL}
 289	table_shapes	1	{Felhasználók,Feljasználó,users,"Csoportoknak tagja","Csoportoknak nem tagja"}
 290	table_shapes	1	{portvars,portvars,portvars,NULL,NULL}
-1498	table_shape_fields	1	{Max.pr.,"Maximális próbálkozások száma",NULL,NULL}
 291	table_shapes	1	{"Adattábla megjelenítés mező leírók","Adattábla megjelenítés mező leíró",table_shape_fields,NULL,NULL}
 292	table_shapes	1	{"Adattábla megjelenítés leírók","Adattábla megjelenítés leíró",table_shapes,NULL,NULL}
 293	table_shapes	1	{"Szervíz változó típusok",service_var_types,service_var_types,NULL,NULL}
@@ -13763,24 +13827,40 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1340	table_shape_fields	1	{Főggvény,"Függvény neve a forrásban",NULL,NULL}
 1342	table_shape_fields	1	{"Forrás sor","A kod sor száma",NULL,NULL}
 1360	table_shape_fields	1	{back_stack,back_stack,NULL,NULL}
+1392	table_shape_fields	1	{MAC,"MAC cím",NULL,NULL}
+1378	table_shapes	1	{arp_logs,arp_logs,arp_logs,NULL,NULL}
+1442	table_shapes	1	{"Felhasználói csoportok","Feljasználói csoport",groups,"Csoportok tagjai","Coportoknak nem tagjai"}
 2245	enum_vals	1	{errtype,errtype,""}
 88	enum_vals	1	{Fatal,Fatal,"Fatális hiba"}
 90	enum_vals	1	{Warning,Warning,Figyelmeztetés}
 92	enum_vals	1	{Ok,Ok,Információ}
+1555	table_shapes	1	{iftypes,iftypes,iftypes,NULL,NULL}
+1607	table_shapes	1	{"Logikai linkek",NULL,NULL,NULL,NULL}
+1614	table_shapes	1	{mactab,mactab,mactab,NULL,NULL}
+1629	table_shapes	1	{mactab_logs,mactab_logs,mactab_logs,NULL,NULL}
 2244	table_shape_fields	1	{Hibalód,"A hiba kódja",NULL,NULL}
+1784	table_shapes	1	{"Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna",place_groups,"Csoport tagja(i)","Coportoknak nem tagja(i)"}
 1330	table_shapes	1	{app_errs,app_errs,app_errs,NULL,NULL}
+1496	table_shape_fields	1	{*Letiltva,"A példány letiltva","A példány letiltása",NULL}
+1676	table_shapes	1	{menu_items,menu_items,menu_items,NULL,NULL}
+1908	table_shapes	1	{service_types,service_types,service_types,NULL,NULL}
 273	table_shapes	1	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+1926	table_shapes	1	{"Szervíz változó típusok",service_var_types,service_var_types,NULL,NULL}
+1980	table_shapes	1	{sys_params,sys_params,sys_params,NULL,NULL}
+1739	table_shapes	1	{param_types,param_types,param_types,NULL,NULL}
+1740	table_shape_fields	1	{param_type_id,param_type_id,NULL,NULL}
+1905	table_shape_fields	1	{Off-line,"Riasztandók csoportjai (Off-line)",NULL,NULL}
+1906	table_shape_fields	1	{on-line,"Riasztandók csoportjai (on-line)",NULL,NULL}
+1907	table_shape_fields	1	{Ritmus,Szívritmus,NULL,NULL}
+1912	table_shapes	1	{service_vars,service_vars,service_vars,NULL,NULL}
+1398	table_shape_fields	1	{"By IP","Port(ok) az IP alapján",NULL,NULL}
+1291	table_shapes	1	{"Riasztási események","Riasztási esemény",alarms,NULL,NULL}
 2139	menu_items	1	{Switch-ek,Switch-ek,"Switch-ek táblája.",NULL}
 2138	menu_items	1	{"Hálózati végpontok","Hálózati végpontok","Hálózati végpontok táblája, alapértelmezett szűrés nélkül.",NULL}
 2140	menu_items	1	{Szerverek,Szerverek,"Szerverek listája.",NULL}
 2141	menu_items	1	{"Munkaállomások táblázat","Munkaállomások táblázat",NULL,NULL}
-1905	table_shape_fields	1	{Off-line,"Riasztandók csoportjai (Off-line)",NULL,NULL}
-1906	table_shape_fields	1	{on-line,"Riasztandók csoportjai (on-line)",NULL,NULL}
-1907	table_shape_fields	1	{Ritmus,Szívritmus,NULL,NULL}
-1902	table_shape_fields	1	{Leng.,"Lengés ellenőrzés időintervallum",NULL,NULL}
 1296	table_shape_fields	1	{^,"Legkritikusabb állapot a riasztás alatt",NULL,NULL}
 1297	table_shape_fields	1	{>,"Utolsó állapot a riasztás alatt",NULL,NULL}
-1291	table_shapes	1	{"Riasztási események","Riasztási esemény",alarms,NULL,NULL}
 1295	table_shape_fields	1	{<,"Állapot a risztás kezdetekor",NULL,NULL}
 1468	table_shapes	1	{host_service_logs,host_service_logs,host_service_logs,NULL,NULL}
 2197	menu_items	1	{Eszközök,NULL,NULL,NULL}
@@ -13802,23 +13882,22 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 2145	menu_items	1	{"Helyek, helyiségek (fa)","Helyek, helyiségek (fa)",NULL,NULL}
 2152	menu_items	1	{"Szolgáltatás példányok (fa)","Szolgáltatás példányok (fa)",NULL,NULL}
 2117	menu_items	1	{"Riasztások (fa)","Riasztások (fa)",NULL,NULL}
-2192	menu_items	1	{"GUI menük","GUI menük",NULL,NULL}
+2275	table_shape_fields	1	{Név,"Paraméter neve",NULL,NULL}
+1399	table_shape_fields	1	{"By MAC","Port(ok) a MAC alapján",NULL,NULL}
 1790	table_shape_fields	1	{place_id,"Egyedi azonosító (ID)",NULL,NULL}
 1791	table_shape_fields	1	{Név,"Hely helyiség neve",NULL,NULL}
 1989	table_shape_fields	1	{"Név a táblában","Mezőnév a táblában",NULL,NULL}
 1237	enum_vals	1	{true,true,""}
 1236	enum_vals	1	{false,false,""}
-12	alarm_messages	3	{"",""}
 1499	table_shape_fields	1	{Int.,"Lekérdezés sürüsége",NULL,NULL}
 1500	table_shape_fields	1	{R.int.,"Újrapróbálkozás ideje",NULL,NULL}
 1501	table_shape_fields	1	{Idöszakok,"Időszakok azonosítója",NULL,NULL}
 1502	table_shape_fields	1	{Leng.int,"Lengésvizsgálat időablaka",NULL,NULL}
-1503	table_shape_fields	1	{Max.leng.,"Maximális lengés szám",NULL,NULL}
+1518	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
 1505	table_shape_fields	1	{N.a.-tól,"Riasztás tilva innentől",NULL,NULL}
 1506	table_shape_fields	1	{N.a.-ig,"Riasztás tiltva eddig",NULL,NULL}
 1507	table_shape_fields	1	{Off-line,"Off-line riasztandók csoportjai",NULL,NULL}
 1508	table_shape_fields	1	{On-line,"On-line riasztandók csoportjai",NULL,NULL}
-1510	table_shape_fields	1	{check_attempts,check_attempts,NULL,NULL}
 1511	table_shape_fields	1	{"Utolsó vált.","Az utolsó változás időpontja",NULL,NULL}
 1485	table_shape_fields	1	{"Szolgáltatás azonosító",Szolgáltatás,NULL,NULL}
 1486	table_shape_fields	1	{Port,"Opcionális port",NULL,NULL}
@@ -13842,10 +13921,17 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1219	enum_vals	1	{short,short,NULL}
 1212	enum_vals	1	{broken,broken,NULL}
 1215	enum_vals	1	{error,error,NULL}
+1741	table_shape_fields	1	{"Paraméter típus név","Paraméter típus név",NULL,NULL}
+2254	menu_items	1	{"Node paraméterek","Node paraméter","A node paraméterek teljes listája.",NULL}
+2078	table_shapes	1	{Felhasználók,Feljasználó,users,"Csoportoknak tagja","Csoportoknak nem tagja"}
+2279	menu_items	1	{"Switch csere","Switch csere","Switch csere:\nA fizikai linkek, és port paraméterek másolása",NULL}
+1870	table_shapes	1	{query_parsers,query_parsers,NULL,NULL,NULL}
 1188	enum_vals	1	{head,head,NULL}
 1181	enum_vals	1	{data,data,NULL}
 1189	enum_vals	1	{id,id,"Numerikus objektum azonosító"}
+1498	table_shape_fields	1	{Max.pr.,"Maximális próbálkozások száma",NULL,NULL}
 1460	table_shape_fields	1	{"*Port állapot","Port örökölt állapota","Port örökölt állapota",NULL}
+1503	table_shape_fields	1	{Max.leng.,"Maximális lengés szám",NULL,NULL}
 1504	table_shape_fields	1	{*Al.tiltáa,noalarm_flag,"Riasztás engedélyezése, vagy teljes vagy időpont szerinti tiltása.",NULL}
 1487	table_shape_fields	1	{*Állapot,"A szervíz példány állapota","A példány állapota.",NULL}
 1262	enum_vals	2	{no,no,""}
@@ -13866,6 +13952,57 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1187	enum_vals	1	{"Nincs ilyen adat",nincs,"Nincs ilyen adat."}
 2209	enum_vals	1	{text,text,NULL}
 2210	enum_vals	1	{question,question,NULL}
+1883	table_shape_fields	1	{Sorrend,Sorrend,NULL,NULL}
+1742	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+1882	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+1743	table_shape_fields	1	{"Adat típus","Adat típus",NULL,NULL}
+1744	table_shape_fields	1	{Dimanzió,Dimanzió,NULL,NULL}
+2251	table_shape_fields	1	{NULL,"Operációs rendszer vagy firmware neve",NULL,NULL}
+1902	table_shape_fields	1	{Leng.,"Lengés ellenőrzés időintervallum",NULL,NULL}
+1917	table_shape_fields	1	{eredeti,"Az eredeti beolvasott érték",NULL,NULL}
+1916	table_shape_fields	1	{Állapot,Állapot,NULL,NULL}
+1915	table_shape_fields	1	{Érték,"A változó aktuális értéke",NULL,NULL}
+2276	table_shape_fields	1	{Megj.,Megjegyzés,NULL,NULL}
+2192	menu_items	1	{"GUI menük","GUI menük",NULL,NULL}
+1679	table_shape_fields	1	{upper_menu_item_id,upper_menu_item_id,NULL,NULL}
+2277	table_shape_fields	1	{Név,"Paraméter neve",NULL,NULL}
+1879	table_shapes	1	{"Minta tár",Minta,selects,NULL,NULL}
+1706	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+1708	table_shape_fields	1	{Érték,Érték,NULL,NULL}
+1709	table_shape_fields	1	{flag,flag,NULL,NULL}
+2278	table_shape_fields	1	{Megj.,Megjegyzés,NULL,NULL}
+1707	table_shape_fields	1	{Node,"Hálózati eszköz",NULL,NULL}
+1872	table_shape_fields	1	{query_parser_note,query_parser_note,NULL,NULL}
+1705	table_shape_fields	1	{ID,"Numerikus egyedi azonosító",NULL,NULL}
+1828	table_shape_fields	1	{ID,"Numerikus egyedi azonosító",NULL,NULL}
+1830	table_shape_fields	1	{Port,Port,NULL,NULL}
+1829	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+1831	table_shape_fields	1	{Érték,Érték,NULL,NULL}
+1832	table_shape_fields	1	{flag,flag,NULL,NULL}
+1873	table_shape_fields	1	{service_id,service_id,NULL,NULL}
+2256	menu_items	1	{"Port paraméterek","Port paraméterek","A port paraméterek teljes listája.",NULL}
+1874	table_shape_fields	1	{parse_type,parse_type,NULL,NULL}
+1875	table_shape_fields	1	{item_sequence_number,item_sequence_number,NULL,NULL}
+1876	table_shape_fields	1	{case_sensitive,case_sensitive,NULL,NULL}
+1877	table_shape_fields	1	{regular_expression,regular_expression,NULL,NULL}
+1878	table_shape_fields	1	{import_expression,import_expression,NULL,NULL}
+1871	table_shape_fields	1	{query_parser_id,query_parser_id,NULL,NULL}
+2281	table_shape_fields	1	{ID,ID,NULL,NULL}
+2280	table_shapes	1	{alarm_service_vars,alarm_service_vars,NULL,NULL,NULL}
+2284	table_shape_fields	1	{ID,ID,NULL,NULL}
+2285	table_shape_fields	1	{Érték,"Érték a riasztáskor",NULL,NULL}
+2286	table_shape_fields	1	{Állapot,"Állapot a riasztáskor",NULL,NULL}
+2287	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+2288	table_shape_fields	1	{raw_value,raw_value,NULL,NULL}
+2291	table_shape_fields	1	{service_var_id,service_var_id,NULL,NULL}
+2290	table_shape_fields	1	{Típus,"Változó típusa",NULL,NULL}
+1981	table_shape_fields	1	{ID,"Egyedi azonosító (ID)",NULL,NULL}
+1982	table_shape_fields	1	{Név,"Rendszer paraméter neve",NULL,NULL}
+1983	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+1984	table_shape_fields	1	{Típus,"A paraméter típusa",NULL,NULL}
+1985	table_shape_fields	1	{Érték,"A rendszer paraméter értéke",NULL,NULL}
+1757	table_shapes	1	{"Fizikai linkek","Fizikai link, patch",NULL,NULL,NULL}
+2292	table_shape_fields	1	{ID,"Rekord azonosító",NULL,NULL}
 1226	enum_vals	1	{notifswitch,notifswitch,""}
 1230	enum_vals	1	{rendben,on,NULL}
 1231	enum_vals	1	{helyreállt,recovered,NULL}
@@ -13883,10 +14020,26 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1428	table_shape_fields	1	{enum_val_note,enum_val_note,NULL,NULL}
 1425	table_shape_fields	1	{enum_val_id,enum_val_id,NULL,NULL}
 2253	table_shape_fields	1	{"Tool tip","Tool tip",NULL,NULL}
+2294	table_shape_fields	1	{Létrehozva,Létrehozva,NULL,NULL}
 1164	enum_vals	2	{addresstype,addresstype,""}
+2295	table_shape_fields	1	{Javítva,Javítva,NULL,NULL}
+2293	table_shape_fields	1	{Javította,Javította,NULL,NULL}
+1704	table_shapes	1	{"Eszköz paraméterek","Az eszközhöz rendelt paraméter",node_params,NULL,NULL}
+1827	table_shapes	1	{"Port paraméterek","A porthoz rendelt paraméter",port_params,NULL,NULL}
+2296	table_shape_fields	1	{Létrehozta,Létrehozta,NULL,NULL}
+2297	table_shape_fields	1	{F.,"\\"Irány\\"",NULL,NULL}
+1436	table_shapes	1	{fkey_types,fkey_types,fkey_types,NULL,NULL}
+2059	table_shapes	1	{unusual_fkeys,unusual_fkeys,unusual_fkeys,NULL,NULL}
+1510	table_shape_fields	1	{check_attempts,check_attempts,NULL,NULL}
+1903	table_shape_fields	1	{"Lengés szám","Maximális lengések száma",NULL,NULL}
 33	errors	3	{""}
 1488	table_shape_fields	1	{"*Nyers áll.","A példány nyers állapota","A példány nyers állapota",NULL}
+2226	enum_vals	1	{auto,auto,NULL}
 1509	table_shape_fields	1	{"*Szürt áll.","Szűretlen állapot","Szűretlen állapot.",NULL}
+2227	enum_vals	1	{query,query,NULL}
+2228	enum_vals	1	{config,config,NULL}
+2229	enum_vals	1	{manual,manual,NULL}
+1393	table_shape_fields	1	{set_type,set_type,NULL,NULL}
 55	enum_vals	2	{kritikus,critical,NULL}
 1019	table_shapes	2	{Nyelvek,Nyelv,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 1029	table_shapes	2	{"lokalizációs szövegek","lokalizációs szöveg\n",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
@@ -13946,7 +14099,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1151	enum_vals	1	{"Riasztási üzenetek",alarm_messages,NULL}
 1152	enum_vals	1	{"Adatbázis hiba üzenetek","db errors",NULL}
 1153	enum_vals	1	{Enumerációk,enum_vals,NULL}
-15	errors	2	{""}
 1154	enum_vals	1	{Menük,menu_items,NULL}
 1155	enum_vals	1	{"Tábla megjelenítés",table_shapes,NULL}
 1156	enum_vals	1	{"Tábla megjelenítés, oszlopk",table_shape_fields,NULL}
@@ -14022,6 +14174,8 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 11	alarm_messages	3	{"",""}
 12	alarm_messages	1	{"Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert",Ismeretlen}
 12	alarm_messages	4	{"",""}
+12	alarm_messages	3	{"",""}
+15	errors	2	{""}
 15	errors	3	{""}
 16	errors	2	{Info}
 16	errors	3	{""}
@@ -14105,7 +14259,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1201	enum_vals	2	{"Szűrés logikai értékre",boolean,""}
 1202	enum_vals	2	{"Csak a megadott két érték közöttiek",interval,""}
 1203	enum_vals	2	{"Minta illesztés a LIKE operátorral",like,""}
-1380	table_shape_fields	2	{reason,reason,"",""}
 1204	enum_vals	2	{"Csak egy értéknél kisebbeket",litle,""}
 1205	enum_vals	2	{"Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny",regexp,""}
 1206	enum_vals	2	{"Minta illesztés a SIMILAR operátorral",similar,""}
@@ -14246,6 +14399,7 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1377	table_shape_fields	2	{lib_ver,lib_ver,"",""}
 1361	table_shapes	2	{app_memos,app_memos,app_memos,"",""}
 1379	table_shape_fields	2	{arp_log_id,arp_log_id,"",""}
+1380	table_shape_fields	2	{reason,reason,"",""}
 1381	table_shape_fields	2	{date_of,date_of,"",""}
 1382	table_shape_fields	2	{ipaddress,ipaddress,"",""}
 1383	table_shape_fields	2	{hwaddress_new,hwaddress_new,"",""}
@@ -14265,7 +14419,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1397	table_shape_fields	2	{note,note,"",""}
 1398	table_shape_fields	2	{"By IP","Port ai IP alapján","",""}
 1399	table_shape_fields	2	{"host By MAC","Host a MAC alapján","",""}
-1400	table_shape_fields	2	{"Port(s) By MAC","Portok a MAC alapján","",""}
 1390	table_shapes	2	{arps,arps,arps,"",""}
 1402	table_shape_fields	2	{dblog_id,dblog_id,"",""}
 1403	table_shape_fields	2	{date_of,date_of,"",""}
@@ -14319,7 +14472,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1450	table_shape_fields	2	{Név,Név,"",""}
 1451	table_shape_fields	2	{Megjegyzés,Megjegyzés,"",""}
 1452	table_shape_fields	2	{Cimke,Cimke,"",""}
-1963	table_shape_fields	2	{sysdescr,sysdescr,"",""}
 1453	table_shape_fields	2	{Index,"A port sorszáma","SNMP eszköz esetén az index kötelező, és azonos az interfész SNMP azonosítójával.",""}
 1454	table_shape_fields	2	{hwaddress,hwaddress,"",""}
 1455	table_shape_fields	2	{port_ostat,port_ostat,"",""}
@@ -14448,6 +14600,7 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1615	table_shape_fields	2	{node_id,node_id,"",""}
 1616	table_shape_fields	2	{node_name,node_name,"",""}
 1617	table_shape_fields	2	{port_id,port_id,"",""}
+1707	table_shape_fields	2	{node_id,node_id,"",""}
 1618	table_shape_fields	2	{port_name,port_name,"",""}
 1619	table_shape_fields	2	{hwaddress,hwaddress,"",""}
 1620	table_shape_fields	2	{mactab_state,mactab_state,"",""}
@@ -14522,7 +14675,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1676	table_shapes	2	{menu_items,menu_items,menu_items,"",""}
 1705	table_shape_fields	2	{node_param_id,node_param_id,"",""}
 1706	table_shape_fields	2	{Típus,Típus,"",""}
-1707	table_shape_fields	2	{node_id,node_id,"",""}
 1708	table_shape_fields	2	{Érték,Érték,"",""}
 1709	table_shape_fields	2	{flag,flag,"",""}
 1704	table_shapes	2	{"Eszköz paraméterek","Az eszközhöz rendelt paraméter",node_params,"",""}
@@ -14612,7 +14764,6 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1795	table_shape_fields	2	{Térkép,"Térkép, alaprajz","",""}
 1796	table_shape_fields	2	{frame,"Keret az alaprajzon","",""}
 1797	table_shape_fields	2	{Telefonszám(ok),Telefonszám(ok),"",""}
-1962	table_shape_fields	2	{"SNMP verzió","SNMP verzió","",""}
 1789	table_shapes	2	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja"}
 1799	table_shape_fields	2	{place_name,place_name,"",""}
 1800	table_shape_fields	2	{place_note,place_note,"",""}
@@ -14755,6 +14906,8 @@ COPY public.localizations (text_id, table_for_text, language_id, texts) FROM std
 1959	table_shape_fields	2	{paraméterek,"Egyébb paraméterek","",""}
 1960	table_shape_fields	2	{"SNMP read community","SNMP read community","",""}
 1961	table_shape_fields	2	{"SNMP write community","SNMP write community","",""}
+1962	table_shape_fields	2	{"SNMP verzió","SNMP verzió","",""}
+1963	table_shape_fields	2	{sysdescr,sysdescr,"",""}
 1964	table_shape_fields	2	{sysobjectid,sysobjectid,"",""}
 1965	table_shape_fields	2	{sysuptime,sysuptime,"",""}
 1966	table_shape_fields	2	{syscontact,syscontact,"",""}
@@ -15040,6 +15193,9 @@ COPY public.menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_
 1714	alarms_tree	lv2gui	1712	20	:shape.table_shape_type=!simple,tree:	none	2160	shape	alarms	\N
 1693	switchs	lv2gui	1691	20	:multi:shape.refine='switch' = ANY (node_type):shape.model_name.setOfValue='switch' = ANY (node_type):shape.model_number.setOfValue='switch' = ANY (node_type):shape.os_name.setOfValue='switch' = ANY (node_type):shape.os_version.setOfValue='switch' = ANY (node_type):	none	2139	shape	snmpdevices	\N
 1695	workstations	lv2gui	1691	40	:multi:shape.refine='workstation' = ANY (node_type):shape.model_name.setOfValue='workstation' = ANY (node_type):shape.model_number.setOfValue='workstation' = ANY (node_type):shape.os_name.setOfValue='workstation' = ANY (node_type):shape.os_version.setOfValue='workstation' = ANY (node_type):	none	2141	shape	snmpdevices	\N
+1762	changeswitch	lv2gui	1751	80	\N	none	2279	own	changeswitch	\N
+1759	all_node_params	lv2gui	1728	70	:shape.node_id.dialog_hide=!!!:shape.node_id.table_hide=!!!:	none	2254	shape	node_params	\N
+1761	all_port_params	lv2gui	1728	80	:shape.port_id.dialog_hide=!!!:shape.port_id.table_hide=!!!:shape.port_id.view.func=port_id2full_name:	none	2256	shape	port_params	\N
 1692	nodes	lv2gui	1691	10	:multi:shape.model_name.setOfValue:shape.model_number.setOfValue:shape.os_name.setOfValue:shape.os_version.setOfValue:	none	2138	shape	snmpdevices	\N
 1707	host_services	lv2gui	1689	110	:multi:shape.node_id.table_hide=false:	none	2153	shape	host_services	\N
 1694	servers	lv2gui	1691	30	:multi:shape.refine='server' = ANY (node_type):shape.model_name.setOfValue='server' = ANY (node_type):shape.model_number.setOfValue='server' = ANY (node_type):shape.os_name.setOfValue='server' = ANY (node_type):shape.os_varsion.setOfValue='server' = ANY (node_type):	none	2140	shape	snmpdevices	\N
@@ -15125,10 +15281,10 @@ COPY public.menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_
 1756	workstation	lv2gui	1751	50	\N	none	2202	own	workstation	\N
 1757	deducepatch	lv2gui	1751	60	\N	none	2203	own	deducepatch	\N
 1755	findmac	lv2gui	1751	40	\N	none	2201	own	findmac	\N
-1746	menus_tab	lv2gui	1739	50	:shape.table_shape_type=!tree:	none	2192	shape	menu_items	\N
 1758	snmpdevquery	lv2gui	1751	70	\N	none	2204	own	snmpdquery	\N
 1751	tools	lv2gui	\N	100	\N	none	2197	menu	\N	\N
 1739	gui	lv2gui	\N	90	\N	none	2185	menu	\N	\N
+1746	menus_tab	lv2gui	1739	50	:shape.button.copy:shape.table_shape_type=!tree:shape.upper_menu_item_id.table_hide=false:	none	2192	shape	menu_items	\N
 \.
 
 
@@ -15136,7 +15292,7 @@ COPY public.menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_
 -- Data for Name: node_params; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY public.node_params (node_param_id, param_type_id, node_id, param_value, flag) FROM stdin;
+COPY public.node_params (node_param_id, node_param_name, node_param_note, node_id, param_type_id, param_value, flag) FROM stdin;
 \.
 
 
@@ -15153,23 +15309,6 @@ COPY public.nodes (node_id, node_name, node_note, node_type, place_id, features,
 --
 
 COPY public.nports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag) FROM stdin;
-\.
-
-
---
--- Data for Name: object_syntaxs; Type: TABLE DATA; Schema: public; Owner: lanview2
---
-
-COPY public.object_syntaxs (object_syntax_id, object_syntax_name, sentence, features, listed) FROM stdin;
-15	places	0PLACE $NAME $NOTE \\\\\n0{:;\n1?!R:PARENT $PARENT;\n1?V:$image_id:IMAGE $1;\n1?V:$frame:FRAME $1;\n1?V:$tels:TEL $1;\n0}\n1@TREE\n	:tree=parent_id:root=1:	f
-14	enum_vals.enum_type_name	\n0NAME $enum_val_name $NOTE {\n1TITLE $view_short, $view_long;\n1?V:$bg_color:   BGCOLOR $1;\n1?V:$fg_color:   FGCOLOR $1;\n1?V:$font_family:FONT $1;\n1?V:$font_attr:  FONT ATTR $1;\n1?V:$tool_tip:   TOOL TIP $1;\n}	\N	f
-11	enum_vals	0ENUM $enum_type_name $NOTE {\n1TITLE $view_short, $view_long;\n1?N:$tool_tip:TOOL TIP $1;\n1@GROUP\n}	:group=enum_type_name:head=enum_val_name:	f
-12	table_shape_fields	0ADD FIELD $NAME $NOTE {\n1TITLE $table_title,$dialog_title;\n1?N:$features:FEATURES $1;\n1?N:$view_rights:VIEW RIGHTS $1;\n1?N:$edit_rights:EDIT RIGHTS $1;\n0}	\N	f
-4	table_shapes	0TABLE ?!E:$table_name:$NAME:$1^ SHAPE $NAME $NOTE {\n1TITLE $table_title,$dialog_title?V:$member_title:,$1^?V:$not_member_title:,$1^;\n1TABLE TYPE $table_shape_type;\n1?E:$table_inherit_type:no:TABLE INHERIT TYPE $1;\n1TABLE VIEW RIGHTS $view_rights;\n1TABLE EDIT RIGHTS $edit_rights;\n1TABLE INSERT RIGHTS $insert_rights;\n1TABLE DELETE RIGHTS $remove_rights;\n1?V:$right_shape_ids:RIGHT SHAPE $1;\n1?V:$features:FEATURES $1;\n1?N:$auto_refresh:AUTO REFRESH $1;\n1@table_shape_fields\n0}	\N	f
-2	users	0USER $NAME $NOTE { // $ID\n1?V:$domain_users:         DOMAIN USER $1;\n1?V:$host_notif_period:    HOST NOTIF PERIOD $1;\n1?V:$serv_notif_period:    SERVICE NOTIF PERIOD $1;\n1?V:$host_notif_switchs:   HOST NOTIF SWITCH $1;\n1?V:$serv_notif_switchs:   SERVICE NOTIF SWITCH $1;\n1?V:$host_notif_cmd:       HOST NOTIF COMMAND $1;\n1?V:$serv_notif_cmd:       SERVICE NOTIF COMMAND $1;\n1?V:$tels:                 TEL $1;\n1?V:$addresses:            ADDRESS $1;\n1?V:$place_id:             PLACE $1;\n1?I:$enabled:ENABLE:DISABLE^;\n0}\n	\N	f
-13	patchs	0PATCH $NAME $NOTE\n0{:;\n1PLACE $place_id;\n1?N:$inventory_number: INVENTORY NUMBER $1;\n1?N:$serial_number:SERIAL NUMBER $1;\n1@node_params\n1@pports;\n0}	\N	f
-16	services	SERVICE $NAME $NOTE \\\n{\n?N:$superior_service_mask:SUPERIOR SERVICE MASK $1;\n?N:$check_cmd: COMMAND $1;\n?F:$features:FEATURES $1;\n?V:$max_check_attempts:MAX CHECK ATTEMPTS  $1;\n?V:$normal_check_interval:NORMAL CHECK INTERVAL  $1;\n?V:$retry_check_interval:RETRY CHECK INTERVAL $1;\n?V:$flapping_interval:FLAPPING INTERVAL $1;\n?V:$flapping_max_change:FLAPPING MAX CHANGE $1;\n}	\N	f
-10	object_syntaxs	SYNTAX $NAME $sentence ?F:$features:$1^;	\N	f
 \.
 
 
@@ -37817,20 +37956,18 @@ COPY public.param_types (param_type_id, param_type_name, param_type_note, param_
 8	timestamp	\N	datetime	\N
 9	inet	\N	inet	\N
 10	bytea	\N	bytea	\N
-11	search_domain	System paraméter: Search domain names(s)	text	\N
-14	suspected_uplink	Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.	boolean	\N
-15	query_mac_tab	Port paraméter: Bejegyzett uplink, de a portnak a mactab táblába való felvétele.	boolean	\N
-16	link_is_invisible_for_LLDP	Port paraméter: Az LLDP számára láthatatlan link (hibaüzenet elnyomása).	boolean	\N
-17	battery_changed	Elem akkumlátor csere utolsó időpontja	date	\N
+27	override_mac	?	mac	\N
 22	bps	Bitsebesség	integer	bps
 23	bytes	Byte-ok	integer	Byte
-27	override_mac	\N	mac	\N
 25	packets	\N	integer	\N
 24	bytes_per_sec	Bytes/sec	real	byte/s
 26	packets_per_sec	packets/sec	real	pkt/s
 28	temp	Hőmérséklet	real	°C
 30	HPE Service SKU	\N	text	\N
 31	node_name	\N	text	\N
+34	voltage	\N	real	V
+33	minute	\N	integer	minute
+35	percent	\N	real	%
 \.
 
 
@@ -37890,7 +38027,7 @@ COPY public.places (place_id, place_name, place_note, place_type, parent_id, ima
 -- Data for Name: port_params; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY public.port_params (port_param_id, param_type_id, port_id, param_value, flag) FROM stdin;
+COPY public.port_params (port_param_id, port_param_name, port_param_note, port_id, param_type_id, param_value, flag) FROM stdin;
 \.
 
 
@@ -37923,11 +38060,12 @@ COPY public.pports (port_id, port_name, port_note, port_tag, iftype_id, node_id,
 --
 
 COPY public.query_parsers (query_parser_id, query_parser_note, service_id, parse_type, item_sequence_number, case_sensitive, regular_expression, import_expression) FROM stdin;
-12	\N	100	parse	30	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)	REPLACE ARP $2 MAC("$3") config $host_service_id $$note$$$4$$note$$;
-10	\N	100	parse	10	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;
-11	\N	100	parse	20	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;
 18	\N	117	parse	20	f	(.+)	SET HOST SERVICE $host_service_id VAR $varnames = REPLACE "$1"/"\\s+"/", "/;  SET HOST SERVICE $host_service_id STATE #state;
 16	\N	117	parse	10	f	^\\s*(\\d+\\.?\\d*)\\s*$	SET HOST SERVICE $host_service_id VAR $varname = $1;  SET HOST SERVICE $host_service_id STATE #state;
+10	\N	99	parse	10	f	Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;
+11	\N	99	parse	20	f	Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;
+12	\N	99	parse	30	f	Dhcp\\s+Server\\s+\\\\+([\\wqd\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)	REPLACE ARP $2 MAC("$3") config $host_service_id $$note$$$4$$note$$;
+19	\N	138	parse	10	f	^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\s+(\\w+)\\s+([A-F\\d:]{17})\\s+(.+)	REPLACE ARP $1 $3 "query" $host_service_id  "$2 $4" ;
 \.
 
 
@@ -37972,6 +38110,8 @@ COPY public.selects (select_id, select_type, select_note, precedence, pattern, p
 35	snmp.node_type	\N	50	Epson	regexpi	printer	\N
 36	snmp.node_type	\N	60	OKI	regexp	printer	\N
 37	lldp.descr	BSD	990	%BSD%	similar	Linux	\N
+38	lldp.descr	HPE	900	HPE%	similar	ProCurve	\N
+39	lldp.descr	\N	90	HPE OfficeConnect Switch%	similar	OfficeConnect	\N
 \.
 
 
@@ -37984,7 +38124,14 @@ COPY public.service_types (service_type_id, service_type_name, service_type_note
 20	life_contr	Jelenlét érzékelés kontroller
 25	life_sign	Jelenlét érzékelés
 26	check_service	Szolgáltatás működésének az ellenörzése
--1	unmarked	\N
+27	mode	Mód azonosító
+30	group	Lekérdezés csoport
+31	daemon	Lekérdező app
+28	protocol	Protokol azonosító
+-1	unmarked	Jelöletlen
+29	querying	Lekérdező
+32	rule	Szabály
+33	link	Link, kapcsolat, mutató(k)
 \.
 
 
@@ -37993,19 +38140,28 @@ COPY public.service_types (service_type_id, service_type_name, service_type_note
 --
 
 COPY public.service_var_types (service_var_type_id, service_var_type_name, service_var_type_note, param_type_id, service_var_type, plausibility_type, plausibility_param1, plausibility_param2, warning_type, warning_param1, warning_param2, critical_type, critical_param1, critical_param2, features, deleted, plausibility_inverse, warning_inverse, critical_inverse, raw_param_type_id) FROM stdin;
-2	ifspeed.fast	Fast ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	100000000	\N	\N	f	f	f	f	22
-8	ifoutoctets	Output bytes	23	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+22	upsOutputVoltage	service : UPS-MIB	34	GAUGE	interval	100	400	interval	210	240	big	200	250	\N	f	f	t	t	2
 14	runtime	Egy lkérdezést futásának az ideje	5	GAUGE	\N	\N	\N	big	00:00:10	\N	big	00:00:30	\N	\N	f	f	f	f	5
-4	ifspeed.10g	Ethernet 10G port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	4294967295	\N	\N	f	f	f	f	22
-5	ifspeed	Ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	22
-6	ifmtu	MTU	23	\N	interval	48	10240	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
-7	ifbytes	Input/output bytes	24	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+23	upsOutputPercentLoad	service : UPS-MIB	35	GAUGE	interval	-1	120	big	80	\N	big	95	\N	\N	f	f	f	f	2
 9	ifpacks	Input/output packets	26	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	25
-11	temp.indoor	Beltéri hőmérséklet	28	\N	interval	5	50	interval	18	30	interval	10	40	\N	f	f	t	t	28
-3	ifspeed.gig	Ethernet gigabit port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	1000000000	\N	\N	f	f	f	f	22
-12	temp.core	CPU/SOC core temp.	28	\N	interval	0	110	interval	10	60	big	75	\N	\N	f	f	t	f	28
-13	ifpacks.err	Input/output error/discard packets	26	COUNTER	\N	\N	\N	big	0.0001	\N	big	1.0	\N	\N	f	f	f	f	25
-15	runtime.slow	Egy lassú lekérdezést futásának az ideje	5	GAUGE	big	00:00:01	\N	big	00:00:30	\N	big	00:01:00	\N	\N	f	f	f	f	5
+21	upsInputVoltage	service : UPS-MIB	34	GAUGE	interval	100	400	interval	210	240	big	200	250	\N	f	f	t	t	2
+20	upsBatteryVoltage	service : UPS-MIB	34	COMPUTE	interval	24	60	interval	50	57	interval	48	58	:rpn=10 /:	f	f	t	t	2
+16	upsBatteryTemperature	service : UPS-MIB	28	GAUGE	interval	0	100	interval	15	30	interval	10	40	\N	f	f	t	t	2
+18	upsEstimatedChargeRemaining	service : UPS-MIB	35	GAUGE	interval	-1	101	litle	50	\N	litle	15	\N	\N	f	f	f	f	2
+17	upsBatteryStatus	service : UPS-MIB	4	GAUGE	\N	\N	\N	equal	batteryNormal	\N	interval	1	3	:enumeration=!,unknown,batteryNormal,batteryLow,batteryDepleted:	f	f	t	t	2
+6	ifmtu	MTU	23	GAUGE	interval	48	10240	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+8	ifoutoctets	Output bytes	23	GAUGE	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+5	ifspeed	Ethernet port átviteli sebessége	22	GAUGE	big	1	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	22
+7	ifbytes	Input/output bytes	24	COUNTER	no	\N	\N	no	\N	\N	no	\N	\N	\N	f	f	f	f	23
+19	upsEstimatedMinutesRemaining	service : UPS-MIB	5	COMPUTE	litle	1 day	\N	litle	00:10:00	\N	litle	00:02:00	\N	:rpn=60 * 1000 *:	f	f	f	f	33
+4	ifspeed-10g	Ethernet 10G port átviteli sebessége	22	GAUGE	big	1	\N	\N	\N	\N	litle	4294967295	\N	\N	f	f	f	f	22
+2	ifspeed-fast	Fast ethernet port átviteli sebessége	22	GAUGE	big	1	\N	\N	\N	\N	litle	100000000	\N	\N	f	f	f	f	22
+3	ifspeed-gig	Ethernet gigabit port átviteli sebessége	22	GAUGE	big	1	\N	\N	\N	\N	litle	1000000000	\N	\N	f	f	f	f	22
+15	runtime-slow	Egy lassú lekérdezést futásának az ideje	5	GAUGE	big	00:00:01	\N	big	00:00:30	\N	big	00:01:00	\N	\N	f	f	f	f	5
+12	temp-core	CPU/SOC core temp.	28	GAUGE	interval	5	110	interval	10	60	big	75	\N	\N	f	f	t	f	28
+11	temp-indoor	Beltéri hőmérséklet	28	GAUGE	interval	5	50	interval	18	30	interval	10	40	\N	f	f	t	t	28
+13	ifpacks-err	Input/output error/discard packets	26	COUNTER	\N	\N	\N	big	0.0001	\N	big	1.0	\N	\N	f	f	f	f	25
+24	upsAdvBatteryRunTimeRemaining	service : PoweNet-MIB	5	COMPUTE	litle	1 day	\N	litle	00:10:00	\N	litle	00:02:00	\N	:rpn=10 *:	f	f	f	f	2
 \.
 
 
@@ -38023,49 +38179,63 @@ COPY public.service_vars (service_var_id, service_var_name, service_var_note, se
 
 COPY public.services (service_id, service_name, service_note, service_type_id, port, superior_service_mask, check_cmd, features, disabled, max_check_attempts, normal_check_interval, retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, deleted, offline_group_ids, online_group_ids, heartbeat_time) FROM stdin;
 0	ticket	Hiba jegy	0	\N	\N	\N	:	t	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-111	portvars	Port változók	-1	\N	^pstat$	\N	:timing=passive:	f	2	\N	\N	0	00:30:00	15	f	\N	\N	00:02:00
-86	arp	ARP tábla lekérdezése	-1	\N	^arpd$	\N	:timing=timed:	f	3	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	00:30:00
-82	arp.proc	ARP fájl a proc-ban, local vagy ssh-n keresztül	-1	\N	\N	\N	:file=/proc/net/arp:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+132	check_md_raid	\N	26	\N	^lv2|group$	sudo /usr/lib/nagios/plugins/check_md_raid	:method=nagios:timing=timed:delay=60000:	f	1	01:00:00	\N	0	00:30:00	15	f	{1}	\N	1 day
+81	dhcp_conf	DHCP config fájl, local vagy ssh-n keresztül	27	\N	\N	\N	:file=/etc/dhcp/dhcpd.conf:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+137	dhcp_leases	DHCP leases fájl, local vagy ssh-n keresztül	27	\N	\N	\N	:file=/var/lib/dhcp/dhcpd.leases:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+135	snmpvars	\N	29	\N	^lv2|group$	snmpvars $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	1	00:05:00	\N	0	01:00:00	5	f	\N	\N	\N
+84	lv2d	Lanview2 super server	-1	\N	~.	\N	:superior:timing=passive:logrot=500M,8:	f	\N	00:05:00	\N	0	00:45:00	5	f	\N	\N	\N
+89	portstat	Device port status query daemon	-1	\N	^lv2|group$	\N	:timing=passive:superior:	f	\N	00:01:00	\N	0	01:00:00	5	f	\N	\N	\N
+82	arp_proc	ARP fájl a proc-ban, local vagy ssh-n keresztül	27	\N	\N	\N	:file=/proc/net/arp:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 98	attached	IndAlarm Contact védett eszköz	25	\N	^indalarmif	\N	:timing=passive:iftype=attach:	f	1	00:00:00	00:00:00	0	00:30:00	15	f	\N	{6,1}	00:01:00
 116	check_ups	UPS check by NUT	-1	\N	^nut$	/usr/lib/nagios/plugins/check_ups -H localhost -u $UPS	:method=nagios:timing=timed:	f	\N	00:05:00	00:01:00	0	00:30:00	15	f	{1}	{1}	\N
-81	dhcp.conf	DHCP config fájl, local vagy ssh-n keresztül	-1	\N	\N	\N	:file=/etc/dhcp/dhcpd.conf:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-121	group	Dummy service for grouping services.	-1	\N	^lv2d$	\N	:	f	\N	00:05:00	\N	0	01:00:00	5	f	\N	\N	\N
-104	http	Check http server	26	80	^lv2d$	/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri	:timing=timed:method=nagios:uri=/:stopTimeOut=15000:	f	2	00:05:00	00:01:00	0	01:00:00	4	f	{1,2}	{2,1}	00:10:00
-105	http.proxy	Check http proxy server	26	3128	^http$	check_http_proxy --proxy=$address:$port --url=http://$parent.address:$parent.port$parent.uri	:timing=timed:method=nagios:uri=/:stopTimeOut15000:	f	2	00:05:00	00:01:00	0	00:02:00	4	f	{1,2}	{1,2}	00:10:00
-87	icontsrv	icontsrv daemon	-1	\N	^lv2d$	icontsrv $S	:process=continue:timing=passive:superior:logrot=500M,4:method=inspector:	f	\N	00:01:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
-88	import	import daemon	-1	\N	^lv2d$	import $S -D	:process=respawn:timing=custom:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+76	local	local service	28	\N	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+104	http	Check http server	26	80	^lv2|group$	/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri	:timing=timed:method=nagios:uri=/:stopTimeOut=15000:	f	2	00:05:00	00:01:00	0	01:00:00	4	f	{1,2}	{2,1}	00:10:00
+87	icontsrv	icontsrv daemon	-1	\N	^lv2|group$	icontsrv $S	:process=continue:timing=passive:superior:logrot=500M,4:method=inspector:	f	\N	00:01:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
+122	sda	Csak a diszket azonosítja (sda)	27	\N	\N	\N	:dev=/dev/sda:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+88	import	import daemon	-1	\N	^lv2|group$	import $S -D	:process=respawn:timing=custom:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+115	nut	Network Ups Tools	-1	\N	^lv2|group$	\N	:timing=passive:superior:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
 95	indalarmif1ma	IndAlarm Contact V1 Master	20	\N	^rs485$	\N	:iftype=rs485:timing=timed:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{1,6}	\N
 96	indalarmif1sl	IndAlarm Contact V1 Slave	20	\N	^indalarmif1ma$	\N	:iftype=iic:timing=timed:superior:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{6,1}	\N
-97	indalarmif2	IndAlarm Contact V2	20	\N	^rs485$	\N	:iftype=rs485:timing=timed:timeout=1000:	f	2	00:00:10	00:00:10	0	00:30:00	15	f	\N	{1,6}	\N
-76	local	local service	-1	\N	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-84	lv2d	Lanview2 super server	-1	\N	~.	\N	:superior:timing=passive:logrot=500M,8:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+97	indalarmif2	IndAlarm Contact V2	20	\N	^rs485$	\N	:iftype=rs485:timeout=1000:timing=timed:	f	2	00:00:10	00:00:10	0	00:30:00	15	f	\N	{1,6}	\N
+86	arp	ARP tábla lekérdezése	-1	\N	^arpd$	\N	:timing=timed:	f	3	00:05:00	00:01:00	0	01:00:00	5	f	\N	\N	00:30:00
+103	syscron	System cron	-1	\N	^lv2d$	\N	:timing=timed,thread:delay=600000:	f	\N	00:10:00	00:10:00	0	01:00:00	5	f	\N	\N	\N
 106	nil-1	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
 109	nil-2	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
 110	nil-3	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
-115	nut	Network Ups Tools	-1	\N	^lv2d$	\N	:timing=passive:superior:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
-93	pmac	Query port address table by <protocol>	-1	\N	^portmac$	\N	:timing=timed:superior:	f	2	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
-92	portmac	Device port address table query daemon	-1	\N	^lv2d$	portmac $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
-89	portstat	Device port status query daemon	-1	\N	^lv2d$	\N	:timing=passive:superior:	f	\N	00:01:00	\N	0	00:30:00	15	f	\N	\N	\N
+99	win_dhcp_conf	DHCP konfiguráció a netsh-n keresztül	-1	\N	parser	netsh dhcp server \\\\$node dump all	:timing=polling:method=qparse:comment=#:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+112	rightmac	MAC cím fehér lista	-1	\N	^pmac$	\N	:timing=passíve:	f	2	\N	\N	0	01:00:00	5	f	{1}	\N	\N
+93	pmac	Query port address table by <protocol>	-1	\N	^portmac$	\N	:timing=timed:superior:	f	2	00:05:00	00:01:00	0	01:00:00	5	f	\N	\N	\N
+91	rlinkstat	Jelenlét, a switch port állapota alapján	25	\N	^pstat$	\N	:timing=passive:iftype=ethernet:	f	2	\N	\N	0	00:30:00	10	f	\N	{6,1}	00:05:00
 -1	nil	A NULL-t reprezentálja, de összehasonlítható	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:30:00	0	f	\N	\N	\N
-113	portvlan	\N	-1	\N	^lv2d$	portvlan $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	1	00:05:00	\N	0	00:30:00	5	f	\N	\N	\N
+113	portvlan	\N	-1	\N	^lv2|group$	portvlan $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	1	00:05:00	\N	0	00:30:00	5	f	\N	\N	\N
 114	pvlan	\N	-1	\N	^portvlan$	\N	:timing=timed:delay=1000:	f	3	00:30:00	00:05:00	0	03:00:00	4	f	\N	\N	\N
-112	rightmac	MAC cím fehér lista	-1	\N	^pmac$	\N	:timing=passíve:	f	2	\N	\N	0	01:00:00	15	f	{1}	\N	\N
-91	rlinkstat	Jelenlét, a switch port állapota alapján	25	\N	^pstat$	\N	:timing=passive:iftype=ethernet:	f	2	\N	\N	0	00:30:00	15	f	\N	{6,1}	00:10:00
+78	snmp	SNMP	28	161	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+77	ssh	ssh	28	22	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 94	rs485	RS485 BUS interface or gateway	20	\N	^icontsrv$	\N	:timing=thread,passive:superior:timeout=60000:	f	\N	00:05:00	00:05:00	0	00:30:00	15	f	\N	\N	00:30:00
-78	snmp	SNMP	-1	161	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-77	ssh	ssh	-1	22	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-103	syscron	System cron	-1	\N	^lv2d$	\N	:timing=timed,thread:delay=600000:	f	\N	00:10:00	00:10:00	0	01:00:00	5	f	\N	\N	\N
-79	tcp.rs	TCP serial port gateway	-1	4001	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+79	tcp.rs	TCP serial port gateway	28	4001	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+92	portmac	Device port address table query daemon	29	\N	^lv2|group$	portmac $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	01:00:00	5	f	\N	\N	\N
 83	updt_oui	Update OUI	-1	\N	~.	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-99	win.dhcp.conf	DHCP konfiguráció a netsh-n keresztül	-1	\N	parser	netsh dhcp server \\\\$node dump all	:timing=polling:method=qparse:comment=#:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-100	win.dhcp.conf.parser	Query Parser (inferior)	-1	\N	^lv2d$	\N	:timing=polling:method=parser:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-85	arpd	Arp daemon	-1	\N	^lv2d$	arpd $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:10:00	\N	0	00:30:00	15	f	\N	\N	00:30:00
+124	sdb	Csak a diszket azonosítja (sdb)	27	\N	\N	\N	:dev=/dev/sdb:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 102	DHCP	DHCP monitorozás	26	\N	\N	dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw	:method=nagios:	f	2	00:10:00	00:02:00	0	04:00:00	8	f	{1}	{1}	00:30:00
-118	parser	Query Parser (pure)	-1	\N	^lv2d$	\N	:timing=passive:method=parser:superior:	f	\N	00:05:00	\N	0	00:30:00	15	f	{1}	\N	\N
-120	ping	Ping check	26	80	^(lv2d)|(group)$	/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10	:timing=timed:method=nagios:warning=10,9%:critical=20,19%:	f	2	00:05:00	00:01:00	0	01:00:00	4	f	{1,2}	{2,1}	00:10:00
 117	temp.owget	Temp by OWFS	-1	\N	^parser$	owget /$id/temperature	:method=qparse,carried:timing=timed:varname=temp:	f	2	00:02:00	00:00:30	0	00:30:00	15	f	{1}	\N	\N
 119	temp.raspb	Temp by raspbian	-1	\N	^parser$	sh -c 'echo \\$((`cat /sys/class/thermal/thermal_zone0/temp`/1000))'	:method=qparse,carried:timing=timed:varname=temp:	f	2	00:02:00	00:00:30	0	00:30:00	15	f	{1}	\N	\N
-90	pstat	Query port status by <protocol>	-1	\N	^portstat$	pstat $S  -R $host_service_id	:process=continue:timing=timed:logrot=500M,8:method=inspector:	f	2	00:00:30	00:00:15	0	02:00:00	10	f	{1}	{1}	\N
+131	check_ide_smart	\N	26	\N	^lv2|group$	/usr/lib/nagios/plugins/check_ide_smart $dev	:method=nagios:timing=timed:delay=60000:	f	1	01:00:00	\N	0	00:30:00	15	f	{1}	\N	1 day
+105	http.proxy	Check http proxy server	26	3128	^http$	/usr/lib/nagios/plugins/check_http -I $address -p $port -u http://$parent.address:$parent.port$parent.uri -w $w -c $c -t $t	:c=10:method=nagios:stoptimeout=16000:t=15:timing=timed:uri=/:w=2:	f	2	00:05:00	00:02:00	0	00:02:00	4	f	{1,2}	{1,2}	00:10:00
+111	portvars	Port változók	29	\N	^pstat$	\N	:timing=passive:	f	2	\N	\N	0	00:30:00	15	f	\N	\N	00:02:00
+85	arpd	Arp daemon	-1	\N	^lv2|group$	arpd $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:10:00	\N	0	01:00:00	5	f	\N	\N	00:30:00
+121	group	Dummy service for grouping services.	-1	\N	^lv2|group$	\N	:superior:timing=passive:	f	\N	00:05:00	\N	0	01:00:00	5	f	\N	\N	\N
+118	parser	Query Parser (pure)	-1	\N	^lv2|group$	\N	:timing=passive:method=parser:superior:	f	\N	00:05:00	\N	0	00:30:00	15	f	{1}	\N	\N
+120	ping	Ping check	26	80	^(lv2d)|(group)$	/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10	:timing=timed:method=nagios:warning=10,9%:critical=20,19%:	f	2	00:05:00	00:01:00	0	01:00:00	6	f	{1,2}	{2,1}	00:10:00
+125	sdc	Csak a diszket azonosítja (sdc)	27	\N	\N	\N	:dev=/dev/sdc:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+126	sdd	Csak a diszket azonosítja (sdd)	27	\N	\N	\N	:dev=/dev/sdd:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+127	sde	Csak a diszket azonosítja (sde)	27	\N	\N	\N	:dev=/dev/sde:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+128	sdf	Csak a diszket azonosítja (sdf)	27	\N	\N	\N	:dev=/dev/sdf:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+129	sdg	Csak a diszket azonosítja (sdg)	27	\N	\N	\N	:dev=/dev/sdg:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+130	sdh	Csak a diszket azonosítja (sdh)	27	\N	\N	\N	:dev=/dev/sdh:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
+134	UPS-MIB	\N	33	\N	^snmpvars$	\N	:timing=timed:variables=upsBatteryStatus[UPS-MIB::::upsBatteryStatus, upsBatteryStatus],upsBatteryTemperature[UPS-MIB::::upsBatteryTemperature, upsBatteryTemperature],upsBatteryVoltage[UPS-MIB::::upsBatteryVoltage, upsBatteryVoltage],upsEstimatedChargeRemaining[UPS-MIB::::upsEstimatedChargeRemaining, upsEstimatedChargeRemaining],upsEstimatedMinutesRemaining[UPS-MIB::::upsEstimatedMinutesRemaining, upsEstimatedMinutesRemaining],upsInputVoltage[UPS-MIB::::upsInputVoltage, upsInputVoltage],upsOutputPercentLoad[UPS-MIB::::upsOutputPercentLoad, upsOutputPercentLoad],upsOutputVoltage[UPS-MIB::::upsOutputVoltage, upsOutputVoltage]:	f	2	00:05:00	00:01:00	0	01:00:00	6	f	{1}	\N	\N
+90	pstat	Query port status by <protocol>	29	\N	^portstat$	pstat $S  -R $host_service_id	:process=continue:timing=timed:logrot=500M,8:method=inspector:	f	3	00:00:30	00:00:30	0	01:00:00	10	f	{1}	{1}	\N
+138	soniwall_arp	\N	29	\N	parser	$homedir/bin/fwarp.sh	:method=qparse:timing=timed:	f	3	00:10:00	00:05:00	0	00:30:00	15	f	{1}	{1}	\N
+136	PowerNet-MIB	SNMP query old MIB 	29	\N	^snmpvars$	\N	:timing=timed:variables=upsAdvBatteryRunTimeRemaining[PowerNet-MIB::::upsAdvBatteryRunTimeRemaining,upsAdvBatteryRunTimeRemaining],upsAdvBatteryTemperature[PowerNet-MIB::::upsAdvBatteryTemperature, upsBatteryTemperature],upsAdvInputLineVoltage[PowerNet-MIB::::upsAdvInputLineVoltage, upsInputVoltage],upsAdvOutputLoad[PowerNet-MIB::::upsAdvOutputLoad, upsOutputPercentLoad],upsAdvOutputVoltage[PowerNet-MIB::::upsAdvOutputVoltage, upsOutputVoltage],upsBasicBatteryStatus[PowerNet-MIB::::upsBasicBatteryStatus,upsBatteryStatus],upsHighPrecBatteryActualVoltage[PowerNet-MIB::::upsHighPrecBatteryActualVoltage, upsBatteryVoltage]:	f	2	00:05:00	00:01:00	0	01:00:00	6	f	{1}	\N	\N
 \.
 
 
@@ -38109,9 +38279,9 @@ COPY public.sys_params (sys_param_id, sys_param_name, sys_param_note, param_type
 23	failower_language	\N	2	1
 21	ticet_reapeat_time	Ha ennél régebbi az azonos tiket riasztás, akkor új riasztás	5	14 days
 25	central_switch_name	A központi switch neve (opcionális)	31	d4r-sw0
-1	version_minor	\N	2	19
 24	restartable_services	Azon szolgáltatások listájy, melyek újraindíthatóak.	4	lv2d,portmac, pstat, arpd, icontsrv, portvlan
 27	reset_rarefaction	\N	1	false
+1	version_minor	\N	2	23
 \.
 
 
@@ -38132,18 +38302,40 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28055	enum_val_id	\N	2483	10	{no,asc,desc}	asc	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1425	enum_val_id	\N
 28696	os_name	\N	2454	104	{no,asc,desc}	no	90	{batch_edit}	\N	\N	\N	\N	f	2247	os_name	\N
 28702	tool_tip	\N	2483	105	\N	no	\N	{huge}	\N	\N	\N	\N	f	2253	tool_tip	\N
+28346	param_type_id	param_type_id	2484	10	{no,asc,desc}	asc	10	{table_hide,read_only}	\N	\N	\N	\N	f	1740	param_type_id	\N
 28693	icon	\N	2480	125	\N	no	\N	{image}	\N	\N	\N	\N	f	2243	icon	\N
 28692	icon_icon	\N	2483	120	\N	no	\N	{image}	\N	\N	\N	\N	f	2218	icon	\N
 28694	err_code	\N	2468	11	{no,asc,desc}	no	5	{table_hide}	\N	\N	\N	\N	f	2244	err_code	\N
 28695	rarefaction	\N	2495	120	{no,asc,desc}	no	120	{batch_edit}	\N	\N	\N	\N	f	2246	rarefaction	\N
+28348	param_type_note	param_type_note	2484	30	{no,asc,desc}	asc	30	{HTML}	\N	\N	\N	\N	f	1742	param_type_note	\N
 28699	os_version	\N	2454	106	{no,asc,desc}	no	100	{batch_edit}	\N	\N	\N	\N	f	2250	os_version	\N
-28700	os_name	\N	2447	54	{no,asc,desc}	no	44	{batch_edit,HTML}	{node}	:column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:	\N	admin	f	2251	os_name	\N
-28701	os_version	\N	2447	56	{no,asc,desc}	no	46	{batch_edit,HTML}	{node}	:column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:	\N	admin	f	2252	os_version	\N
+28717	port_param_name	\N	2443	12	{no,asc,desc}	asc	5	{}	\N	\N	\N	\N	f	2275	port_param_name	\N
+28700	os_name	\N	2447	54	{no,asc,desc}	no	44	{batch_edit,HTML}	{node}	\N	\N	admin	f	2251	os_name	\N
 28122	superior_host_service_id	\N	2452	140	{no,asc,desc}	no	60	{batch_edit}	\N	:refine=service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id:filter:	\N	\N	f	1497	superior_host_service_id	\N
 28109	node_id	\N	2452	10	{no,asc,desc}	asc	10	{batch_edit,HTML}	\N	:filter=places:	\N	\N	f	1484	node_id	\N
 28112	host_service_state	\N	2452	40	{no,asc,desc}	no	70	{batch_edit,bg_color,fg_color,image}	unknown	\N	\N	admin	f	1487	host_service_state	status.png
 28512	disabled	\N	2495	110	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	1923	disabled	\N
 28688	delegate_port_state	\N	2495	100	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	2206	delegate_port_state	\N
+28247	hwaddress_node	\N	2475	30	{no,asc,desc}	no	30	{}	\N	:view.expr=mac2node_name(?::::macaddr):	\N	\N	f	1632	hwaddress	\N
+28721	alarm_service_var_id	\N	2512	10	\N	no	\N	{table_hide}	\N	\N	\N	\N	f	2281	alarm_service_var_id	\N
+28732	phs_link_id	\N	2438	0	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	2292	phs_link_id	\N
+28701	os_version	\N	2447	56	{no,asc,desc}	no	46	{batch_edit,HTML}	{node}	\N	\N	admin	f	2252	os_version	\N
+28724	alarm_id	\N	2512	20	\N	no	\N	{table_hide}	\N	\N	\N	\N	f	2284	alarm_id	\N
+28718	port_param_note	\N	2443	45	\N	no	\N	{}	\N	\N	\N	\N	f	2276	port_param_note	\N
+28719	node_param_name	\N	2442	12	{no,asc,desc}	asc	4	{}	\N	\N	\N	\N	f	2277	node_param_name	\N
+28720	node_param_note	\N	2442	45	\N	no	\N	{}	\N	\N	\N	\N	f	2278	node_param_note	\N
+28426	param_type_id	\N	2443	35	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1829	param_type_id	\N
+28725	service_var_value	\N	2512	40	\N	no	\N	{}	\N	\N	\N	\N	f	2285	service_var_value	\N
+28726	var_state	\N	2512	50	\N	no	\N	{}	\N	\N	\N	\N	f	2286	var_state	\N
+28727	state_msg	\N	2512	60	\N	no	\N	{huge}	\N	\N	\N	\N	f	2287	state_msg	\N
+28728	raw_value	\N	2512	70	\N	no	\N	{}	\N	\N	\N	\N	f	2288	raw_value	\N
+28730	service_var_type	\N	2512	80	\N	no	\N	{}	\N	:view_func=service_var_type_name FROM service_var_types WHERE service_var_type_id = ?:	\N	\N	f	2290	service_var_id	\N
+28731	service_var_id	\N	2512	30	\N	no	\N	{table_hide}	\N	\N	\N	\N	f	2291	service_var_id	\N
+28734	create_time	\N	2438	150	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	f	2294	create_time	\N
+28735	modify_time	\N	2438	170	{no,asc,desc}	no	130	{}	\N	\N	\N	\N	f	2295	modify_time	\N
+28733	modify_user_id	\N	2438	180	{no,asc,desc}	no	140	{}	\N	\N	\N	\N	f	2293	modify_user_id	\N
+28736	create_user_id	\N	2438	160	{no,asc,desc}	no	120	{}	\N	\N	\N	\N	f	2296	create_user_id	\N
+28737	forwared	\N	2438	190	\N	no	\N	{}	\N	\N	\N	\N	f	2297	forward	\N
 28691	usabilityes	\N	2460	80	{no,asc,desc}	no	80	{batch_edit}	\N	\N	\N	\N	f	2211	usabilityes	\N
 27909	online_alarm_ack_id	\N	2437	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1268	online_alarm_ack_id	\N
 27910	host_service_id	\N	2437	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1269	host_service_id	\N
@@ -38234,16 +38426,11 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28021	first_time_old	first_time_old	2473	90	\N	no	\N	{}	\N	\N	\N	\N	f	1387	first_time_old	\N
 28022	last_time_old	last_time_old	2473	100	\N	no	\N	{}	\N	\N	\N	\N	f	1388	last_time_old	\N
 28023	acknowledged	acknowledged	2473	110	\N	no	\N	{}	\N	\N	\N	\N	f	1389	acknowledged	\N
-28024	ipaddress	ipaddress	2472	10	{no,asc,desc}	asc	10	{read_only,HTML}	\N	\N	\N	\N	f	1391	ipaddress	\N
-28025	hwaddress	hwaddress	2472	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	f	1392	hwaddress	\N
-28026	set_type	set_type	2472	30	\N	no	\N	{read_only,HTML}	\N	\N	\N	\N	f	1393	set_type	\N
 28027	host_service_id	host_service_id	2472	40	\N	no	\N	{read_only,HTML}	\N	\N	\N	\N	f	1394	host_service_id	\N
 28028	first_time	first_time	2472	50	{no,asc,desc}	no	30	{read_only,HTML}	\N	\N	\N	\N	f	1395	first_time	\N
 28029	last_time	last_time	2472	60	{no,asc,desc}	no	40	{read_only,HTML}	\N	\N	\N	\N	f	1396	last_time	\N
 28030	arp_note	arp_note	2472	70	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1397	arp_note	\N
-28031	port_by_ipa	port_by_ipa	2472	80	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1398	port_by_ipa	\N
-28032	node_by_hwa	node_by_hwa	2472	90	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1399	node_by_hwa	\N
-28033	ports_by_hwa	ports_by_hwa	2472	100	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1400	ports_by_hwa	\N
+28026	set_type	set_type	2472	30	\N	no	\N	{read_only,fg_color,HTML}	\N	\N	\N	\N	f	1393	set_type	\N
 28034	dblog_id	dblog_id	2467	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1402	dblog_id	\N
 28035	date_of	date_of	2467	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	f	1403	date_of	\N
 28036	error_id	error_id	2467	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	f	1404	error_id	\N
@@ -38265,6 +38452,11 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28052	host_service_id	host_service_id	2461	70	\N	no	\N	{}	\N	\N	\N	\N	f	1421	host_service_id	\N
 28053	last_time	last_time	2461	80	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	f	1422	last_time	\N
 28054	flag	flag	2461	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1423	flag	\N
+28024	ipaddress	ipaddress	2472	10	{no,asc,desc}	asc	10	{read_only,HTML,raw}	\N	\N	\N	\N	f	1391	ipaddress	\N
+28025	hwaddress	hwaddress	2472	20	{no,asc,desc}	no	20	{read_only,raw}	\N	\N	\N	\N	f	1392	hwaddress	\N
+28118	delegate_host_state	\N	2452	34	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	1493	delegate_host_state	\N
+28031	port_by_ip	\N	2472	80	{no,asc,desc}	no	50	{read_only}	\N	:view.func=ip2full_port_name:	\N	\N	f	1398	ipaddress	\N
+28032	port_by_hwa	\N	2472	90	{no,asc,desc}	no	60	{read_only}	\N	:view.func=mac2full_port_name:	\N	\N	f	1399	hwaddress	\N
 28059	bg_color	\N	2483	50	\N	no	\N	{bg_color}	\N	:color:	\N	\N	f	1429	bg_color	\N
 28060	fg_color	\N	2483	60	\N	no	\N	{fg_color}	\N	:color:	\N	\N	f	1430	fg_color	\N
 28061	font_family	\N	2483	70	\N	no	\N	{}	\N	:font_family:	\N	\N	f	1431	font_family	\N
@@ -38317,14 +38509,17 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28064	view_long	\N	2483	100	\N	no	\N	{}	\N	\N	\N	\N	f	1434	view_long	\N
 28065	icon	\N	2483	110	\N	no	\N	{dialog_hide,raw}	\N	\N	\N	\N	f	1435	icon	\N
 28057	enum_val_name	\N	2483	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	f	1427	enum_val_name	\N
-28118	delegate_host_state	\N	2452	34	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	1493	delegate_host_state	\N
 28129	noalarm_flag	\N	2452	36	\N	no	\N	{batch_edit,bg_color,fg_color,image}	\N	:batch_edit_fields=noalarm_from,noalarm_to:color:	\N	\N	f	1504	noalarm_flag	\N
 28137	last_touched	last_touched	2452	290	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	f	1512	last_touched	\N
 28138	act_alarm_log_id	act_alarm_log_id	2452	300	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1513	act_alarm_log_id	\N
 28139	last_alarm_log_id	last_alarm_log_id	2452	310	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1514	last_alarm_log_id	\N
 28141	last_noalarm_msg	last_noalarm_msg	2452	330	\N	no	\N	{}	\N	\N	\N	\N	f	1516	last_noalarm_msg	\N
 28142	heartbeat_time	heartbeat_time	2452	340	\N	no	\N	{}	\N	\N	\N	\N	f	1517	heartbeat_time	\N
-28143	host_service_id	host_service_id	2452	350	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1518	host_service_id	\N
+28121	disabled	\N	2452	32	\N	no	\N	{batch_edit,bg_color,fg_color,HTML,image}	\N	\N	\N	\N	f	1496	disabled	\N
+28135	check_attempts	check_attempts	2452	270	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1510	check_attempts	\N
+28123	max_check_attempts	\N	2452	150	\N	no	\N	{batch_edit}	\N	:spinbox=1,10:	\N	\N	f	1498	max_check_attempts	\N
+28128	flapping_max_change	\N	2452	200	\N	no	\N	{batch_edit}	\N	:spinbox=1,32:	\N	\N	f	1503	flapping_max_change	\N
+28143	host_service_id	host_service_id	2452	0	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1518	host_service_id	\N
 28213	node_name1	\N	2440	10	{no,asc,desc}	no	10	{}	\N	\N	\N	\N	f	1594	node_name1	\N
 28214	port_name1	\N	2440	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	f	1595	port_name1	\N
 28140	deleted	deleted	2452	320	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color,image}	\N	\N	\N	\N	f	1515	deleted	\N
@@ -38337,20 +38532,16 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28114	state_msg	\N	2452	110	\N	no	\N	{huge,batch_edit}	\N	\N	\N	\N	f	1489	state_msg	\N
 28117	proto_service_id	\N	2452	124	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	f	1492	proto_service_id	\N
 28119	check_cmd	\N	2452	142	\N	no	\N	{}	\N	\N	\N	admin	f	1494	check_cmd	\N
-28123	max_check_attempts	\N	2452	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1498	max_check_attempts	\N
 28124	normal_check_interval	\N	2452	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1499	normal_check_interval	\N
 28131	noalarm_to	\N	2452	230	\N	no	\N	{}	\N	\N	\N	\N	f	1506	noalarm_to	\N
 28132	offline_group_ids	\N	2452	240	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1507	offline_group_ids	\N
 28125	retry_check_interval	\N	2452	170	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1500	retry_check_interval	\N
 28126	timeperiod_id	\N	2452	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1501	timeperiod_id	\N
 28133	online_group_ids	\N	2452	250	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1508	online_group_ids	\N
-28135	check_attempts	check_attempts	2452	270	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1510	check_attempts	\N
 28127	flapping_interval	\N	2452	190	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1502	flapping_interval	\N
-28128	flapping_max_change	\N	2452	200	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1503	flapping_max_change	\N
 28136	last_changed	\N	2452	280	{no,asc,desc}	no	100	{read_only}	\N	\N	\N	\N	f	1511	last_changed	\N
 28110	service_id	\N	2452	20	{no,asc,desc}	asc	20	{HTML}	\N	:filter:	\N	\N	f	1485	service_id	\N
 28111	port_id	\N	2452	30	{no,asc,desc}	asc	30	{HTML}	\N	:owner=node_id:	\N	\N	f	1486	port_id	\N
-28121	disabled	\N	2452	32	\N	no	\N	{batch_edit,bg_color,fg_color,HTML,image}	\N	\N	\N	\N	f	1496	disabled	\N
 28179	iftype_id	iftype_id	2471	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1556	iftype_id	\N
 28180	iftype_name	iftype_name	2471	20	\N	no	\N	{}	\N	\N	\N	\N	f	1557	iftype_name	\N
 28181	iftype_note	iftype_note	2471	30	\N	no	\N	{}	\N	\N	\N	\N	f	1558	iftype_note	\N
@@ -38391,7 +38582,6 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28220	last_time	last_time	2440	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	f	1601	last_time	\N
 28221	text_id	text_id	2501	10	{no,asc,desc}	asc	20	{read_only}	\N	\N	\N	\N	f	1603	text_id	\N
 28222	table_for_text	table_for_text	2501	20	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	f	1604	table_for_text	\N
-28276	node_name	node_name	2449	20	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1663	node_name	\N
 28223	language_id	language_id	2501	30	{no,asc,desc}	asc	30	{read_only}	\N	\N	\N	\N	f	1605	language_id	\N
 28224	texts	texts	2501	40	\N	no	\N	{}	\N	\N	\N	\N	f	1606	texts	\N
 28225	node_name1	\N	2439	10	{no,asc,desc}	no	10	{}	\N	\N	\N	\N	f	1608	node_name1	\N
@@ -38416,7 +38606,6 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28244	ipaddrs_by_rif	ipaddrs_by_rif	2474	140	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1628	ipaddrs_by_rif	\N
 28245	mactab_log_id	mactab_log_id	2475	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1630	mactab_log_id	\N
 28246	hwaddress	hwaddress	2475	20	{no,asc,desc}	no	10	{}	\N	\N	\N	\N	f	1631	hwaddress	\N
-28247	hwaddress_node	\N	2475	30	{no,asc,desc}	no	30	{}	\N	:view.expr=mac2node_name(?\\:\\:macaddr):	\N	\N	f	1632	hwaddress	\N
 28248	reason	reason	2475	40	\N	no	\N	{}	\N	\N	\N	\N	f	1633	reason	\N
 28249	be_void	be_void	2475	50	\N	no	\N	{}	\N	\N	\N	\N	f	1634	be_void	\N
 28250	date_of	date_of	2475	60	{no,asc,desc}	desc	20	{}	\N	\N	\N	\N	f	1635	date_of	\N
@@ -38445,6 +38634,7 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28273	ipaddrs_by_arp	ipaddrs_by_arp	2453	140	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1659	ipaddrs_by_arp	\N
 28274	ipaddrs_by_rif	ipaddrs_by_rif	2453	150	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1660	ipaddrs_by_rif	\N
 28275	node_id	node_id	2449	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1662	node_id	\N
+28276	node_name	node_name	2449	20	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1663	node_name	\N
 28277	port_id	port_id	2449	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1664	port_id	\N
 28278	port_name	port_name	2449	40	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1665	port_name	\N
 28279	hwaddress	hwaddress	2449	50	{no,asc,desc}	no	10	{read_only}	\N	\N	\N	\N	f	1666	hwaddress	\N
@@ -38459,7 +38649,6 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28288	ipaddrs_by_rif	ipaddrs_by_rif	2449	140	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	f	1675	ipaddrs_by_rif	\N
 28289	menu_item_name	menu_item_name	2482	10	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	f	1677	menu_item_name	\N
 28290	app_name	app_name	2482	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1678	app_name	\N
-28291	upper_menu_item_id	upper_menu_item_id	2482	30	\N	no	\N	{table_hide}	\N	\N	\N	\N	f	1679	upper_menu_item_id	\N
 28292	item_sequence_number	item_sequence_number	2482	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1680	item_sequence_number	\N
 28293	menu_item_type	\N	2482	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	f	1681	menu_item_type	\N
 28294	menu_param	\N	2482	60	{no,asc,desc}	no	40	{HTML}	\N	\N	\N	\N	f	1682	menu_param	\N
@@ -38470,11 +38659,12 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28299	whats_this	whats_this	2482	110	\N	no	\N	{huge}	\N	\N	\N	\N	f	1687	whats_this	\N
 28300	menu_rights	menu_rights	2482	120	\N	no	\N	{}	\N	\N	\N	\N	f	1688	menu_rights	\N
 28301	menu_item_id	menu_item_id	2482	130	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1689	menu_item_id	\N
-28315	node_param_id	node_param_id	2442	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1705	node_param_id	\N
-28316	param_type_id	param_type_id	2442	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1706	param_type_id	\N
-28317	node_id	node_id	2442	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1707	node_id	\N
-28318	param_value	param_value	2442	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1708	param_value	\N
-28319	flag	flag	2442	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1709	flag	\N
+28317	node_id	\N	2442	30	{no,asc,desc}	asc	6	{table_hide,read_only}	\N	\N	\N	\N	f	1707	node_id	\N
+28291	upper_menu_item_id	upper_menu_item_id	2482	30	{no,asc,desc}	asc	15	{table_hide}	\N	\N	\N	\N	f	1679	upper_menu_item_id	\N
+28315	node_param_id	\N	2442	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1705	node_param_id	\N
+28316	param_type_id	\N	2442	35	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1706	param_type_id	\N
+28318	param_value	\N	2442	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	f	1708	param_value	\N
+28319	flag	\N	2442	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1709	flag	\N
 28320	port_name	\N	2505	10	{no,asc,desc}	asc	20	{read_only,HTML}	\N	\N	\N	\N	f	1711	port_name	\N
 28321	port_index	\N	2505	20	{no,asc,desc}	asc	10	{table_hide,read_only}	\N	\N	\N	\N	f	1712	port_index	\N
 28322	vlan_id	\N	2505	30	{no,asc,desc}	no	30	{read_only,HTML}	\N	\N	\N	\N	f	1713	vlan_id	\N
@@ -38501,11 +38691,6 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28343	port_index	port_index	2446	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	f	1736	port_index	\N
 28344	deleted	deleted	2446	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1737	deleted	\N
 28345	flag	flag	2446	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1738	flag	\N
-28346	param_type_id	param_type_id	2484	10	{no,asc,desc}	asc	10	{table_hide,read_only}	\N	\N	\N	\N	f	1740	param_type_id	\N
-28347	param_type_name	param_type_name	2484	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1741	param_type_name	\N
-28348	param_type_note	param_type_note	2484	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	f	1742	param_type_note	\N
-28349	param_type_type	param_type_type	2484	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	f	1743	param_type_type	\N
-28350	param_type_dim	param_type_dim	2484	50	{no,asc,desc}	asc	50	{}	\N	\N	\N	\N	f	1744	param_type_dim	\N
 28351	node_id	\N	2445	10	\N	no	\N	{table_hide,read_only,HTML}	\N	\N	\N	\N	f	1746	node_id	\N
 28352	node_name	\N	2445	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	f	1747	node_name	\N
 28353	node_note	\N	2445	30	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	f	1748	node_note	\N
@@ -38526,6 +38711,9 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28368	node_name2	\N	2438	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	f	1764	node_name2	\N
 28369	port_name2	\N	2438	80	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	f	1765	port_name2	\N
 28638	view_user_ids	\N	2436	170	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	2058	view_user_ids	\N
+28347	param_type_name	param_type_name	2484	20	{no,asc,desc}	asc	20	{HTML}	\N	\N	\N	\N	f	1741	param_type_name	\N
+28349	param_type_type	param_type_type	2484	40	{no,asc,desc}	asc	40	{HTML}	\N	\N	\N	\N	f	1743	param_type_type	\N
+28350	param_type_dim	param_type_dim	2484	50	{no,asc,desc}	asc	50	{HTML}	\N	\N	\N	\N	f	1744	param_type_dim	\N
 28370	port_index2	\N	2438	90	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	f	1766	port_index2	\N
 28371	port_tag2	\N	2438	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	f	1767	port_tag2	\N
 28372	phs_link_type2	\N	2438	110	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	f	1768	phs_link_type2	\N
@@ -38561,6 +38749,7 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28404	frame	frame	2496	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	f	1804	frame	\N
 28405	tels	tels	2496	70	\N	no	\N	{}	\N	\N	\N	\N	f	1805	tels	\N
 28406	place_id	place_id	2496	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1806	place_id	\N
+28425	port_param_id	\N	2443	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1828	port_param_id	\N
 28415	port_id	port_id	2506	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1817	port_id	\N
 28416	node_id	node_id	2506	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1818	node_id	\N
 28417	port_name	port_name	2506	30	{no,asc,desc}	no	10	{read_only}	\N	\N	\N	\N	f	1819	port_name	\N
@@ -38571,13 +38760,9 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28422	first_time	first_time	2506	80	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1824	first_time	\N
 28423	last_time	last_time	2506	90	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1825	last_time	\N
 28424	set_type	set_type	2506	100	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1826	set_type	\N
-28425	port_param_id	port_param_id	2443	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1828	port_param_id	\N
 28391	place_id	place_id	2490	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1790	place_id	\N
 28392	place_name	place_name	2490	10	{no,asc,desc}	asc	11	{}	\N	\N	\N	\N	f	1791	place_name	\N
-28426	param_type_id	param_type_id	2443	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1829	param_type_id	\N
-28427	port_id	port_id	2443	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1830	port_id	\N
-28428	param_value	param_value	2443	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1831	param_value	\N
-28429	flag	flag	2443	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1832	flag	\N
+28475	precedence	precedence	2492	40	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	f	1883	precedence	\N
 28430	portvar_id	portvar_id	2498	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1834	portvar_id	\N
 28431	service_var_name	service_var_name	2498	20	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	f	1835	service_var_name	\N
 28432	service_var_type_id	service_var_type_id	2498	30	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	f	1836	service_var_type_id	\N
@@ -38612,33 +38797,34 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28461	shared_cable	shared_cable	2444	90	\N	no	\N	{}	\N	\N	\N	\N	f	1867	shared_cable	\N
 28462	shared_port_id	shared_port_id	2444	100	\N	no	\N	{}	\N	:owner=node_id:	\N	\N	f	1868	shared_port_id	\N
 28463	port_id	port_id	2444	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1869	port_id	\N
-28464	query_parser_id	query_parser_id	2457	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1871	query_parser_id	\N
-28465	query_parser_note	query_parser_note	2457	20	\N	no	\N	{}	\N	\N	\N	\N	f	1872	query_parser_note	\N
-28466	service_id	service_id	2457	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1873	service_id	\N
-28467	parse_type	parse_type	2457	40	\N	no	\N	{}	\N	\N	\N	\N	f	1874	parse_type	\N
-28468	item_sequence_number	item_sequence_number	2457	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1875	item_sequence_number	\N
-28469	case_sensitive	case_sensitive	2457	60	\N	no	\N	{}	\N	\N	\N	\N	f	1876	case_sensitive	\N
-28470	regular_expression	regular_expression	2457	70	\N	no	\N	{}	\N	\N	\N	\N	f	1877	regular_expression	\N
-28471	import_expression	import_expression	2457	80	\N	no	\N	{}	\N	\N	\N	\N	f	1878	import_expression	\N
 28472	select_id	select_id	2492	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1880	select_id	\N
 28473	select_type	select_type	2492	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1881	select_type	\N
-28474	select_note	select_note	2492	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	f	1882	select_note	\N
-28475	precedence	precedence	2492	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	f	1883	precedence	\N
 28476	pattern	pattern	2492	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	f	1884	pattern	\N
 28477	pattern_type	pattern_type	2492	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	f	1885	pattern_type	\N
 28478	choice	choice	2492	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	f	1886	choice	\N
+28427	port_id	\N	2443	30	{no,asc,desc}	no	7	{table_hide,read_only}	\N	\N	\N	\N	f	1830	port_id	\N
+28428	param_value	\N	2443	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	f	1831	param_value	\N
+28429	flag	\N	2443	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1832	flag	\N
+28474	select_note	select_note	2492	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	f	1882	select_note	\N
+28465	query_parser_note	\N	2457	120	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1872	query_parser_note	\N
+28466	service_id	\N	2457	30	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	f	1873	service_id	\N
+28467	parse_type	\N	2457	40	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1874	parse_type	\N
+28468	item_sequence_number	\N	2457	50	{no,asc,desc}	asc	20	{HTML}	\N	\N	\N	\N	f	1875	item_sequence_number	\N
+28469	case_sensitive	\N	2457	60	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1876	case_sensitive	\N
+28470	regular_expression	\N	2457	70	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1877	regular_expression	\N
+28471	import_expression	\N	2457	80	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1878	import_expression	\N
+28464	query_parser_id	\N	2457	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1871	query_parser_id	\N
 28479	features	features	2492	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	f	1887	features	\N
 28499	service_type_id	service_type_id	2456	10	\N	no	\N	{read_only}	\N	\N	\N	\N	f	1909	service_type_id	\N
 28500	service_type_name	service_type_name	2456	20	\N	no	\N	{}	\N	\N	\N	\N	f	1910	service_type_name	\N
 28501	service_type_note	service_type_note	2456	30	\N	no	\N	{}	\N	\N	\N	\N	f	1911	service_type_note	\N
 28509	host_service_id	host_service_id	2495	10	{no,asc,desc}	no	5	{table_hide,read_only}	\N	\N	\N	\N	f	1920	host_service_id	\N
-28496	offline_group_ids	\N	2455	170	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1905	offline_group_ids	\N
+28497	online_group_ids	\N	2455	180	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1906	online_group_ids	\N
 28515	service_var_type_id	\N	2494	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	f	1927	service_var_type_id	\N
 28516	service_var_type_name	\N	2494	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1928	service_var_type_name	\N
 28517	service_var_type_note	\N	2494	30	\N	no	\N	{}	\N	\N	\N	\N	f	1929	service_var_type_note	\N
 28518	param_type_id	\N	2494	40	\N	no	\N	{}	\N	\N	\N	\N	f	1930	param_type_id	\N
 28519	raw_param_type_id	\N	2494	50	\N	no	\N	{}	\N	\N	\N	\N	f	1931	raw_param_type_id	\N
-28520	service_var_type	\N	2494	60	\N	no	\N	{}	\N	\N	\N	\N	f	1932	service_var_type	\N
 28521	plausibility_type	\N	2494	70	\N	no	\N	{}	\N	\N	\N	\N	f	1933	plausibility_type	\N
 28522	plausibility_inverse	\N	2494	80	\N	no	\N	{}	\N	\N	\N	\N	f	1934	plausibility_inverse	\N
 28523	plausibility_param1	\N	2494	90	\N	no	\N	{}	\N	\N	\N	\N	f	1935	plausibility_param1	\N
@@ -38658,30 +38844,31 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28502	service_var_id	service_var_id	2495	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1913	service_var_id	\N
 28510	features	features	2495	1100	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	f	1921	features	\N
 28508	service_var_type_id	service_var_type_id	2495	40	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1919	service_var_type_id	\N
-28504	service_var_value	\N	2495	40	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1915	service_var_value	\N
-28505	var_state	\N	2495	50	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1916	var_state	\N
+28504	service_var_value	\N	2495	40	\N	no	\N	{HTML}	\N	\N	\N	admin	f	1915	service_var_value	\N
+28506	raw_value	\N	2495	60	\N	no	\N	{HTML}	\N	\N	\N	admin	f	1917	raw_value	\N
 28513	service_var_note	service_var_note	2495	1000	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1924	service_var_note	\N
-28489	max_check_attempts	\N	2455	100	\N	no	\N	{batch_edit}	\N	:spinbox=1,10:	\N	\N	f	1898	max_check_attempts	\N
+28490	normal_check_interval	\N	2455	110	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1899	normal_check_interval	\N
 28514	deleted	deleted	2495	2000	\N	no	\N	{table_hide,dialog_hide,read_only,image}	\N	\N	\N	\N	f	1925	deleted	\N
-28506	raw_value	\N	2495	60	\N	no	\N	{read_only,HTML}	\N	\N	\N	\N	f	1917	raw_value	\N
+28505	var_state	\N	2495	50	\N	no	\N	{HTML}	\N	\N	\N	admin	f	1916	var_state	\N
 28511	state_msg	\N	2495	80	\N	no	\N	{read_only,huge,HTML}	\N	\N	\N	\N	f	1922	state_msg	\N
-28482	service_note	\N	2455	200	\N	no	\N	{}	\N	\N	\N	\N	f	1891	service_note	\N
-28483	service_type_id	\N	2455	40	{no,asc,desc}	no	20	{batch_edit}	\N	\N	\N	\N	f	1892	service_type_id	\N
-28485	superior_service_mask	\N	2455	60	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	f	1894	superior_service_mask	\N
-28484	port	\N	2455	50	\N	no	\N	{}	\N	\N	\N	\N	f	1893	port	\N
-28488	disabled	\N	2455	90	\N	no	\N	{batch_edit,image}	\N	:color:	\N	\N	f	1897	disabled	\N
-28487	features	\N	2455	80	{no,asc,desc}	no	50	{huge}	\N	\N	\N	\N	f	1896	features	\N
-28492	timeperiod_id	\N	2455	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1901	timeperiod_id	\N
-28493	flapping_interval	\N	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1902	flapping_interval	\N
-28507	delegate_service_state	\N	2495	90	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	1918	delegate_service_state	\N
+28520	service_var_type	\N	2494	60	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1932	service_var_type	\N
+28481	service_name	\N	2455	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	f	1890	service_name	\N
 28486	check_cmd	\N	2455	70	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	f	1895	check_cmd	\N
-28491	retry_check_interval	\N	2455	120	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1900	retry_check_interval	\N
+28484	port	\N	2455	50	\N	no	\N	{}	\N	\N	\N	\N	f	1893	port	\N
+28485	superior_service_mask	\N	2455	60	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	f	1894	superior_service_mask	\N
+28489	max_check_attempts	\N	2455	100	\N	no	\N	{batch_edit,HTML}	\N	:spinbox=1,10:	\N	\N	f	1898	max_check_attempts	\N
+28488	disabled	\N	2455	90	\N	no	\N	{batch_edit,image}	\N	:color:	\N	\N	f	1897	disabled	\N
+28493	flapping_interval	\N	2455	140	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1902	flapping_interval	\N
 28495	deleted	\N	2455	160	\N	no	\N	{table_hide,dialog_hide,read_only,image}	\N	\N	\N	\N	f	1904	deleted	\N
-28490	normal_check_interval	\N	2455	110	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1899	normal_check_interval	\N
-28494	flapping_max_change	\N	2455	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1903	flapping_max_change	\N
-28497	online_group_ids	\N	2455	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1906	online_group_ids	\N
-28498	heartbeat_time	\N	2455	190	\N	no	\N	{batch_edit}	\N	\N	\N	\N	f	1907	heartbeat_time	\N
-28481	service_name	\N	2455	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1890	service_name	\N
+28507	delegate_service_state	\N	2495	90	\N	no	\N	{batch_edit,HTML,image}	\N	\N	\N	\N	f	1918	delegate_service_state	\N
+28487	features	\N	2455	80	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	f	1896	features	\N
+28492	timeperiod_id	\N	2455	130	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1901	timeperiod_id	\N
+28496	offline_group_ids	\N	2455	170	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1905	offline_group_ids	\N
+28491	retry_check_interval	\N	2455	120	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1900	retry_check_interval	\N
+28498	heartbeat_time	\N	2455	190	\N	no	\N	{batch_edit,HTML}	\N	\N	\N	\N	f	1907	heartbeat_time	\N
+28482	service_note	\N	2455	200	\N	no	\N	{}	\N	\N	\N	\N	f	1891	service_note	\N
+28494	flapping_max_change	\N	2455	150	\N	no	\N	{batch_edit,HTML}	\N	:spinbox=1,32:	\N	\N	f	1903	flapping_max_change	\N
+28483	service_type_id	\N	2455	40	{no,asc,desc}	no	20	{batch_edit,HTML}	\N	\N	\N	\N	f	1892	service_type_id	\N
 28536	node_name	node_name	2454	20	{no,asc,desc}	asc	30	{HTML}	\N	\N	\N	\N	f	1949	node_name	\N
 28538	node_type	node_type	2454	40	{no,asc,desc}	no	70	{batch_edit,HTML}	\N	:column=2:hide=patch,node,hub:	\N	\N	f	1951	node_type	\N
 28539	place_id	\N	2454	50	{no,asc,desc}	no	50	{batch_edit,HTML}	\N	:filter=places:	\N	\N	f	1952	place_id	\N
@@ -38711,15 +38898,11 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28563	vlan_name	\N	2458	50	{no,asc,desc}	no	30	{HTML}	\N	\N	\N	\N	f	1977	vlan_id	\N
 28564	vlan_id	\N	2458	60	{no,asc,desc}	no	40	{dialog_hide,read_only,HTML,raw}	\N	\N	\N	\N	f	1978	vlan_id	\N
 28565	subnet_type	\N	2458	70	{no,asc,desc}	no	50	{HTML}	\N	\N	\N	\N	f	1979	subnet_type	\N
-28566	sys_param_id	sys_param_id	2485	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1981	sys_param_id	\N
-28677	node_id	\N	2504	20	\N	no	\N	{read_only}	\N	\N	\N	\N	f	2101	node_id	\N
-28567	sys_param_name	sys_param_name	2485	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	1982	sys_param_name	\N
-28568	sys_param_note	sys_param_note	2485	30	\N	no	\N	{}	\N	\N	\N	\N	f	1983	sys_param_note	\N
-28569	param_type_id	param_type_id	2485	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	f	1984	param_type_id	\N
-28570	param_value	param_value	2485	50	\N	no	\N	{}	\N	\N	\N	\N	f	1985	param_value	\N
 28573	table_field_name	\N	2480	30	{no,asc,desc}	no	30	{HTML}	\N	\N	\N	\N	f	1989	table_field_name	\N
 28537	node_stat	\N	2454	30	\N	no	\N	{HTML,image}	\N	\N	\N	\N	f	1950	node_stat	\N
+28567	sys_param_name	\N	2485	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	f	1982	sys_param_name	\N
 28572	table_shape_field_name	\N	2480	20	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	f	1988	table_shape_field_name	\N
+28568	sys_param_note	\N	2485	130	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1983	sys_param_note	\N
 28575	table_title	table_title	2480	50	{no,asc,desc}	no	50	{HTML}	\N	\N	\N	\N	f	1991	table_title	\N
 28576	dialog_title	\N	2480	60	{no,asc,desc}	no	60	{HTML}	\N	\N	\N	\N	f	1992	dialog_title	\N
 28577	table_shape_id	\N	2480	70	{no,asc,desc}	no	70	{table_hide,read_only,HTML}	\N	\N	\N	\N	f	1993	table_shape_id	\N
@@ -38728,8 +38911,11 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28580	ord_init_type	\N	2480	100	{no,asc,desc}	no	90	{HTML}	\N	\N	\N	\N	f	1996	ord_init_type	\N
 28581	ord_init_sequence_number	\N	2480	110	{no,asc,desc}	no	100	{HTML}	\N	\N	\N	\N	f	1997	ord_init_sequence_number	\N
 28582	field_flags	\N	2480	120	{no,asc,desc}	no	110	{HTML}	\N	\N	\N	\N	f	1998	field_flags	\N
+28566	sys_param_id	\N	2485	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	f	1981	sys_param_id	\N
 28584	default_value	\N	2480	140	{no,asc,desc}	no	130	{table_hide,HTML}	\N	\N	\N	\N	f	2000	default_value	\N
 28585	features	\N	2480	150	{no,asc,desc}	no	140	{huge,HTML}	\N	\N	\N	\N	f	2001	features	\N
+28569	param_type_id	\N	2485	40	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	f	1984	param_type_id	\N
+28570	param_value	\N	2485	50	\N	no	\N	{HTML}	\N	\N	\N	\N	f	1985	param_value	\N
 28613	timeperiod_id	timeperiod_id	2463	10	\N	no	\N	{read_only}	\N	\N	\N	\N	f	2031	timeperiod_id	\N
 28614	timeperiod_name	timeperiod_name	2463	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	f	2032	timeperiod_name	\N
 28615	timeperiod_note	timeperiod_note	2463	30	\N	no	\N	{}	\N	\N	\N	\N	f	2033	timeperiod_note	\N
@@ -38817,6 +39003,7 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 28674	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	f	2097	host_notif_cmd	\N
 28675	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	f	2098	serv_notif_cmd	\N
 28676	vlan_id	\N	2504	10	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	f	2100	vlan_id	\N
+28677	node_id	\N	2504	20	\N	no	\N	{read_only}	\N	\N	\N	\N	f	2101	node_id	\N
 28678	node_name	\N	2504	30	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	f	2102	node_name	\N
 28679	vlan_name	\N	2504	40	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	f	2103	vlan_name	\N
 28680	vlan_note	\N	2504	50	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	f	2104	vlan_note	\N
@@ -38834,67 +39021,68 @@ COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, ta
 --
 
 COPY public.table_shapes (table_shape_id, table_shape_name, table_shape_note, table_shape_type, table_name, schema_name, table_inherit_type, inherit_table_names, refine, features, right_shape_ids, auto_refresh, view_rights, edit_rights, insert_rights, remove_rights, style_sheet, text_id) FROM stdin;
+2442	node_params	Eszköz paraméterek	{simple}	node_params	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	1704
+2443	port_params	Port paraméterek	{simple}	port_params	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	1827
+2469	app_memos	Applikáció napló	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:bg_color=importance:report:button.copy:	\N	\N	viewer	system	system	admin	\N	1361
 2468	app_errs	Applikáció hiba napló	{simple}	app_errs	public	no	\N	\N	:bg_color=acknowledged:	\N	\N	viewer	system	system	admin	\N	1330
-2486	groups	felhasználói csoportok	{group}	groups	public	no	\N	\N	\N	{2487}	\N	viewer	admin	admin	admin	\N	1442
+2473	arp_logs	ARP lekérdezés napló.	{simple,read_only}	arp_logs	public	no	\N	\N	:button.copy:	\N	\N	viewer	system	system	operator	\N	1378
+2471	iftypes	Port típusok	{simple}	iftypes	public	no	\N	\N	:button.copy:	\N	\N	viewer	system	system	system	\N	1555
 2455	services	\N	{bare}	services	public	no	\N	\N	:button.copy:bg_color=disabled:	\N	\N	viewer	admin	admin	admin	\N	1888
-2469	app_memos	Applikáció napló	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:bg_color=importance:report:	\N	\N	viewer	system	system	admin	\N	1361
-2473	arp_logs	ARP lekérdezés napló.	{simple,read_only}	arp_logs	public	no	\N	\N	\N	\N	\N	viewer	system	system	operator	\N	1378
-2472	arps	ARP tábla	{simple,read_only}	arps_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	1390
+2486	groups	felhasználói csoportok	{group}	groups	public	no	\N	\N	:button.copy:	{2487}	\N	viewer	admin	admin	admin	\N	1442
+2439	log_links	Logikai linkek	{link,read_only}	log_links_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	admin	\N	1607
+2492	selects	Minta tár	{simple}	selects	public	no	\N	\N	:button.copy:	\N	\N	operator	admin	admin	admin	\N	1879
 2467	db_errs	Adatbázis hiba napló	{simple}	db_errs	public	no	\N	\N	\N	\N	\N	viewer	system	system	system	\N	1401
 2461	dyn_addr_ranges	Dinamikus címtartományok	{simple}	dyn_addr_ranges	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	1414
 2483	enum_vals	Enumerációs értékek	{simple}	enum_vals	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	1424
-2476	fkey_types	Távoli kulcs típusok	{simple,read_only}	fkey_types	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	1436
-2488	place_groups	Hely csoportok, kategóriák és zónák	{group}	place_groups	public	no	\N	\N	\N	{2490}	\N	viewer	operator	operator	operator	\N	1784
+2472	arps	ARP tábla	{simple}	arps	public	no	\N	\N	:button.copy:	\N	\N	viewer	system	system	admin	\N	1390
+2457	query_parsers	Lekérdezés értelmezések	{simple}	query_parsers	public	no	\N	\N	:button.copy:report:	\N	\N	operator	admin	admin	admin	\N	1870
 2463	timeperiods	Időintervallumok	{group}	timeperiods	public	no	\N	\N	\N	{2462}	\N	viewer	operator	operator	operator	\N	2030
-2471	iftypes	Port típusok	{simple}	iftypes	public	no	\N	\N	\N	\N	\N	viewer	system	system	system	\N	1555
+2474	mactab	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	admin	system	operator	\N	1614
 2460	images	\N	{simple}	images	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	admin	\N	1565
 2448	ip_addresses	IP címek	{child}	ip_addresses	public	no	\N	\N	:subnets.owner=subnet_id:	\N	\N	viewer	operator	operator	operator	\N	1573
 2440	lldp_links	LLDP linkek	{link}	lldp_links_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	system	system	operator	\N	1593
-2439	log_links	Logikai linkek	{link,read_only}	log_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1607
-2474	mactab	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	\N	\N	\N	viewer	admin	system	operator	\N	1614
-2475	mactab_logs	Port címtábla lekérdezés napló	{simple,read_only}	mactab_logs	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1629
+2475	mactab_logs	Port címtábla lekérdezés napló	{simple,read_only}	mactab_logs	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	admin	\N	1629
+2488	place_groups	Hely csoportok, kategóriák és zónák	{group}	place_groups	public	no	\N	\N	:button.copy:	{2490}	\N	viewer	operator	operator	operator	\N	1784
+2482	menu_items	Menu elemek	{tree}	menu_items	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	1676
 2453	mactab_node	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	:snmpdevices.owner=node_id:	\N	\N	viewer	system	system	operator	\N	1645
 2449	mactab_port	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	:hostports.owner=port_id:	\N	\N	viewer	system	system	operator	\N	1661
-2482	menu_items	Menu elemek	{tree}	menu_items	public	no	\N	\N	\N	\N	\N	viewer	system	system	system	\N	1676
-2442	node_params	Eszköz paraméterek	{child}	node_params	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	1704
+2512	alarm_service_vars	\N	{child,read_only}	alarm_service_vars	public	no	\N	\N	:bg_color=var_state:copy:report:	\N	\N	viewer	system	system	admin	\N	2280
 2447	nodes	Passzív, felügyeletbe bevont elemek (Csak dialógus!)	{dialog}	nodes	public	only	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	1716
 2446	nports	Passzív portok (Csak dialógus!)	{dialog}	nports	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	1729
-2484	param_types	Paraméter típus leírók	{simple}	param_types	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	1739
+2476	fkey_types	Távoli kulcs típusok	{simple,read_only}	fkey_types	public	no	\N	\N	\N	\N	\N	operator	admin	admin	admin	\N	1436
 2441	phsnodes	Hálózati elem (aktív, passzív és csatlakozók)	{owner,read_only}	patchs	public	on	\N	\N	:button.copy:	{2438,2439,2440}	\N	viewer	system	system	system	\N	1772
+2477	unusual_fkeys	Nem tipikus távoli kulcsok	{simple,read_only}	unusual_fkeys	public	no	\N	\N	\N	\N	\N	operator	admin	admin	admin	\N	2059
 2490	places	Helyiségek (tábla)	{member}	places	public	no	\N	\N	:map=get_parent_image:button.copy:report:	{2488}	\N	viewer	operator	operator	operator	\N	1789
-2443	port_params	Port paraméterek	{child}	port_params	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	1827
+2456	service_types	Szolgáltatás típusok	{simple}	service_types	public	no	\N	\N	:button.copy:	\N	\N	viewer	admin	admin	admin	\N	1908
 2503	port_vlans	\N	{simple}	port_vlans	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1848
 2444	pports	Pach panel és fali csatlakozó portok	{owner,child}	pports	public	only	\N	\N	:button.copy:	{2443,2438}	\N	viewer	operator	operator	operator	\N	1858
-2457	query_parsers	Lekérdezés értelmezések	{simple}	query_parsers	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	1870
-2492	selects	Minta tár	{simple}	selects	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	1879
-2456	service_types	Szolgáltatás típusok	{simple}	service_types	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	1908
+2485	sys_params	Rendszer paraméterek	{simple}	sys_params	public	no	\N	\N	:button.copy:	\N	\N	operator	system	system	system	\N	1980
+2484	param_types	Paraméter típus leírók	{simple}	param_types	public	no	\N	\N	:button.copy:	\N	\N	viewer	admin	admin	admin	\N	1739
 2458	subnets	Alhálózatok	{owner}	subnets	public	no	\N	\N	:vlans.owner=vlan_id:button.copy:	{2448}	\N	viewer	operator	operator	operator	\N	1972
-2485	sys_params	Rendszer paraméterek	{simple}	sys_params	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	1980
 2462	tpows	Időintervallumok, a hét napjaira	{member}	tpows	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	2034
 2436	uaalarms	Nem nyugtázott riasztások	{bare}	online_alarm_unacks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N	2041
-2477	unusual_fkeys	Nem tipikus távoli kulcsok	{simple}	unusual_fkeys	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	2059
 2464	user_events	\N	{simple}	user_events	public	no	\N	\N	\N	\N	\N	operator	admin	admin	admin	\N	2069
 2459	vlans	VLAN-ok	{owner}	vlans	public	no	\N	\N	:button.copy:report:	{2458,2503,2504}	\N	viewer	operator	operator	operator	\N	2106
+2494	service_var_types	\N	{simple}	service_var_types	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	admin	\N	1926
 2437	aaalarms	Nyugtázott aktív riasztások	{bare,read_only}	online_alarm_acks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	:bg_color=last_status:	\N	00:05:00	indalarm	system	system	system	\N	1267
-2466	alarms	Riasztások (tábla)	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=last_status,noalarm,true:	{2464,2470}	\N	indalarm	system	system	admin	\N	1291
+2495	service_vars	\N	{simple}	service_vars	public	no	\N	\N	:copy:report:bg_color=var_state,disabled:	\N	\N	viewer	operator	operator	admin	\N	1912
+2438	phs_links	Fizikai linkek	{link}	phs_links_shape	public	no	\N	\N	:button.copy:report:	\N	\N	viewer	operator	operator	operator	\N	1757
 2478	alarm_messages	Figyelmeztető üzenetek szövege	{simple}	alarm_messages	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	1286
 2496	places_topol	Helyek fa és a helységben lévő objektumok	{tree,owner}	places	public	no	\N	\N	:report:	{2441,2445,2454,2487}	\N	viewer	operator	operator	admin	\N	1798
 2450	hostports	Hálózati interfészek, portok (fa)	{tree,owner,child}	interfaces	public	listed_rev	{nports}	\N	:button.copy:bg_color=port_stat:	{2448,2443,2449,2438,2439,2440,2498,2503,2506}	\N	viewer	operator	operator	operator	\N	1449
 2454	snmpdevices	Hálózati elemek	{owner}	snmpdevices	public	listed_rev	{nodes}	\N	:button.copy:report:bg_color=node_stat:	{2450,2442,2438,2439,2440,2452,2453,2505,2506,2504}	\N	viewer	operator	operator	operator	\N	1947
+2487	users	felhasználók	{member}	users	public	no	\N	\N	:places_topol.owner=place_id:	{2486}	\N	operator	admin	admin	admin	\N	2078
 2500	languages	\N	{simple}	languages	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1582
 2501	localizations	\N	{simple}	localizations	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1602
+2466	alarms	Riasztások (tábla)	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=last_status,noalarm,true:	{2464,2470,2512}	\N	indalarm	system	system	admin	\N	1291
 2505	node_port_vlan	\N	{child,read_only}	node_port_vlans	public	no	\N	\N	:snmpdevices.owner=node_id:bg_color=vlan_stat:	\N	\N	viewer	operator	operator	admin	\N	1710
 2481	table_shapes	Adattábla megjelenítő leíró	{owner}	table_shapes	public	no	\N	\N	:report:	{2480}	\N	operator	admin	admin	admin	\N	2007
-2438	phs_links	Fizikai linkek	{link}	phs_links_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	1757
 2498	portvars	\N	{child}	portvars	public	no	\N	\N	:vlan_list_by_host.owner=vlan_id:bg_color=var_state,disabled:	\N	\N	viewer	operator	operator	admin	\N	1833
 2506	port_in_mactab	\N	{simple,read_only}	port_in_mactab	public	no	\N	\N	:hostports.owner=port_id:snmpdevices.owner=node_id:	\N	\N	viewer	operator	operator	admin	\N	1816
 2452	host_services	A hostokhoz rendelt szervíz példányok (táblázat)	{owner}	host_services	public	no	\N	\N	:button.copy:snmpdevices.owner=node_id:bg_color=host_service_state,disabled:	{2495,2470}	\N	viewer	operator	operator	admin	\N	1483
-2494	service_var_types	\N	{simple}	service_var_types	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1926
 2480	table_shape_fields	Tábla mezők megjelenítése	{child}	table_shape_fields	public	no	\N	\N	:report:	\N	\N	operator	admin	admin	admin	\N	1986
 2470	host_service_logs	A szervíz példányok log rekordjai	{simple,read_only}	host_service_logs	public	no	\N	\N	:button.copy:snmpdevices.owner=node_id:bg_color=new_state:alarms.owner=host_service_id,@:	\N	\N	viewer	system	system	admin	\N	1468
-2487	users	felhasználók	{member}	users	public	no	\N	\N	:places_topol.owner=place_id:	{2486}	\N	operator	admin	admin	admin	\N	2078
 2504	vlan_list_by_host	\N	{child,read_only}	vlan_list_by_host	public	no	\N	\N	:snmpdevices.owner=node_id:id=vlan_id:vlans.owner=vlan_id:	\N	\N	viewer	operator	operator	admin	\N	2099
-2495	service_vars	\N	{simple}	service_vars	public	no	\N	\N	:copy:report:bg_color=var_state,disabled:	\N	\N	viewer	operator	operator	admin	\N	1912
 2445	patchs	Pach panelek és fali csatlakozók	{owner}	patchs	public	only	\N	\N	:button.copy:insert=cPatchDialog:modify=cPatchDialog:report:	{2442,2444,2438}	\N	viewer	operator	operator	operator	\N	1745
 \.
 
@@ -39018,6 +39206,8 @@ COPY public.unusual_fkeys (unusual_fkey_id, table_schema, table_name, column_nam
 53	public	portvars	service_var_type_id	property	public	service_var_types	service_var_type_id	\N
 54	public	portvars	host_service_id	property	public	host_services	host_service_id	\N
 60	public	port_vlans	port_id	owner	public	nports	port_id	{interfaces}
+61	public	phs_links_shape	create_user_id	property	public	users	user_id	\N
+62	public	phs_links_shape	modify_user_id	property	public	users	user_id	\N
 \.
 
 
@@ -39036,8 +39226,8 @@ COPY public.user_events (user_event_id, created, happened, user_id, alarm_id, ev
 COPY public.users (user_id, user_name, user_note, passwd, domain_users, first_name, last_name, language, tels, addresses, place_id, expired, enabled, features, host_notif_period, serv_notif_period, host_notif_switchs, serv_notif_switchs, host_notif_cmd, serv_notif_cmd) FROM stdin;
 0	nobody	Unknown user	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
 1	system	system	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
-2	admin	Administrator	$1$Go6Xc9hy$rlw/v7.5pLN1HmT8kigJs0	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
-3	operator	Operator	$1$./ksXj4F$0gh8O8DTwQDe96yNI5y9k/	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+2	admin	Administrator	$1$ZLIOo1wg$S8jk1UDk8PgrcucDXaXib/	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+3	operator	Operator	$1$RorJNs7H$UuVZAU4fYogKuQmrqPSVL/	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
 4	viewer	Viewer	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
 \.
 
@@ -39051,45 +39241,52 @@ COPY public.vlans (vlan_id, vlan_name, vlan_note, vlan_stat, flag) FROM stdin;
 
 
 --
+-- Name: alarm_service_vars_alarm_service_var_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+--
+
+SELECT pg_catalog.setval('public.alarm_service_vars_alarm_service_var_id_seq', 1405, true);
+
+
+--
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.alarms_alarm_id_seq', 421402, true);
+SELECT pg_catalog.setval('public.alarms_alarm_id_seq', 1, false);
 
 
 --
 -- Name: app_errs_applog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.app_errs_applog_id_seq', 1457275, true);
+SELECT pg_catalog.setval('public.app_errs_applog_id_seq', 1, false);
 
 
 --
 -- Name: app_memos_app_memo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.app_memos_app_memo_id_seq', 20998105, true);
+SELECT pg_catalog.setval('public.app_memos_app_memo_id_seq', 1, false);
 
 
 --
 -- Name: arp_logs_arp_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.arp_logs_arp_log_id_seq', 18906, true);
+SELECT pg_catalog.setval('public.arp_logs_arp_log_id_seq', 1, false);
 
 
 --
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.db_errs_dblog_id_seq', 481097, true);
+SELECT pg_catalog.setval('public.db_errs_dblog_id_seq', 1, false);
 
 
 --
 -- Name: dyn_addr_ranges_dyn_addr_range_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.dyn_addr_ranges_dyn_addr_range_id_seq', 107, true);
+SELECT pg_catalog.setval('public.dyn_addr_ranges_dyn_addr_range_id_seq', 1, false);
 
 
 --
@@ -39145,7 +39342,7 @@ SELECT pg_catalog.setval('public.graphs_graph_id_seq', 1, false);
 -- Name: group_users_group_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.group_users_group_user_id_seq', 32, true);
+SELECT pg_catalog.setval('public.group_users_group_user_id_seq', 5, true);
 
 
 --
@@ -39159,21 +39356,21 @@ SELECT pg_catalog.setval('public.groups_group_id_seq', 5, true);
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.host_service_logs_host_service_log_id_seq', 3539941, true);
+SELECT pg_catalog.setval('public.host_service_logs_host_service_log_id_seq', 1, false);
 
 
 --
 -- Name: host_service_noalarms_host_service_noalarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.host_service_noalarms_host_service_noalarm_id_seq', 934, true);
+SELECT pg_catalog.setval('public.host_service_noalarms_host_service_noalarm_id_seq', 1, false);
 
 
 --
 -- Name: host_services_host_service_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.host_services_host_service_id_seq', 8331, true);
+SELECT pg_catalog.setval('public.host_services_host_service_id_seq', 1, false);
 
 
 --
@@ -39187,28 +39384,35 @@ SELECT pg_catalog.setval('public.iftypes_iftype_id_seq', 27, true);
 -- Name: images_image_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.images_image_id_seq', 25, true);
+SELECT pg_catalog.setval('public.images_image_id_seq', 1, false);
 
 
 --
 -- Name: import_templates_import_template_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.import_templates_import_template_id_seq', 46, true);
+SELECT pg_catalog.setval('public.import_templates_import_template_id_seq', 1, false);
 
 
 --
 -- Name: imports_import_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.imports_import_id_seq', 15, true);
+SELECT pg_catalog.setval('public.imports_import_id_seq', 1, false);
+
+
+--
+-- Name: ip_address_logs_ip_addres_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+--
+
+SELECT pg_catalog.setval('public.ip_address_logs_ip_addres_log_id_seq', 1, false);
 
 
 --
 -- Name: ipaddresses_ip_address_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.ipaddresses_ip_address_id_seq', 6767, true);
+SELECT pg_catalog.setval('public.ipaddresses_ip_address_id_seq', 6875, true);
 
 
 --
@@ -39222,77 +39426,70 @@ SELECT pg_catalog.setval('public.languages_language_id_seq', 4, true);
 -- Name: lldp_links_table_lldp_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.lldp_links_table_lldp_link_id_seq', 3246, true);
+SELECT pg_catalog.setval('public.lldp_links_table_lldp_link_id_seq', 1, false);
 
 
 --
 -- Name: log_links_table_log_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.log_links_table_log_link_id_seq', 862, true);
+SELECT pg_catalog.setval('public.log_links_table_log_link_id_seq', 1, false);
 
 
 --
 -- Name: mactab_logs_mactab_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.mactab_logs_mactab_log_id_seq', 9812266, true);
+SELECT pg_catalog.setval('public.mactab_logs_mactab_log_id_seq', 1, false);
 
 
 --
 -- Name: menu_items_menu_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.menu_items_menu_item_id_seq', 1758, true);
+SELECT pg_catalog.setval('public.menu_items_menu_item_id_seq', 1762, true);
 
 
 --
--- Name: node_params_node_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+-- Name: node_params_node_param_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.node_params_node_param_id_seq', 94, true);
+SELECT pg_catalog.setval('public.node_params_node_param_id_seq1', 3, true);
 
 
 --
 -- Name: nports_port_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.nports_port_id_seq', 24741, true);
-
-
---
--- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
---
-
-SELECT pg_catalog.setval('public.object_syntaxs_object_syntax_id_seq', 17, true);
+SELECT pg_catalog.setval('public.nports_port_id_seq', 1, false);
 
 
 --
 -- Name: param_types_param_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.param_types_param_type_id_seq', 31, true);
+SELECT pg_catalog.setval('public.param_types_param_type_id_seq', 35, true);
 
 
 --
 -- Name: patchs_node_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.patchs_node_id_seq', 3385, true);
+SELECT pg_catalog.setval('public.patchs_node_id_seq', 1, false);
 
 
 --
 -- Name: phs_links_table_phs_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.phs_links_table_phs_link_id_seq', 6887, true);
+SELECT pg_catalog.setval('public.phs_links_table_phs_link_id_seq', 1, false);
 
 
 --
 -- Name: place_group_places_place_group_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.place_group_places_place_group_place_id_seq', 1469, true);
+SELECT pg_catalog.setval('public.place_group_places_place_group_place_id_seq', 1475, true);
 
 
 --
@@ -39306,35 +39503,35 @@ SELECT pg_catalog.setval('public.place_groups_place_group_id_seq', 30, true);
 -- Name: places_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.places_place_id_seq', 1062, true);
+SELECT pg_catalog.setval('public.places_place_id_seq', 1064, true);
 
 
 --
--- Name: port_params_port_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+-- Name: port_params_port_param_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.port_params_port_param_id_seq', 831, true);
+SELECT pg_catalog.setval('public.port_params_port_param_id_seq1', 19, true);
 
 
 --
 -- Name: port_vlan_logs_port_vlan_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.port_vlan_logs_port_vlan_log_id_seq', 22105, true);
+SELECT pg_catalog.setval('public.port_vlan_logs_port_vlan_log_id_seq', 26879, true);
 
 
 --
 -- Name: port_vlans_port_vlan_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.port_vlans_port_vlan_id_seq', 26210, true);
+SELECT pg_catalog.setval('public.port_vlans_port_vlan_id_seq', 31230, true);
 
 
 --
 -- Name: query_parsers_query_parser_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.query_parsers_query_parser_id_seq', 18, true);
+SELECT pg_catalog.setval('public.query_parsers_query_parser_id_seq', 19, true);
 
 
 --
@@ -39355,42 +39552,42 @@ SELECT pg_catalog.setval('public.rrd_files_rrd_file_id_seq', 1, false);
 -- Name: selects_select_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.selects_select_id_seq', 37, true);
+SELECT pg_catalog.setval('public.selects_select_id_seq', 39, true);
 
 
 --
 -- Name: service_types_service_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.service_types_service_type_id_seq', 26, true);
+SELECT pg_catalog.setval('public.service_types_service_type_id_seq', 33, true);
 
 
 --
 -- Name: service_var_types_service_var_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.service_var_types_service_var_type_id_seq', 15, true);
+SELECT pg_catalog.setval('public.service_var_types_service_var_type_id_seq', 24, true);
 
 
 --
 -- Name: service_vars_service_var_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.service_vars_service_var_id_seq', 74244, true);
+SELECT pg_catalog.setval('public.service_vars_service_var_id_seq', 75332, true);
 
 
 --
 -- Name: services_service_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.services_service_id_seq', 121, true);
+SELECT pg_catalog.setval('public.services_service_id_seq', 138, true);
 
 
 --
 -- Name: subnets_subnet_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.subnets_subnet_id_seq', 221, true);
+SELECT pg_catalog.setval('public.subnets_subnet_id_seq', 1, false);
 
 
 --
@@ -39404,21 +39601,21 @@ SELECT pg_catalog.setval('public.sys_params_sys_param_id_seq', 27, true);
 -- Name: table_shape_fields_table_shape_field_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.table_shape_fields_table_shape_field_id_seq', 28702, true);
+SELECT pg_catalog.setval('public.table_shape_fields_table_shape_field_id_seq', 28737, true);
 
 
 --
 -- Name: table_shapes_table_shape_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.table_shapes_table_shape_id_seq', 2507, true);
+SELECT pg_catalog.setval('public.table_shapes_table_shape_id_seq', 2512, true);
 
 
 --
 -- Name: text_id_sequ; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.text_id_sequ', 2253, true);
+SELECT pg_catalog.setval('public.text_id_sequ', 2297, true);
 
 
 --
@@ -39446,14 +39643,14 @@ SELECT pg_catalog.setval('public.tpows_tpow_id_seq', 97, true);
 -- Name: unusual_fkeys_unusual_fkey_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.unusual_fkeys_unusual_fkey_id_seq', 60, true);
+SELECT pg_catalog.setval('public.unusual_fkeys_unusual_fkey_id_seq', 62, true);
 
 
 --
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('public.user_events_user_event_id_seq', 234391, true);
+SELECT pg_catalog.setval('public.user_events_user_event_id_seq', 1, false);
 
 
 --
@@ -39469,6 +39666,22 @@ SELECT pg_catalog.setval('public.users_user_id_seq', 5, true);
 
 ALTER TABLE ONLY public.alarm_messages
     ADD CONSTRAINT alarm_messages_pkey PRIMARY KEY (service_type_id, status);
+
+
+--
+-- Name: alarm_service_vars alarm_service_vars_alarm_id_service_var_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.alarm_service_vars
+    ADD CONSTRAINT alarm_service_vars_alarm_id_service_var_id_key UNIQUE (alarm_id, service_var_id);
+
+
+--
+-- Name: alarm_service_vars alarm_service_vars_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.alarm_service_vars
+    ADD CONSTRAINT alarm_service_vars_pkey PRIMARY KEY (alarm_service_var_id);
 
 
 --
@@ -39760,6 +39973,14 @@ ALTER TABLE ONLY public.interfaces
 
 
 --
+-- Name: ip_address_logs ip_address_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.ip_address_logs
+    ADD CONSTRAINT ip_address_logs_pkey PRIMARY KEY (ip_addres_log_id);
+
+
+--
 -- Name: ip_addresses ipaddresses_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
@@ -39904,19 +40125,19 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: node_params node_params_param_type_id_node_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: node_params node_params_node_param_name_node_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.node_params
-    ADD CONSTRAINT node_params_param_type_id_node_id_key UNIQUE (param_type_id, node_id);
+    ADD CONSTRAINT node_params_node_param_name_node_id_key UNIQUE (node_param_name, node_id);
 
 
 --
--- Name: node_params node_params_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: node_params node_params_pkey1; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.node_params
-    ADD CONSTRAINT node_params_pkey PRIMARY KEY (node_param_id);
+    ADD CONSTRAINT node_params_pkey1 PRIMARY KEY (node_param_id);
 
 
 --
@@ -39949,22 +40170,6 @@ ALTER TABLE ONLY public.nports
 
 ALTER TABLE ONLY public.nports
     ADD CONSTRAINT nports_pkey PRIMARY KEY (port_id);
-
-
---
--- Name: object_syntaxs object_syntaxs_object_syntax_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
---
-
-ALTER TABLE ONLY public.object_syntaxs
-    ADD CONSTRAINT object_syntaxs_object_syntax_name_key UNIQUE (object_syntax_name);
-
-
---
--- Name: object_syntaxs object_syntaxs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
---
-
-ALTER TABLE ONLY public.object_syntaxs
-    ADD CONSTRAINT object_syntaxs_pkey PRIMARY KEY (object_syntax_id);
 
 
 --
@@ -40080,19 +40285,19 @@ ALTER TABLE ONLY public.places
 
 
 --
--- Name: port_params port_params_param_type_id_port_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: port_params port_params_pkey1; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.port_params
-    ADD CONSTRAINT port_params_param_type_id_port_id_key UNIQUE (param_type_id, port_id);
+    ADD CONSTRAINT port_params_pkey1 PRIMARY KEY (port_param_id);
 
 
 --
--- Name: port_params port_params_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: port_params port_params_port_param_name_port_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.port_params
-    ADD CONSTRAINT port_params_pkey PRIMARY KEY (port_param_id);
+    ADD CONSTRAINT port_params_port_param_name_port_id_key UNIQUE (port_param_name, port_id);
 
 
 --
@@ -40652,6 +40857,13 @@ CREATE INDEX interfaces_node_id_index ON public.interfaces USING btree (node_id)
 
 
 --
+-- Name: ip_address_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX ip_address_logs_date_of_index ON public.ip_address_logs USING btree (date_of);
+
+
+--
 -- Name: ip_addresses_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
@@ -40715,13 +40927,6 @@ CREATE UNIQUE INDEX menu_items_text_id_key ON public.menu_items USING btree (tex
 
 
 --
--- Name: node_params_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
---
-
-CREATE INDEX node_params_node_id_index ON public.node_params USING btree (node_id);
-
-
---
 -- Name: nports_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
@@ -40754,13 +40959,6 @@ CREATE INDEX place_group_places_place_group_id_index ON public.place_group_place
 --
 
 CREATE INDEX place_group_places_place_id_index ON public.place_group_places USING btree (place_id);
-
-
---
--- Name: port_params_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
---
-
-CREATE INDEX port_params_port_id_index ON public.port_params USING btree (port_id);
 
 
 --
@@ -40966,7 +41164,7 @@ CREATE TRIGGER interfaces_check_before_update BEFORE UPDATE ON public.interfaces
 -- Name: interfaces interfaces_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER interfaces_check_reference_node_id BEFORE INSERT OR UPDATE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'nodes');
+CREATE TRIGGER interfaces_check_reference_node_id BEFORE INSERT OR UPDATE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('nodes');
 
 
 --
@@ -41015,7 +41213,7 @@ CREATE TRIGGER node_param_check_value BEFORE INSERT OR UPDATE ON public.node_par
 -- Name: node_params node_param_value_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER node_param_value_check_reference_node_id BEFORE INSERT OR UPDATE ON public.node_params FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'patchs');
+CREATE TRIGGER node_param_value_check_reference_node_id BEFORE INSERT OR UPDATE ON public.node_params FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('patchs');
 
 
 --
@@ -41064,7 +41262,7 @@ CREATE TRIGGER nports_check_before_update BEFORE UPDATE ON public.nports FOR EAC
 -- Name: nports nports_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nports_check_reference_node_id BEFORE INSERT OR UPDATE ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'nodes');
+CREATE TRIGGER nports_check_reference_node_id BEFORE INSERT OR UPDATE ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('nodes');
 
 
 --
@@ -41255,6 +41453,22 @@ CREATE TRIGGER vlan_delete_before_trigger BEFORE DELETE ON public.vlans FOR EACH
 
 ALTER TABLE ONLY public.alarm_messages
     ADD CONSTRAINT alarm_messages_service_type_id_fkey FOREIGN KEY (service_type_id) REFERENCES public.service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+
+
+--
+-- Name: alarm_service_vars alarm_service_vars_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.alarm_service_vars
+    ADD CONSTRAINT alarm_service_vars_alarm_id_fkey FOREIGN KEY (alarm_id) REFERENCES public.alarms(alarm_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+
+
+--
+-- Name: alarm_service_vars alarm_service_vars_service_var_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.alarm_service_vars
+    ADD CONSTRAINT alarm_service_vars_service_var_id_fkey FOREIGN KEY (service_var_id) REFERENCES public.service_vars(service_var_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
@@ -41562,6 +41776,30 @@ ALTER TABLE ONLY public.interfaces
 
 
 --
+-- Name: ip_address_logs ip_address_logs_daemon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.ip_address_logs
+    ADD CONSTRAINT ip_address_logs_daemon_id_fkey FOREIGN KEY (daemon_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+
+
+--
+-- Name: ip_address_logs ip_address_logs_ip_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.ip_address_logs
+    ADD CONSTRAINT ip_address_logs_ip_address_id_fkey FOREIGN KEY (ip_address_id) REFERENCES public.ip_addresses(ip_address_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+
+
+--
+-- Name: ip_address_logs ip_address_logs_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.ip_address_logs
+    ADD CONSTRAINT ip_address_logs_port_id_fkey FOREIGN KEY (port_id) REFERENCES public.interfaces(port_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+
+
+--
 -- Name: ip_addresses ipaddresses_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
@@ -41650,11 +41888,11 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: node_params node_params_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: node_params node_params_param_type_id_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.node_params
-    ADD CONSTRAINT node_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+    ADD CONSTRAINT node_params_param_type_id_fkey1 FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
@@ -41738,11 +41976,11 @@ ALTER TABLE ONLY public.places
 
 
 --
--- Name: port_params port_params_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+-- Name: port_params port_params_param_type_id_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
 ALTER TABLE ONLY public.port_params
-    ADD CONSTRAINT port_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+    ADD CONSTRAINT port_params_param_type_id_fkey1 FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --

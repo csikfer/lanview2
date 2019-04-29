@@ -87,5 +87,11 @@
         <file>icons/view-list-details.ico</file>
         <file>icons/view-list-icon.ico</file>
         <file>icons/document-export-2.ico</file>
+        <file>icons/flag-black.ico</file>
+        <file>icons/flag-blue.ico</file>
+        <file>icons/flag-green.ico</file>
+        <file>icons/flag-red.ico</file>
+        <file>icons/flag-yellow.ico</file>
+        <file>icons/system-search-4.ico</file>
     </qresource>
 </RCC>

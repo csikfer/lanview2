@@ -63,12 +63,13 @@ EXT_ int subNetType(const QString& __at, enum eEx __ex = EX_ERROR);
 /// @enum eAddressType
 /// @brief Ip cím típusok
 enum eAddressType {
-    AT_FIXIP   =  0,    ///< Egyedi fix IP cím
+    AT_FIXIP   =  0,    ///< Egyedi fix IP cím (DHCP)
     AT_PRIVATE,         ///< Csak lokálisan használt valós cím, ütközhet bármilyen egyébb IP címmel.
     AT_EXTERNAL,        ///< Külső cím (fix cím, de nincs hozzá subnet
     AT_DYNAMIC,         ///< dinamikus IP cím
     AT_PSEUDO,          ///< Egyedi nem valós IP cím, csak azonosításra
-    AT_JOINT             ///< Közös cím (cluster)
+    AT_JOINT,           ///< Közös cím (cluster)
+    AT_MANUAL           ///< manuálisan beállítva
 };
 
 /// Cím típus stringgel tér vissza, a megadott konstans alapján.

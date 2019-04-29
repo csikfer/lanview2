@@ -95,69 +95,47 @@ cRecordViewModelBase::~cRecordViewModelBase()
 
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
+    qlonglong& ff = column.fieldFlags;
     QString s, et;
-    QVariant tt;
-    switch (column.isImage) {
-    case cRecordTableColumn::IS_NOT_IMAGE:
-        break;
-    case cRecordTableColumn::IS_IMAGE:
-        switch (role) {
-        case Qt::DecorationRole: {
-            qlonglong id;
-            cImage  image;
-            QPixmap pix;
-            id = pr->getId(fix);
-            image.setById(*pq, id);
-            if (pixmap(image, pix)) return QVariant(pix);
-            return QVariant();
-        }
-        case Qt::TextColorRole:
-        case Qt::BackgroundRole:
-        case Qt::DisplayRole:
-        case Qt::FontRole:
-            return QVariant();
-        default:
-            break;
-        }
-        break;
-    case cRecordTableColumn::IS_ICON:
-    case cRecordTableColumn::IS_ICON_NAME:
-        if (cRecordTableColumn::IS_ICON == column.isImage) {
-            qlonglong e = pr->getId(fix);
-            const cEnumVal *pev = nullptr;
-            if (e != NULL_ID) {
-                et = column.enumTypeName;
-                pev = &cEnumVal::enumVal(et, int(e), EX_IGNORE);
-            }
-            else {
-                pev = &cEnumVal::enumVal(_sDatacharacter, DC_NULL, EX_IGNORE);
-            }
-            s  = pev->getName(_sIcon);
-            QString stt = pev->getText(cEnumVal::LTX_TOOL_TIP);
-            if (!stt.isEmpty()) tt = stt;
-        }
-        else {  // IS_ICON_NAME
-            s = pr->getName(fix);
-        }
-        if (!s.isEmpty()) {
-            switch (role) {
-            case Qt::DecorationRole:
-                return QVariant(resourceIcon(s));
-            case Qt::ToolTipRole:
-                return tt;
-            case Qt::TextColorRole:
-            case Qt::BackgroundRole:
-            case Qt::DisplayRole:
-            case Qt::FontRole:
+    if (column.isImage != cRecordTableColumn::IS_NOT_IMAGE) {
+        if (role == Qt::DecorationRole) {
+            switch (column.isImage) {
+            case cRecordTableColumn::IS_IMAGE: {
+                qlonglong id;
+                cImage  image;
+                QPixmap pix;
+                id = pr->getId(fix);
+                image.setById(*pq, id);
+                if (pixmap(image, pix)) return QVariant(pix);
                 return QVariant();
+              }
+            case cRecordTableColumn::IS_ICON:
+            case cRecordTableColumn::IS_ICON_NAME:
+                if (cRecordTableColumn::IS_ICON == column.isImage) {
+                    qlonglong e = pr->getId(fix);
+                    const cEnumVal *pev = nullptr;
+                    if (e != NULL_ID) {
+                        et = column.enumTypeName;
+                        pev = &cEnumVal::enumVal(et, int(e), EX_IGNORE);
+                    }
+                    else {
+                        pev = &cEnumVal::enumVal(_sDatacharacter, DC_NULL, EX_IGNORE);
+                    }
+                    s  = pev->getName(_sIcon);
+                }
+                else {  // IS_ICON_NAME
+                    s = pr->getName(fix);
+                }
+                return QVariant(resourceIcon(s));
             default:
-                break;
+                EXCEPTION(EPROGFAIL);
             }
         }
-        break;
+        else if (role == Qt::DisplayRole && (ff & ENUM2SET(FF_NOTEXT))) {
+            return QVariant();
+        }
     }
     if (isTextId) fix = column.textIndex;
-    qlonglong& ff = column.fieldFlags;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         QColor c;

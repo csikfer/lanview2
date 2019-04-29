@@ -109,7 +109,8 @@ enum eFieldFlag {
     FF_TOOL_TIP,        ///< A ToolTip megjelenítése enumerációs típus esetén
     FF_HTML,            ///< HTML (szűkített) táblában megjelenítendő
     FF_RAW,             ///< A mező tartalma eredeti formában történő megjelenítése
-    FF_IMAGE            ///< Megjelenítés képként
+    FF_IMAGE,           ///< Megjelenítés képként (is)
+    FF_NOTEXT           ///< Képként megjelenítés esetén nincs szöveg
 };
 
 /// Konverziós függvény az eFieldFlag enumerációs típushoz

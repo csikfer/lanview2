@@ -1644,7 +1644,7 @@ static inline cEnumVal& actEnum()
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar offs ix_z vlan_t set_t srvtid lnx
-%type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id image_idz tmod int0 replace
+%type  <i>  vlan_id place_id iptype pix pix_z image_id image_idz tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts srvvt_id
@@ -2433,7 +2433,7 @@ ip_qq   : ips iptype                            { $$ = new tStringPair(sp2s($1),
         | NULL_T                                { $$ = nullptr; }
         | ARP_T                                 { $$ = new tStringPair(_sARP,     _sFixIp); }
         ;
-ip_a    : ips iptype_a                          { $$ = new tStringPair(sp2s($1),  addrType($2)); }
+ip_a    : ips iptype                            { $$ = new tStringPair(sp2s($1),  addrType($2)); }
         ;
 mac     : MAC_V                                 { $$ = $1; }
         | MAC_T '(' sexpr ')'                   {
@@ -2451,16 +2451,7 @@ mac_qq  : mac                                   { $$ = new QVariant($1->toString
         | NULL_T                                { $$ = nullptr; }                                          // A MAC NULL lessz
         ;
 iptype  :                                       { $$ = AT_FIXIP;   }
-        | '/' FIXIP_T                           { $$ = AT_FIXIP;   }
-        | '/' PRIVATE_T                         { $$ = AT_PRIVATE; }
-        | '/' DYNAMIC_T                         { $$ = AT_DYNAMIC; }
-        | '/' PSEUDO_T                          { $$ = AT_PSEUDO;  }
-        | '/' EXTERNAL_T                        { $$ = AT_EXTERNAL;}
-        ;
-iptype_a:                                       { $$ = AT_FIXIP; }
-        | '/' FIXIP_T                           { $$ = AT_FIXIP; }
-        | '/' PRIVATE_T                         { $$ = AT_PRIVATE; }
-        | '/' PSEUDO_T                          { $$ = AT_PSEUDO; }
+        | '/' str                               { $$ = addrType(sp2s($2)); }
         ;
 vlan_t  : str                                   { $$ = (qlonglong)vlanType(sp2s($1)); }
         ;
