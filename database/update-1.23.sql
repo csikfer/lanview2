@@ -313,6 +313,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP VIEW mactab_logs_shape;
+
 -- ------------------------------------------------------------------------------------------------
 
 SELECT set_db_version(1, 23);

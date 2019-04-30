@@ -9,6 +9,7 @@ TRUNCATE db_errs RESTART IDENTITY;
 TRUNCATE host_service_logs RESTART IDENTITY;
 TRUNCATE host_service_noalarms RESTART IDENTITY;
 -- DELETE FROM mactab;
+-- DELETE FROM mactab_logs;
 UPDATE host_services SET
 	host_service_state = 'unknown',
 	soft_state = 'unknown',
@@ -33,3 +34,4 @@ UPDATE interfaces SET
 	port_stat = 'unknown';
 TRUNCATE mactab_logs RESTART IDENTITY;
 TRUNCATE ip_address_logs RESTART IDENTITY;
+TRUNCATE dyn_ipaddress_logs RESTART IDENTITY;
