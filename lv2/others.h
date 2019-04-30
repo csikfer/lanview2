@@ -176,6 +176,11 @@ public:
     /// @return A szét darabolt stringgek litája
     static QStringList value2list(const QString &s);
     static QString list2value(const QStringList& l);
+    /// Egy lista konverziója egy értékké. A lista szeparátor a ',' karakter (list_sep), ha a lista elem tartalmaz
+    /// ',' karaktert, akkor azt '\,' -el helyettesíti (lis_esep).
+    /// @param l A listát tartalmazó konténer
+    /// @param f Ha értéke igaz, és az l konténer csak egy elemű, akkor a ', ' karakterek elé nem szúrja be a '\' karaktert.
+    static QString list2value(const QVariantList& l, bool f = false);
     /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
     /// space karakter van, akkor azt a space karaktert eldobja a metódus.
     /// A kapott lista elemeket enumerációs értékeknek tekintve (a listát set-nek) összeállít egy maszk értéket.
@@ -207,6 +212,8 @@ public:
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
     void modifyField(cRecordFieldRef& _fr);
     cFeatures noSimple() const;
+    static const QString list_sep;
+    static const QString list_esep;
 };
 
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).

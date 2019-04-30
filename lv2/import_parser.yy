@@ -1961,14 +1961,14 @@ features: str ';'                   { $$ = $1; }
 feature_s: feature                  { ($$ = new tStringMap)->insert($1->first, $1->second); delete $1; }
         | feature_s feature         { ($$ = $1)            ->insert($2->first, $2->second); delete $2; }
         ;
-feature : str ';'                   { $$ = new tStringPair(sp2s($1), _sNul); }
-        | str '=' vals ';'          { $$ = new tStringPair(sp2s($1), QVariantListToString(*$3)); delete $3; }
-        | str '=' '{' maps '}'      { $$ = new tStringPair(sp2s($1), cFeatures::map2value(*$4)); }
+feature : map
+        | str '=' '{' maps '}'      { $$ = new tStringPair(sp2s($1), cFeatures::map2value(*$4)); /* auto.delete $4; */ }
         ;
 maps    : map                       { ($$ = new tStringMap)->insert($1->first, $1->second); delete $1; }
         | maps map                  { ($$ = $1)            ->insert($2->first, $2->second); delete $2; }
         ;
-map     : str '=' vals ';'          { $$ = new tStringPair(sp2s($1), QVariantListToString(*$3)); delete $3; }
+map     : str '=' vals ';'          { $$ = new tStringPair(sp2s($1), cFeatures::list2value(*$3, true)); delete $3; }
+        | str ';'                   { $$ = new tStringPair(sp2s($1), _sNul); }
         ;
 // felhasználók, felhesználói csoportok definíciója.
 user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3, $4); pUser->setId(_sPlaceId, gPlace()); }

@@ -1,7 +1,8 @@
-#include "lanview.h"
-#include "others.h"
 #include <QCoreApplication>
 #include <QTextStream>
+#include "lanview.h"
+#include "others.h"
+// #include "lv2types.h"
 
 /*!
 @file lv2datab.h
@@ -78,6 +79,9 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
 
 /******************************************************************************/
 
+const QString cFeatures::list_sep = ",";
+const QString cFeatures::list_esep = "\\,";
+
 cFeatures::cFeatures()
     : tStringMap()
 {
@@ -147,7 +151,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 
 QStringList cFeatures::value2list(const QString &s)
 {
-    QStringList r = s.split(QRegExp("\\s*,\\s*"));
+    QStringList r = s.split(list_sep);
     for (int i = 0; i < r.size(); ++i) {
         while (r.at(i).endsWith(QChar('\\'))) {
             if ((i +1) >= r.size()) EXCEPTION(EDATA, 0, s);
@@ -155,21 +159,42 @@ QStringList cFeatures::value2list(const QString &s)
             r[i] += QChar(',') + r[i +1];
             r.removeAt(i +1);
         }
+        r[i] = r[i].trimmed();
     }
     return r;
 }
 
 QString cFeatures::list2value(const QStringList& l)
 {
-    static const QString sep = ",";
-    static const QString esep = "\\,";
     QString r;
     if (!l.isEmpty()) {
         foreach (QString s, l) {
-            s = s.replace(sep, esep);
-            r += s + sep;
+            s = s.replace(list_sep, list_esep);
+            r += s + list_sep;
         }
-        r.chop(sep.size());
+        r.chop(list_sep.size());
+    }
+    return r;
+}
+
+QString cFeatures::list2value(const QVariantList& l, bool f)
+{
+    QString r;
+    f = f && l.size() == 1;
+    if (!l.isEmpty()) {
+        foreach (QVariant v, l) {
+            QString s;
+            int t = v.userType();
+            if (metaIsInteger(t) || metaIsFloat(t) || metaIsString(t)) s = v.toString();
+            else if (t == _UMTID_netAddress)    s = v.value<netAddress>().toString();
+            else if (t == _UMTID_QHostAddress)  s = v.value<QHostAddress>().toString();
+            else if (t == _UMTID_cMac)          s = v.value<cMac>().toString();
+            else                                EXCEPTION(EDATA, t, QObject::trUtf8("Unsupported data type : %1").arg(debVariantToString(v)));
+            if (f) return  s;
+            s = s.replace(list_sep, list_esep);
+            r += s + list_sep;
+        }
+        r.chop(list_sep.size());
     }
     return r;
 }
