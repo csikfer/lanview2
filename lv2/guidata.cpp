@@ -242,7 +242,8 @@ cTableShape::cTableShape() : cRecord(), shapeFields(this)
 
 cTableShape::cTableShape(const cTableShape &__o) : cRecord(), shapeFields(this, __o.shapeFields)
 {
-    _pFeatures = nullptr;
+    if (__o._pFeatures == nullptr) _pFeatures = nullptr;
+    else                           _pFeatures = new cFeatures(*__o._pFeatures);
     _set(cTableShape::descr());
     _cp(__o);
 }

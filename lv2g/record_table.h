@@ -7,8 +7,11 @@
 #include    "QTableWidget"
 
 #if defined(LV2G_LIBRARY)
+// Form: Filter tab
 #include    "ui_column_filter.h"
+// Form: no rights
 #include    "ui_no_rights.h"
+// Form:    partial form for batch edit
 #include    "ui_edit_field.h"
 #else
 namespace Ui {
@@ -118,6 +121,7 @@ signals:
     void moveDown(cRecordTableOrd *p);
 };
 
+/// Tri state check box for set data type
 class cEnumCheckBox : public QCheckBox {
     Q_OBJECT
 public:
@@ -254,6 +258,7 @@ enum eRecordTableFlags  {
 class cRecordsViewBase;
 typedef QList<cRecordsViewBase *>   tRecordsViewBaseList;
 
+/// Base object for displaying a data table
 class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
@@ -493,6 +498,10 @@ public:
     void setPageButtons();
 
     ///
+    /// \brief Dialógus több tag több csoportba helyezése, vagy onnan törlése
+    /// \param __add    true: beteszi a csoportba, false: kiveszi a csoportból
+    ///
+    void groupDialog(bool __add);
 
     /// A táblázatot megjelenítő widget
     QTableView     *pTableView;

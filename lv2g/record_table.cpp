@@ -1568,7 +1568,7 @@ void cRecordsViewBase::insert(bool _similar)
         refresh();
         return;
     }
-    // Dialógus a keíró szerint összeállítva
+    // Dialógus a leíró szerint összeállítva
     // A dialógusban megjelenítendő nyomógombok.
     qlonglong buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
     switch (tableInhType) {
@@ -2128,7 +2128,7 @@ void cRecordsViewBase::initMaster()
 
     pMasterLayout = new QHBoxLayout(_pWidget);
     if (pUpper == nullptr) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
-    else                pMasterSplitter = new QSplitter(Qt::Horizontal);
+    else                   pMasterSplitter = new QSplitter(Qt::Horizontal);
     pMasterLayout->addWidget(pMasterSplitter);
 
     pLeftWidget   = new QWidget();
@@ -2492,6 +2492,10 @@ void cRecordTable::init()
         if (!isNoInsert) buttons << DBT_INSERT;
         if (!isNoModify) buttons << DBT_SIMILAR << DBT_MODIFY;
     }
+    qlonglong type = pTableShape->getId(_sTableShapeType);
+    if (type & ENUM2SET2(TS_MEMBER, TS_GROUP)) {
+        buttons << DBT_PUT_IN << DBT_TAKE_OUT;
+    }
     flags = 0;
 
     if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
@@ -2672,10 +2676,16 @@ void cRecordTable::last()
 
 void cRecordTable::putIn()
 {
+    if ((flags & (RTF_NGROUP | RTF_NMEMBER)) == 0) {    // Dialog ?
+        groupDialog(true);
+        return;
+    }
+
     if (pUpper == nullptr || pUpper->pRightTables == nullptr || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
     cRecord *pM = nullptr;
     cRecord *pG = nullptr;
+
     if (((flags & RTF_NGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == nullptr) {
@@ -2718,10 +2728,16 @@ void cRecordTable::putIn()
 
 void cRecordTable::takeOut()
 {
+    if ((flags & (RTF_NGROUP | RTF_NMEMBER)) == 0) {
+        groupDialog(false);
+        return;
+    }
+
     if (pUpper == nullptr || pUpper->pRightTables == nullptr || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
     cRecord *pM = nullptr;
     cRecord *pG = nullptr;
+
     if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == nullptr) {
@@ -2761,6 +2777,82 @@ void cRecordTable::takeOut()
     }
     pUpper->pRightTables->at(1)->refresh();
 }
+
+void cRecordTable::groupDialog(bool __add)
+{
+    if (pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
+    QModelIndexList mil = selectedRows();   // Selected records to be managed
+    if (mil.isEmpty()) return;  // We have nothing to do
+    cTableShape *pDialogTableShape = new cTableShape(pRightTables->first()->tableShape());
+    pDialogTableShape->setId(_sTableShapeType, ENUM2SET(TS_BARE));    // Simple table
+    QDialog *pDialog = new QDialog;
+    cRecordTable * pRecordTable = dynamic_cast<cRecordTable *>(cRecordsViewBase::newRecordView(pDialogTableShape));
+    if (pRecordTable == nullptr) EXCEPTION(EDATA);
+    QVBoxLayout *pLayout = new QVBoxLayout;
+    pDialog->setLayout(pLayout);
+    pLayout->addWidget(pRecordTable->pWidget());
+    cDialogButtons * pButtons = new cDialogButtons(iTab(DBT_SPACER, DBT_PUT_IN, DBT_CANCEL));
+    pLayout->addWidget(pButtons->pWidget());
+    connect(pButtons, SIGNAL(buttonClicked(int)), pDialog, SLOT(done(int)));
+    QString title;
+    qlonglong type = pTableShape->getId(_sTableShapeType);
+    if      (type & ENUM2SET(TS_MEMBER)) {  // Add selected members to selected groups in the dialog
+        if (__add) title = trUtf8("A kijelölt tagok hozzáadása a csoportokhoz");
+        else       title = trUtf8("A kijelölt tagok kivétele a csoportokból");
+    }
+    else if (type & ENUM2SET(TS_GROUP)) {   // Add selected groups to the members selected in the dialog
+        if (__add) title = trUtf8("A kijelölt csoportokba tagok hozzáadása");
+        else       title = trUtf8("A kijelölt csoportokból tagok kivétele");
+    }
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
+    pDialog->setWindowTitle(title);
+    int r = pDialog->exec();
+    if (r == DBT_PUT_IN) {
+        QModelIndexList dmil = pRecordTable->selectedRows();    // Selected records in the dialog
+        if (!dmil.isEmpty()) {
+            QBitArray memberMap, groupMap;
+            cRecordTable *memberTable, * groupTable;
+            QString title;
+            qlonglong type = pTableShape->getId(_sTableShapeType);
+            if      (type & ENUM2SET(TS_MEMBER)) {  // Add selected members to selected groups in the dialog
+                memberTable = this;
+                memberMap  = pTableModel()->index2map(mil);
+                groupTable = pRecordTable;
+                groupMap   = groupTable->pTableModel()->index2map(dmil);
+            }
+            else {                                  // Add selected groups to the members selected in the dialog
+                groupTable  = this;
+                groupMap    = pTableModel()->index2map(mil);
+                memberTable = pRecordTable;
+                memberMap   = groupTable->pTableModel()->index2map(dmil);
+            }
+            cRecord *pM = nullptr;
+            cRecord *pG = nullptr;
+            for (int im = 0; im < memberMap.size(); ++im) {
+                if (memberMap.at(im)) {
+                    pM = memberTable->record(im);
+                    for (int ig = 0; ig < groupMap.size(); ++ig) {
+                        if (groupMap.at(ig)) {
+                            pG = groupTable->record(ig);
+                            if (__add) {
+                                cGroupAny(*pG, *pM).insert(*pq, EX_ERROR);
+                            }
+                            else {
+                                cGroupAny(*pG, *pM).remove(*pq, EX_ERROR);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    delete pDialog;
+    delete pRecordTable;
+    refresh();
+}
+
 
 #define MAXMAXROWS 100000
 

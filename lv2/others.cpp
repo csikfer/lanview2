@@ -93,7 +93,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
     static const QString msg = QObject::trUtf8("Invalid magic string %1 : %2");
     static const QChar sep = QChar(':');
     int i, n = __ms.size();
-    if (n == 0 || (n == 1 && __ms[0] == sep)) return true;
+    if (n == 0 || (n == 1 && __ms[0] == sep)) return true;  // Empty, ok.
     QString field;
     if (__ms[0] != sep) {   // The first character must be a separator
         if (__ex) EXCEPTION(EDATA, -1, msg + __ms);

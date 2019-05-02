@@ -1009,22 +1009,26 @@ public:
     }
     /// A metődus feltételezi, hogy a group és member objektumoknak ki van töltve az ID mezőjük, és ez alapján beinzertálja a kapcsoló rekordot.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
-    /// @param __ex Ha értéke true, akkor hiba esettén dob egy kizárást, egyébként hiba esetén false-val tér vissza.
-    /// @return Ha sikerült az insert, akkor true, ha hiba történt, és __ex = false, akkor false.
-    bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR) {
+    /// @param __ex Hiba kapcsoló, __ex = EX_IGNORE esetén nincs hiba kezelés.
+    /// @return Ha sikerült az insert, akkor true, ha hiba történt vagy nem volt változás, akkor false
+    /// @exception cError* Hiba esetén, ha __ex értéke nem EX_IGNORE, ill. ha nincs művelet (a kapcsoló rekord már létezik),
+    ///     és __ex értéke EX_NOOP.
+    bool insert(QSqlQuery& __q, enum eEx __ex = EX_NOOP) {
         QString sql = "INSERT INTO " + tableName() +
                 QChar('(') + group.idName() + QChar(',') + member.idName() + QChar(')') +
                 " VALUES(" + QString::number(group.getId()) + QChar(',') + QString::number(member.getId()) + QChar(')');
+        if (__ex < EX_NOOP) {
+            sql += QString("ON CONFLICT (%1,%2) DO NOTHING").arg(group.idName(), member.idName());
+        }
         _DBGFNL() << "SQL:" << sql << endl;
         if (!__q.exec(sql)) {
-            // Pontosítani kéne, sajnos nincs hibakód!!
-            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) {
+            if (__ex == EX_IGNORE) {
                 SQLQUERYERRDEB(__q);
                 return false;
             }
             else SQLQUERYERR(__q)
         }
-        return true;
+        return __q.numRowsAffected() == 1;
     }
     /// Egy kapcsoló rekord törlése.
     /// Ha megadjuk az __id opcionális paramétert, és annak értéke nem NULL_ID, akkor a megadott azonosítójú kapcsoló rekordot törli.
@@ -1032,9 +1036,11 @@ public:
     /// azonosítható kapcsoló rekordot fogja törölni.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @param __id opcionális kapcsoló rekord ID
-    /// @param __ex Ha értéke true, akkor hiba esettén dob egy kizárást, egyébként hiba esetén false-val tér vissza.
-    /// @return Ha sikerült a törlés, akkor true, ha hiba történt, és __ex = false, akkor false.
-    bool remove(QSqlQuery& __q, qlonglong __id = NULL_ID, enum eEx __ex = EX_ERROR) {
+    /// @param __ex Hiba kapcsoló, __ex = EX_IGNORE esetén nincs hiba kezelés.
+    /// @return Ha sikerült a törlés, akkor true, ha hiba történt vagy nem volt változás, akkor false
+    /// @exception cError* Hiba esetén, ha __ex értéke nem EX_IGNORE, ill. ha nincs művelet (a kapcsoló rekord nem létezik),
+    ///     és __ex értéke EX_NOOP.
+    bool remove(QSqlQuery& __q, qlonglong __id = NULL_ID, enum eEx __ex = EX_NOOP) {
         QString sql = "DELETE FROM " + tableName() + " WHERE ";
         if (__id == NULL_ID) {
             sql +=  group.idName()  + " = " + QString::number(group.getId()) + " AND " +
@@ -1044,13 +1050,14 @@ public:
             sql += idName() + " = " + QString::number(__id);
         }
         if (!__q.exec(sql)) {
-            // Pontosítani kéne, sajnos nincs hibakód!!
-            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) {
+            if (__ex == EX_IGNORE) {
                 SQLQUERYERRDEB(__q);
                 return false;
             }
             else SQLQUERYERR(__q)
         }
+        bool r = __q.numRowsAffected() == 1;
+        if (!r && __ex == EX_NOOP) EXCEPTION(EFOUND);
         return true;
     }
     /// Beolvassa a megadott group objektum összes tagját
