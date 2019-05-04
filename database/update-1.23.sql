@@ -127,7 +127,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
+-- !!!!! Több hiba javítva : 2019.05.04. !!!!!
 CREATE OR REPLACE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query', hsi bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     arp     arps;               -- arps record
@@ -158,12 +158,12 @@ BEGIN
                 joint := true;
     END;
     IF NOT noipa THEN
-        IF hwa <> hwaddress FROM interface WHERE port_id = oip.port_id THEN
+        IF hwa <> hwaddress FROM interfaces WHERE port_id = oip.port_id THEN
             IF oip.ip_address_type = 'dynamic' THEN
                 -- Delete outdated address
                 UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
-                INSERT INTO ip_address_logs(reason, daemon_id, ip_address_id, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
-                    VALUES('discard', hsi, oip.ip_address_id, 'dynamic', oip.port_id, oip.address, 'dynamic', oip.port_id);
+                INSERT INTO ip_address_logs(reason, daemon_id, ip_address_id, ip_address_type_new, port_id, address_old, ip_address_type_old)
+                    VALUES('discard', hsi, oip.ip_address_id, 'dynamic', oip.port_id, oip.address, 'dynamic');
                 noipa := true;
             ELSE
                 col := true;
@@ -186,8 +186,8 @@ BEGIN
                 t := 'Modify by config : ' || oip.ip_address_type  || ' -> ' || adt || '; ' || oip.address || ' -> ' || ipa;
                 msg := 'Modify by replace_arp(), service : ' || COALESCE(host_service_id2name(hsi), 'NULL') || ' ' || NOW()::text;
                 UPDATE ip_addresses SET ip_address_note = msg, address = ipa, ip_address_type = adt WHERE ip_address_id = oip.ip_address_id;
-                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
-                    VALUES('modify', msg, hsi, oip.ip_address_id, ipa, adt, oip.port_id, oip.address, oip.ip_address_type, oip.port_id);
+                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old)
+                    VALUES('modify', msg, hsi, oip.ip_address_id, ipa, adt, oip.port_id, oip.address, oip.ip_address_type);
             EXCEPTION WHEN OTHERS THEN
                 GET STACKED DIAGNOSTICS
                     msg = MESSAGE_TEXT,
@@ -203,7 +203,7 @@ BEGIN
             DECLARE
                 pid bigint;
             BEGIN
-                SELECT port_id INTO pid FROM interface WHERE hwaddress = hwa;
+                SELECT port_id INTO pid FROM interfaces WHERE hwaddress = hwa;
                 GET DIAGNOSTICS n = ROW_COUNT;
                 IF n = 1 THEN
                     IF stp = 'query' AND is_dyn_addr(ipa) IS NOT NULL THEN
@@ -211,7 +211,7 @@ BEGIN
                     END IF;
                     t := 'Inser IP address (' || adt || ') record : port : ' || port_id2full_name(pid) || ' .';
                     msg := 'Insert by replace_arp(), service : ' || COALESCE(host_service_id2name(hsi), 'NULL') || ' ' || NOW()::text;
-                    INSERT INTO ip_address(port_id, ip_address_note, address, ip_address_type) VALUES(pid, msg, ipa, adt);
+                    INSERT INTO ip_addresses(port_id, ip_address_note, address, ip_address_type) VALUES(pid, msg, ipa, adt);
                 END IF;
             END;
         END IF;
@@ -226,8 +226,8 @@ BEGIN
                 sid bigint := NULL;
             BEGIN
                 UPDATE ip_addresses SET ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
-                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old, port_id)
-                    VALUES('update', msg, hsi, oip.ip_address_id, ipa, 'fixip', oip.port_id, ipa, 'dynamic', oip.port_id);
+                INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old)
+                    VALUES('update', msg, hsi, oip.ip_address_id, ipa, 'fixip', oip.port_id, ipa, 'dynamic');
             END;
         END IF;
     END IF;
