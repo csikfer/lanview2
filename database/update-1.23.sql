@@ -128,6 +128,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- !!!!! Több hiba javítva : 2019.05.04. !!!!!
+-- !!!!! Hiba javítás : 2019.05.06. !!!!!
 CREATE OR REPLACE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query', hsi bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     arp     arps;               -- arps record
@@ -179,13 +180,17 @@ BEGIN
             DECLARE
                 det text;
                 hnt text;
+                snid bigint := oip.subnet_id;
             BEGIN 
                 IF stp = 'query' AND is_dyn_addr(ipa) IS NOT NULL THEN
                     adt := 'dynamic';
                 END IF;
+                IF NOT ipa << netaddr FROM subnets WHERE subnet_id = snid THEN
+                    snid := NULL;
+                END IF;
                 t := 'Modify by config : ' || oip.ip_address_type  || ' -> ' || adt || '; ' || oip.address || ' -> ' || ipa;
                 msg := 'Modify by replace_arp(), service : ' || COALESCE(host_service_id2name(hsi), 'NULL') || ' ' || NOW()::text;
-                UPDATE ip_addresses SET ip_address_note = msg, address = ipa, ip_address_type = adt WHERE ip_address_id = oip.ip_address_id;
+                UPDATE ip_addresses SET ip_address_note = msg, address = ipa, ip_address_type = adt, subnet_id = snid WHERE ip_address_id = oip.ip_address_id;
                 INSERT INTO ip_address_logs(reason, message, daemon_id, ip_address_id, address_new, ip_address_type_new, port_id, address_old, ip_address_type_old)
                     VALUES('modify', msg, hsi, oip.ip_address_id, ipa, adt, oip.port_id, oip.address, oip.ip_address_type);
             EXCEPTION WHEN OTHERS THEN
@@ -193,8 +198,8 @@ BEGIN
                     msg = MESSAGE_TEXT,
                     det = PG_EXCEPTION_DETAIL,
                     hnt = PG_EXCEPTION_HINT;
-                t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
-                    || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
+                t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp
+                    || ' The existing IP address record port name : ' || port_id2full_name(oip.port_id)
                     || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
                 -- RAISE WARNING 'Ticket : %', t; 
                 PERFORM ticket_alarm('critical', t, hsi);
