@@ -561,7 +561,7 @@ int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
         lastCount = val;
         lastTime  = now;
         addMsg(sFirstValue);
-        return noValue(q, state, RS_UNKNOWN);
+        return noValue(q, state, ENUM_INVALID);
     }
     qlonglong delta = 0;
     switch (svt) {
@@ -601,7 +601,7 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
         lastValue = val;
         lastTime  = now;
         addMsg(sFirstValue);
-        return noValue(q, state, RS_UNKNOWN);
+        return noValue(q, state, ENUM_INVALID);
     }
     double delta = val - lastValue;
     lastValue = val;
@@ -688,15 +688,16 @@ int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
     qlonglong hbt = heartbeat(q, EX_ERROR);
     if (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime())) {
+        _st = RS_UNREACHABLE;
         setId(_ixVarState, _st);
         clear(_ixServiceVarValue);
         update(q, false, updateMask);
-        if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
+        if (getBool(_sDelegateServiceState)) state = _st;
     }
-    // else {  // Nincs adat, türelmi idő nem járt le
-    //     ;
-    // }
-    return RS_UNREACHABLE;
+    else {  // Nincs adat, türelmi idő nem járt le
+        ;
+    }
+    return _st;
 }
 
 eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo)

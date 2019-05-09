@@ -83,6 +83,12 @@ public:
 //    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
     int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
+    /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
+    /// @param q
+    /// @param val A nyers egész típusú érték
+    /// @param state Továbbítandó állapot
+    /// @param rawChg Közvetlen, feltétel nélküli beállítás
+    /// @return A vátozó állapota.
     int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
     int setUnreachable(QSqlQuery q, const QString &msg = QString());
     const QStringList * enumVals();
