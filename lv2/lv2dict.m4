@@ -50,7 +50,6 @@ STRDEF(Permissive, "permissive")
 STRDEF(Strict, "strict")
 STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
-STRDEF(Reset, "reset")
 STRDEF(Color, "color")
 
 STRDEF(ViewFunc, "view.func")
@@ -185,6 +184,12 @@ dnl Features
 STRDEF(ButtonCopy, "button.copy")
 STRDEF(Report, "report")
 
+dnl
+STRDEF(Other, "other")
+STRDEF(Tick, "tick")
+STRDEF(Reset, "reset")
+STRDEF(Exit, "exit")
+STRDEF(Pause, "pause")
 
 dnl Tábla és mező nevek
 STRDEF(Languages, "languages")

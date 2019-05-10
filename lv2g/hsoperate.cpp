@@ -13,6 +13,7 @@ enum ePermit {
     PERMIT_NO, PERMIT_PART, PERMIT_ALL
 };
 
+/// Field indexs in SQL query
 enum eFieldIx {
     RX_ID,
     RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
@@ -68,6 +69,9 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
     pDialog = par->pDialog;
     pCheckBoxSub = nullptr;
     pCheckBoxSet = nullptr;
+    pToolButtonCmd = nullptr;
+    pComboBoxCmd = nullptr;
+    pService = nullptr;
     pq = par->pq;
     staticInit();
     set = pDialog->permit == PERMIT_ALL;
@@ -80,6 +84,8 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
         nsub  = v.toInt(&ok);
         if (!ok) EXCEPTION(EDATA, RX_NSUB, v.toString());
     }
+    QSqlQuery qq = getQuery();
+    pService = cService::service(qq, rec.value(RX_SERVICE_NAME).toString());
 }
 
 void cHSORow::staticInit()
@@ -120,27 +126,27 @@ QWidget * cHSORow::getWidgetSub()
     return pWidget;
 }
 
+static const QStringList    inspectorCommands = { _sTick };
+static const QStringList    appCommands = { _sReset, _sExit };
 
-QToolButton* cHSORow::getButtonReset()
+QWidget* cHSORow::getButtonCmd()
 {
-    static QStringList srvList;
-    if (srvList.isEmpty()) {    // újraindítható szolgáltatások/lekérdezések nevei
-        QSqlQuery q = getQuery();
-        QString s = cSysParam::getTextSysParam(q, "restartable_services", "lv2d,portmac,pstat,arpd,icontsrv,portvlan");
-        QRegExp sep("\\s*,\\s*");
-        srvList << s.split(sep);
-    }
-    if (pDialog->permit != PERMIT_ALL) return nullptr;
-    QString srvName = rec.value(RX_SERVICE_NAME).toString();
-    bool disabled = rec.value(RX_DISABLED).toBool();
-    disabled = disabled || rec.value(RX_SRV_DISABLED).toBool();
-    QToolButton *pButton = nullptr;
-    if (!disabled && srvList.contains(srvName)) {
-        pButton = new QToolButton();
-        pButton->setIcon(QIcon("://icons/system-restart.ico"));
-        connect(pButton, SIGNAL(clicked()), this, SLOT(pressReset()));
-    }
-    return pButton;
+    QWidget *pWidget = new QWidget;
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    pComboBoxCmd = new QComboBox;
+    pToolButtonCmd = new QToolButton();
+    pComboBoxCmd->addItems(inspectorCommands);
+    pComboBoxCmd->addItems(appCommands);
+    pComboBoxCmd->setCurrentIndex(0);
+    pToolButtonCmd->setIcon(QIcon("://icons/run.ico"));
+    pLayout->setMargin(0);
+    pLayout->addWidget(pComboBoxCmd);
+    pLayout->addWidget(pToolButtonCmd);
+    pWidget->setLayout(pLayout);
+    connect(pToolButtonCmd, SIGNAL(clicked()), this, SLOT(pressReset()));
+    connect(pComboBoxCmd, SIGNAL(currentTextChanged(QString)), this, SLOT(changedCmd(QString)));
+    changedCmd(inspectorCommands.first());
+    return pWidget;
 }
 
 
@@ -204,6 +210,16 @@ void cHSORow::pressReset()
     QString sPayload = _sReset + _sSpace + QString::number(id);
     sqlNotify(*pq, srvName, sPayload);
 }
+
+void cHSORow::changedCmd(const QString& cmd)
+{
+    bool f = true;
+    if (appCommands.contains(cmd)) {
+        f = false == pService->isEmpty(pService->toIndex(_sCheckCmd)) && 0 == pService->feature(_sMethod).compare(_sInspector, Qt::CaseInsensitive);
+    }
+    pToolButtonCmd->setEnabled(f);
+}
+
 
 cHSOState::cHSOState(QSqlQuery& q, const QString& _sql, const QVariantList _binds, cHSOperate *par)
     : QObject(par), sql(_sql), binds(_binds)
@@ -498,7 +514,7 @@ void cHSOperate::refreshTable()
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
         setCell(row, TC_CBOX_NSUB,pRow->getWidgetSub());
         setCell(row, TC_SUPERIOR,pRow->item(RX_SUPERIOR_NAME));
-        setCell(row, TC_RESTART, pRow->getButtonReset());
+        setCell(row, TC_RESTART, pRow->getButtonCmd());
         row++;
     }
     bool noSup = actState()->nsup == 0;

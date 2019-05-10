@@ -18,7 +18,7 @@ public:
     cHSORow(QSqlQuery& q, cHSOState *par, int _row);
     QCheckBox * getCheckBoxSet();
     QWidget *   getWidgetSub();
-    QToolButton *getButtonReset();
+    QWidget *getButtonCmd();
     QTableWidgetItem * item(int vix);
     QTableWidgetItem * item(int ix, const cColEnumType *pType);
     QTableWidgetItem * item(int vix, int eix, const cColEnumType *pType);
@@ -32,6 +32,9 @@ public:
     bool        set, sub;
     QCheckBox  *pCheckBoxSub;
     QCheckBox  *pCheckBoxSet;
+    QComboBox  *pComboBoxCmd;
+    QToolButton*pToolButtonCmd;
+    const cService *pService;
 protected:
     cHSOperate *pDialog;
     static void staticInit();
@@ -43,6 +46,7 @@ protected slots:
     void togleSub(bool f) { sub = f; }
     void goSub();
     void pressReset();
+    void changedCmd(const QString& cmd);
 };
 
 

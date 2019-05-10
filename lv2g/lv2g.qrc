@@ -93,5 +93,6 @@
         <file>icons/flag-red.ico</file>
         <file>icons/flag-yellow.ico</file>
         <file>icons/system-search-4.ico</file>
+        <file>icons/run.ico</file>
     </qresource>
 </RCC>

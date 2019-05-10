@@ -269,7 +269,7 @@ void  cMenuAction::executeIt()
         break;
     case MAT_EXEC: {
         QString name = objectName();
-        if      (0 == name.compare("exit",    Qt::CaseInsensitive)) qApp->exit(0);
+        if      (0 == name.compare(_sExit,    Qt::CaseInsensitive)) qApp->exit(0);
         else if (0 == name.compare("restart", Qt::CaseInsensitive)) appReStart();
         else if (0 == name.compare("tabs",    Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::TabbedView);
         else if (0 == name.compare("windows", Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::SubWindowView);

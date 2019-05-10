@@ -621,6 +621,15 @@ void cInspector::threadPreInit()
     return;
 }
 
+void cInspector::dbNotif(const QString& cmd)
+{
+    if (0 == cmd.compare(_sTick, Qt::CaseInsensitive)) {
+        timerEvent(nullptr);
+        return;
+    }
+    // Still missing: reset, pause ...
+}
+
 void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 {
     _DBGFN() << name() << VDEB(qs) << endl;

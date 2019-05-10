@@ -237,6 +237,9 @@ public:
     /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
+    /// Db Notification
+    /// @param cmd Command string
+    virtual void dbNotif(const QString& cmd);
     /// Beolvassa a szolgáltatás példányhoz tartozó változókat
     tOwnRecords<cServiceVar, cHostService> *fetchVars(QSqlQuery& q);
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,

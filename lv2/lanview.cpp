@@ -556,6 +556,7 @@ void lanView::setSelfObjects()
                 pSelfHostService->setId(_sServiceId, pSelfService->getId());
                 if (1 == pSelfHostService->completion(*pQuery)) {
                     setSelfStateF = true;
+                    selfHostServiceId = pSelfHostService->getId();
                 }
                 else {                                  // not found or unclear
                     pDelete(pSelfHostService);
@@ -701,38 +702,54 @@ void lanView::uSigSlot(int __i)
 }
 #endif
 
+static void subSrvDbNotif(cInspector * _pi, const QList<qlonglong>& hsids, const QString& cmd)
+{
+    if (_pi == nullptr) return;
+    if (hsids.contains(_pi->hostServiceId())) _pi->dbNotif(cmd);
+    if (_pi->pSubordinates == nullptr) return;
+    foreach (cInspector * pi, *_pi->pSubordinates) {
+        subSrvDbNotif(pi, hsids, cmd);
+    }
+}
+
 void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
     if (ONDB(INFO)) {
         QString src;
         switch (source) {
-        case QSqlDriver::SelfSource:    src = "Self";       break;
-        case QSqlDriver::OtherSource:   src = "Other";      break;
+        case QSqlDriver::SelfSource:    src = _sSelf;       break;
+        case QSqlDriver::OtherSource:   src = _sOther;      break;
         case QSqlDriver::UnknownSource:
-     /* default:  */                    src = "Unknown";    break;
+     /* default:  */                    src = _sUnknown;    break;
         }
         cDebug::cout() << HEAD() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
     }
     QString sPayload = payload.toString();
     if (sPayload.isNull()) return;
-    QStringList hsids = sPayload.split(QRegExp("[\\s\\(\\),;/]+"));
-    QString     cmd = hsids.takeFirst();
-    bool        f = hsids.isEmpty(); // No specified any host_service_id
-    if (!f) {
-        foreach (QString shsid, hsids) {
-            bool ok;
-            qlonglong hsid = shsid.toInt(&ok);
-            if (ok && selfHostServiceId == hsid) {
-                f = true;
-                break;
-            }
+    QStringList shsids = sPayload.split(QRegExp("[\\s\\(\\),;/]+"));
+    QString     cmd = shsids.takeFirst();
+    if (shsids.isEmpty()) return; // No specified any host_service_id
+    QList<qlonglong> hsids;
+    foreach (QString shsid, shsids) {
+        bool ok;
+        qlonglong hsid = shsid.toInt(&ok);
+        if (ok) hsids << hsid;
+    }
+    if (hsids.isEmpty()) return; // No specified any valid host_service_id
+    if (hsids.contains(selfHostServiceId)) {
+        if (0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
+            PDEB(WARNING) << trUtf8("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
+            reSet();
+        }
+        else if (0 == QString(_sExit).compare(cmd,  Qt::CaseInsensitive)) {
+            PDEB(WARNING) << trUtf8("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
+            down();
+            exit(0);
         }
     }
-    if (!f) return;
-    if (0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
-        PDEB(WARNING) << trUtf8("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
-        reSet();
-    }
+    // command to cInspector object, sub services ?
+    subSrvDbNotif(pSelfInspector, hsids, cmd);
+
 }
 
 void lanView::insertStart(QSqlQuery& q)
