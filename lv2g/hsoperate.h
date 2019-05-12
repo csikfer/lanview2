@@ -24,6 +24,8 @@ public:
     QTableWidgetItem * item(int vix, int eix, const cColEnumType *pType);
     QTableWidgetItem * item(int ix, const cColStaticDescr& cd);
     QTableWidgetItem * boolItem(int ix, const QString& tn, const QString &fn);
+    static bool serviceIsApp(const QVariant &suphsid, const cService *ps);
+    static QString findAppName(QSqlQuery &q, qlonglong hsid);
     qlonglong   id;             /// A példány ID-je
     int         nsub;           /// Az al szolgáltatáspéldányok száma
     QSqlRecord  rec;            /// Adatok
@@ -35,6 +37,7 @@ public:
     QComboBox  *pComboBoxCmd;
     QToolButton*pToolButtonCmd;
     const cService *pService;
+    bool _serviceIsApp;
 protected:
     cHSOperate *pDialog;
     static void staticInit();
@@ -45,7 +48,7 @@ protected slots:
     void togleSet(bool f);
     void togleSub(bool f) { sub = f; }
     void goSub();
-    void pressReset();
+    void pressCmd();
     void changedCmd(const QString& cmd);
 };
 
