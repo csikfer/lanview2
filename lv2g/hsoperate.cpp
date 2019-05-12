@@ -208,7 +208,14 @@ void cHSORow::pressReset()
 {
     QString srvName = rec.value(RX_SERVICE_NAME).toString();
     QString sPayload = _sReset + _sSpace + QString::number(id);
-    sqlNotify(*pq, srvName, sPayload);
+    if (!sqlNotify(*pq, srvName, sPayload)) {
+        QString msg = trUtf8("A NOTIFY SQL parancs kiadása sikertelen (%1, %2).").arg(srvName, sPayload);
+        QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
+    }
+    else {
+        QString msg = trUtf8("SQL NOTIFY O.K. (%1, %2).").arg(srvName, sPayload);
+        QMessageBox::information(nullptr, dcViewLong(DC_INFO), msg);
+    }
 }
 
 void cHSORow::changedCmd(const QString& cmd)
