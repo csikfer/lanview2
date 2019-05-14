@@ -820,11 +820,11 @@ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, con
     return execSqlFunction(q, s + fn, v1, v2, v3, v4, v5);
 }
 
-void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
+bool sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
 {
     QString sql = "NOTIFY " + channel;
     if (!payload.isEmpty()) sql += ", " + quoted(payload);
-    if (!q.exec(sql)) SQLQUERYERR(q);
+    return q.exec(sql);
 }
 
 int getListFromQuery(QSqlQuery q, QStringList& list, int __ix)

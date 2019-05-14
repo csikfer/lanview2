@@ -86,6 +86,7 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
     }
     QSqlQuery qq = getQuery();
     pService = cService::service(qq, rec.value(RX_SERVICE_NAME).toString());
+    _serviceIsApp = serviceIsApp(rec.value(RX_SUPERIOR_ID), pService);
 }
 
 void cHSORow::staticInit()
@@ -143,7 +144,7 @@ QWidget* cHSORow::getButtonCmd()
     pLayout->addWidget(pComboBoxCmd);
     pLayout->addWidget(pToolButtonCmd);
     pWidget->setLayout(pLayout);
-    connect(pToolButtonCmd, SIGNAL(clicked()), this, SLOT(pressReset()));
+    connect(pToolButtonCmd, SIGNAL(clicked()), this, SLOT(pressCmd()));
     connect(pComboBoxCmd, SIGNAL(currentTextChanged(QString)), this, SLOT(changedCmd(QString)));
     changedCmd(inspectorCommands.first());
     return pWidget;
@@ -192,6 +193,31 @@ QTableWidgetItem * cHSORow::boolItem(int ix, const QString& tn, const QString& f
 
 }
 
+bool cHSORow::serviceIsApp(const QVariant& suphsid, const cService *ps)
+{
+    return suphsid.isNull() ||
+        (false == ps->isEmpty(ps->toIndex(_sCheckCmd)) &&
+         ps->feature(_sMethod).contains(_sInspector, Qt::CaseInsensitive));
+}
+
+QString cHSORow::findAppName(QSqlQuery& q, qlonglong hsid)
+{
+    static const QString sql =
+            "SELECT shs.service_id, hs.superior_host_service_id, shs.superior_host_service_id"
+            " FROM host_services AS hs"
+            " JOIN host_services AS shs ON hs.superior_host_service_id = shs.host_service_id"
+            " WHERE hs.host_service_id = ?";
+    if (execSql(q, sql, hsid)) {
+        qlonglong sid = q.value(0).toLongLong();
+        QVariant vshsid = q.value(1);
+        QVariant vsshsid = q.value(2);
+        const cService *ps = cService::service(q, sid);
+        if (serviceIsApp(vsshsid, ps)) return ps->getName();
+        return findAppName(q, vshsid.toLongLong());
+    }
+    return _sNul;
+}
+
 void cHSORow::togleSet(bool f)
 {
     set = f;
@@ -204,18 +230,38 @@ void cHSORow::goSub() {
     pDialog->goSub(row);
 }
 
-void cHSORow::pressReset()
+void cHSORow::pressCmd()
 {
-    QString srvName = rec.value(RX_SERVICE_NAME).toString();
-    QString sPayload = _sReset + _sSpace + QString::number(id);
-    sqlNotify(*pq, srvName, sPayload);
+    QString srvName;
+    if (_serviceIsApp) {
+        srvName = rec.value(RX_SERVICE_NAME).toString();
+    }
+    else {
+        QSqlQuery q = getQuery();
+        srvName = findAppName(q, id);
+        if (srvName.isEmpty()) {
+            QString msg = trUtf8("A szolgáltatáspéldányt futtató applikáció neve nem megállapítható.");
+            QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
+            return;
+        }
+    }
+    QString sPayload = pComboBoxCmd->currentText();
+    sPayload += _sSpace + QString::number(id);
+    if (!sqlNotify(*pq, srvName, sPayload)) {
+        QString msg = trUtf8("A NOTIFY SQL parancs kiadása sikertelen (%1, %2).").arg(srvName, sPayload);
+        QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
+    }
+    else {
+        QString msg = trUtf8("SQL NOTIFY O.K. (%1, %2).").arg(srvName, sPayload);
+        QMessageBox::information(nullptr, dcViewLong(DC_INFO), msg);
+    }
 }
 
 void cHSORow::changedCmd(const QString& cmd)
 {
     bool f = true;
     if (appCommands.contains(cmd)) {
-        f = false == pService->isEmpty(pService->toIndex(_sCheckCmd)) && 0 == pService->feature(_sMethod).compare(_sInspector, Qt::CaseInsensitive);
+        f = _serviceIsApp;
     }
     pToolButtonCmd->setEnabled(f);
 }
