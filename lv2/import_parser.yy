@@ -1000,7 +1000,7 @@ static inline void yyunget(const QChar& _c) {
 }
 
 static int yylex(void);
-static void strReplace(QString * s, QString * src, QString *trg);
+static QString *strReplace(QString * s, QString * src, QString *trg);
 static void forLoopMac(QString *_in, QVariantList *_lst, int step = 1);
 static void forLoop(QString *_in, QVariantList *_lst, int step = 1);
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
@@ -1719,7 +1719,7 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
-        | REPLACE_T str '/' str '/' str '/'                 { strReplace($2, $4, $6); }
+        | EXEC_T str ';'                                    { insertCode(sp2s($2)); }
         ;
 // Ciklusok
 for_m   : FOR_T vals DO_T MACRO_T NAME_V ';'                { forLoopMac($5, $2); }
@@ -1763,6 +1763,7 @@ sexpr   : str_                      { $$ = $1; }
         | '(' sexpr ')'             { $$ = $2; }
         | sexpr '+' sexpr           { *($$ = $1) += *$3; delete $3; }
         | iexpr '*' sexpr           { *($$ = $3)  =  $3->repeated($1); }
+        | REPLACE_T str '/' str '/' str { $$ = strReplace($2, $4, $6); }
         ;
 str_z   : str                       { $$ = $1; }
         |                           { $$ = new QString(); }
@@ -3417,7 +3418,7 @@ static QString getAllTokens(bool sort)
     return r.join(sep);
 }
 
-static void strReplace(QString * s, QString * src, QString *trg)
+static QString * strReplace(QString * s, QString * src, QString *trg)
 {
     QString r = *s;
     delete s;
@@ -3426,7 +3427,7 @@ static void strReplace(QString * s, QString * src, QString *trg)
     delete src;
     r.replace(re, *trg);
     delete trg;
-    insertCode(r);
+    return new QString(r);
 }
 
 static void forLoopMac(QString *_in, QVariantList *_lst, int step)
