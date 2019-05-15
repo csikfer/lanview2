@@ -66,6 +66,18 @@ SERVICE "attached" "IndAlarm Contact védett eszköz" {
     TYPE "life_sign";
     ON LINE GROUPS "dispatcher", "admin";
 }
+SERVICE "check_disk" {
+    SUPERIOR SERVICE MASK "^lv2|group$";
+    COMMAND "/usr/lib/nagios/plugins/check_disk $vol";
+    FEATURES ":method=nagios:timing=timed:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 600;
+    HEARTBEAT TIME 1800;
+    FLAPPING INTERVAL 7200;
+    FLAPPING MAX CHANGE 8;
+    TYPE "querying";
+    OFF LINE GROUPS "admin";
+}
 SERVICE "check_ide_smart" {
     SUPERIOR SERVICE MASK "^lv2|group$";
     COMMAND "/usr/lib/nagios/plugins/check_ide_smart $dev";
@@ -571,16 +583,15 @@ SERVICE "tcp.rs" "TCP serial port gateway" {
 }
 SERVICE "temp.owget" "Temp by OWFS" {
     SUPERIOR SERVICE MASK "^parser$";
-    COMMAND "owget /$id/temperature";
+    COMMAND "owget $paths";
     FEATURES  {
         "method" = "qparse,carried";
         "timing" = "timed";
-        "varname" = "temp";
     }
     MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 120;
-    RETRY CHECK INTERVAL 30;
-    FLAPPING INTERVAL 1800;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 7200;
     FLAPPING MAX CHANGE 15;
     OFF LINE GROUPS "admin";
 }
@@ -714,14 +725,26 @@ SERVICE VAR TYPE "runtime-slow" "Egy lassú lekérdezést futásának az ideje" 
 SERVICE VAR TYPE "temp-core" "CPU/SOC core temp." {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "5", "110";
-    CRITICAL "big" "75";
+    CRITICAL "big" "80";
     WARNING INVERSE "interval" "10", "60";
 }
 SERVICE VAR TYPE "temp-indoor" "Beltéri hőmérséklet" {
     TYPE "temp" "GAUGE";
-    PLAUSIBILITY "interval" "5", "50";
+    PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "40";
     WARNING INVERSE "interval" "18", "30";
+}
+SERVICE VAR TYPE "temp-indoor_clim" "Beltéri hőmérséklet" {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "0", "60";
+    CRITICAL INVERSE "interval" "10", "30";
+    WARNING INVERSE "interval" "15", "25";
+}
+SERVICE VAR TYPE "temp-outdoor" "Kültéri hőmérséklet" {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "-30", "50";
+    CRITICAL INVERSE "interval" "-20", "45";
+    WARNING INVERSE "interval" "-10", "35";
 }
 SERVICE VAR TYPE "upsAdvBatteryRunTimeRemaining" "service : PoweNet-MIB" {
     TYPE "interval", "bigint" "COMPUTE";
@@ -790,8 +813,7 @@ QUERY PARSER "win_dhcp_conf" {
 }
 DELETE QUERY PARSER "temp.owget";
 QUERY PARSER "temp.owget" {
-     "^\\s*(\\d+\\.?\\d*)\\s*$" "SET HOST SERVICE $host_service_id VAR $varname = $1;  SET HOST SERVICE $host_service_id STATE #state;";
-     "(.+)" "SET HOST SERVICE $host_service_id VAR $varnames = REPLACE \"$1\"/\"\\s+\"/\", \"/;  SET HOST SERVICE $host_service_id STATE #state;";
+     "(.+)" "EXEC &[ \"SET HOST SERVICE $host_service_id VAR $varnames = \" + REPLACE \"$1\"/\"\\\\s+\"/\", \" + \";\"];  SET HOST SERVICE $host_service_id STATE #state;";
 }
 DELETE QUERY PARSER "soniwall_arp";
 QUERY PARSER "soniwall_arp" {

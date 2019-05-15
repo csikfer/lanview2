@@ -3140,8 +3140,8 @@ TABLE SHAPE "pports" "Pach panel és fali csatlakozó portok" {
     ADD FIELD "port_tag" "port_tag" {
         TITLE "Cimke",@;
     }
-    ADD FIELD "iftype_id" "iftype_id" {
-        TITLE "iftype_id",@;
+    ADD FIELD "iftype_id" "Always patch" {
+        TITLE NULL;
         FLAG "table_hide", "dialog_hide", "read_only";
         DEFAULT VALUE "4";
     }
@@ -3162,6 +3162,7 @@ TABLE SHAPE "pports" "Pach panel és fali csatlakozó portok" {
     }
     ADD FIELD "shared_cable" "shared_cable" {
         TITLE "Megosztás","A megosztás típusa";
+        FLAG "batch_edit";
     }
     ADD FIELD "shared_port_id" "shared_port_id" {
         TITLE "Megosztva","Másodlagos megosztáshoz tartozó elsődleges port";
@@ -3181,9 +3182,9 @@ TABLE SHAPE "query_parsers" "Lekérdezés értelmezések" {
     FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
-    EDIT RIGHTS "system";
-    DELETE RIGHTS "system";
-    INSERT RIGHTS "system";
+    EDIT RIGHTS "admin";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "admin";
     ADD FIELD "query_parser_id" "query_parser_id" {
         TITLE "query_parser_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
@@ -3546,7 +3547,7 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     ADD FIELD "node_stat" {
         TITLE "*Állapot","Az eszköz állpota";
         TOOL TIP "Az eszköz állapota. A szolgáltatás példány(ok)-tól örökölt állapot.";
-        FLAG "HTML", "image";
+        FLAG "HTML", "image", "notext";
     }
     ADD FIELD "node_type" "node_type" {
         TITLE "Típus","Az eszköz típusa";
@@ -3635,8 +3636,8 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
         FLAG "table_hide", "dialog_hide", "read_only";
     }
     FIELD "node_name" ORD asc, no, desc;
-    FIELD "node_type", "place_id", "place_groups", "serial_number", "inventory_number", "model_number", "model_name", "os_name", "os_version", "node_note" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "serial_number", "inventory_number", "node_name", "node_note", "place_id", "place_groups", "node_type", "model_number", "model_name", "os_name", "os_version";
+    FIELD "node_stat", "node_type", "place_id", "place_groups", "serial_number", "inventory_number", "model_number", "model_name", "os_name", "os_version", "node_note" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "serial_number", "inventory_number", "node_name", "node_stat", "node_note", "place_id", "place_groups", "node_type", "model_number", "model_name", "os_name", "os_version";
 }
 TABLE SHAPE "subnets" "Alhálózatok" {
     TITLE "subnets",@,@;
