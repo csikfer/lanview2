@@ -969,7 +969,46 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     QString::const_iterator i = checkCmd.constBegin();
     char separator = 0;
     bool prevSpace = false;
+    QString checkCmdSubs;   // Command substituted
+    // Substitute
     while (i != checkCmd.constEnd()) {
+        char c = i->toLatin1();
+        QChar qc = *i;
+        ++i;
+        if (separator != 0 && c == separator) {
+            separator = 0;
+            checkCmdSubs += qc;
+            continue;
+        }
+        if (c == '\'') {
+            separator = c;
+            checkCmdSubs += qc;
+            continue;
+        }
+        if (c == '\\') {
+            if (i != checkCmd.constEnd()) {
+                checkCmdSubs += qc;
+                checkCmdSubs += *i;
+                ++i;
+            }
+            continue;
+        }
+        if (c == '$') {
+            if (i->toLatin1() == '$') {
+                checkCmdSubs += qc;
+                ++i;
+            }
+            else {
+                QString vname;
+                vname = getParName(i, checkCmd.constEnd());
+                checkCmdSubs += getParValue(q, vname);
+                continue;
+            }
+        }
+        checkCmdSubs += qc;
+    }
+    // Split args
+    while (i != checkCmdSubs.constEnd()) {
         char c = i->toLatin1();
         QChar qc = *i;
         ++i;
@@ -990,22 +1029,11 @@ int cInspector::getCheckCmd(QSqlQuery& q)
             continue;
         }
         if (c == '\\') {
-            if (i != checkCmd.constEnd()) {
+            if (i != checkCmdSubs.constEnd()) {
                 arg += *i;
                 ++i;
             }
             continue;
-        }
-        if (c == '$') {
-            if (i->toLatin1() == '$') {
-                ++i;
-            }
-            else {
-                QString vname;
-                vname = getParName(i, checkCmd.constEnd());
-                arg += getParValue(q, vname);
-                continue;
-            }
         }
         arg += qc;
     }
