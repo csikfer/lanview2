@@ -968,7 +968,6 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     QString arg;
     QString::const_iterator i = checkCmd.constBegin();
     char separator = 0;
-    bool prevSpace = false;
     QString checkCmdSubs;   // Command substituted
     // Substitute
     while (i != checkCmd.constEnd()) {
@@ -995,7 +994,6 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         }
         if (c == '$') {
             if (i->toLatin1() == '$') {
-                checkCmdSubs += qc;
                 ++i;
             }
             else {
@@ -1008,6 +1006,8 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         checkCmdSubs += qc;
     }
     // Split args
+    bool prevSpace = false;
+    i = checkCmdSubs.constBegin();
     while (i != checkCmdSubs.constEnd()) {
         char c = i->toLatin1();
         QChar qc = *i;
