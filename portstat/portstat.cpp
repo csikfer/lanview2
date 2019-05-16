@@ -248,21 +248,20 @@ bool cPortStat::postInit(QSqlQuery& q)
         }
     }
     else {
-        if (parent->hostServiceId() != vhs.getId(_sSuperiorHostServiceId)) {
+        int ix = vhs.toIndex(_sSuperiorHostServiceId);
+        if (parent->hostServiceId() != vhs.getId(ix)) {
             // Not ours !!!???
-            vhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
-            vhs.setFlag(false);
+            QBitArray m = vhs.clearStateFields(TS_FALSE);
+            vhs.setId(ix, parent->hostServiceId());
+            m.setBit(ix);
             vhs._toReadBack = RB_NO_ONCE;
-            vhs.update(q, false, vhs.mask(_sSuperiorHostServiceId, _sFlag));
+            vhs.update(q, false, m);
         }
         else {  // OK
             vhs.mark(q, vhs.primaryKey(), false); // clear flag
         }
         if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
-            // Clear states
-            if (_sUnknown != vhs.getName(_sHostServiceState)) {
-                vhs.clearState(q);
-            }
+            vhs.clearState(q);
             pDelete(pPortVars);
         }
     }

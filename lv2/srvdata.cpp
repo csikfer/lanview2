@@ -327,18 +327,31 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
 
 cHostService& cHostService::clearState(QSqlQuery& __q)
 {
-    setName(_sHostServiceState, _sUnknown);
-    setName(_sHardState, _sUnknown);
-    setName(_sSoftState, _sUnknown);
-    clear(_sStateMsg);
-    setName(_sLastChanged, _sNOW);
-    setName(_sLastTouched ,_sNOW);
-    setBool(_sFlag, false);
-    QBitArray setMask = mask(_sHostServiceState, _sHardState, _sSoftState, _sStateMsg);
-    setMask = setMask | mask(_sLastChanged, _sLastTouched, _sFlag);
+    QBitArray setMask = clearStateFields(TS_FALSE);
     _toReadBack = RB_NO_ONCE;
     update(__q, false, setMask, primaryKey());
     return *this;
+}
+
+QBitArray cHostService::clearStateFields(eTristate flag)
+{
+    QBitArray setMask;
+    setMask = mask(_sActAlarmLogId, _sLastAlarmLogId, _sStateMsg);
+    clear(setMask);
+    setName(_sHostServiceState, _sUnknown);
+    setName(_sHardState,        _sUnknown);
+    setName(_sSoftState,        _sUnknown);
+    setMask |= mask(_sHostServiceState, _sHardState, _sSoftState);
+    setName(_sLastChanged, _sNOW);
+    setName(_sLastTouched ,_sNOW);
+    setId(_sCheckAttempts, 0);
+    setMask |= mask(_sLastChanged, _sLastTouched, _sCheckAttempts);
+    if (flag != TS_NULL) {
+        int ix = toIndex(_sFlag);
+        setBool(ix, flag == TS_TRUE);
+        setMask.setBit(ix);
+    }
+    return setMask;
 }
 
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)

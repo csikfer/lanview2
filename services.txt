@@ -66,6 +66,19 @@ SERVICE "attached" "IndAlarm Contact védett eszköz" {
     TYPE "life_sign";
     ON LINE GROUPS "dispatcher", "admin";
 }
+SERVICE "check_dhcp" "DHCP monitorozás" {
+    COMMAND "dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw";
+    FEATURES ":method=nagios:";
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 600;
+    HEARTBEAT TIME 1800;
+    RETRY CHECK INTERVAL 120;
+    FLAPPING INTERVAL 14400;
+    FLAPPING MAX CHANGE 8;
+    TYPE "check_service";
+    ON LINE GROUPS "admin";
+    OFF LINE GROUPS "admin";
+}
 SERVICE "check_disk" {
     SUPERIOR SERVICE MASK "^lv2|group$";
     COMMAND "/usr/lib/nagios/plugins/check_disk $vol";
@@ -118,19 +131,6 @@ SERVICE "check_ups" "UPS check by NUT" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
-    ON LINE GROUPS "admin";
-    OFF LINE GROUPS "admin";
-}
-SERVICE "DHCP" "DHCP monitorozás" {
-    COMMAND "dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw";
-    FEATURES ":method=nagios:";
-    MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 600;
-    HEARTBEAT TIME 1800;
-    RETRY CHECK INTERVAL 120;
-    FLAPPING INTERVAL 14400;
-    FLAPPING MAX CHANGE 8;
-    TYPE "check_service";
     ON LINE GROUPS "admin";
     OFF LINE GROUPS "admin";
 }
@@ -687,7 +687,7 @@ SERVICE VAR TYPE "ifoutoctets" "Output bytes" {
 SERVICE VAR TYPE "ifpacks" "Input/output packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
 }
-SERVICE VAR TYPE "ifpacks-err" "Input/output error/discard packets" {
+SERVICE VAR TYPE "ifpacks_err" "Input/output error/discard packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
     CRITICAL "big" "1.0";
     WARNING "big" "0.0001";
@@ -696,17 +696,17 @@ SERVICE VAR TYPE "ifspeed" "Ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
 }
-SERVICE VAR TYPE "ifspeed-10g" "Ethernet 10G port átviteli sebessége" {
+SERVICE VAR TYPE "ifspeed_10g" "Ethernet 10G port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "4294967295";
 }
-SERVICE VAR TYPE "ifspeed-fast" "Fast ethernet port átviteli sebessége" {
+SERVICE VAR TYPE "ifspeed_fast" "Fast ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "100000000";
 }
-SERVICE VAR TYPE "ifspeed-gig" "Ethernet gigabit port átviteli sebessége" {
+SERVICE VAR TYPE "ifspeed_gig" "Ethernet gigabit port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "1000000000";
@@ -716,35 +716,41 @@ SERVICE VAR TYPE "runtime" "Egy lkérdezést futásának az ideje" {
     CRITICAL "big" "00:00:30";
     WARNING "big" "00:00:10";
 }
-SERVICE VAR TYPE "runtime-slow" "Egy lassú lekérdezést futásának az ideje" {
+SERVICE VAR TYPE "runtime_slow" "Egy lassú lekérdezést futásának az ideje" {
     TYPE "interval" "GAUGE";
     PLAUSIBILITY "big" "00:00:01";
     CRITICAL "big" "00:01:00";
     WARNING "big" "00:00:30";
 }
-SERVICE VAR TYPE "temp-core" "CPU/SOC core temp." {
+SERVICE VAR TYPE "temp_core" "CPU/SOC core temp." {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "5", "110";
     CRITICAL "big" "80";
     WARNING INVERSE "interval" "10", "60";
 }
-SERVICE VAR TYPE "temp-indoor" "Beltéri hőmérséklet" {
+SERVICE VAR TYPE "temp_indoor" "Beltéri hőmérséklet" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "40";
     WARNING INVERSE "interval" "18", "30";
 }
-SERVICE VAR TYPE "temp-indoor_clim" "Beltéri hőmérséklet" {
+SERVICE VAR TYPE "temp_indoor_clim" "Beltéri hőmérséklet klimatizált" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "30";
     WARNING INVERSE "interval" "15", "25";
 }
-SERVICE VAR TYPE "temp-outdoor" "Kültéri hőmérséklet" {
+SERVICE VAR TYPE "temp_outdoor" "Kültéri hőmérséklet" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "-30", "50";
     CRITICAL INVERSE "interval" "-20", "45";
     WARNING INVERSE "interval" "-10", "35";
+}
+SERVICE VAR TYPE "temp_rack_hot" "Rack hőmérséklet, szerver kiáramló levegő" {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "0", "60";
+    CRITICAL INVERSE "interval" "10", "40";
+    WARNING INVERSE "interval" "18", "35";
 }
 SERVICE VAR TYPE "upsAdvBatteryRunTimeRemaining" "service : PoweNet-MIB" {
     TYPE "interval", "bigint" "COMPUTE";

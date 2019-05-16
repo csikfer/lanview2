@@ -99,6 +99,10 @@ public:
     /// Törli az aktuális rekord (ID alapján) állapot mezőit.
     /// Az adatbázisból nem olvassa vissza a rekordok tartalmát.
     cHostService& clearState(QSqlQuery& __q);
+    /// Az objektum állapot mezőit törli/alaphelyzetbe állítja (a memóriában)
+    /// @param flag Ha értéke nem TS_NULL, akkor beállítja a flag mezőt is
+    /// @return A modosított mezők maszk-ja.
+    QBitArray clearStateFields(eTristate flag = TS_NULL);
     /// A hálózati elem, és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
