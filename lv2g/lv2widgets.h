@@ -804,7 +804,7 @@ private slots:
 };
 
 /// @class cIntervalWidget
-/// Egy intervallum
+/// Time interval
 class LV2GSHARED_EXPORT cIntervalWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -863,9 +863,10 @@ private slots:
     void destroyedImage(QObject *p);
 };
 
-class Ui_fKeyArrayEd;
+class Ui_fKeyArrayEd;   ///< Form for cFKeyArrayWidget
 /// @class cArrayWidget
 /// Egy tömb adatmező megjelenítése és módosítása
+/// A tömb elemek rekord ID-k, a rekord név kerül megjelenítésre.
 class LV2GSHARED_EXPORT cFKeyArrayWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -932,7 +933,7 @@ private slots:
 
 
 /// @class cFontFamilyWidget
-/// Font csalás kiválasztása
+/// Font család kiválasztása
 class LV2GSHARED_EXPORT cFontFamilyWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -950,7 +951,7 @@ private slots:
 };
 
 /// @class cFontAttrWidget
-/// Font csalás kiválasztása
+/// Font attributumok megadása
 class LV2GSHARED_EXPORT cFontAttrWidget : public cFieldEditBase {
     Q_OBJECT
 public:

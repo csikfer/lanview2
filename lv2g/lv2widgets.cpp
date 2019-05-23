@@ -2239,7 +2239,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             if (_pParentDialog == nullptr) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
             cRecordDialog *pDialog = dynamic_cast<cRecordDialog *>(_pParentDialog);
             if (pDialog == nullptr) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
-            QList<cFieldEditBase *>::iterator it = pDialog->fields.begin(); // A hivatkozott mező a jelenlegi elött!!
+            QList<cFieldEditBase *>::iterator it = pDialog->fields.begin(); // A hivatkozott mező a jelenlegi elött kell legyen!!
             for (;it < pDialog->fields.end(); ++it) {
                 if (0 == (*it)->_fieldShape.getName().compare(owner, Qt::CaseInsensitive)) {
                     cFieldEditBase *pfeb = *it;
@@ -2351,9 +2351,9 @@ bool cFKeyWidget::setWidget()
 int cFKeyWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
+    actId = _colDescr.toId(_value);
     if (1 == r) {
         // ? _refresh();
-        actId = _colDescr.toId(_value);
         if (pSelectPlace != nullptr) {
             pSelectPlace->refresh();
         }
@@ -2364,13 +2364,17 @@ int cFKeyWidget::set(const QVariant& v)
 
 QString cFKeyWidget::getName()
 {
+    QString r;
     if (pModel != nullptr) {
-        return pModel->currendName();
+        r = pModel->currendName();
     }
-    if (pSelectPlace != nullptr) {
-        return pSelectPlace->currentPlaceName();
+    else if (pSelectPlace != nullptr) {
+        r = pSelectPlace->currentPlaceName();
     }
-    EXCEPTION(EPROGFAIL);
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
+    return r;
 }
 
 void cFKeyWidget::setFromEdit(int i)
@@ -2378,7 +2382,10 @@ void cFKeyWidget::setFromEdit(int i)
     if (pModel == nullptr) EXCEPTION(EPROGFAIL);
     qlonglong id = pModel->atId(i);
     setFromWidget(id);
-    // pUi->comboBox()->setCurrentIndex(i);
+    if (pNullButton != nullptr && _actValueIsNULL) {
+        pNullButton->setChecked(false);
+        disableEditWidget(TS_FALSE);
+    }
 }
 
 void cFKeyWidget::setFromEdit(qlonglong id)
