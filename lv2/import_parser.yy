@@ -1647,13 +1647,13 @@ static inline cEnumVal& actEnum()
 %type  <i>  vlan_id place_id iptype pix pix_z image_id image_idz tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
-%type  <i>  node_h node_ts srvvt_id
+%type  <i>  node_h node_ts srvvt_id reattr
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered inverse
+%type  <b>  bool_ bool_on bool ifdef exclude replfl prefered inverse
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from features
-%type  <sl> strs strs_z strs_zz alert list_m nsws nsws_
+%type  <sl> strs strsz strs_z strs_zz alert list_m nsws nsws_
 %type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
 %type  <vl> vals vtfilt
@@ -1775,6 +1775,9 @@ strs    : str                       { $$ = new QStringList(*$1); delete $1; }
         | list_m                    { $$ = $1; }
         | strs ',' str              { $$ = $1;   *$$ << *$3;     delete $3; }
         | strs ',' list_m           { $$ = $1;   *$$ << *$3;     delete $3; }
+        ;
+strsz   : strs                      { $$ = $1; }
+        |                           { $$ = new QStringList; }
         ;
 strs_z  : str_z                     { $$ = new QStringList(*$1); delete $1; }
         | list_m                    { $$ = $1; }
@@ -2967,13 +2970,13 @@ qparse  : QUERY_T PARSER_T srvid '{'    { ivars[_sServiceId] = $3; ivars[_sItemS
 qparis  : qpari
         | qparis qpari
         ;
-qpari   : cases str str str_z ';'   { cQueryParser::_insert(qq(), ivars[_sServiceId], _sParse, $1, sp2s($2), sp2s($3), sp2s($4), ivars[_sItemSequenceNumber]);
+qpari   : TEMPLATE_T reattr str str str_z ';'   { cQueryParser::_insert(qq(), ivars[_sServiceId], _sParse, $2, sp2s($3), sp2s($4), sp2s($5), ivars[_sItemSequenceNumber]);
                                       ivars[_sItemSequenceNumber] += 10; }
         | PREP_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPrep, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         | POST_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPost, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         ;
-cases   : CASE_T bool_              { $$ = $2; }
-        |                           { $$ = false; }
+reattr  : ATTR_T '(' strsz ')'      { $$ = 0; foreach (QString s, *$3) { $$ |= ENUM2SET(regexpAttr(s)); } delete $3; }
+        |                           { $$ = ENUM2SET(RA_EXACTMATCH); }
         ;
 replaces: iprange
         | reparp

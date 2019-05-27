@@ -966,7 +966,7 @@ void cSetWidget::setFromEdit(int id)
             _bits &= ~m;
             setWidgetAutoset(_bits, _autosets);
         }
-        _isNull = _bits == 0;
+        // _isNull = _bits == 0;    // Lehet üres tömb is!
         if (_isNull && _defaults != 0) {
             _bits = _defaults;
         }

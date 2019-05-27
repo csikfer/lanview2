@@ -488,9 +488,8 @@ enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cCol
         return ifExcep(r, acceptable, v);
     default:
         EXCEPTION(EPROGFAIL, eColType);
-        break;
     }
-    return ifExcep(VC_INVALID, acceptable, v);
+    // return ifExcep(VC_INVALID, acceptable, v);
 }
 
 QVariant cColStaticDescr::fromSql(const QVariant& _f) const
@@ -998,7 +997,7 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     default:
         EXCEPTION(EPROGFAIL);
     }
-    return _f; // Csak a warning miatt
+    // return _f; // Csak a warning miatt
 }
 QString   cColStaticDescrArray::toName(const QVariant& _f) const
 {
@@ -1154,6 +1153,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v, cColS
     return ifExcep(r, acceptable, v);
 }
 
+// A DEFAULT-nál előfordulhat az ARRAY[...] forma is, azt nem kezeli a függvény
 QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
 {
     QString s = _f.toString();
@@ -1560,7 +1560,6 @@ qlonglong cColStaticDescrAddr::toId(const QVariant& _f) const
     case FT_INET:
     case FT_CIDR:
         return 0;
-        break;
     default:        EXCEPTION(EPROGFAIL);
     }
     if (!_f.isNull()) DERR() << QObject::trUtf8("Invalid data type : %1").arg(_f.typeName()) << endl;
@@ -1606,12 +1605,12 @@ QVariant  cColStaticDescrTime::set(const QVariant& _f, qlonglong& str) const
     QTime   dt;
     if (_f.canConvert<QTime>()) dt = _f.toTime();
     else if (variantIsNum(_f)) {   // millicesc to QTime
-        qlonglong h = variantIsFloat(_f) ? (qlonglong)_f.toDouble() : _f.toLongLong();
+        qlonglong h = variantIsFloat(_f) ? qlonglong(_f.toDouble()) : _f.toLongLong();
         int ms = h % 1000; h /= 1000;
         int s  = h %   60; h /=   60;
         int m  = h %   60; h /=   60;
         if (h < 24) {
-            dt = QTime((int)h, m, s, ms);
+            dt = QTime(int(h), m, s, ms);
         }
     }
     else if (variantIsString(_f)) {
@@ -3257,8 +3256,22 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
             return execSqlTextFunction(q, pFeatures->value(_sViewFunc), descr()[__i].toSql(get(__i)));
         }
         else if (pFeatures->keys().contains(_sViewExpr)) {
+            QStringList args = pFeatures->slValue(_sViewExpr);
+            QString expr = args.takeFirst();
+            static const QString m = "$";
+            if (args.isEmpty()) args << m;
+            QVariantList binds;
+            foreach (QString arg, args) {
+                if (arg == m) {
+                    binds << descr()[__i].toSql(get(__i));
+                }
+                else {
+                    int ix = toIndex(arg);
+                    binds << descr()[ix].toSql(get(ix));
+                }
+            }
             QString r;
-            if (execSql(q, "SELECT " + pFeatures->value(_sViewExpr), descr()[__i].toSql(get(__i)))) {
+            if (execSql(q, "SELECT " + expr, binds)) {
                 r = q.value(0).toString();
             }
             return r;

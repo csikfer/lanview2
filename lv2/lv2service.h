@@ -51,18 +51,18 @@ enum eInspectorType {
 
     IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
     IT_METHOD_NAGIOS        = 0x0100,   ///< Nagios plugin
-//  IT_METHOD_MUNIN         = 0x0200,   ///< Munin plugin
-    IT_METHOD_QPARSE        = 0x0300,   ///< Query parser
+    IT_METHOD_QPARSE        = 0x0200,   ///< Query parser
     IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
     IT_METHOD_CARRIED       = 0x0800,   ///<
     IT_METHOD_INSPECTOR     = 0x1000,   ///< Egy LanView2 service (cInspector) APP
-    IT_METHOD_MASK          = 0x1F00,
+//  IT_METHOD_MUNIN         = 0x2000,   ///< Munin plugin
+    IT_METHOD_MASK          = 0xFF00L,
 
-    IT_SUPERIOR             = 0x2000,   ///< Alárendelt funkciók vannak
-    IT_MAIN                 = 0x4000,   ///< Fő folyamat, nincs parent
-    IT_PURE_PARSER          = 0x8000,   ///<
+    IT_SUPERIOR             =0x10000L,   ///< Alárendelt funkciók vannak
+    IT_MAIN                 =0x20000L,   ///< Fő folyamat, nincs parent
+    IT_PURE_PARSER          =0x40000L,   ///<
 
-    IT_AUTO_TRANSACTION     =0x10000L   ///< Nincs automatikus tranzakció kezelés
+    IT_AUTO_TRANSACTION     =0x80000L   ///< Nincs automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota
@@ -103,7 +103,7 @@ protected:
     cInspector& inspector;
     QTimer *    pTimer;
 protected slots:
-    void timerEvent();
+    void on_timer_timeout();
 };
 
 /// @class cInspectorThread
@@ -206,7 +206,7 @@ public:
     virtual int run(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
-    virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
+    virtual enum eNotifSwitch parse(int _ec, QIODevice &_text);
     /// Futás időzítés indítása
     virtual void start();
     int firstDelay();
@@ -293,7 +293,7 @@ public:
     cHostService        hostService;
     /// A node rekord objektum pointere (node, host, snmpdevice)
     cNode              *pNode;
-    /// A port objektum pointere, ha meg van adva a hos_services rekordban, egyébként NULL
+    /// A port objektum pointere, ha meg van adva a host_services rekordban, egyébként NULL
     cNPort             *pPort;
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
     cFeatures        *_pFeatures;
@@ -347,8 +347,8 @@ protected:
     int getInspectorTiming(const QString &value);
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
-    enum eNotifSwitch parse_nagios(int _ec, QIODevice &text);
-    enum eNotifSwitch parse_qparse(int _ec, QIODevice &text);
+    enum eNotifSwitch parse_nagios(int _ec, const QString &text);
+    enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza

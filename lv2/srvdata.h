@@ -345,6 +345,20 @@ class LV2SHARED_EXPORT cImport : public cRecord {
 class cInspector;
 class cImportParseThread;
 
+enum eParseType {
+    PT_PREP, PT_PARSE, PT_POST
+};
+
+const QString& parseType(int e, eEx __ex = EX_ERROR);
+int parseType(const QString& s, eEx __ex = EX_ERROR);
+
+enum eRegexpAttr {
+    RA_CASESENSITIVE, RA_EXACTMATCH, RA_LOOP
+};
+
+const QString& regexpAttr(int e, eEx __ex = EX_ERROR);
+int regexpAttr(const QString& s, eEx __ex = EX_ERROR);
+
 class LV2SHARED_EXPORT cQueryParser : public cRecord {
     CRECORD(cQueryParser);
 public:
@@ -352,11 +366,11 @@ public:
     /// @param q
     /// @param _sid A szolgáltatás azonosító (ID)
     /// @param _ty Típus neve ('prep', 'parse', 'post')
-    /// @param _cs Nagybetű érzékenység (true : nagybetű érzékeny)
+    /// @param _ra A regExp attributumai
     /// @param _re A reguláris kifejezés
     /// @param _cmd Parancs
     /// @param _seq Sorrend vagy prioritás
-    static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, bool _cs, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
+    static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, qlonglong _ra, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
     void setInspector(cInspector *pInsp);       ///< Inspector mod, közvetlen végrehajtás
     /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
     /// A konténer a behelyettesítésekhez egy változó listát ad, mivel ilyenkor pInspector értéke NULL, így az azon keresztüli behelyettesítések nem elérhetőek.
@@ -381,6 +395,7 @@ protected:
     bool                slave;
     QStringList         *pListCmd;          ///< interpreter parancsok listája
     QList<QRegExp>      *pListRExp;         ///< Reguláris kifelyezések listája (sorrend azonos mint a pListCmd-ben)
+    QList<qlonglong>    *pListReAttr;       ///< Reguláris kifelyezések attributumainak listája (sorrend azonos mint a pListCmd-ben)
     QString             *pPrepCmd;          ///< prepare (indító) parancs, ha van, egyébként NULL
     QString             *pPostCmd;          ///< post (záró) parancs, ha van, egyébként NULL
     cInspector          *pInspector;        ///< Tulajdonos pointere, ha egy szálban fut az interpreter

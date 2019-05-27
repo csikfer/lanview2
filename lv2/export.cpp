@@ -907,12 +907,21 @@ QString cExport::QueryParsers(eEx __ex)
                 r += line(_sDELETE_ + _sQUERY_PARSER_ + servicName + _sSemicolon);
                 r += lineBeginBlock(_sQUERY_PARSER_ + servicName);
             }
-            QString pt = o.getName(_sParseType);
+            int pt = int(o.getId(_sParseType));
             QString l;
-            if      (pt == _sPrep)                  l = "PREP ";
-            else if (pt == _sPost)                  l = "POST ";
-            else if (o.getBigInt(_sCaseSensitive))  l = "CASE " + str(o[_sRegularExpression]);
-            else                                    l =           str(o[_sRegularExpression]);
+            static const qlonglong defAttr = ENUM2SET(RA_EXACTMATCH);
+            switch (pt) {
+            case PT_PREP:   l = "PREP ";    break;
+            case PT_POST:   l = "POST ";    break;
+            case PT_PARSE:
+                l = "TEMPLATE ";
+                if (defAttr != o.getId(_sRegexpAttr)) {
+                    l += "ATTR(" + o.getName(_sRegexpAttr) + ") ";
+                }
+                break;
+            default:
+                EXCEPTION(EPROGFAIL);
+            }
             r += line(l + str(o[_sImportExpression]) + str_z(o[_sQueryParserNote]) + _sSemicolon);
         } while (o.next(q));
         r += lineEndBlock();

@@ -1095,17 +1095,67 @@ const cRecStaticDescr& cImport::descr() const
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-CRECDDCR(cQueryParser, _sQueryParsers)
 CRECDEF(cQueryParser)
+
+const QString& parseType(int e, eEx __ex)
+{
+    switch (e) {
+    case PT_PREP:   return _sPrep;
+    case PT_PARSE:  return _sParse;
+    case PT_POST:   return _sPost;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+
+}
+
+int parseType(const QString& s, eEx __ex)
+{
+    if (0 == s.compare(_sPrep,  Qt::CaseInsensitive)) return PT_PREP;
+    if (0 == s.compare(_sParse, Qt::CaseInsensitive)) return PT_PARSE;
+    if (0 == s.compare(_sPost,  Qt::CaseInsensitive)) return PT_POST;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, s);
+    return ENUM_INVALID;
+}
+
+const QString& regexpAttr(int e, eEx __ex)
+{
+    switch (e) {
+    case RA_CASESENSITIVE:  return _sCasesensitive;
+    case RA_EXACTMATCH:     return _sExactmatch;
+    case RA_LOOP:           return _sLoop;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
+int regexpAttr(const QString& s, eEx __ex)
+{
+    if (0 == s.compare(_sCasesensitive, Qt::CaseInsensitive)) return RA_CASESENSITIVE;
+    if (0 == s.compare(_sExactmatch,    Qt::CaseInsensitive)) return RA_EXACTMATCH;
+    if (0 == s.compare(_sLoop,          Qt::CaseInsensitive)) return RA_LOOP;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, s);
+    return ENUM_INVALID;
+}
+
+const cRecStaticDescr&  cQueryParser::descr() const
+{
+    if (initPDescr<cQueryParser>(_sQueryParsers)) {
+        CHKENUM(_sParseType, parseType);
+        CHKENUM(_sRegexpAttr, regexpAttr);
+    }
+    return *_pRecordDescr;
+}
 
 cQueryParser::cQueryParser() : cRecord()
 {
-    pPostCmd = pPrepCmd = nullptr;
-    pListCmd = nullptr;
-    pListRExp = nullptr;
-    pInspector = nullptr;
-    pVarMap    = nullptr;
-    pCommands      = nullptr;
+    pPostCmd      = pPrepCmd = nullptr;
+    pListCmd      = nullptr;
+    pListRExp     = nullptr;
+    pListReAttr   = nullptr;
+    pInspector    = nullptr;
+    pVarMap       = nullptr;
+    pCommands     = nullptr;
     pParserThread = nullptr;
     slave = false;
     _set(cQueryParser::descr());
@@ -1113,10 +1163,13 @@ cQueryParser::cQueryParser() : cRecord()
 
 cQueryParser::cQueryParser(const cQueryParser& __o) : cRecord()
 {
-    pPostCmd = pPrepCmd = nullptr;
-    pListCmd = nullptr;
-    pListRExp = nullptr;
-    pInspector = nullptr;
+    pPostCmd      = pPrepCmd = nullptr;
+    pListCmd      = nullptr;
+    pListRExp     = nullptr;
+    pListReAttr   = nullptr;
+    pInspector    = nullptr;
+    pVarMap       = nullptr;
+    pCommands     = nullptr;
     pParserThread = nullptr;
     slave = false;
     _cp(__o);
@@ -1128,15 +1181,16 @@ cQueryParser::~cQueryParser()
     pDelete(pPrepCmd);
     pDelete(pListCmd);
     pDelete(pListRExp);
+    pDelete(pListReAttr);
     // pDelete(pParserThread);
 }
 
-void cQueryParser::_insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, bool _cs, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq)
+void cQueryParser::_insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, qlonglong _ra, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq)
 {
     cQueryParser o;
     o.setId(  _sServiceId,         _sid);
     o.setName(_sParseType,         _ty);
-    o.setBool(_sCaseSensitive,     _cs);
+    o.setBool(_sRegexpAttr,        _ra);
     o.setName(_sRegularExpression, _re);
     o.setName(_sImportExpression,  _cmd);
     o.setName(_sQueryParserNote,   _not);
@@ -1177,14 +1231,34 @@ int cQueryParser::prep(cError *& pe)
 int cQueryParser::parse(QString src,  cError *&pe)
 {
     pe = nullptr;
-    if (pListCmd == nullptr || pListRExp == nullptr || pListCmd->size() != pListRExp->size()) EXCEPTION(EPROGFAIL);
+    if (pListCmd == nullptr || pListRExp == nullptr || pListReAttr == nullptr
+     || pListCmd->size() != pListRExp->size() || pListCmd->size() != pListReAttr->size()) EXCEPTION(EPROGFAIL);
     int i, n = pListCmd->size();
     for (i = 0; i < n; i++) {
-        QRegExp rexp = pListRExp->at(i);
-        if (rexp.exactMatch(src)) {
-            return execute(pe, pListCmd->at(i), rexp.capturedTexts());
+        QRegExp   rexp = pListRExp->at(i);
+        qlonglong reat = pListReAttr->at(i);
+        // PDEB(VERBOSE) << src << " ~ " << rexp.pattern() << " - " << reat << endl;
+        const QString& cmd = pListCmd->at(i);
+        if (ENUM2SET(RA_EXACTMATCH) & reat) {
+            if (rexp.exactMatch(src)) {
+                return execute(pe, cmd, rexp.capturedTexts());
+            }
         }
-        else continue;
+        else {
+            int ix = rexp.indexIn(src);
+            if (ix == -1) continue;
+            if (ENUM2SET(RA_LOOP) & reat) {
+                int r;
+                do {
+                    r = execute(pe, cmd, rexp.capturedTexts());
+                    if (R_ERROR == r) return R_ERROR;
+                } while ((ix = rexp.indexIn(src, ix)) > -1);
+                return r;
+            }
+            else {
+                return execute(pe, cmd, rexp.capturedTexts());
+            }
+        }
     }
     PDEB(VVERBOSE) << "Nincs illeszkedes : " << src << endl;
     return R_NOTFOUND;
@@ -1215,7 +1289,7 @@ cQueryParser *cQueryParser::newChild(cInspector * _isp)
     if (R_NOTFOUND == r && nullptr != _isp->pPrimeService) r = p->load(q, _isp->primeServiceId(), false, false);
     if (R_NOTFOUND == r && nullptr != _isp->pProtoService) r = p->load(q, _isp->protoServiceId(), false, false);
     if (R_NOTFOUND == r) {
-        if (pListCmd == nullptr || pListRExp == nullptr) EXCEPTION(EDATA, 0, _isp->name());
+        if (pListCmd == nullptr || pListRExp == nullptr || pListReAttr) EXCEPTION(EDATA, 0, _isp->name());
         pDelete(p);
         return this;
     }
@@ -1236,19 +1310,23 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
     pDelete(pPrepCmd);
     pDelete(pListCmd);
     pDelete(pListRExp);
+    pDelete(pListReAttr);
     qlonglong id = getId(ixServiceId);
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sParse);
     int n = completion(q);
     if (n == 0) return R_NOTFOUND;
     pListRExp = new QList<QRegExp>;
+    pListReAttr = new QList<qlonglong>;
     pListCmd  = new QStringList;
     do {
         *pListCmd << getName(_sImportExpression);
-        enum Qt::CaseSensitivity cs = getBool(_sCaseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive ;
+        qlonglong reat = getBool(_sRegexpAttr);
+        enum Qt::CaseSensitivity cs = reat & ENUM2SET(RA_CASESENSITIVE) ? Qt::CaseSensitive : Qt::CaseInsensitive;
         QRegExp rexp(getName(_sRegularExpression),cs);
         if (!rexp.isValid()) EXCEPTION(EDATA, getId(), getName(_sRegularExpression));
-        *pListRExp << rexp;
+        *pListRExp   << rexp;
+        *pListReAttr << reat;
     } while(next(q));
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sPrep);
@@ -1334,7 +1412,7 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
     _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
     int r = R_ERROR;
-    if (pInspector != nullptr) {
+    if (pInspector != nullptr) {                            // Execute
         if (pParserThread == nullptr) {
             if (0 == importParseText(cmd)) return REASON_OK;
             pe = importGetLastError();
@@ -1344,7 +1422,7 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
             r = pParserThread->push(cmd, pe);
         }
     }
-    else if (pVarMap != nullptr && pCommands != nullptr) {
+    else if (pVarMap != nullptr && pCommands != nullptr) {  // Collecting rows to execute
         *pCommands += cmd + "\n";
         r = REASON_OK;
     }

@@ -52,8 +52,8 @@ STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
 STRDEF(Color, "color")
 
-STRDEF(ViewFunc, "view.func")
-STRDEF(ViewExpr, "view.expr")
+STRDEF(ViewFunc, "view_func")
+STRDEF(ViewExpr, "view_expr")
 
 STRDEF(Enumeration, "enumeration")
 
@@ -821,7 +821,10 @@ STRDEF(QueryParsers, "query_parsers")
   STRDEF(Prep, "prep")
   STRDEF(Parse, "parse")
   STRDEF(Post, "post")
- STRDEF(CaseSensitive, "case_sensitive")
+ STRDEF(RegexpAttr, "regexp_attr")
+  STRDEF(Casesensitive, "casesensitive")
+  STRDEF(Exactmatch, "exactmatch")
+  STRDEF(Loop, "loop")
  STRDEF(RegularExpression, "regular_expression")
  STRDEF(ImportExpression, "import_expression")
 

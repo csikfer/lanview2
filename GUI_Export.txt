@@ -1160,12 +1160,12 @@ TABLE SHAPE "arps" "ARP tábla" {
     }
     ADD FIELD "ipaddress" AS "port_by_ip" {
         TITLE "By IP","Port(ok) az IP alapján";
-        FEATURES ":view.func=ip2full_port_name:";
+        FEATURES ":view_func=ip2full_port_name:";
         FLAG "read_only";
     }
     ADD FIELD "hwaddress" AS "port_by_hwa" {
         TITLE "By MAC","Port(ok) a MAC alapján";
-        FEATURES ":view.func=mac2full_port_name:";
+        FEATURES ":view_func=mac2full_port_name:";
         FLAG "read_only";
     }
     FIELD "ipaddress" ORD asc, no, desc;
@@ -1904,7 +1904,7 @@ TABLE SHAPE "ip_address_logs" {
     }
     ADD FIELD "port_id" {
         TITLE "interfész","Interfész";
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
         FLAG "HTML";
     }
     ADD FIELD "address_old" {
@@ -2146,7 +2146,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     ADD FIELD "hwaddress" AS "hwaddress_node" {
         TITLE "MAC node","Node név a MAC alapján";
         FEATURES  {
-            "view.expr" = "mac2node_name(?::macaddr)";
+            "view_expr" = "mac2node_name(?::macaddr)";
         }
     }
     ADD FIELD "reason" "reason" {
@@ -2160,7 +2160,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     }
     ADD FIELD "port_id_old" {
         TITLE "port_id_old",@;
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
     }
     ADD FIELD "mactab_state_old" "mactab_state_old" {
         TITLE "mactab_state_old",@;
@@ -2176,7 +2176,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     }
     ADD FIELD "port_id_new" {
         TITLE "port_id_new",@;
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
     }
     ADD FIELD "mactab_state_new" "mactab_state_new" {
         TITLE "mactab_state_new",@;
@@ -3086,7 +3086,7 @@ TABLE SHAPE "port_vlans" {
         TITLE "Port",@;
         FEATURES  {
             "filter" = "port.node";
-            "view.func" = "port_id2full_name";
+            "view_func" = "port_id2full_name";
         }
     }
     ADD FIELD "vlan_id" AS "vlan_id_raw" {
@@ -3201,7 +3201,7 @@ TABLE SHAPE "query_parsers" "Lekérdezés értelmezések" {
     ADD FIELD "item_sequence_number" "item_sequence_number" {
         TITLE "item_sequence_number",@;
     }
-    ADD FIELD "case_sensitive" "case_sensitive" {
+    ADD FIELD "regexp_attr" "case_sensitive" {
         TITLE "case_sensitive",@;
     }
     ADD FIELD "regular_expression" "regular_expression" {
@@ -3390,6 +3390,9 @@ TABLE SHAPE "service_vars" {
     }
     ADD FIELD "service_var_value" {
         TITLE "Érték","A változó aktuális értéke";
+        FEATURES  {
+            "view_expr" = "service_value2text(?\\,?\\,false),$,service_var_type_id";
+        }
         FLAG "HTML";
         EDIT RIGHTS "admin";
     }
@@ -3562,7 +3565,7 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     ADD FIELD "place_id" AS "place_groups" {
         TITLE "Hely cs.","place_groups";
         FEATURES  {
-            "view.expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND place_group_id  > 1),', ')";
+            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND place_group_id  > 1)\\,'\\,')";
         }
         FLAG "dialog_hide", "read_only", "HTML";
     }

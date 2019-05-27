@@ -31,7 +31,7 @@ void cThreadAcceptor::timer(int ms, eTimerStat tst)
     }
     if (pTimer == nullptr) {
         pTimer = new QTimer(this);
-        connect(pTimer, SIGNAL(timeout()), this, SLOT(timerEvent()));
+        connect(pTimer, SIGNAL(timeout()), this, SLOT(on_timer_timeout()));
     }
     inspector.timerId = 0;
     pTimer->start(ms);
@@ -40,7 +40,7 @@ void cThreadAcceptor::timer(int ms, eTimerStat tst)
     }
 }
 
-void cThreadAcceptor::timerEvent()
+void cThreadAcceptor::on_timer_timeout()
 {
     QTimerEvent e(0);
     _DBGFN() << inspector.name() << endl;
@@ -771,6 +771,7 @@ int cInspector::getInspectorProcess(const QString &value)
         switch (met) {
         // ezeknél nem is kell (lehet) időzítés
         case IT_METHOD_NAGIOS:
+        case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
 //      case IT_METHOD_MUNIN:
         case IT_METHOD_QPARSE:
         case IT_METHOD_QPARSE | IT_METHOD_PARSER:
@@ -783,7 +784,6 @@ int cInspector::getInspectorProcess(const QString &value)
             EXCEPTION(EDATA, met, trUtf8("Invalid 'process', 'method'\n") + typeErrMsg(q));
           }
         }
-        break; // warning
     }
     default: {
         // Nem OK
@@ -809,6 +809,7 @@ int cInspector::getInspectorMethod(const QString &value)
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
+    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
 //  case IT_METHOD_MUNIN:
     case IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
@@ -1251,45 +1252,64 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     return RS_UNREACHABLE;
 }
 
-enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
+enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text)
 {
     _DBGFN() <<  name() << endl;
     enum eNotifSwitch r = RS_INVALID;
-    switch (inspectorType & IT_METHOD_MASK) {
+    int method = inspectorType & IT_METHOD_MASK;
+    switch (method) {
 //  case IT_METHOD_CUSTOM:
     case IT_METHOD_CARRIED:
-        r = RS_STAT_SETTED;
-        break;
+        return RS_STAT_SETTED;
 //  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
     case IT_METHOD_NAGIOS:
+    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
+    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
+    case IT_METHOD_QPARSE:
+        break;
+    default:
+        EXCEPTION(ENOTSUPP, inspectorType, name());
+    }
+    QString text = QString::fromUtf8(_text.readAll());
+    switch (method) {
+//  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
+    case IT_METHOD_NAGIOS:
+    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
         r = parse_nagios(_ec, text);
         break;
     case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
         r = parse_qparse(_ec, text);
         break;
-    default:
-        EXCEPTION(ENOTSUPP, inspectorType, name());
     }
     return r;
 }
 
-enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
+enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text)
 {
-    QString s = _sDown;
-    int r = RS_STAT_SETTED | RS_SET_RETRY;
-    QString note = QString::fromUtf8(text.readAll());
+    int r = RS_DOWN, rr;
     switch (_ec) {
-    case NR_OK:         s = _sOn;           r = RS_STAT_SETTED;     break;
-    case NR_WARNING:    s = _sWarning;      break;
-    case NR_CRITICAL:   s = _sCritical;     break;
-    case NR_UNKNOWN:    s = _sUnreachable;  break;
+    case NR_OK:         r = RS_ON;           break;
+    case NR_WARNING:    r = RS_WARNING;      break;
+    case NR_CRITICAL:   r = RS_CRITICAL;     break;
+    case NR_UNKNOWN:    r = RS_UNREACHABLE;  break;
     }
-    hostService.setState(*pq, s, note, lastRun.elapsed());
-    return eNotifSwitch(r);
+    QString note = text;
+    if (inspectorType & IT_METHOD_QPARSE) switch (r) {
+    case RS_ON:
+    case RS_WARNING:
+    case RS_CRITICAL:
+        rr = parse_qparse(_ec, text);
+        note += trUtf8("\nQuery pareser result : %1 (#%2).").arg(notifSwitch(rr, EX_IGNORE)).arg(rr);
+        break;
+    default:
+        note += trUtf8("\nQuery pareser has been left out.");
+    }
+    hostService.setState(*pq, notifSwitch(r), note, lastRun.elapsed());
+    return RS_STAT_SETTED;
 }
 
-enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
+enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
 {
     _DBGFN() << name() << endl;
     (void)_ec;
@@ -1304,13 +1324,14 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
         pQparser = pQparser->newChild(this);
     }
     pQparser->setInspector(this);   // A kliens beállítása...
-    QString t;
     bool ok = false;
     // A text soronkénti feldolgozása
-    while (false == (t = QString::fromUtf8(text.readLine())).isEmpty()) {
+    QRegExp sep("[\r\n]+");
+    QStringList sl = text.split(sep);
+    foreach (QString t, sl) {
         t = t.simplified();
         if (t.isEmpty()) continue;      // üres
-        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Van kommnt jel. és az első karakter az
+        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Van komment jel. és az első karakter az
         cError *pe = nullptr;
         int r = pQparser->parse(t, pe);
         // Ha semmire sem volt találat
