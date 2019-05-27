@@ -918,6 +918,7 @@ QString cExport::QueryParsers(eEx __ex)
                 if (defAttr != o.getId(_sRegexpAttr)) {
                     l += "ATTR(" + o.getName(_sRegexpAttr) + ") ";
                 }
+                l += str(o[_sRegularExpression]) + _sSp;
                 break;
             default:
                 EXCEPTION(EPROGFAIL);
