@@ -42,7 +42,7 @@
        </property>
        <property name="icon">
         <iconset resource="lv2g.qrc">
-         <normaloff>:/icons/first.ico</normaloff>:/icons/first.ico</iconset>
+         <normaloff>:/icons/go-home-2.ico</normaloff>:/icons/go-home-2.ico</iconset>
        </property>
       </widget>
      </item>

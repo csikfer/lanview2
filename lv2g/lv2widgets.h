@@ -778,11 +778,16 @@ public:
     cTimeWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase* _par);
     ~cTimeWidget();
     virtual int set(const QVariant& v);
+    virtual void disableEditWidget(eTristate tsf = TS_NULL);
 protected:
     QTimeEdit *pTimeEdit;
+    QToolButton *pFirstButton;
+    QToolButton *pLastButton;
 private slots:
     void setFromEdit();
     void setFromEdit(QTime d);
+    void setFirst();
+    void setLast();
 };
 
 /// @class cDateTimeWidget

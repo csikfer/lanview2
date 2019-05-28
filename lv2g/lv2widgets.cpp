@@ -2719,13 +2719,22 @@ cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pEditWidget = pTimeEdit = new QTimeEdit;
+    pFirstButton = new QToolButton();
+    pLastButton  = new QToolButton();
+    pTimeEdit->setDisplayFormat("hh:mm:ss.zzz");
+    pFirstButton->setIcon(QIcon("://icons/first.ico"));
+    pLastButton ->setIcon(QIcon("://icons/last.ico"));
     pLayout->addWidget(pTimeEdit);
+    pLayout->addWidget(pFirstButton);
+    pLayout->addWidget(pLastButton);
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
     connect(pTimeEdit, SIGNAL(TimeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
+    connect(pFirstButton, SIGNAL(clicked()), this, SLOT(setFirst()));
+    connect(pLastButton, SIGNAL(clicked()), this, SLOT(setLast()));
 }
 
 cTimeWidget::~cTimeWidget()
@@ -2742,6 +2751,14 @@ int cTimeWidget::set(const QVariant& v)
     return r;
 }
 
+void cTimeWidget::disableEditWidget(eTristate tsf)
+{
+    cFieldEditBase::disableEditWidget(tsf);
+    pFirstButton->setDisabled(_actValueIsNULL);
+    pLastButton ->setDisabled(_actValueIsNULL);
+}
+
+
 void cTimeWidget::setFromEdit()
 {
     QVariant v;
@@ -2757,6 +2774,15 @@ void cTimeWidget::setFromEdit()
 void cTimeWidget::setFromEdit(QTime d)
 {
     setFromWidget(QVariant(d));
+}
+
+void cTimeWidget::setFirst()
+{
+    setName("00:00");
+}
+void cTimeWidget::setLast()
+{
+    setName("23:59:59.999");
 }
 
 /* **************************************** cDateTimeWidget ****************************************  */

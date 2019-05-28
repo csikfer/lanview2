@@ -1063,15 +1063,22 @@ static inline const cMac& mp2m(cMac * mp)
 }
 
 
-static QString * sTime(qlonglong h, qlonglong m, qlonglong s = 0)
+static QString * sTime(qlonglong h, qlonglong m, double s = 0)
 {
-    if (h < 0 || h >  24) yyerror(QObject::trUtf8("Invalid hour value"));
-    if (m < 0 || m >= 60) yyerror(QObject::trUtf8("Invalid min value"));
-    if (s < 0 || s >= 60) yyerror(QObject::trUtf8("Invalid sec value"));
-    if (h == 24 && (m > 0 || s > 0)) yyerror("Invalid time value");
     QString *p = new QString();
-    static const QChar fillChar = QLatin1Char('0');
-    *p = QString("%1:%2:%3").arg(h, 2, 10, fillChar).arg(m, 2, 10, fillChar).arg(s, 2, 10, fillChar);
+    if (h == 24 && m == 0 && int(s * 10000) == 0) {
+        *p = "23:59:59.999";
+    }
+    else {
+        if (h < 0 || h >= 24) yyerror(QObject::trUtf8("Invalid hour value"));
+        if (m < 0 || m >= 60) yyerror(QObject::trUtf8("Invalid min value"));
+        if (s < 0 || s >= 60) yyerror(QObject::trUtf8("Invalid sec value"));
+        static const QChar fillChar = QLatin1Char('0');
+        *p = QString("%1:%2:%3")
+                .arg(h, 2, 10, fillChar)
+                .arg(m, 2, 10, fillChar)
+                .arg(s, 6, 'f', 3, fillChar);
+    }
     return p;
 }
 
@@ -1161,16 +1168,16 @@ static void portUpdateNc(intList  *seql, bool _f)
     }
 }
 
-static QString *toddef(QString * name, QString *  day, QString * fr, QString *  to, QString *descr)
+static QString *toddef(QString * name, QString *  day, QString * fr, QString *  to, QString *note)
 {
     cTpow t;
     t.setName(*name);
-    t[_sTpowNote] = *descr;
+    t[_sTpowNote] = *note;
     t[_sDow]       = *day;
     t[_sBeginTime] = *fr;
     t[_sEndTime]   = *to;
+    delete day; delete fr; delete to; delete note;
     t.insert(qq());
-    delete day; delete fr; delete to; delete descr;
     return name;
 }
 
@@ -2087,7 +2094,8 @@ tod     : _toddef                   { $$ = $1; }
         ;
 // Egy napon bellüli időpont megadása
 time    : INTEGER_V ':' INTEGER_V               { $$ = sTime($1, $3); }
-        | INTEGER_V ':' INTEGER_V ':' INTEGER_V { $$ = sTime($1, $3, $5); }
+        | INTEGER_V ':' INTEGER_V ':' INTEGER_V { $$ = sTime($1, $3, double($5)); }
+        | INTEGER_V ':' INTEGER_V ':' FLOAT_V   { $$ = sTime($1, $3, $5); }
         ;
 // Inzertál egy time_of_day rekordot, a rekord névvel tár vissza
 _toddef : TIME_T OF_T DAY_T str str FROM_T time TO_T time str_z	{ $$ = toddef($4, $5, $7, $9, $10); }

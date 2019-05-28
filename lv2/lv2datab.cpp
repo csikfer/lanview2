@@ -1587,7 +1587,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrTime::check(const QVariant& _f, cCo
 
 QVariant  cColStaticDescrTime::fromSql(const QVariant& _f) const
 {
-    // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
+    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     return _f;
 }
 QVariant  cColStaticDescrTime::toSql(const QVariant& _f) const
@@ -1623,8 +1623,10 @@ QVariant  cColStaticDescrTime::set(const QVariant& _f, qlonglong& str) const
 }
 QString   cColStaticDescrTime::toName(const QVariant& _f) const
 {
-    // _DBGF() << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    return _f.toTime().toString("hh:mm:ss.zzz");
+    _DBGFN() << _f.typeName() << _sCommaSp << _f.toString() << endl;
+    QTime   t = _f.toTime();
+    QString s = t.toString("hh:mm:ss.zzz");
+    return s;
 }
 /// Ezred másodperc értéket ad vissza
 qlonglong cColStaticDescrTime::toId(const QVariant& _f) const

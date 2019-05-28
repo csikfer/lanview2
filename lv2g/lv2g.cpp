@@ -72,8 +72,8 @@ lv2g::lv2g() :
     // Init icons...
     iconNull.   addFile("://icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
     iconNull.   addFile("://icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
-    iconDefault.addFile("://icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
-    iconDefault.addFile("://icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
+    iconDefault.addFile("://icons/go-home-2.ico",     QSize(), QIcon::Normal, QIcon::On);
+    iconDefault.addFile("://icons/go-home-2-no.ico",  QSize(), QIcon::Normal, QIcon::Off);
 }
 
 lv2g::~lv2g()

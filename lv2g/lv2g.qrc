@@ -94,5 +94,7 @@
         <file>icons/flag-yellow.ico</file>
         <file>icons/system-search-4.ico</file>
         <file>icons/run.ico</file>
+        <file>icons/go-home-2.ico</file>
+        <file>icons/go-home-2-no.ico</file>
     </qresource>
 </RCC>
