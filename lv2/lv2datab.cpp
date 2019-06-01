@@ -3263,17 +3263,22 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
             static const QString m = "$";
             if (args.isEmpty()) args << m;
             QVariantList binds;
+            bool ok = true;
             foreach (QString arg, args) {
                 if (arg == m) {
                     binds << descr()[__i].toSql(get(__i));
                 }
                 else {
-                    int ix = toIndex(arg);
+                    int ix = toIndex(arg, EX_IGNORE);
+                    if (ix < 0) {
+                        ok = false;
+                        break;
+                    }
                     binds << descr()[ix].toSql(get(ix));
                 }
             }
-            QString r;
-            if (execSql(q, "SELECT " + expr, binds)) {
+            QString r = "?!";
+            if (ok && execSql(q, "SELECT " + expr, binds)) {
                 r = q.value(0).toString();
             }
             return r;

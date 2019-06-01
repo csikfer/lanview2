@@ -58,7 +58,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
     QString msg;
     QString name = ui->lineEditName->text();
     bool isInsert = pHost == nullptr;
-    bool isConvert = pDev != pHost;
+    bool isConvert = pHost != nullptr && pDev != pHost;
     if (isConvert) {
         if (!convertToSnmp || isInsert) EXCEPTION(EPROGFAIL);
         msg = trUtf8("Nem SNMP eszköz konvertálása SNMP eszközzé.\n");
