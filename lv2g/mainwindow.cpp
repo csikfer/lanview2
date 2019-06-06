@@ -11,7 +11,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
 {
     if (lv2g::pMainWindow != nullptr) EXCEPTION(EPROGFAIL);
     lv2g::pMainWindow = this;
-    QString title = trUtf8("LanView %1 V%2, API V%3")
+    QString title = tr("LanView %1 V%2, API V%3")
             .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
     setWindowTitle(title);
     setWindowIcon(QIcon("://icons/LanView2.ico"));
@@ -37,7 +37,7 @@ void cMainWindow::init(bool _setup)
         QSqlQuery *pq2 = newQuery();
         QSqlQuery *pqm = newQuery();
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) {
-            QString msg = trUtf8("Nincs menü a GUI applikációhoz");
+            QString msg = tr("Nincs menü a GUI applikációhoz");
             if (lanView::isAuthorized(PL_ADMIN)) {
                 cMsgBox::warning(msg, this);
                 setSetupMenu();
@@ -63,37 +63,37 @@ cMainWindow::~cMainWindow()
 
 void cMainWindow::setSetupMenu()
 {
-    QAction *pFile = menuBar()->addAction(trUtf8("File"));
+    QAction *pFile = menuBar()->addAction(tr("File"));
     QMenu   *pm    = new QMenu(menuBar());
     pFile->setMenu(pm);
     QAction *pa;
     cMenuAction *po;
 
-    QString nm = trUtf8("Setup");
+    QString nm = tr("Setup");
     pa = pm->addAction(nm);
     cIntSubObj *pot =  new cSetupWidget(nullptr);
     pot->setObjectName(nm);
     po  = new cMenuAction(pot, INT_SETUP, pa, pMdiArea);
     po->setObjectName(nm);
 
-    nm = trUtf8("Restart");
+    nm = tr("Restart");
     pa = pm->addAction(nm);
     po  = new cMenuAction(nm, pa, pMdiArea);
     po->setObjectName(nm);
 
-    nm = trUtf8("Exit");
+    nm = tr("Exit");
     pa = pm->addAction(nm);
     po  = new cMenuAction(nm, pa, pMdiArea);
     po->setObjectName(nm);
 
     if (lanView::dbIsOpen()) {
-        QAction *pTools = menuBar()->addAction(trUtf8("Tools"));
+        QAction *pTools = menuBar()->addAction(tr("Tools"));
         QMenu   *pm    = new QMenu(menuBar());
         pTools->setMenu(pm);
         QAction *pa;
         cMenuAction *po;
 
-        QString nm = trUtf8("Import");
+        QString nm = tr("Import");
         pa = pm->addAction(nm);
         cIntSubObj *pot =  new cParseWidget(nullptr);
         pot->setObjectName(nm);
@@ -131,13 +131,13 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
                     delete pq2;
                 }
                 else {  // Nem ok a features mező
-                    QString mm = trUtf8("A hiba miatt a %1:%2 nevű menüpont figyelmen kívül lessz hagyva.")
+                    QString mm = tr("A hiba miatt a %1:%2 nevű menüpont figyelmen kívül lessz hagyva.")
                             .arg(sm.getName(_sAppName), sm.getName());
                     cErrorMessageBox::messageBox(pe, this, mm);
                 }
             } while (sm.next(*pq));
         }
-        else DWAR() << trUtf8("üres menü : ") << _mi.getName() << endl;
+        else DWAR() << tr("üres menü : ") << _mi.getName() << endl;
     }
     else {
         new cMenuAction(pq, &_mi, pa, pMdiArea);

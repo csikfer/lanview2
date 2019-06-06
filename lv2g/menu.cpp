@@ -41,9 +41,9 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         setObjectName(param);
         setType(MAT_SHAPE);
         if (!tableShape.fetchByName(param)) {
-            msg = trUtf8("A %1 nevű menúben a %2 nevű tábla megelenítő rekordot (table_shapes) nem sikerült beolvasni.")
+            msg = tr("A %1 nevű menúben a %2 nevű tábla megelenítő rekordot (table_shapes) nem sikerült beolvasni.")
                     .arg(pmi->getName(), param);
-            msg += trUtf8("A leíró vaószínüleg nem létezik. A menüpont le lessz tiltva.");
+            msg += tr("A leíró vaószínüleg nem létezik. A menüpont le lessz tiltva.");
             cMsgBox::warning(msg, par);
             pa->setDisabled(true);
         }
@@ -78,9 +78,9 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
 #undef SETINTWIN
 #undef _SETINTWIN
         else {
-            msg = trUtf8("A %1 nevű menüben ismeretlen %2 nevű form.")
+            msg = tr("A %1 nevű menüben ismeretlen %2 nevű form.")
                    .arg(pmi->getName(), param);
-            msg += trUtf8("A menüpont le lessz tiltva.");
+            msg += tr("A menüpont le lessz tiltva.");
             cMsgBox::warning(msg, par);
             pa->setDisabled(true);
             break;
@@ -104,9 +104,9 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         }
         break;
     default:
-        msg = trUtf8("A %1 nevű menü típusa '%2' ismeretlen.")
+        msg = tr("A %1 nevű menü típusa '%2' ismeretlen.")
                .arg(pmi->getName(), pmi->getName(cMenuItem::ixMenuItemType()));
-        msg += trUtf8("A menüpont le lessz tiltva.");
+        msg += tr("A menüpont le lessz tiltva.");
         cMsgBox::warning(msg, par);
         pa->setDisabled(true);
         break;
@@ -204,7 +204,7 @@ void cMenuAction::initInt()
 void cMenuAction::displayIt()
 {
     if (pMdiArea == nullptr) {
-        EXCEPTION(EPROGFAIL, -1, trUtf8("pMdiArea is NULL"));
+        EXCEPTION(EPROGFAIL, -1, tr("pMdiArea is NULL"));
     }
     cError *pe = nullptr;
     try {
@@ -234,7 +234,7 @@ void cMenuAction::displayIt()
         pIntSubObj->pWidget()->show();
         return;
     } CATCHS(pe);
-    QString msg = trUtf8("Program, vagy adat hiba miatt a kért funkció nem elérhető.");
+    QString msg = tr("Program, vagy adat hiba miatt a kért funkció nem elérhető.");
     cErrorMessageBox::messageBox(pe, pMdiArea, msg);
     delete pe;
     pIntSubObj = nullptr;

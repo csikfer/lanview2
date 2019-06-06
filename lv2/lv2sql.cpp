@@ -70,7 +70,7 @@ QStringList _sqlToStringList(const QString& _s)
                         }
                     }
                     if (!fragment) break;
-                    if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid (fragment) string array : ") + _s);
+                    if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, QObject::tr("Invalid (fragment) string array : ") + _s);
                     sl[i] += QChar(',') + (s = sl[i +1]);
                     sl.removeAt(i +1);
                 }
@@ -81,7 +81,7 @@ QStringList _sqlToStringList(const QString& _s)
                 continue;
             }
             else if (s.isEmpty()) {
-                EXCEPTION(EDBDATA, 8, QObject::trUtf8("Invalid string array (empty text) : ") + _s);
+                EXCEPTION(EDBDATA, 8, QObject::tr("Invalid string array (empty text) : ") + _s);
             }
             sl[i].replace(nm, "\"");
         }
@@ -115,7 +115,7 @@ QString integerListToSql(const QVariantList& vl)
         else {
             bool ok;
             r += QString::number(v.toLongLong(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
+            if (!ok) EXCEPTION(EDATA,-1,QObject::tr("Invalid number"));
         }
 
     }
@@ -134,7 +134,7 @@ QString doubleListToSql(const QVariantList& vl)
         else {
             bool ok;
             r += QString::number(v.toDouble(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
+            if (!ok) EXCEPTION(EDATA,-1,QObject::tr("Invalid number"));
         }
 
     }
@@ -399,7 +399,7 @@ QSqlDatabase *  getSqlDb(void)
         lanView::getInstance()->threadMutex.lock();
         QSqlDatabase *pDb;
         QString tn = currentThreadName();
-        if (tn.isEmpty()) EXCEPTION(EPROGFAIL, 0, QObject::trUtf8("Thread name is empty."));
+        if (tn.isEmpty()) EXCEPTION(EPROGFAIL, 0, QObject::tr("Thread name is empty."));
         QMap<QString, QSqlDatabase *>&  map = lanView::getInstance()->dbThreadMap;
         QMap<QString, QSqlDatabase *>::iterator i = map.find(tn);
         newDb = i == map.end();
@@ -498,11 +498,11 @@ void sqlCommit(QSqlQuery& q, const QString& tn)
     cError *pe = nullptr;
     bool r = false;
     if (pTrl->isEmpty()) {
-        msg = QObject::trUtf8("End transaction, invalid name : %1; no pending transaction").arg(tn);
+        msg = QObject::tr("End transaction, invalid name : %1; no pending transaction").arg(tn);
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else if (pTrl->last() != tn) {
-        QString msg = QObject::trUtf8("End transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
+        QString msg = QObject::tr("End transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else {
@@ -533,11 +533,11 @@ cError *sqlRollback(QSqlQuery& q, const QString& tn, eEx __ex)
     bool r = false;
     int i = pTrl->indexOf(tn);
     if (pTrl->isEmpty()) {
-        msg = QObject::trUtf8("Rollback transaction, invalid name : %1; no pending transaction").arg(tn);
+        msg = QObject::tr("Rollback transaction, invalid name : %1; no pending transaction").arg(tn);
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else if (i < 0) {
-        QString msg = QObject::trUtf8("Rollback transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
+        QString msg = QObject::tr("Rollback transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else {

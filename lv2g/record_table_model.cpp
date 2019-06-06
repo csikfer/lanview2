@@ -24,7 +24,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     , columns(_rt.fields)
 {
     if (sIrrevocable.isEmpty()) {
-        sIrrevocable = QObject::trUtf8("A művelet nem visszavonható.");
+        sIrrevocable = QObject::tr("A művelet nem visszavonható.");
     }
     lineBgColorEnum2Ix = lineBgColorEnumIx = NULL_IX;  // Nincs teljes sor háttérszinezés
     QString colorFildName = tableShape.feature(_sBgColor);
@@ -42,7 +42,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
                 }
                 else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
                     lineBgColorEnumIx = NULL_IX;
-                    DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
+                    DWAR() << QObject::tr("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
                 }
                 // Fellülbíráló szín, egy másik mező kitüntetett értékére
                 if (lineBgColorEnumIx >= 0 && !sl.isEmpty()) {
@@ -60,13 +60,13 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
                         }
                         else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
                             lineBgColorEnum2Ix = NULL_IX;
-                            DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + sl.first(), tableShape.identifying()) << endl;
+                            DWAR() << QObject::tr("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + sl.first(), tableShape.identifying()) << endl;
                         }
                     }
                 }
             }
             else {
-                DWAR() << QObject::trUtf8("Invalid field name (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
+                DWAR() << QObject::tr("Invalid field name (%1), Shape : %2").arg(_sBgColor + "=" + colorFildName, tableShape.identifying()) << endl;
             }
         }
     }
@@ -265,7 +265,7 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
     bool r = SqlInsert(*pq, pRec);  // Insert, if error, view error message box
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
     if (r && !insertRow(pRec)) {    // Insert ok and view error
-        cMsgBox::warning(QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"), recordView.pWidget());
+        cMsgBox::warning(QObject::tr("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"), recordView.pWidget());
     }
     return r;
 }
@@ -376,13 +376,13 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
 {
     QBitArray   rb = index2map(mil);
     if (rb.count(true) == 0) return;
-    QString text = trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable;
-    text += trUtf8("\nTörlésre kijelölt objektu(mok) :");
+    QString text = tr("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable;
+    text += tr("\nTörlésre kijelölt objektu(mok) :");
     int s = rb.size();    // Az összes rekord száma
     for (int i = 0; i < s; ++i) {   // végigszaladunk a sorokon
         if (rb[i]) {
             cRecord * p = _records.at(i);
-            text += trUtf8("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
+            text += tr("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
         }
     }
 

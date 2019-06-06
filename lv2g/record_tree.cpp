@@ -106,7 +106,7 @@ void cRecordTree::init()
         break;
     default:
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
-                  trUtf8("TABLE %1 SHAPE %2 TYPE : %3")
+                  tr("TABLE %1 SHAPE %2 TYPE : %3")
                   .arg(pTableShape->getName(),
                        pTableShape->getName(_sTableName),
                        pTableShape->getName(_sTableShapeType))

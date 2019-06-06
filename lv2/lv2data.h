@@ -209,23 +209,27 @@ class LV2SHARED_EXPORT cParamType : public cRecord {
     CRECORD(cParamType);
 public:
     /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
-    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
+    /// Hiba esetén, ha __ex nem EX_IGNORE (vagy nincs megadva), akkor dob egy kizárást,
     /// @param q Az adatbázis művelethet használt objektum
-    /// @param __n A paraméter neve
+    /// @param __n A paraméter típus neve
     /// @param __de Egy megjegyzés a paraméter típushoz
     /// @param __t A paraméter adat típusa
     /// @param __di A paraméter dimenziója, opcionális
+    /// @param _replace Ha igaz, akkor ha létezik a rekord a név alapján, akkor modosítás van beszúrás helyett
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), enum eEx __ex = EX_ERROR);
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool _replace = false, enum eEx __ex = EX_ERROR);
     /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param q Az adatbázis művelethet használt objektum
-    /// @param __n A paraméter neve
+    /// @param __n A paraméter típus neve
     /// @param __de Egy megjegyzés a paraméter típushoz
     /// @param __t A paraméter adat típusa (lsd.: eParamType).
     /// @param __di A paraméter dimenziója, opcionális
+    /// @param _replace Ha igaz, akkor ha létezik a rekord a név alapján, akkor modosítás van beszúrás helyett
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), enum eEx __ex = EX_ERROR);
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool _replace = false, enum eEx __ex = EX_ERROR) {
+        return insertNew(q, __n, __de, paramTypeType(__t), __di, _replace, __ex);
+    }
     /// Egy QVariant típusból konvertálja az adatbázisba kiírandó text típusú értéket, a típusban meghatározott adattípusnak megfelelően.
     /// @param __t Az adat típus
     /// @param __v A konvertálandó érték
@@ -291,7 +295,7 @@ public:
     /// A paraméter adat típus enumerációs értékkel tér vissza
     qlonglong valueType()   const { return paramType.getId(_sParamTypeType); }
     /// A paraméter adat típus névvel tér vissza
-    const QString& valueTypeName(enum eEx __ex = EX_ERROR) const {return paramTypeType(valueType(), __ex); }
+    const QString& valueTypeName(enum eEx __ex = EX_ERROR) const {return paramTypeType(int(valueType()), __ex); }
     /// A paraméter dimenzió ill. mértékegység nevével tér vissza
     QString valueDim()    const { return paramType.getName(__sParamTypeDim); }
     /// A paraméter értékkel tér vissza
@@ -307,19 +311,19 @@ public:
     cSysParam& operator=(const QVariant& __v) { return setValue(__v); }
     static enum eReasons setTextSysParam(QSqlQuery& _q, const QString& __nm, const QString& _val, const QString& _tn = _sText) {
         execSqlFunction(_q, "set_text_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
-        return (enum eReasons)reasons(_q.value(0).toString());
+        return eReasons(reasons(_q.value(0).toString()));
     }
     static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sBoolean) {
         execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
-        return (enum eReasons)reasons(_q.value(0).toString());
+        return eReasons(reasons(_q.value(0).toString()));
     }
     static enum eReasons setIntegerSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInteger) {
         execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
-        return (enum eReasons)reasons(_q.value(0).toString());
+        return eReasons(reasons(_q.value(0).toString()));
     }
     static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInterval) {
         execSqlFunction(_q, "set_interval_sys_param", QVariant(__nm), QVariant(intervalToStr(_val)), QVariant(_tn));
-        return (enum eReasons)reasons(_q.value(0).toString());
+        return eReasons(reasons(_q.value(0).toString()));
     }
     static enum eReasons setSysParam(QSqlQuery& _q, const QString& __nm, const QVariant& _val, const QString& _tn, enum eEx __ex = EX_ERROR) {
         cSysParam   po;
@@ -738,7 +742,7 @@ public:
     static const cIfType *fromIana(int _iana_id);
     ///
     bool isLinkage() const {
-        eLinkType lt = (eLinkType)getId(_sIfTypeLinkType);
+        eLinkType lt = eLinkType(getId(_sIfTypeLinkType));
         return lt == LT_PTP || lt == LT_BUS || lt == LT_PATCH;
     }
 protected:
@@ -1119,7 +1123,7 @@ public:
     /// Ha az objektum azt kelzi, hogy az egy magadott (A) port nincs bekötve, akkor true-val tér vissza.
     bool isNC() const   { return cd && (ab < -1 && b < 0 && bb < 0); }
 };
-inline uint qHash(const cShareBack& sh) { return (uint)qHash(sh.getA()); }
+inline uint qHash(const cShareBack& sh) { return uint(qHash(sh.getA())); }
 
 /*!
 @class cPatch
@@ -1633,10 +1637,10 @@ public:
     cPortVlan& setVlanId(const QString& __vn)   { set(_ixVlanId, cVLan().getIdByName(__vn)); return *this; }
     cPortVlan& setVlanType(enum eVlanType __e)  { setName(_ixVlanType, vlanType(__e)); return *this; }
     cPortVlan& setVlanType(const QString& __n)  { (void)vlanType(__n); setName(_ixVlanType, __n); return *this; }
-    enum eVlanType getVlanType(enum eEx __ex = EX_ERROR){ return (enum eVlanType)vlanType(getName(_ixVlanType), __ex); }
+    enum eVlanType getVlanType(enum eEx __ex = EX_ERROR){ return eVlanType(vlanType(getName(_ixVlanType), __ex)); }
     cPortVlan& setSetType(enum eSetType __e)    { setName(_ixSetType, setType(__e)); return *this; }
     cPortVlan& setSetType(const QString& __n)   { (void)setType(__n); setName(_ixSetType, __n); return *this; }
-    enum eSetType getSetType(enum eEx __ex = EX_ERROR)  { return (enum eSetType)setType(getName(_ixSetType), __ex); }
+    enum eSetType getSetType(enum eEx __ex = EX_ERROR)  { return eSetType(setType(getName(_ixSetType), __ex)); }
     STATICIX(cPortVlan, PortId)
     STATICIX(cPortVlan, VlanId)
     STATICIX(cPortVlan, VlanType)
@@ -1650,7 +1654,7 @@ public:
 /// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
 #define APPMEMO(q, m, i) cAppMemo::memo(q, m, i, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
-/// @macro QAPPMEMO(q, m, i)
+/// @macro QAPPMEMO(m, i)
 /// Egy ap_memos rekord kiírása.
 /// @param m Az üzenet string
 /// @param i Az üzenet fontossága (enum eNotifSwitch konstans)

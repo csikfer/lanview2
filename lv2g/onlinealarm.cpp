@@ -62,12 +62,12 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
     pRightVBLayout->addWidget(pMap, 10);
     pButtonLayout  = new QHBoxLayout();
     pRightVBLayout->addLayout(pButtonLayout);
-    pAckButton     = new QPushButton(trUtf8("Nyugtázás"));
+    pAckButton     = new QPushButton(tr("Nyugtázás"));
     pAckButton->setDisabled(true);
     pButtonLayout->addWidget(pAckButton);
     connect(pAckButton, SIGNAL(clicked()), this, SLOT(acknowledge()));
     if (isAdmin) {
-        pAckAllButton = new QPushButton(trUtf8("Mind nyugtázása"));
+        pAckAllButton = new QPushButton(tr("Mind nyugtázása"));
         pAckAllButton->setDisabled(true);
         pButtonLayout->addWidget(pAckAllButton);
         connect(pAckAllButton, SIGNAL(clicked()), this, SLOT(allAcknowledge()));
@@ -110,7 +110,7 @@ void cOnlineAlarm::map()
     if (sNodeTitle.isEmpty()) {
         sNodeTitle  = cTableShape::getFieldDialogTitle(*pq, _sNodes,  _sNodeName);
         sPlaceTitle = cTableShape::getFieldDialogTitle(*pq, _sPlaces, _sPlaceName);
-        sTicket     = trUtf8("Hiba jegy");
+        sTicket     = tr("Hiba jegy");
     }
     static const qlonglong ticketId  = cHostService::ticketId(*pq, EX_IGNORE);
     QString text;   // HTML text
@@ -129,22 +129,22 @@ void cOnlineAlarm::map()
     node.fetchById(*pq, nodeId);
     text += _sBr + sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
     text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
-    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + pTargetRec->getName(_sMsg) + "</i></b>";
-    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    text += _sBr + tr("Riasztás oka : ") + "<b><i>" + pTargetRec->getName(_sMsg) + "</i></b>";
+    text += _sBr + tr("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
     */
     text += cAlarm::htmlText(*pq, pTargetRec->getId());
     if (pTargetRec->isIndex(_sAckUserIds) && pTargetRec->get(_sAckUserIds).toList().isEmpty() == false) {
-        text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTargetRec->view(*pq, _sAckUserIds) + "</b>";
+        text += _sBr + tr("Nyugtázva : ") + "<b>" + pTargetRec->view(*pq, _sAckUserIds) + "</b>";
         QString note = pTargetRec->getName(_sAckUserNote);
         if (!note.isEmpty()) {
-            _sBr + trUtf8("Nyugtázó(k) megjegyzése(i) : ") + "<i>" + note.replace(QString("\n"), _sBr);
+            _sBr + tr("Nyugtázó(k) megjegyzése(i) : ") + "<i>" + note.replace(QString("\n"), _sBr);
         }
         if (isTicket) {
-            text += _sBr + trUtf8("Hiba jegyhez fűzött megjegyzés : ") + "<b>" + pActRecord->getName(_sEventNote) + "</b>";
+            text += _sBr + tr("Hiba jegyhez fűzött megjegyzés : ") + "<b>" + pActRecord->getName(_sEventNote) + "</b>";
         }
     }
     if (isTicket  && pActRecord->get(_sAckUserIds).toList().isEmpty() == false) {
-        text += _sBr + trUtf8("Hiba jegyet nyugtázta : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b>";
+        text += _sBr + tr("Hiba jegyet nyugtázta : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b>";
     }
     // A parent alaprajza
     bool ok = place.fetchById(*pq, placeId);
@@ -157,7 +157,7 @@ void cOnlineAlarm::map()
     ok = ok && image.dataIsPic();
     clearMap();
     if (ok) {
-        text += trUtf8("<br>Alaprejz: %1, %2").arg(image.getName(), image.getNote());
+        text += tr("<br>Alaprejz: %1, %2").arg(image.getName(), image.getNote());
         if (vPol.isNull() == false) {   // Van polygon
             QColor color(Qt::red);      // Piros
             color.setAlpha(128);        // félig átlátszó
@@ -166,12 +166,12 @@ void cOnlineAlarm::map()
             center = avarage<QPolygonF, QPointF>(pol).toPoint();
         }
         else {
-            text += trUtf8("<br><br><b>Nincs pontos hely adat.</b>");
+            text += tr("<br><br><b>Nincs pontos hely adat.</b>");
         }
     }
     ok = ok && pMap->setImage(image);
     if (!ok) {
-        text += trUtf8("<br><br><b>Nincs megjeleníthető alaprajz.</b>");
+        text += tr("<br><br><b>Nincs megjeleníthető alaprajz.</b>");
     }
     else {
         if (vPol.isNull() == false) {
@@ -252,7 +252,7 @@ void cOnlineAlarm::allAcknowledge()
         int row = mi.row();
         const cRecord *pr = pRecTabNoAck->recordAt(row, EX_IGNORE);
         if (pr == nullptr) {
-            DERR() << trUtf8("Invalid selected row : %1").arg(row) << endl;
+            DERR() << tr("Invalid selected row : %1").arg(row) << endl;
             continue;
         }
         qlonglong aid = pr->getId();
@@ -337,7 +337,7 @@ cAckDialog::cAckDialog(cOnlineAlarm *par)
 {
     pUi = new Ui_ackDialog;
     pUi->setupUi(this);
-    if (par->isTicket) setWindowTitle(trUtf8("Hiba jegy nyugtázása"));
+    if (par->isTicket) setWindowTitle(tr("Hiba jegy nyugtázása"));
     pUi->labelPlace->setText(par->sPlaceTitle);
     pUi->lineEditPlace->setText(par->pTargetRec->getName(_sPlaceName));
     pUi->labelNode->setText(par->sNodeTitle);

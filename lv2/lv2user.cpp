@@ -100,11 +100,11 @@ bool cUser::checkPasswordAndFetch(QSqlQuery& q, const QString &__passwd, qlonglo
 enum ePrivilegeLevel cUser::getRights(QSqlQuery& q)
 {
     if (isNullId()) {
-        if (isNullName()) EXCEPTION(EDATA, 0, trUtf8("Nincs megadva a felhasználói ID, vagy név"));
+        if (isNullName()) EXCEPTION(EDATA, 0, tr("Nincs megadva a felhasználói ID, vagy név"));
         setByName(q);
     }
     QString sql = "SELECT MAX(group_rights) FROM group_users JOIN groups USING(group_id) WHERE user_id = ?";
-    if (!execSql(q, sql, get(idIndex()))) EXCEPTION(EDATA, 0, trUtf8("Nem azonosítható a felhasználói ID, vagy név"));
+    if (!execSql(q, sql, get(idIndex()))) EXCEPTION(EDATA, 0, tr("Nem azonosítható a felhasználói ID, vagy név"));
     _privilegeLevel = (enum ePrivilegeLevel)::privilegeLevel(q.value(0).toString(), EX_IGNORE);
     return (ePrivilegeLevel)_privilegeLevel;
 }

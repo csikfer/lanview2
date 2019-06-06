@@ -10,7 +10,7 @@
 class LV2SHARED_EXPORT cServiceType : public cRecord {
     CRECORD(cServiceType);
 public:
-    static qlonglong insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, enum eEx __ex = EX_ERROR);
+    static qlonglong insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool _replace = false, enum eEx __ex = EX_ERROR);
 };
 
 class LV2SHARED_EXPORT cAlarmMsg  : public cRecord {

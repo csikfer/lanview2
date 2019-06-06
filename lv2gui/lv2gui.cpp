@@ -7,11 +7,11 @@
 
 void setAppHelp()
 {
-    lanView::appHelp += QObject::trUtf8("-a|--app-name              APP name.\n");
-    lanView::appHelp += QObject::trUtf8("-s|--setup                 Setup.\n");
-    lanView::appHelp += QObject::trUtf8("-o|--aoto-open <menu name> Menüpont aktíválása\n");
-    lanView::appHelp += QObject::trUtf8("-f|--fullscreen [<#scrin>] teljes képernyő\n");
-    lanView::appHelp += QObject::trUtf8("-m|--maximize              Maximális ablak.\n");
+    lanView::appHelp += QObject::tr("-a|--app-name              APP name.\n");
+    lanView::appHelp += QObject::tr("-s|--setup                 Setup.\n");
+    lanView::appHelp += QObject::tr("-o|--aoto-open <menu name> Menüpont aktíválása\n");
+    lanView::appHelp += QObject::tr("-f|--fullscreen [<#scrin>] teljes képernyő\n");
+    lanView::appHelp += QObject::tr("-m|--maximize              Maximális ablak.\n");
 }
 
 int main(int argc, char * argv[])
@@ -26,7 +26,7 @@ int main(int argc, char * argv[])
     lv2g::pSplash = new QSplashScreen(QPixmap("://splash.png"));
     lv2g::pSplash->show();
     // QApplication::processEvents(QEventLoop::AllEvents);
-    lv2g::splashMessage(QObject::trUtf8("Program indítás..."));
+    lv2g::splashMessage(QObject::tr("Program indítás..."));
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {
         lv2Gui::_setup = true;
@@ -57,7 +57,7 @@ int main(int argc, char * argv[])
     lanView::sqlNeeded  = lv2Gui::_setup ? SN_NO_SQL : SN_SQL_TRY;
 
     if (lanView::sqlNeeded != SN_NO_SQL) {
-        lv2g::splashMessage(QObject::trUtf8("Az adatbázis megnyitása ..."));
+        lv2g::splashMessage(QObject::tr("Az adatbázis megnyitása ..."));
     }
     lv2Gui   mo;
 

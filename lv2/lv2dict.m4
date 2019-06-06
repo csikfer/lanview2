@@ -597,7 +597,6 @@ dnl type: servicevartype
  STRDEF(DERIVE, "DERIVE")
  STRDEF(DDERIVE, "DDERIVE")
  STRDEF(ABSOLUTE, "ABSOLUTE")
- STRDEF(COMPUTE, "COMPUTE")
 dnl type: drawtype
  STRDEF(LINE, "LINE")
  STRDEF(AREA, "AREA")
@@ -642,6 +641,7 @@ STRDEF(ServiceVarTypes, "service_var_types")
  STRDEF(CriticalInverse, "critical_inverse")
  dnl features deleted
  STRDEF(RawParamTypeId, "raw_param_type_id")
+ STRDEF(RawToRrd, "raw_to_rrd")
 STRDEF(ServiceVars, "service_vars")
  STRDEF(ServiceVarId, "service_var_id")
  STRDEF(ServiceVarName, "service_var_name")
@@ -654,6 +654,11 @@ STRDEF(ServiceVars, "service_vars")
  STRDEF(DelegatePortState, "delegate_port_state")
  dnl service_var_types host_service_id features deleted
  STRDEF(Rarefaction, "rarefaction")
+STRDEF(ServiceRrdVars, "service_rrd_vars")
+ dnl service_vars.*
+ STRDEF(RrdHelperId, "rrd_helper_id")
+ STRDEF(RrdBeatsId, "rrd_beat_id")
+ STRDEF(RrdDisabled, "rrd_disabled")
 STRDEF(Graphs, "graphs")
  STRDEF(GraphId, "graph_id")
  STRDEF(GraphName, "graph_name")

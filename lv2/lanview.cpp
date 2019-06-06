@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 24
+#define DB_VERSION_MINOR 25
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -48,13 +48,13 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
         QString arg(args[i]);
         if (arg.indexOf(_sMinusMinus)  == 0) {
             if (__s == arg.mid(2)) {
-                //PDEB(PARSEARG) << QObject::trUtf8("Long switch found, return %1").arg(i) << endl;
+                //PDEB(PARSEARG) << QObject::tr("Long switch found, return %1").arg(i) << endl;
                 return i;
             }
         }
         else if (arg[0] == QChar('-') && arg.count() > 1) {
             if (QChar(__c) == arg[1]) {
-                //PDEB(PARSEARG) << QObject::trUtf8("Short switch found, return %1").arg(i) << endl;
+                //PDEB(PARSEARG) << QObject::tr("Short switch found, return %1").arg(i) << endl;
                 return i;
             }
         }
@@ -133,7 +133,7 @@ qlonglong sendError(const cError *pe, lanView *_instance)
     fields.add("err_syscode",   pe->mErrorSysCode);
     fields.add("err_submsg",    pe->mErrorSubMsg);
     fields.add(_sThreadName,    pe->mThreadName);
-    fields.add("sql_err_num",   pe->mSqlErrNum);
+    fields.add("sql_err_code",  pe->mSqlErrCode);
     fields.add("sql_err_type",  pe->mSqlErrType);
     fields.add("sql_driver_text",pe->mSqlErrDrText);
     fields.add("sql_db_text",   pe->mSqlErrDbText);
@@ -262,7 +262,7 @@ lanView::lanView()
         cXSignal::setupUnixSignalHandlers();
         connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)));
 #endif // MUST_USIGNAL
-        if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("A lanView objektumból csak egy példány lehet."))
+        if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::tr("A lanView objektumból csak egy példány lehet."))
         instance = this;
         // Connect database, if need
         if (sqlNeeded != SN_NO_SQL) {
@@ -320,7 +320,7 @@ lanView::lanView()
 #ifdef SNMP_IS_EXISTS
             netSnmp::init();
 #else //  SNMP_IS_EXISTS
-            EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("SNMP not supported."));
+            EXCEPTION(ENOTSUPP, -1, QObject::tr("SNMP not supported."));
 #endif //  SNMP_IS_EXISTS
         }
         PDEB(VVERBOSE) << "End " << __PRETTY_FUNCTION__ << " try block." << endl;
@@ -349,7 +349,7 @@ QStringList * lanView::getTransactioMapAndCondLock()
 static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
 {
     if (!l.isEmpty()) {
-        DWAR() << QObject::trUtf8("Rolback %1 all transactions : %2").arg(n,l.join(", ")) << endl;
+        DWAR() << QObject::tr("Rolback %1 all transactions : %2").arg(n,l.join(", ")) << endl;
         QSqlQuery q(*pdb);
         q.exec("ROLLBACK");
         l.clear();
@@ -359,7 +359,7 @@ static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
 lanView::~lanView()
 {
     instance = nullptr;    // "Kifelé" már nincs objektum
-    PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg(qulonglong(this), 0, 16) << endl;
+    PDEB(OBJECT) << QObject::tr("delete (lanView *)%1").arg(qulonglong(this), 0, 16) << endl;
     // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
     rollback_all("main", pDb, mainTrasactions);
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
@@ -376,8 +376,8 @@ lanView::~lanView()
                 }
             }
             else {
-                if (pSelfHostService == nullptr) DERR() << trUtf8("A pSelfHostService pointer értéke NULL.") << endl;
-                if (pQuery           == nullptr) DERR() << trUtf8("A pQuery pointer értéke NULL.") << endl;
+                if (pSelfHostService == nullptr) DERR() << tr("A pSelfHostService pointer értéke NULL.") << endl;
+                if (pQuery           == nullptr) DERR() << tr("A pQuery pointer értéke NULL.") << endl;
             }
         }
         setSelfStateF = false;
@@ -399,13 +399,13 @@ lanView::~lanView()
             }
         }
         else {
-            DERR() << trUtf8("A pSefHostService vagy a pQuery pointer értéke NULL.") << endl;
+            DERR() << tr("A pSefHostService vagy a pQuery pointer értéke NULL.") << endl;
         }
     }
     pDelete(lastError);
     int en = cError::errCount();
     if (en) {   // Ennek illene üresnek lennie
-        DERR() << trUtf8("A hiba objektum konténer nem üres! %1 db kezeletlen objektum.").arg(en) << endl;
+        DERR() << tr("A hiba objektum konténer nem üres! %1 db kezeletlen objektum.").arg(en) << endl;
         do {
             cError *pe = cError::errorList.first();
             sendError(pe, this);
@@ -414,7 +414,7 @@ lanView::~lanView()
     }
     // Lelőjük az összes Thread-et ...? Azoknak elvileg már nem szabadna mennie, sőt a konténernek is illik üresnek lennie
     // A thread-ek adatbázis objektumait töröljük.
-    PDEB(INFO) << QObject::trUtf8("Lock by threadMutex, in lanView destructor ...") << endl;
+    PDEB(INFO) << QObject::tr("Lock by threadMutex, in lanView destructor ...") << endl;
     threadMutex.lock();
     for (QMap<QString, QSqlDatabase *>::iterator i = dbThreadMap.begin(); i != dbThreadMap.end(); i++) {
         QSqlDatabase * pdb = i.value();
@@ -423,14 +423,14 @@ lanView::~lanView()
                 if (pdb->isOpen()) {
                     rollback_all(i.key(), pdb, trasactionsThreadMap[i.key()]);
                     pdb->close();
-                    PDEB(SQL) << QObject::trUtf8("Close database.") << endl;
+                    PDEB(SQL) << QObject::tr("Close database.") << endl;
                 }
             }
             delete pdb;
-            DWAR() << QObject::trUtf8("pdb for %1 thread deleted by lanView destructor.").arg(i.key()) << endl;
+            DWAR() << QObject::tr("pdb for %1 thread deleted by lanView destructor.").arg(i.key()) << endl;
         }
         else {
-            DERR() << QObject::trUtf8("pdb is NULL, for %1 thread.").arg(i.key()) << endl;
+            DERR() << QObject::tr("pdb is NULL, for %1 thread.").arg(i.key()) << endl;
         }
     }
     dbThreadMap.clear();
@@ -466,12 +466,12 @@ bool checkDbVersion(QSqlQuery& q, QString& msg)
     int vmajor = int(execSqlIntFunction(q, &ok1, "get_int_sys_param", "version_major"));
     int vminor = int(execSqlIntFunction(q, &ok2, "get_int_sys_param", "version_minor"));
     if (!(ok1 && ok2)) {
-        msg = QObject::trUtf8("The database version numbers wrong format or missing.");
+        msg = QObject::tr("The database version numbers wrong format or missing.");
         DERR() << msg << endl;
         return false;
     }
     if (DB_VERSION_MAJOR != vmajor || DB_VERSION_MINOR != vminor) {
-        msg = QObject::trUtf8("Incorrect database version.\n"
+        msg = QObject::tr("Incorrect database version.\n"
                               "The expected version is %1.%2\n"
                               "The current database version is %3.%4")
                 .arg(DB_VERSION_MAJOR).arg(DB_VERSION_MINOR).arg(vmajor).arg(vminor);
@@ -521,18 +521,18 @@ void lanView::closeDatabase()
         if (pDb->isValid()) {
             if (pDb->isOpen()) {
                 pDb->close();
-                PDEB(SQL) << QObject::trUtf8("Close database.") << endl;
+                PDEB(SQL) << QObject::tr("Close database.") << endl;
             }
             delete pDb;
             pDb = nullptr;
             QSqlDatabase::removeDatabase(_sQPSql);
-            PDEB(SQL) << QObject::trUtf8("Remove database object.") << endl;
+            PDEB(SQL) << QObject::tr("Remove database object.") << endl;
         }
         else {
             delete pDb;
             pDb = nullptr;
         }
-        PDEB(SQL) << QObject::trUtf8("pDb deleted.") << endl;
+        PDEB(SQL) << QObject::tr("pDb deleted.") << endl;
     }
 }
 
@@ -574,7 +574,7 @@ void lanView::parseArg(void)
     DBGFN();
     int i;
     if (ONDB(PARSEARG)) {
-        cDebug::cout() << head << QObject::trUtf8("arguments :");
+        cDebug::cout() << head << QObject::tr("arguments :");
         foreach (QString arg, args) {
              cDebug::cout() << QChar(' ') << arg;
         }
@@ -583,29 +583,29 @@ void lanView::parseArg(void)
     if (0 < findArg(QChar('h'), _sHelp, args)) {
         QTextStream QStdOut(stdout);
         if (appHelp.isEmpty() == false) QStdOut << appHelp << endl;
-        QStdOut << trUtf8("-d|--debug-level <level>    Set debug level") << endl;
-        QStdOut << trUtf8("-L|--log-file <file name>   Set log file name") << endl;
-        QStdOut << trUtf8("-V|--lib-version            Print lib version") << endl;
-        QStdOut << trUtf8("-S|--test-self-name         Test option") << endl;
-        QStdOut << trUtf8("-R|--host-service-id        Root host-service id") << endl;
-        QStdOut << trUtf8("-h|--help                   Print help") << endl;
+        QStdOut << tr("-d|--debug-level <level>    Set debug level") << endl;
+        QStdOut << tr("-L|--log-file <file name>   Set log file name") << endl;
+        QStdOut << tr("-V|--lib-version            Print lib version") << endl;
+        QStdOut << tr("-S|--test-self-name         Test option") << endl;
+        QStdOut << tr("-R|--host-service-id        Root host-service id") << endl;
+        QStdOut << tr("-h|--help                   Print help") << endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('V'), _sLibVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(trUtf8("LanView2 lib version ")).arg(libVersion) << endl;
+        QStdOut << QString(tr("LanView2 lib version ")).arg(libVersion) << endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('v'), _sVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(trUtf8("%1 version %2")).arg(appName).arg(appVersion) << endl;
+        QStdOut << QString(tr("%1 version %2")).arg(appName).arg(appVersion) << endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < (i = findArg(QChar('d'), _sDebugLevel, args))
      && (i + 1) < args.count()) {
         bool ok;
         debug = args[i + 1].toLongLong(&ok, 0);
-        if (!ok) DERR() << trUtf8("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
+        if (!ok) DERR() << tr("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
         args.removeAt(i);
         args.removeAt(i);
     }
@@ -625,7 +625,7 @@ void lanView::parseArg(void)
      && (i + 1) < args.count()) {
         bool ok;
         selfHostServiceId = args[i + 1].toLongLong(&ok, 0);
-        if (!ok) DERR() << trUtf8("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
+        if (!ok) DERR() << tr("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
         args.removeAt(i);
         args.removeAt(i);
     }
@@ -636,7 +636,7 @@ void lanView::instAppTransl()
 {
     if (pLocale == nullptr) {
         appTranslator = nullptr;
-        DERR() << QObject::trUtf8("Application language file not loaded, locale object pointer is NULL.") << endl;
+        DERR() << QObject::tr("Application language file not loaded, locale object pointer is NULL.") << endl;
         return;
     }
     appTranslator = new QTranslator(this);
@@ -645,7 +645,7 @@ void lanView::instAppTransl()
         QCoreApplication::installTranslator(appTranslator);
     }
     else {
-        DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(pLocale->name()) << endl;
+        DERR() << QObject::tr("Application language file not loaded : %1/%2").arg(appName).arg(pLocale->name()) << endl;
         delete appTranslator;
         appTranslator = nullptr;
     }
@@ -655,7 +655,7 @@ void lanView::instAppTransl()
 bool lanView::uSigRecv(int __i)
 {
     if (__i == SIGHUP) {
-        PDEB(INFO) << trUtf8("Esemény : SIGHUP; reset ...") << endl;
+        PDEB(INFO) << tr("Esemény : SIGHUP; reset ...") << endl;
         reSet();
         return false;
     }
@@ -692,11 +692,11 @@ void lanView::uSigSlot(int __i)
 {
     if (uSigRecv(__i)) switch (__i) {
         case SIGINT:
-            PDEB(INFO) << QObject::trUtf8("Signal SIGINT, call exit.") << endl;
+            PDEB(INFO) << QObject::tr("Signal SIGINT, call exit.") << endl;
             QCoreApplication::exit(0);
             break;
         default:
-            PDEB(WARNING) << QObject::trUtf8("Signal #%1 ignored.").arg(__i) << endl;
+            PDEB(WARNING) << QObject::tr("Signal #%1 ignored.").arg(__i) << endl;
             break;
     }
 }
@@ -722,7 +722,7 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         case QSqlDriver::UnknownSource:
      /* default:  */                    src = _sUnknown;    break;
         }
-        cDebug::cout() << HEAD() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+        cDebug::cout() << HEAD() << QObject::tr("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
     }
     QString sPayload = payload.toString();
     if (sPayload.isNull()) return;
@@ -738,11 +738,11 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
     if (hsids.isEmpty()) return; // No specified any valid host_service_id
     if (hsids.contains(selfHostServiceId)) {
         if (0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
-            PDEB(WARNING) << trUtf8("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
+            PDEB(WARNING) << tr("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
             reSet();
         }
         else if (0 == QString(_sExit).compare(cmd,  Qt::CaseInsensitive)) {
-            PDEB(WARNING) << trUtf8("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
+            PDEB(WARNING) << tr("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
             down();
             exit(0);
         }
@@ -788,10 +788,10 @@ bool lanView::subsDbNotif(const QString& __n, eEx __ex)
             }
             return true;    // O.K.
         }
-        e = trUtf8("Database notification subscribe is unsuccessful.");
+        e = tr("Database notification subscribe is unsuccessful.");
     }
     else {
-        e = trUtf8("Database notification is nothing supported.");
+        e = tr("Database notification is nothing supported.");
     }
     if (__ex) EXCEPTION(ENOTSUPP, -1, e);
     DERR() << e << endl;
@@ -806,7 +806,7 @@ const cUser *lanView::setUser(const QString& un, const QString& pw, eEx __ex)
     instance->pUser = new cUser();
     if (!instance->pUser->checkPasswordAndFetch(q, pw, un)) {
         pDelete(instance->pUser);
-        if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó, vagy nem megfelelő jelszó"));
+        if (__ex)  EXCEPTION(EFOUND,-1,tr("Ismeretlen felhasználó, vagy nem megfelelő jelszó"));
         return nullptr;
     }
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
@@ -820,7 +820,7 @@ const cUser *lanView::setUser(const QString& un, eEx __ex)
     instance->pUser = new cUser();
     if (!instance->pUser->fetchByName(q, un)) {
         pDelete(instance->pUser);
-        if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó : %1").arg(un));
+        if (__ex)  EXCEPTION(EFOUND,-1,tr("Ismeretlen felhasználó : %1").arg(un));
         return nullptr;
     }
     if (q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
@@ -835,7 +835,7 @@ const cUser *lanView::setUser(qlonglong uid, eEx __ex)
     instance->pUser = new cUser();
     if (!instance->pUser->fetchById(q,uid)) {
         pDelete(instance->pUser);
-        if (__ex)  EXCEPTION(EFOUND, uid, trUtf8("Ismeretlen felhasználó azonosító"));
+        if (__ex)  EXCEPTION(EFOUND, uid, tr("Ismeretlen felhasználó azonosító"));
         return nullptr;
     }
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q);
@@ -1155,7 +1155,7 @@ void cExportQueue::destroy_mq(QObject *p)
     QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
     if (it == intMap.end()) {
         // Ettöl a sortol megkergül a fordító :-O
-        // DERR() << trUtf8("Object (thread) name %1 not found").arg(tn) << endl;
+        // DERR() << tr("Object (thread) name %1 not found").arg(tn) << endl;
     }
     else {
         delete it.value();

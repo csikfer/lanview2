@@ -262,20 +262,20 @@ EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& sMac);
 EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
 
 inline QString logLink2str(QSqlQuery& q, cLogLink& lnk) {
-    return QObject::trUtf8("#%1 : %2  <==> %3\n")
+    return QObject::tr("#%1 : %2  <==> %3\n")
             .arg(lnk.getId())
             .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)));
 }
 
 inline QString lldpLink2str(QSqlQuery& q, cLldpLink& lnk) {
-    return QObject::trUtf8("#%1 : %2  <==> %3  (%4 > %5\n")
+    return QObject::tr("#%1 : %2  <==> %3  (%4 > %5\n")
             .arg(lnk.getId())
             .arg(cNPort::getFullNameById(q, lnk.getId(_sPortId1)), cNPort::getFullNameById(q, lnk.getId(_sPortId2)))
             .arg(lnk.getName(_sFirstTime), lnk.getName(_sLastTime));
 }
 
 inline QString mactab2str(QSqlQuery& q, cMacTab& mt) {
-    return QObject::trUtf8("%1  ==> %2  (%3 > %4\n")
+    return QObject::tr("%1  ==> %2  (%3 > %4\n")
             .arg(cNPort::getFullNameById(q, mt.getId(_sPortId)), mt.getName(_sHwAddress))
             .arg(mt.getName(_sFirstTime), mt.getName(_sLastTime));
 }

@@ -234,13 +234,13 @@ cImagePolygonWidget::cImagePolygonWidget(bool _e, QWidget * _par)
 bool cImagePolygonWidget::setImage(const cImage& __o, const QString& __t)
 {
     QString name = __o.getName();
-    if (!__o.dataIsPic()) EXCEPTION(EDATA, -1, trUtf8("Image %1 is not picture.").arg(name));
-    if (__o.hashIsNull()) EXCEPTION(EDATA, -1, trUtf8("Image %1 hash is NULL.").arg(name));
+    if (!__o.dataIsPic()) EXCEPTION(EDATA, -1, tr("Image %1 is not picture.").arg(name));
+    if (__o.hashIsNull()) EXCEPTION(EDATA, -1, tr("Image %1 hash is NULL.").arg(name));
     QByteArray hash = __o.getHash();
     if (imageHash == hash) return false;        // Nincs változás
     const char * _type = __o._getType();
     QByteArray   _data = __o.getImage();
-    if (!picture.loadFromData(_data, _type)) EXCEPTION(EDATA, -1, trUtf8("Image %1 convert to QPixmap failed.").arg(name));
+    if (!picture.loadFromData(_data, _type)) EXCEPTION(EDATA, -1, tr("Image %1 convert to QPixmap failed.").arg(name));
     QString title = __t;
     if (title.isEmpty()) title = __o.getNoteOrName();
     setWindowTitle(title);

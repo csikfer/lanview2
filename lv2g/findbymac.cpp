@@ -30,7 +30,7 @@ void cFBMExpThread::readyLine()
 static const QString _sNMap = "nmap";
 
 cPopUpNMap::cPopUpNMap(QWidget *par, const QString& sIp)
-    : cPopupReportWindow(par, trUtf8("Start nmap..."), trUtf8("%1 nmap report").arg(sIp))
+    : cPopupReportWindow(par, tr("Start nmap..."), tr("%1 nmap report").arg(sIp))
     , process(new QProcess(this))
 {
     pButtonSave->setDisabled(true);
@@ -46,7 +46,7 @@ cPopUpNMap::cPopUpNMap(QWidget *par, const QString& sIp)
 
 void cPopUpNMap::processStarted()
 {
-    pTextEdit->setText(trUtf8("nmap started ..."));
+    pTextEdit->setText(tr("nmap started ..."));
 }
 
 void cPopUpNMap::processFinished(int ec)
@@ -55,7 +55,7 @@ void cPopUpNMap::processFinished(int ec)
         pTextEdit->append(htmlGrInf(_sOk));
     }
     else {
-        pTextEdit->append(htmlError(trUtf8("Exit code : %1").arg(ec)));
+        pTextEdit->append(htmlError(tr("Exit code : %1").arg(ec)));
     }
     pButtonSave->setEnabled(true);
 }
@@ -242,7 +242,7 @@ void cFindByMac::hit_explore()
     QString swName = pUi->comboBoxSw->currentText();
     cSnmpDevice sw;
     if (ip.isNull() || !mac.isValid() || !sw.fetchByName(q, swName)) {
-        pUi->textEdit->append(htmlError(trUtf8("Hibás adatok.")));
+        pUi->textEdit->append(htmlError(tr("Hibás adatok.")));
         return;
     }
     pThread = new cFBMExpThread(mac, ip, sw, this);

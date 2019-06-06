@@ -25,11 +25,11 @@ int importParseText(QString text)
 {
     importFileNm = "[stream]";
     pImportInputStream = new QTextStream(&text);
-    PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
+    PDEB(INFO) << QObject::tr("Start parser ...") << endl;
     initImportParser();
     int r = importParse();
     downImportParser();
-    PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
+    PDEB(INFO) << QObject::tr("End parser.") << endl;
     pDelete(pImportInputStream);
     return r;
 }
@@ -47,11 +47,11 @@ int importParseFile(const QString& fn)
         pImportInputStream = new QTextStream(&in);
         importFileNm = in.fileName();
     }
-    PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
+    PDEB(INFO) << QObject::tr("Start parser ...") << endl;
     initImportParser();
     int r = importParse();
     downImportParser();
-    PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
+    PDEB(INFO) << QObject::tr("End parser.") << endl;
     pDelete(pImportInputStream);
     return r;
 }
@@ -115,7 +115,7 @@ void	cImportParseThread::run()
         DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
         return;
     }
-    PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
+    PDEB(INFO) << QObject::tr("Start parser (thread) ...") << endl;
     initImportParser();
     if (pSrc == nullptr) {     // Fordítás a queue-n keresztül
         importFileNm = "[queue]";
@@ -128,7 +128,7 @@ void	cImportParseThread::run()
         importParse(IPS_THREAD);
     }
     downImportParser();
-    PDEB(INFO) << QObject::trUtf8("End parser ((thread)).") << endl;
+    PDEB(INFO) << QObject::tr("End parser ((thread)).") << endl;
     pDelete(pImportInputStream);
     DBGFNL();
 }
@@ -160,7 +160,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
     }
     else {
         pe = importGetLastError();
-        if (pe == nullptr) pe = NEWCERROR(EUNKNOWN, -1, trUtf8("A parser szál nem fut."));
+        if (pe == nullptr) pe = NEWCERROR(EUNKNOWN, -1, tr("A parser szál nem fut."));
         r = R_DISCARD;
     }
     if (REASON_OK != r) {

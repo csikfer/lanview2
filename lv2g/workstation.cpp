@@ -386,9 +386,9 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pUi->verticalLayoutIp->insertWidget(1, pIpEditWidget);
     pIpEditWidget->showToolBoxs(true, true, true);
     pIpEditWidget->enableToolButtons(true, true, true);
-    pIpEditWidget->setInfoToolTip(trUtf8("Infó az IP címről."));
-    pIpEditWidget->setGoToolTip(trUtf8("Eszköz (minta) kiválasztása az IP cím alapján."));
-    pIpEditWidget->setQueryToolTip(trUtf8("Az IP megállpítása a MAC alapján."));
+    pIpEditWidget->setInfoToolTip(tr("Infó az IP címről."));
+    pIpEditWidget->setGoToolTip(tr("Eszköz (minta) kiválasztása az IP cím alapján."));
+    pIpEditWidget->setQueryToolTip(tr("Az IP megállpítása a MAC alapján."));
     pMacValidator = new cMacValidator(true, this);
     pUi->lineEditPMAC->setValidator(pMacValidator);
     // small cosmetics
@@ -470,7 +470,7 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
         n = n.simplified();
     }
     if (sVal.isEmpty()) {
-        QString msg = trUtf8("Nincs kitöltve a %1 mező.").arg(n);
+        QString msg = tr("Nincs kitöltve a %1 mező.").arg(n);
         if (isNull || !unique) {
             sErrs << htmlWarning(msg);
         }
@@ -485,8 +485,8 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
         node.setName(fn, sVal); // Azonos mezőérték keresése
         if (node.completion(*pq) && !(isModify && node.getId() == node.getId())) {  // önmagunkkal nem ütközünk
             cPatch *pn = cPatch::getNodeObjById(*pq, node.getId());
-            sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(n));
-            QString t = trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(n);
+            sErrs << htmlError(QObject::tr("A megadott %1 nem egyedi!").arg(n));
+            QString t = tr("A %2 (%3) eszköznek azonos a %1-a.").arg(n);
             sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t, 0));
             delete pn;
             isOk = false;
@@ -508,7 +508,7 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
     QString s;
     s = pUi->lineEditName->text();
     if (s.isEmpty()) {  // Missing workstation(/node) name.
-        sErrs << htmlError(trUtf8("Nincs megadva a név! Az egyedi név megadása kötelező."));
+        sErrs << htmlError(tr("Nincs megadva a név! Az egyedi név megadása kötelező."));
         isOk = false;
         return;
     }
@@ -516,8 +516,8 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
     isModify = pUi->radioButtonMod->isChecked();    // nem mindíg frissül
     if (pn != nullptr) {
         if (!(isModify && node.getId() == pn->getId())) { // Name is not unique
-            sErrs << htmlError(trUtf8("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
-            QString t = trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : ");
+            sErrs << htmlError(tr("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
+            QString t = tr("A %1 megadott néven bejegyzett (%2 típusú) eszköz : ");
             sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t, CV_PORTS));
         }
         delete pn;
@@ -558,7 +558,7 @@ void cWorkstation::setStatPortName(bool f, QStringList& sErrs, QStringList& sInf
     (void)sInfs;
     QString s = pUi->lineEditPName->text();
     if (s.isEmpty()) {
-        sErrs << htmlError(trUtf8("Nincs megadva a port név! Az név megadása kötelező."));
+        sErrs << htmlError(tr("Nincs megadva a port név! Az név megadása kötelező."));
         isOk = false;
         return;
     }
@@ -584,20 +584,20 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
     if (!f || pip == nullptr) return;
     int state = pIpEditWidget->state();
     if (state & cIpEditWidget::IES_SUBNET_IS_NULL) {
-        sErrs << htmlError(trUtf8("Nincs megadva alhálózat, vagy VLAN."));
+        sErrs << htmlError(tr("Nincs megadva alhálózat, vagy VLAN."));
     }
     if (state & cIpEditWidget::IES_ADDRESS_IS_INVALID) {
-        sErrs << htmlError(trUtf8("Hibás, vagy hiányos IP címet adott meg."));
+        sErrs << htmlError(tr("Hibás, vagy hiányos IP címet adott meg."));
         isOk = false;
         return;
     }
     if (state & cIpEditWidget::IES_ADDRESS_IS_NULL) {
-        QString msg = trUtf8("Nincs megadva IP cím.");
+        QString msg = tr("Nincs megadva IP cím.");
         if (pip->getId(_sIpAddressType) == AT_DYNAMIC) {
             sErrs << htmlInfo(msg);
         }
         else {
-            msg += trUtf8(" A cím megadása a 'dynamic' típus kivételével kötelező.");
+            msg += tr(" A cím megadása a 'dynamic' típus kivételével kötelező.");
             sErrs << htmlError(msg);
             isOk = false;
         }
@@ -607,8 +607,8 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
     QHostAddress a = pip->address();
     if (pip->getId(_sIpAddressType) != AT_PRIVATE && n.fetchByIp(*pq, a, EX_IGNORE)) {
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
-            sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
-            QString t = trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve.");
+            sErrs << htmlError(tr("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
+            QString t = tr("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve.");
             sInfs << htmlPair2Text(htmlReportNode(*pq, n, t, 0));
             isOk = false;
         }
@@ -620,20 +620,20 @@ void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs
     if (!f || pif == nullptr) return;
     QString sMac = pUi->lineEditPMAC->text();
     if (sMac.isEmpty()) {
-        sErrs << htmlWarning(trUtf8("Nincs megadva a MAC."));
+        sErrs << htmlWarning(tr("Nincs megadva a MAC."));
         return;
     }
     cMac mac = pif->mac();
     if (mac.isEmpty()) {
-        sErrs << htmlWarning(trUtf8("A megadott MAC hibás."));
+        sErrs << htmlWarning(tr("A megadott MAC hibás."));
         isOk = false;
         return;
     }
     cNode n;
     if (n.fetchByMac(*pq, mac)) {
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
-            sErrs << htmlError(trUtf8("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
-            QString t = trUtf8("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve.");
+            sErrs << htmlError(tr("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
+            QString t = tr("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve.");
             sInfs << htmlPair2Text(htmlReportNode(*pq, n, t, 0));
             isOk = false;
         }
@@ -662,12 +662,12 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
     pUi->lineEditLinkNote->setEnabled(exist);
     if (!exist) {      // nincs cél port
         if (lnid == NULL_ID) {   // cél eszköz se
-            sErrs << htmlWarning(trUtf8("Nincs megadva link."));
+            sErrs << htmlWarning(tr("Nincs megadva link."));
             return;
         }
         cPatch *pn = cPatch::getNodeObjById(*pq, lnid);
-        sErrs << htmlError(trUtf8("Nincs megadva a linkelt eszköz portja."));
-        QString t = trUtf8("A következő eszköz egy portjára csatlakozna : %2 ");
+        sErrs << htmlError(tr("Nincs megadva a linkelt eszköz portja."));
+        QString t = tr("A következő eszköz egy portjára csatlakozna : %2 ");
         sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t));
         delete pn;
         isOk = false;
@@ -690,8 +690,8 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
         }
     }
     if (list.size() > 0) {
-        sErrs << htmlWarning(trUtf8("A megadott link ütközik más linkekkel, ha menti, akkor ezek automatikusan törődnek. Visszaállításra nincs lehetőség."));
-        sInfs << htmlInfo(trUtf8("A megadott link a következő link(ek)el ütközik:"))
+        sErrs << htmlWarning(tr("A megadott link ütközik más linkekkel, ha menti, akkor ezek automatikusan törődnek. Visszaállításra nincs lehetőség."));
+        sInfs << htmlInfo(tr("A megadott link a következő link(ek)el ütközik:"))
                + linksHtmlTable(*pq, list);
     }
     link.clear();
@@ -713,10 +713,10 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
         }
         if (list.size() > 0) {
             if (link.getId(_sPhsLinkType2) == LT_TERM) {
-                msg += htmlInfo(QObject::trUtf8("A linkel lánca, végponttól - végpontig:"));
+                msg += htmlInfo(QObject::tr("A linkel lánca, végponttól - végpontig:"));
             }
             else {
-                msg += htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a másik végpontig :"));
+                msg += htmlInfo(QObject::tr("A linkek lánca, csonka, nem ér el a másik végpontig :"));
             }
             msg += linksHtmlTable(*pq, list);
             if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
@@ -735,7 +735,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
                 epid = llnk.getId(_sPortId1);
                 PDEB(VERBOSE) << "Loaded LogLink : " << cNPort::getFullNameById(*pq, epid) << " <==> " << cNPort::getFullNameById(*pq, lpid) << endl;
                 if (epid != ppid) {
-                    sInfs << htmlError(trUtf8("Az ellen oldali végpont (törlendő) logikai linkje : %1").arg(cNPort::getFullNameById(*pq, epid)));
+                    sInfs << htmlError(tr("Az ellen oldali végpont (törlendő) logikai linkje : %1").arg(cNPort::getFullNameById(*pq, epid)));
                 }
             }
             cLldpLink ldnl;
@@ -744,11 +744,11 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
             if (ldnl.completion(*pq)) {
                 epid = ldnl.getId(_sPortId1);
                 if (epid != ppid) {
-                    sInfs << htmlError(trUtf8("Az ellen oldali végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(*pq, epid)));
+                    sInfs << htmlError(tr("Az ellen oldali végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(*pq, epid)));
                 }
                 else {
                     eq = true;
-                    sInfs << htmlGrInf(trUtf8("Megeggyező LLDP link."));
+                    sInfs << htmlGrInf(tr("Megeggyező LLDP link."));
                 }
             }
             if (!eq) {
@@ -757,7 +757,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
                 if (ldnl.completion(*pq)) {
                     epid = ldnl.getId(_sPortId2);
                     if (epid != lpid) {
-                        sInfs << htmlError(trUtf8("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(*pq, epid)));
+                        sInfs << htmlError(tr("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(*pq, epid)));
                     }
                 }
             }
@@ -768,14 +768,14 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
             if (mt.completion(*pq)) {
                 qlonglong mtp = mt.getId(_sPortId);
                 if (lpid == mtp) {
-                    sInfs << htmlGrInf(trUtf8("A Link megerősítve a MAC címtáblák alapján."));
+                    sInfs << htmlGrInf(tr("A Link megerősítve a MAC címtáblák alapján."));
                 }
                 else {
-                    sInfs << htmlError(trUtf8("A Link ütközik a MAC címtáblákkal, talált port %1 .").arg(cNPort::getFullNameById(*pq, mtp)));
+                    sInfs << htmlError(tr("A Link ütközik a MAC címtáblákkal, talált port %1 .").arg(cNPort::getFullNameById(*pq, mtp)));
                 }
             }
             else {
-                sInfs << htmlInfo(trUtf8("A Link nincs megerősítve a MAC címtáblák alapján."));
+                sInfs << htmlInfo(tr("A Link nincs megerősítve a MAC címtáblák alapján."));
             }
         }
     }
@@ -910,14 +910,14 @@ void cWorkstation::ip_go()
             cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
             if (1 == cnt) {
                 if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
-                    pUi->textEditMsg->append(htmlError(trUtf8("A %1 IP alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
+                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
                                                        .arg(ip.toString(), n.getName())));
                     return;
                 }
                 cNPort *p = n.ports.first();
                 cInterface *pi = p->reconvert<cInterface>();
                 if (pi->addresses.size() > 1) {                 // Max egy cím
-                    pUi->textEditMsg->append(htmlError(trUtf8("A %1 IP alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
+                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
                                                        .arg(ip.toString(), n.getName())));
                     return;
                 }
@@ -931,7 +931,7 @@ void cWorkstation::ip_go()
                     set = n.getId() == pSelNode->currentNodeId();
                 }
                 if (set) {
-                    pUi->textEditMsg->append(htmlInfo(trUtf8("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
+                    pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
                 }
             }
         }
@@ -939,16 +939,16 @@ void cWorkstation::ip_go()
             QString msg;
             switch (cnt) {
             case -1:
-                msg = trUtf8("A IP nem valós cím.");
+                msg = tr("A IP nem valós cím.");
                 break;
             case 1:
-                msg = trUtf8("A %1 IP alapján nem sikerült beolvasni az eszköz adatokat.").arg(ip.toString());
+                msg = tr("A %1 IP alapján nem sikerült beolvasni az eszköz adatokat.").arg(ip.toString());
                 break;
             case 0:
-                msg = trUtf8("A %1 IP címmel nincs bejegyzett eszköz.").arg(ip.toString());
+                msg = tr("A %1 IP címmel nincs bejegyzett eszköz.").arg(ip.toString());
                 break;
             default:
-                msg = trUtf8("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());
+                msg = tr("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());
                 break;
             }
             pUi->textEditMsg->append(htmlError(msg));
@@ -964,7 +964,7 @@ void cWorkstation::ip_query()
             QList<QHostAddress> al = cArp::mac2ips(*pq, mac);
             int n = al.size();
             if (n > 1) { // Több cím van! Ezt csak jelezzük
-                QString msg = trUtf8("A MAC-hez tőbb cím is tartozik, az első lessz beállítva, eldobott címek : ");
+                QString msg = tr("A MAC-hez tőbb cím is tartozik, az első lessz beállítva, eldobott címek : ");
                 foreach (QHostAddress a, al.mid(1)) {
                     msg += a.toString() + ", ";
                 }
@@ -974,11 +974,11 @@ void cWorkstation::ip_query()
             if (n >= 1) {   // Az első címet állítjuk be
                 pIpEditWidget->set(al.first());     // Type??
                 addressChanged(al.first(), AT_DYNAMIC);
-                pUi->textEditMsg->append(trUtf8("A %1 MAC alapján beállított IP cím : %2").arg(mac.toString(), al.first().toString()));
+                pUi->textEditMsg->append(tr("A %1 MAC alapján beállított IP cím : %2").arg(mac.toString(), al.first().toString()));
                 return;
             }
         }
-        pUi->textEditMsg->append(trUtf8("A %1 MAC-hez tartozó IP cím megállpítása sikertelen.").arg(mac.toString()));
+        pUi->textEditMsg->append(tr("A %1 MAC-hez tartozó IP cím megállpítása sikertelen.").arg(mac.toString()));
     }
 }
 
@@ -1143,7 +1143,7 @@ void cWorkstation::on_toolButtonIP2MAC_clicked()
                 return;
             }
         }
-        pUi->textEditMsg->append(trUtf8("A MAC cím megállpítása az IP címből sikertelen."));
+        pUi->textEditMsg->append(tr("A MAC cím megállpítása az IP címből sikertelen."));
     }
 }
 
@@ -1167,14 +1167,14 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
             cnt = n.fetchByMac(*pq, mac, EX_ERROR);
             if (1 == cnt) {        // Egy port
                 if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
-                    pUi->textEditMsg->append(htmlError(trUtf8("A %1 MAC alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
+                    pUi->textEditMsg->append(htmlError(tr("A %1 MAC alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
                                                        .arg(mac.toString(), n.getName())));
                     return;
                 }
                 cNPort *p = n.ports.first();
                 cInterface *pi = p->reconvert<cInterface>();
                 if (pi->addresses.size() > 1) {                 // Max egy cím
-                    pUi->textEditMsg->append(htmlError(trUtf8("A %1 MAC alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
+                    pUi->textEditMsg->append(htmlError(tr("A %1 MAC alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
                                                        .arg(mac.toString(), n.getName())));
                     return;
                 }
@@ -1188,7 +1188,7 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
                     set = n.getId() == pSelNode->currentNodeId();
                 }
                 if (set) {
-                    pUi->textEditMsg->append(htmlInfo(trUtf8("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
+                    pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
                 }
             }
         }
@@ -1196,16 +1196,16 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
             QString msg;
             switch (cnt) {
             case -1:
-                msg = trUtf8("A MAC nem valós cím.");
+                msg = tr("A MAC nem valós cím.");
                 break;
             case 1:
-                msg = trUtf8("A %1 MAC alapján nem sikerült beolvasni az eszköz adatokat.").arg(mac.toString());
+                msg = tr("A %1 MAC alapján nem sikerült beolvasni az eszköz adatokat.").arg(mac.toString());
                 break;
             case 0:
-                msg = trUtf8("A %1 MAC címmel nincs bejegyzett eszköz.").arg(mac.toString());
+                msg = tr("A %1 MAC címmel nincs bejegyzett eszköz.").arg(mac.toString());
                 break;
             default:
-                msg = trUtf8("A %1 MAC címmel több bejegyzett eszköz is van.").arg(mac.toString());
+                msg = tr("A %1 MAC címmel több bejegyzett eszköz is van.").arg(mac.toString());
                 break;
             }
             pUi->textEditMsg->append(htmlError(msg));
@@ -1233,8 +1233,8 @@ void cWorkstation::on_pushButtonDelete_clicked()
     bbNode.begin();
     if (node.getId() != NULL_ID) {
         int b = QMessageBox::warning(this,
-                             trUtf8("A %1 nevű eszköz törlése.").arg(node.getName()),
-                             trUtf8("Valóban törölni akarja az eszközt? Teljes visszavonásra nincs lehetőség!"),
+                             tr("A %1 nevű eszköz törlése.").arg(node.getName()),
+                             tr("Valóban törölni akarja az eszközt? Teljes visszavonásra nincs lehetőség!"),
                              QMessageBox::Ok, QMessageBox::Cancel);
         if (b != QMessageBox::Ok) {
             bbNode.end(false);   // nincs változás
@@ -1263,14 +1263,14 @@ void cWorkstation::on_pushButtonGoServices_clicked()
             (*i)->triggered();
         }
         else {
-            QString msg = trUtf8("Nincs szervízpéldányt manipuláló adatlap a menüben.");
+            QString msg = tr("Nincs szervízpéldányt manipuláló adatlap a menüben.");
             pUi->textEditMsg->append(htmlError(msg));
             return;
         }
         QWidget *pw = lv2g::getInstance()->pMainWindow->pMdiArea->currentSubWindow()->widget();
         cHSOperate *pHSOp = dynamic_cast<cHSOperate *>(pw);
         if (pHSOp == nullptr) {
-            QString msg = trUtf8("A szervízpéldányt manipuláló adatlap kiválasztása sikertelen.");
+            QString msg = tr("A szervízpéldányt manipuláló adatlap kiválasztása sikertelen.");
             pUi->textEditMsg->append(htmlError(msg));
             return;
         }
@@ -1306,27 +1306,27 @@ void cWorkstation::on_pushButtonSave_clicked()
     }
     sqlBegin(*pq, _sWorkstation);
     if (isModify) {
-        ok = cErrorMessageBox::condMsgBox(node.tryUpdateById(*pq), this, trUtf8("Az eszköz modosítása sikertelen."));
+        ok = cErrorMessageBox::condMsgBox(node.tryUpdateById(*pq), this, tr("Az eszköz modosítása sikertelen."));
     }
     else {
         if (pip != nullptr) pip->clearId();
         node.ports.clearId();
         node.clearId(); // A konténerekben töröltük az ID-ket először, igy azokat nem törli!
         node.clear(_sNodeStat);
-        ok = cErrorMessageBox::condMsgBox(node.tryInsert(*pq), this, trUtf8("Az eszköz regisztrálása sikertelen."));
+        ok = cErrorMessageBox::condMsgBox(node.tryInsert(*pq), this, tr("Az eszköz regisztrálása sikertelen."));
     }
     if (ok) {
         qlonglong pid = pnp->getId();
-        QString msgPost = trUtf8(" Az egész művelet visszavonásra kerül.");
+        QString msgPost = tr(" Az egész művelet visszavonásra kerül.");
         if (!pl.isNull(_sPortId2)) {                // Van link
             pl.setId(_sPortId1,      pid);
             pl.setId(_sPhsLinkType1, LT_TERM);
             pl.setId(_sLinkType,     LT_PTP);
             pl.setNote(pUi->lineEditLinkNote->text());
-            ok = cErrorMessageBox::condMsgBox(pl.tryReplace(*pq), this, trUtf8("Az eszköz fizikai linkjjének (patch) rögzítépse sikertelen.") + msgPost);
+            ok = cErrorMessageBox::condMsgBox(pl.tryReplace(*pq), this, tr("Az eszköz fizikai linkjjének (patch) rögzítépse sikertelen.") + msgPost);
         }
         else if (isModify && pl.isExist(*pq, pid, LT_TERM)) {   // Ha volt link, törlendő
-            ok = cErrorMessageBox::condMsgBox(pl.tryRemove(*pq), this, trUtf8("Az eszköz fizikai linkjjének (patch) törlése sikertelen.") + msgPost);
+            ok = cErrorMessageBox::condMsgBox(pl.tryRemove(*pq), this, tr("Az eszköz fizikai linkjjének (patch) törlése sikertelen.") + msgPost);
         }
     }
     if (ok) {
@@ -1338,7 +1338,7 @@ void cWorkstation::on_pushButtonSave_clicked()
     pSelNode->refresh(false);
     pSelLinked->refresh(false);
     node2gui(true);
-    pUi->textEditMsg->append(trUtf8("A bevitt adatok sikeresen el lettek mentve."));
+    pUi->textEditMsg->append(tr("A bevitt adatok sikeresen el lettek mentve."));
     pEditModelName->refresh();
     pEditModelNumber->refresh();
     pEditOsName->refresh();
@@ -1394,14 +1394,14 @@ void cWorkstation::on_pushButtonFindMac_clicked()
             (*i)->triggered();
         }
         else {
-            QString msg = trUtf8("Nincs cím szerinti keresés adatlap a menüben.");
+            QString msg = tr("Nincs cím szerinti keresés adatlap a menüben.");
             pUi->textEditMsg->append(htmlError(msg));
             return;
         }
         QWidget *pw = lv2g::getInstance()->pMainWindow->pMdiArea->currentSubWindow()->widget();
         cFindByMac *pFBMp = dynamic_cast<cFindByMac *>(pw);
         if (pFBMp == nullptr) {
-            QString msg = trUtf8("A cím szerinti keresés adatlap kiválasztása sikertelen.");
+            QString msg = tr("A cím szerinti keresés adatlap kiválasztása sikertelen.");
             pUi->textEditMsg->append(htmlError(msg));
             return;
         }

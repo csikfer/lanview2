@@ -39,11 +39,11 @@ public:
         hl.fetchByNamePattern(q, *ph, false);
         QString n;
         n = *ph; pDelete(ph);
-        if (hl.isEmpty()) yyerror(QObject::trUtf8("A %1 mintára egyetlen hálózati elem neve sem illeszkedik.").arg(n));
+        if (hl.isEmpty()) yyerror(QObject::tr("A %1 mintára egyetlen hálózati elem neve sem illeszkedik.").arg(n));
         tRecordList<cService> sl;
         sl.fetchByNamePattern(q, *ps, false);
         n = *ps; pDelete(ps);
-        if (sl.isEmpty()) yyerror(QObject::trUtf8("A %1 mintára egyetlen szolgáltatás típus neve sem illeszkedik.").arg(n));
+        if (sl.isEmpty()) yyerror(QObject::tr("A %1 mintára egyetlen szolgáltatás típus neve sem illeszkedik.").arg(n));
         for (tRecordList<cNode>::iterator i = hl.begin(); i < hl.end(); ++i) {
             cNode &h = **i;
             for (tRecordList<cService>::iterator j = sl.begin(); j < sl.end(); ++j) {
@@ -56,7 +56,7 @@ public:
                 *this << phs;
             }
         }
-        if (isEmpty()) yyerror(QObject::trUtf8("A megadott minta kollekcióra nincs semmilyen találat."));
+        if (isEmpty()) yyerror(QObject::tr("A megadott minta kollekcióra nincs semmilyen találat."));
         pDelete(pn);
         pDelete(pp);
     }
@@ -107,12 +107,12 @@ class cTemplateMapMap : public QMap<QString, cTemplateMap> {
     }
     /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
     void set(const QString& __type, const QString& __name, const QString& __cont) {
-        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Üres minta."))
+        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Üres minta."))
         (*this)[__type].set(__name, __cont);
     }
     /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
     void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
-        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Üres minta."))
+        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Üres minta."))
         (*this)[__type].save(qq(), __name, __cont, __descr);
     }
     /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
@@ -338,7 +338,7 @@ void c_yyFile::inc(QString *__f)
 {
     c_yyFile    o;
     o.newFile = new QFile(*__f);
-    if (!importSrcOpen(*o.newFile)) yyerror(QObject::trUtf8("include: file open error."));
+    if (!importSrcOpen(*o.newFile)) yyerror(QObject::tr("include: file open error."));
     o.oldStream = pImportInputStream;
     pImportInputStream = new QTextStream(o.newFile);
     o.oldFileName = importFileNm;
@@ -371,7 +371,7 @@ void c_yyFile::dropp()
     importFileNm = f;
 }
 
-static  qlonglong       id;
+// static  qlonglong       id;
 
 unsigned long yyflags = 0;
 
@@ -473,17 +473,17 @@ static const QString       sPortNm = "PN";   // Port név
 static inline qlonglong gPlace() { return globalPlaceId == NULL_ID ? UNKNOWN_PLACE_ID : globalPlaceId; }
 
 static inline qlonglong& vint(const QString& n){
-    if (!ivars.contains(n)) yyerror(QObject::trUtf8("Integer variable %1 not found").arg(n));
+    if (!ivars.contains(n)) yyerror(QObject::tr("Integer variable %1 not found").arg(n));
     return ivars[n];
 }
 
 static inline QString& vstr(const QString& n){
-    if (!svars.contains(n)) yyerror(QObject::trUtf8("String variable %1 not found").arg(n));
+    if (!svars.contains(n)) yyerror(QObject::tr("String variable %1 not found").arg(n));
     return svars[n];
 }
 
 static inline QVariantList& varray(const QString& n){
-    if (!avars.contains(n)) yyerror(QObject::trUtf8("String variable %1 not found").arg(n));
+    if (!avars.contains(n)) yyerror(QObject::tr("String variable %1 not found").arg(n));
     return avars[n];
 }
 
@@ -494,7 +494,7 @@ static inline const QString& nextNetType() {
     case NT_SECONDARY:  break;
     case NT_PRIVATE:
     case NT_PSEUDO:     netType = ENUM_INVALID;        break;
-    default:            yyerror(QObject::trUtf8("Compiler error."));
+    default:            yyerror(QObject::tr("Compiler error."));
     }
     return subNetType(r);
 }
@@ -641,9 +641,9 @@ void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
         if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
     }
     portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, EX_IGNORE);
-    if (portId(__e) == NULL_ID) yyerror(QObject::trUtf8("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
+    if (portId(__e) == NULL_ID) yyerror(QObject::tr("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
     if (__s != 0) {
-        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
+        if (share.size() > 0) yyerror(QObject::tr("Multiple share defined"));
         share = chkShare(__s);
     }
     delete __n;
@@ -668,14 +668,14 @@ void cLink::side(eSide __e, QString * __n, int __p, int __s)
     }
     else {
         nid = nodeId(__e);
-        if (nid == NULL_ID) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva node!"));
+        if (nid == NULL_ID) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva node!"));
         portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, EX_IGNORE);
     }
     if (portId(__e) == NULL_ID) {
-        yyerror(QObject::trUtf8("Invalid port index, #%1:#%2").arg(nid).arg(__p));
+        yyerror(QObject::tr("Invalid port index, #%1:#%2").arg(nid).arg(__p));
     }
     if (__s != 0) {
-        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
+        if (share.size() > 0) yyerror(QObject::tr("Multiple share defined"));
         share = chkShare(__s);;
     }
     delete __n;
@@ -716,8 +716,8 @@ void cLink::replace(QString * __note, QStringList * __srv)
         cNode           ho;
         cNPort          po;
         // Szervíz: megadták, vagy default
-        if (__srv->size() > 0 && __srv->at(0).size() > 0) { if (!se.fetchByName(__srv->at(0))) yyerror(QObject::trUtf8("Invalis alert service name.")); }
-        else                                              { if (!se.fetchById(alertServiceId)) yyerror(QObject::trUtf8("Nothing default alert service.")); }
+        if (__srv->size() > 0 && __srv->at(0).size() > 0) { if (!se.fetchByName(__srv->at(0))) yyerror(QObject::tr("Invalis alert service name.")); }
+        else                                              { if (!se.fetchById(alertServiceId)) yyerror(QObject::tr("Nothing default alert service.")); }
         po.setById(qq(), portId2);   // A jobb oldali port a mienk
         ho.setById(qq(), po.getId(_sNodeId));
         // Volt megjegyzés ?
@@ -737,7 +737,7 @@ void cLink::replace(QString * __note, QStringList * __srv)
             cIfType att;
             att.setByName(qq(), _sAttach);
             if (po.getId(_sIfTypeId) != cIfType::ifTypeId(_sAttach)) {
-                if (!newNode) yyerror(QObject::trUtf8("Invalid port type"));
+                if (!newNode) yyerror(QObject::tr("Invalid port type"));
                 po.set();
                 po.setName(__sAttach);
                 po.setId(_sNodeId, ho.getId());
@@ -773,7 +773,7 @@ const QString&  cLink::chkShare(int __s)
         shares << QString(_sB) << QString(_sBA) << QString(_sBB);
         shares << QString(_sC) << QString(_sD);
     }
-    if (__s >= shares.size() || __s < 0 ) yyerror(QObject::trUtf8("Invalid share value."));
+    if (__s >= shares.size() || __s < 0 ) yyerror(QObject::tr("Invalid share value."));
     return shares[__s];
 }
 
@@ -913,7 +913,7 @@ static void delMenuItem()
         return;
     case MT_SHAPE:
         if (NULL_ID == cTableShape().getIdByName(qq(), p->getParam(), EX_IGNORE)) {
-            yyerror(QObject::trUtf8("SHAPE '%1' not found.").arg(p->getParam()));
+            yyerror(QObject::tr("SHAPE '%1' not found.").arg(p->getParam()));
         }
     default:
         break;
@@ -1070,9 +1070,9 @@ static QString * sTime(qlonglong h, qlonglong m, double s = 0)
         *p = "23:59:59.999";
     }
     else {
-        if (h < 0 || h >= 24) yyerror(QObject::trUtf8("Invalid hour value"));
-        if (m < 0 || m >= 60) yyerror(QObject::trUtf8("Invalid min value"));
-        if (s < 0 || s >= 60) yyerror(QObject::trUtf8("Invalid sec value"));
+        if (h < 0 || h >= 24) yyerror(QObject::tr("Invalid hour value"));
+        if (m < 0 || m >= 60) yyerror(QObject::tr("Invalid min value"));
+        if (s < 0 || s >= 60) yyerror(QObject::tr("Invalid sec value"));
         static const QChar fillChar = QLatin1Char('0');
         *p = QString("%1:%2:%3")
                 .arg(h, 2, 10, fillChar)
@@ -1098,7 +1098,7 @@ static enum ePortShare s2share(QString * __ps)
     if (s == _sBB)  return ES_BB;
     if (s == _sC)   return ES_C;
     if (s == _sD)   return ES_D;
-    yyerror(QString(QObject::trUtf8("Helytelen megosztás típus : %1")).arg(s));
+    yyerror(QString(QObject::tr("Helytelen megosztás típus : %1")).arg(s));
     return ES_;     // Hogy ne pofázzon a fordító
 }
 
@@ -1107,7 +1107,7 @@ static bool portChkShare(intList&  pl, QStringList *psl)
     QStringList sl = *psl;
     delete psl;
     int siz = pl.size();
-    QString e = QObject::trUtf8("Helytelenül magadott kábelmegosztás #");
+    QString e = QObject::tr("Helytelenül magadott kábelmegosztás #");
     if (siz != sl.size())  yyerror(e + "1");
     switch (siz) {
     case 2:
@@ -1222,7 +1222,7 @@ static int portName2SeqN(const QString& n)
 {
     if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     int r = pPatch->ports.indexOf(_sPortName,  QVariant(n));
-    if (r < 0) yyerror(QObject::trUtf8("Nincs %1 nevű port.").arg(n));
+    if (r < 0) yyerror(QObject::tr("Nincs %1 nevű port.").arg(n));
     setLastPort(n, r);
     return r;
 }
@@ -1233,7 +1233,7 @@ static int portIndex2SeqN(qlonglong ix)
 {
     if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     int r = pPatch->ports.indexOf(_sPortIndex,  QVariant(ix));
-    if (r < 0) yyerror(QObject::trUtf8("Nincs %1 indexű port.").arg(ix));
+    if (r < 0) yyerror(QObject::tr("Nincs %1 indexű port.").arg(ix));
     setLastPort(pPatch->ports[r]);
     return r;
 }
@@ -1380,14 +1380,14 @@ static void setReplace(int _rep)
 /// Egy definiált/modosított objektum kiírása, és az objektum törlése
 template <class R> void writeAndDel(R *& p)
 {
-    if (p == nullptr) yyerror(QObject::trUtf8("Null pointer in %1.").arg(__PRETTY_FUNCTION__));
+    if (p == nullptr) yyerror(QObject::tr("Null pointer in %1.").arg(__PRETTY_FUNCTION__));
     QString emsg;
     if (isReplace) {
-        emsg = QObject::trUtf8("Replace object : ");
+        emsg = QObject::tr("Replace object : ");
         p->replace(qq());
     }
     else {
-        emsg = QObject::trUtf8("Insert object : ");
+        emsg = QObject::tr("Insert object : ");
         p->insert(qq());
     }
     emsg += p->identifying();
@@ -1538,7 +1538,7 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
                 }
                 else {
                     if (0 != _sTrue.compare(*_pval, Qt::CaseInsensitive) && 0 != _sFalse.compare(*_pval, Qt::CaseInsensitive)) {
-                        yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+                        yyerror(QObject::tr("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
                         delete _pval;
                         return;
                     }
@@ -1549,7 +1549,7 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
             }
         }
         pDelete(_pval);
-        yyerror(QObject::trUtf8("Invalid boolean field name : %1").arg(actEnumType));
+        yyerror(QObject::tr("Invalid boolean field name : %1").arg(actEnumType));
         return;
     }
     else {
@@ -1560,7 +1560,7 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
         }
         else {
             if (!cType.check(*_pval)) {
-                yyerror(QObject::trUtf8("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
+                yyerror(QObject::tr("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
                 delete _pval;
                 return;
             }
@@ -1641,7 +1641,7 @@ static inline cEnumVal& actEnum()
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
-%token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T
+%token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T RAW_T  RRD_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
 
@@ -2070,7 +2070,7 @@ ugrp_p  : NOTE_T str ';'                        { SETNOTE(pGroup, $2); }
         ;
 rights  : str                                   { $$ = $1;
                                                   if (cColStaticDescr::VC_INVALID == cGroup().descr()[_sGroupRights].check(*$$)) {
-                                                      yyerror(QObject::trUtf8("Ivalid rights value : %1").arg(*$1));
+                                                      yyerror(QObject::tr("Ivalid rights value : %1").arg(*$1));
                                                       delete $1;
                                                   }
                                                 }
@@ -2108,7 +2108,7 @@ params  : ptype
         | syspar
         ;
 // Paraméter típus definíciók
-ptype   : PARAM_T str str_z TYPE_T str str_z ';'{ cParamType::insertNew(qq(), sp2s($2), sp2s($3), paramTypeType(sp2s($5)), sp2s($6)); }
+ptype   : PARAM_T replfl str str_z TYPE_T str str_z ';'{ cParamType::insertNew(qq(), sp2s($3), sp2s($4), paramTypeType(sp2s($6)), sp2s($7), $2); }
         ;
 // Renddszerparaméterek definiálása
 syspar  : SYS_T str PARAM_T str '=' value ';'   { cSysParam::setSysParam(qq(), sp2s($4), vp2v($6), sp2s($2)); }
@@ -2173,7 +2173,7 @@ image_p : TYPE_T imgty ';'          { pImage->setName(_sImageType, *$2); delete 
         ;
 imgty   : str                       { $$ = $1;
                                       if (cColStaticDescr::VC_INVALID == cImage().descr()[_sImageType].check(*$1)) {
-                                           yyerror(QObject::trUtf8("Ivalid notif swich value : %1").arg(*$1));
+                                           yyerror(QObject::tr("Ivalid notif swich value : %1").arg(*$1));
                                            delete $1;
                                       }
                                     }
@@ -2542,9 +2542,9 @@ service : SERVICE_T str str_z                   { REPOBJ(pService, cService(), R
           srvend                                { writeAndDel(pService); }
         | SERVICE_T INSERT_T str str_z          { REPOBJ(pService, cService(), REPLACE_OFF, $3, $4); }
           srvend                                { writeAndDel(pService); }
-        | SERVICE_T TYPE_T str str_z ';'        { cServiceType::insertNew(qq(), sp2s($3), sp2s($4)); }
+        | SERVICE_T TYPE_T replfl str str_z ';'        { cServiceType::insertNew(qq(), sp2s($4), sp2s($5), $3); }
         | MESSAGE_T str str SERVICE_T TYPE_T srvtid nsws ';'    { cAlarmMsg::replaces(qq(), $6, slp2sl($7), sp2s($2), sp2s($3)); }
-        | SERVICE_T TYPE_T srvtid MESSAGE_T  '{'                { id = $3; }    srvmsgs '}'
+//      | SERVICE_T TYPE_T srvtid MESSAGE_T  '{'    { id = $3; }    srvmsgs '}'
         | SERVICE_T VAR_T hsid replace str str_z TYPE_T srvvt_id { REPOBJ(pServiceVar, cServiceVar(), $4, $5, $6);
                                                                           pServiceVar->setId(_sServiceVarTypeId, $8);
                                                                           pServiceVar->setId(_sHostServiceId, $3); }
@@ -2583,11 +2583,11 @@ srv_p   : SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceM
         | HEARTBEAT_T TIME_T str ';'            { (*pService)[_sHeartbeatTime] = *$3; delete $3; }
         | HEARTBEAT_T TIME_T int ';'            { (*pService)[_sHeartbeatTime] = $3 * 1000; }
         ;
-srvmsgs : srvmsg
-        | srvmsgs srvmsg
-        ;
-srvmsg  : nsws_ ':' str str ';'                 { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
-        ;
+// srvmsgs : srvmsg
+//        | srvmsgs srvmsg
+//        ;
+// srvmsg  : nsws_ ':' str str ';'                 { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
+//         ;
 hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostService, cHostService(qq(), sp2s($3), _sNul, sp2s($5), sp2s($6)));
                                                   pHostService->set(_sSuperiorHostServiceId, globalSuperiorId); }
           hsrvend                               { pHostService->insert(qq()); DELOBJ(pHostService); }
@@ -2666,12 +2666,12 @@ vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParam
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2))); }
         | TYPE_T str str ';'                    { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(),     *$2 ));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($2)));
-                                                  pServiceVarType->setId(_sServiceVarType, cServiceVarType::srvartype(qq(), sp2s($3))->getId());  }
+                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($3)));  }
         | TYPE_T str ',' str ';'                { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4))); }
         | TYPE_T str ',' str str ';'            { pServiceVarType->setId(_sParamTypeId,    cParamType().getIdByName(qq(), sp2s($2)));
                                                   pServiceVarType->setId(_sRawParamTypeId, cParamType().getIdByName(qq(), sp2s($4)));
-                                                  pServiceVarType->setId(_sServiceVarType, cServiceVarType::srvartype(qq(), sp2s($5))->getId());  }
+                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($5)));  }
         | PLAUSIBILITY_T vtfilt ';'             { pServiceVarType->setId(_sPlausibilityType, filterType($2->at(0).toString()));
                                                   pServiceVarType->set(_sPlausibilityInverse, $2->at(1));
                                                   pServiceVarType->set(_sPlausibilityParam1,  $2->at(2));
@@ -2688,10 +2688,11 @@ vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParam
                                                   pServiceVarType->set(_sCriticalParam2,  $2->at(3));
                                                   delete $2; }
         | FEATURES_T features                   { pServiceVarType->setName(_sFeatures, sp2s($2)); }
+        | bool_on RAW_T TO_T RRD_T ';'          { pServiceVarType->setBool(_sRawToRrd, $1); }
         ;
-vtfilt  : str inverse                           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant()         << QVariant();  }
-        | str inverse value                     { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant(vp2v($3)) << QVariant();}
-        | str inverse value ',' value           { *($$ = new QVariantList) << QVariant(sp2s($1)) << QVariant($2) << QVariant(vp2v($3)) << QVariant(vp2v($5));}
+vtfilt  : inverse str                           { *($$ = new QVariantList) << QVariant(sp2s($2)) << QVariant($1) << QVariant()         << QVariant();  }
+        | inverse str value                     { *($$ = new QVariantList) << QVariant(sp2s($2)) << QVariant($1) << QVariant(vp2v($3)) << QVariant();}
+        | inverse str value ',' value           { *($$ = new QVariantList) << QVariant(sp2s($2)) << QVariant($1) << QVariant(vp2v($3)) << QVariant(vp2v($5));}
         ;
 inverse :                                       { $$ = false; }
         | INVERSE_T                             { $$ = true; }
@@ -3193,7 +3194,7 @@ static const struct token {
     TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
-    TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED)
+    TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED) TOK(RAW)  TOK(RRD)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
     { "WST",    WORKSTATION_T }, // rövidítések
@@ -3434,7 +3435,7 @@ static QString * strReplace(QString * s, QString * src, QString *trg)
     QString r = *s;
     delete s;
     QRegExp re(*src);
-    if (!re.isValid()) yyerror(QObject::trUtf8("Invalid regexp : %1").arg(*src));
+    if (!re.isValid()) yyerror(QObject::tr("Invalid regexp : %1").arg(*src));
     delete src;
     r.replace(re, *trg);
     delete trg;

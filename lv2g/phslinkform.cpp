@@ -209,7 +209,7 @@ void phsLinkWidget::on_toolButtonStep_clicked()
             pvl->addWidget(pte);
             pvl->addLayout(phl);
             d.setLayout(pvl);
-            d.setWindowTitle(trUtf8("Elaágazás, ki kell választani az irányt, megosztás alapján!"));
+            d.setWindowTitle(tr("Elaágazás, ki kell választani az irányt, megosztás alapján!"));
             QObject::connect(pbg, SIGNAL(buttonClicked(int)), &d, SLOT(done(int)));
             i = d.exec();   // Selected record
             cPhsLink *pl = list.at(i);

@@ -65,22 +65,22 @@ void cDPRow::staticInit()
 
     ixSharedPortId = cPPort().toIndex(_sSharedPortId);
     //                          title                           icon        tool tip
-    colHead(CID_INDEX,          "#",                            _sNul,      QObject::trUtf8("A helyi patch port indexek."));
-    colHead(CID_STATE_WARNING,  QObject::trUtf8("Megjegyzés"),  sIHelp,     QObject::trUtf8("Megjegyzés, hiba üzenetek."));
-    colHead(CID_STATE_CONFLICT, QObject::trUtf8("Konfliktus"),  sIConflict, QObject::trUtf8("Ütközések, mentés esetén törlendő linkek."));
-    colHead(CID_STATE_TAG,      QObject::trUtf8("Cimke"),       sITagSt,    QObject::trUtf8("A patch port címkék összevetése."));
-    colHead(CID_STATE_MAC,      QObject::trUtf8("Cím"),         sIMap,      QObject::trUtf8("Osszevetés az switch címtáblákkal."));
-    colHead(CID_STATE_LLDP,     QObject::trUtf8("LLDP"),        sILldp,     QObject::trUtf8("Osszevetés az LLDP lekérdezésekkel."));
-    colHead(CID_SAVE,           QObject::trUtf8("Mentve"),      sIDbAdd,    QObject::trUtf8("Mentés."));
-    colHead(CID_IF_LEFT,        QObject::trUtf8("Interfész"),   _sNul,      QObject::trUtf8("Helyi vagy bal oldali interfész."));
-    colHead(CID_SHARE_LEFT,     QObject::trUtf8("Sh."),         _sNul,      QObject::trUtf8("Helyi vagy bal oldali megosztás, eredő megosztás."));
-    colHead(CID_PPORT_LEFT,     QObject::trUtf8("Patch"),       _sNul,      QObject::trUtf8("Helyi vagy bal oldali patch port."));
-    colHead(CID_TAG_LEFT,       QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Helyi vagy bal oldali patch port címke."));
-    colHead(CID_TAG,            QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Patch port címke."));
-    colHead(CID_TAG_RIGHT,      QObject::trUtf8("Címke"),       _sNul,      QObject::trUtf8("Távoli vagy jobb oldali patch port címke."));
-    colHead(CID_PPORT_RIGHT,    QObject::trUtf8("Patch"),       _sNul,      QObject::trUtf8("Távoli vagy jobb oldali patch port."));
-    colHead(CID_SHARE_RIGHT,    QObject::trUtf8("Sh."),         _sNul,      QObject::trUtf8("Távoli vagy jobb oldali megosztás, eredő megosztás."));
-    colHead(CID_IF_RIGHT,       QObject::trUtf8("Inteface"),    _sNul,      QObject::trUtf8("Távoli vagy jobb oldali interfész."));
+    colHead(CID_INDEX,          "#",                            _sNul,      QObject::tr("A helyi patch port indexek."));
+    colHead(CID_STATE_WARNING,  QObject::tr("Megjegyzés"),  sIHelp,     QObject::tr("Megjegyzés, hiba üzenetek."));
+    colHead(CID_STATE_CONFLICT, QObject::tr("Konfliktus"),  sIConflict, QObject::tr("Ütközések, mentés esetén törlendő linkek."));
+    colHead(CID_STATE_TAG,      QObject::tr("Cimke"),       sITagSt,    QObject::tr("A patch port címkék összevetése."));
+    colHead(CID_STATE_MAC,      QObject::tr("Cím"),         sIMap,      QObject::tr("Osszevetés az switch címtáblákkal."));
+    colHead(CID_STATE_LLDP,     QObject::tr("LLDP"),        sILldp,     QObject::tr("Osszevetés az LLDP lekérdezésekkel."));
+    colHead(CID_SAVE,           QObject::tr("Mentve"),      sIDbAdd,    QObject::tr("Mentés."));
+    colHead(CID_IF_LEFT,        QObject::tr("Interfész"),   _sNul,      QObject::tr("Helyi vagy bal oldali interfész."));
+    colHead(CID_SHARE_LEFT,     QObject::tr("Sh."),         _sNul,      QObject::tr("Helyi vagy bal oldali megosztás, eredő megosztás."));
+    colHead(CID_PPORT_LEFT,     QObject::tr("Patch"),       _sNul,      QObject::tr("Helyi vagy bal oldali patch port."));
+    colHead(CID_TAG_LEFT,       QObject::tr("Címke"),       _sNul,      QObject::tr("Helyi vagy bal oldali patch port címke."));
+    colHead(CID_TAG,            QObject::tr("Címke"),       _sNul,      QObject::tr("Patch port címke."));
+    colHead(CID_TAG_RIGHT,      QObject::tr("Címke"),       _sNul,      QObject::tr("Távoli vagy jobb oldali patch port címke."));
+    colHead(CID_PPORT_RIGHT,    QObject::tr("Patch"),       _sNul,      QObject::tr("Távoli vagy jobb oldali patch port."));
+    colHead(CID_SHARE_RIGHT,    QObject::tr("Sh."),         _sNul,      QObject::tr("Távoli vagy jobb oldali megosztás, eredő megosztás."));
+    colHead(CID_IF_RIGHT,       QObject::tr("Inteface"),    _sNul,      QObject::tr("Távoli vagy jobb oldali interfész."));
 }
 
 void cDPRow::showText(int column, const QString& text, const QString& tool_tip)
@@ -148,13 +148,13 @@ void cDPRow::calcLinkCheck(QSqlQuery& q)
     if (spidl == NULL_ID) {
         pid = pidl;
         if (!isPrimary) {
-            warnMsg += htmlError(QObject::trUtf8("A lokális/bal oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
+            warnMsg += htmlError(QObject::tr("A lokális/bal oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
             warning = 2;
         }
     }
     else {
         if (isPrimary) {
-            warnMsg += htmlError(QObject::trUtf8("A lokális/bal oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
+            warnMsg += htmlError(QObject::tr("A lokális/bal oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
             warning = 2;
         }
     }
@@ -166,13 +166,13 @@ void cDPRow::calcLinkCheck(QSqlQuery& q)
     if (spidr == NULL_ID) {
         pid = pidr;
         if (!isPrimary) {
-            warnMsg += htmlError(QObject::trUtf8("A távoli/jobb oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
+            warnMsg += htmlError(QObject::tr("A távoli/jobb oldali hátlapi nem elsődleges megosztásnál hiányzik az elsődleges port hivatkozás."));
             warning = 2;
         }
     }
     else {
         if (isPrimary) {
-            warnMsg += htmlError(QObject::trUtf8("A távoli/jobb oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
+            warnMsg += htmlError(QObject::tr("A távoli/jobb oldali hátlapi elsődleges megosztásnál nem lehet elsődleges port hivatkozás (%1).").arg(cNPort().getNameById(q, pid)));
             warning = 2;
         }
     }
@@ -265,7 +265,7 @@ void cDPRow::checkAndShowSharing(int _cx_left, int _cx_right)
     if (shel != ES_INVALID && sher != ES_INVALID) {
         _warn = shel != sher;
         if (_warn) {
-            warnMsg += htmlWarning(QObject::trUtf8("Nem egyező végponti megosztások"));
+            warnMsg += htmlWarning(QObject::tr("Nem egyező végponti megosztások"));
             if (warning == 0) warning = 1; // suspicious
         }
     }
@@ -291,7 +291,7 @@ void cDPRow::checkAndShowLLDP(QSqlQuery& q, int _cx)
         }
         if (s2.isEmpty()) {
             s = sIWarning;
-            s2 = QObject::trUtf8("Nincs találat az LLDP linkek között.");
+            s2 = QObject::tr("Nincs találat az LLDP linkek között.");
         }
         else {
             s = sIError;
@@ -311,12 +311,12 @@ eTristate cDPRow::checkMac(QSqlQuery& q, cNPort& pnp1, cNPort& pnp2)
         if (mt.setMac(_sHwAddress, mac).completion(q) == 1) {
             qlonglong swpid = mt.getId(_sPortId);
             if (swpid == pnp2.getId()) {
-                s2 += QObject::trUtf8("Megerősített link, a %1 címtáblája alapján (%2 - %3)\n")
+                s2 += QObject::tr("Megerősített link, a %1 címtáblája alapján (%2 - %3)\n")
                         .arg(pnp2.getFullName(q), mt.getName(_sFirstTime), mt.getName(_sLastTime));
                 return TS_TRUE;
             }
             else {
-                s2 += QObject::trUtf8("A címtábla lekérdezésnek ellentmondó link, a %1 -> %2 címtáblája alapján (%3 - %4)\n")
+                s2 += QObject::tr("A címtábla lekérdezésnek ellentmondó link, a %1 -> %2 címtáblája alapján (%3 - %4)\n")
                         .arg(cNPort::getFullNameById(q, swpid), pnp2.getFullName(q),
                              mt.getName(_sFirstTime), mt.getName(_sLastTime));
                 return  TS_FALSE;
@@ -838,7 +838,7 @@ void cDeducePatch::byLLDP()
     }
     else {
         pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
-        pModel->setItem(0, 0, new QStandardItem(trUtf8("Az LLDP alapján nincs találat.")));
+        pModel->setItem(0, 0, new QStandardItem(tr("Az LLDP alapján nincs találat.")));
         pUi->tableView->setSortingEnabled(false);
     }
     pUi->tableView->resizeColumnsToContents();
@@ -908,7 +908,7 @@ void cDeducePatch::byMAC()
     }
     else {
         pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
-        pModel->setItem(0, 0, new QStandardItem(trUtf8("A címtáblák alapján nincs találat.")));
+        pModel->setItem(0, 0, new QStandardItem(tr("A címtáblák alapján nincs találat.")));
         pUi->tableView->setSortingEnabled(false);
     }
     pUi->tableView->resizeColumnsToContents();
@@ -950,7 +950,7 @@ void cDeducePatch::byTag()
     }
     else {
         pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
-        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pModel->setItem(0, 0, new QStandardItem(tr("Nincs egy megegyező cimke sem.")));
         pUi->tableView->setSortingEnabled(false);
     }
     pUi->tableView->resizeColumnsToContents();
@@ -994,7 +994,7 @@ void cDeducePatch::paralel()
     }
     else {
         pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
-        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pModel->setItem(0, 0, new QStandardItem(tr("Nincs egy megegyező cimke sem.")));
         pUi->tableView->setSortingEnabled(false);
     }
     pUi->tableView->resizeColumnsToContents();
@@ -1043,7 +1043,7 @@ void cDeducePatch::report()
     }
     else {
         pModel->setHorizontalHeaderItem(0, new QStandardItem(QIcon(cDPRow::sIHelp), _sNul));
-        pModel->setItem(0, 0, new QStandardItem(trUtf8("Nincs egy megegyező cimke sem.")));
+        pModel->setItem(0, 0, new QStandardItem(tr("Nincs egy megegyező cimke sem.")));
         pUi->tableView->setSortingEnabled(false);
     }
     pUi->tableView->resizeColumnsToContents();
@@ -1130,7 +1130,7 @@ void cDeducePatch::on_pushButtonStart_clicked()
 
 void cDeducePatch::on_pushButtonSave_clicked()
 {
-    QString msg = trUtf8(
+    QString msg = tr(
                 "Valóban menti a kijelölt linkeket?\n"
                 "Az ütköző linkek automatikusan törlődnek."
                 "A művelet visszavonására nincs legetőség.");
@@ -1198,19 +1198,19 @@ void cDeducePatch::on_pushButtonReport_clicked()
     QString title;
     switch (methode) {
     case DPM_LLDP:
-        title = trUtf8("Fali kábel felfedezés LDAP alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        title = tr("Fali kábel felfedezés LDAP alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
         break;
     case DPM_MAC:
-        title = trUtf8("Fali kábel felfedezés címtáblák alapján alapján: %1").arg(pSelNode->currentNodeName());
+        title = tr("Fali kábel felfedezés címtáblák alapján alapján: %1").arg(pSelNode->currentNodeName());
         break;
     case DPM_TAG:
-        title = trUtf8("Fali kábel felfedezés cimkék alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        title = tr("Fali kábel felfedezés cimkék alapján: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
         break;
     case DPM_PAR:
-        title = trUtf8("Patch panel hátlap 1-1 beközés: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        title = tr("Patch panel hátlap 1-1 beközés: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
         break;
     case DPM_REP:
-        title = trUtf8("Patch panel bekötés riport: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
+        title = tr("Patch panel bekötés riport: %1 - %2").arg(pSelNode->currentNodeName(), pSelNode2->currentNodeName());
         break;
     default:
         EXCEPTION(EPROGFAIL);

@@ -380,7 +380,7 @@ QString cPhsLink::show(bool t) const
 {
     QSqlQuery q = getQuery();
     QString r;
-    if (!t) r = trUtf8("Fizikai link. ");
+    if (!t) r = tr("Fizikai link. ");
     r += show12(q, true) + " <==> " + show12(q, false);
     QString note = getNote();
     if (!note.isEmpty()) r += " " + parentheses(note);
@@ -477,7 +477,7 @@ QString cLogLink::show(bool t) const
 {
     QSqlQuery q = getQuery();
     QString r;
-    if (!t) r = trUtf8("Logikai link. ");
+    if (!t) r = tr("Logikai link. ");
     r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
     QString note = getNote();
     if (!note.isEmpty()) r += " " + parentheses(note);
@@ -487,8 +487,8 @@ QString cLogLink::show(bool t) const
 QStringList cLogLink::showChain() const
 {
     QVariantList vids = get(__sPhsLinkChain).toList();
-    if (vids.isEmpty()) return QStringList(trUtf8("Üres lánc"));
-    QString e = trUtf8("A lánc hibás");
+    if (vids.isEmpty()) return QStringList(tr("Üres lánc"));
+    QString e = tr("A lánc hibás");
     qlonglong apid = getId(_sPortId1);  // Megyünk portról - portra, ez az első
     qlonglong rpid = getId(_sPortId2);  // Ha fordított az irány, akkor ez az első
     bool first   = true;
@@ -549,7 +549,7 @@ QString cLldpLink::show(bool t) const
 {
     QSqlQuery q = getQuery();
     QString r;
-    if (!t) r = trUtf8("LLDP link. ");
+    if (!t) r = tr("LLDP link. ");
     r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
     return r;
 }
@@ -614,40 +614,40 @@ QString reportComparedLinks(QSqlQuery& q, eLinkResult r, qlonglong pid, const cL
     QString sr;
     switch (r) {
     case LINK_LLDP_AND_LOGIC:
-        sr = QObject::trUtf8("A logikai és az LLDP link azonos.");
+        sr = QObject::tr("A logikai és az LLDP link azonos.");
         if (details) {
             sr += nl;
-            sr += QObject::trUtf8("LLDP és logikai : ") + logl.show(true) + nl;
-            sr += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+            sr += QObject::tr("LLDP és logikai : ") + logl.show(true) + nl;
+            sr += QObject::tr("A fizikai linkek lánca :") + nl;
             sr += logl.showChain().join(nl);
 
         }
         break;
     case LINK_NOT_FOUND:
-        sr = QObject::trUtf8("Nincs se LLDP, se logikai link.");
+        sr = QObject::tr("Nincs se LLDP, se logikai link.");
         break;
     case LINK_LLDP_ONLY:
-        sr = QObject::trUtf8("Nincs logikai link, csak LLDP.");
+        sr = QObject::tr("Nincs logikai link, csak LLDP.");
         if (details) {
             sr += nl;
-            sr += QObject::trUtf8("LLDP    : ") + lldp.show(true);
+            sr += QObject::tr("LLDP    : ") + lldp.show(true);
         }
         break;
     case LINK_LOGIC_ONLY:
-        sr = QObject::trUtf8("Nincs LLDP link, csak logikai.");
+        sr = QObject::tr("Nincs LLDP link, csak logikai.");
         if (details) {
             sr += nl;
-            sr += QObject::trUtf8("Logikai : ") + logl.show(true) + nl;
-            sr += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+            sr += QObject::tr("Logikai : ") + logl.show(true) + nl;
+            sr += QObject::tr("A fizikai linkek lánca :") + nl;
             sr += logl.showChain().join(nl);
         }
         break;
     case LINK_CONFLICT:
     case LINK_RCONFLICT:
-        sr  = QObject::trUtf8("Az %1 ellentmondás van a logikai és LLDP linkek között.").arg(cNPort::getFullNameById(q, pid)) + nl;
-        sr += QObject::trUtf8("LLDP    : ") + lldp.show(true) + nl;
-        sr += QObject::trUtf8("Logikai : ") + logl.show(true) + nl;
-        sr += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+        sr  = QObject::tr("Az %1 ellentmondás van a logikai és LLDP linkek között.").arg(cNPort::getFullNameById(q, pid)) + nl;
+        sr += QObject::tr("LLDP    : ") + lldp.show(true) + nl;
+        sr += QObject::tr("Logikai : ") + logl.show(true) + nl;
+        sr += QObject::tr("A fizikai linkek lánca :") + nl;
         sr += logl.showChain().join(nl);
         break;
     default:

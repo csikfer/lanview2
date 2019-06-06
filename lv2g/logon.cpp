@@ -52,7 +52,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         }
     }
     _changeTxt   = ui->chgPswPB->text();
-    _unChangeTxt = trUtf8("Ne legyen jelszócsere");
+    _unChangeTxt = tr("Ne legyen jelszócsere");
     _change = true;
     change();   // Megfordítja a _change flag-et, és eltünteti a felesleges elemeket
     _state  = LR_INITED;
@@ -130,7 +130,7 @@ void cLogOn::ok()
         if (_change) {              // Jelszó csere?
             QString np = ui->newPswLE->text();
             if (np != ui->newPsw2LE->text()) {
-                ui->msgLBL->setText(trUtf8("A kétszer begépelt új jelszó nem eggyezik. Próbálja újra!"));
+                ui->msgLBL->setText(tr("A kétszer begépelt új jelszó nem eggyezik. Próbálja újra!"));
                 return;
             }
             QSqlQuery q = getQuery();
@@ -142,7 +142,7 @@ void cLogOn::ok()
     else {
         if (_probes < _maxProbes) {
             _probes++;
-            ui->msgLBL->setText(trUtf8("Nem megfelelő felhasználónév, vagy jelszó. Próbálja újra!"));
+            ui->msgLBL->setText(tr("Nem megfelelő felhasználónév, vagy jelszó. Próbálja újra!"));
             return;
             return;
         }

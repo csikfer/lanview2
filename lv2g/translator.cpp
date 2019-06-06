@@ -37,7 +37,7 @@ cTransLang::cTransLang(int ix, cTranslator *par)
         break;
     }
     int langNum = langIndex + 1;
-    pLabel->setText(trUtf8("Nyelv #%1").arg(langNum));
+    pLabel->setText(tr("Nyelv #%1").arg(langNum));
     parent->ui->toolButtonAddComboBox->setEnabled(langNum < MAX_LANGUAGES);
     pSelectLanguage = new cSelectLanguage(pComboBox, pFlag, nullable, this);
     if (!nullable) {
@@ -347,7 +347,7 @@ void cTranslator::on_pushButtonView_clicked()
       + selectText
       + QString( " FROM %1 AS o"                                                      ).arg(sTableName);
     if (!execSql(q, sql)) {
-        const QString msg = QObject::trUtf8("A %1 táblában nincs egy szerkeszthető sor sem, nincs mit fordítani.").arg(sTableName);
+        const QString msg = QObject::tr("A %1 táblában nincs egy szerkeszthető sor sem, nincs mit fordítani.").arg(sTableName);
         cMsgBox::warning(msg, this);
         return;
     }
@@ -394,7 +394,7 @@ void cTranslator::on_pushButtonSave_clicked()
         }
         else {
             sqlRollback(q, st);
-            QString msg = trUtf8("Hiba történt a mentés közben.");
+            QString msg = tr("Hiba történt a mentés közben.");
             cErrorMessageBox::messageBox(pe, this, msg);
         }
         fromImport = false;
@@ -435,7 +435,7 @@ void cTranslator::on_toolButtonDelComboBox_clicked()
 void cTranslator::on_pushButtonCancel_clicked()
 {
     if (isChanged()) {
-        QString text = trUtf8("Valóban eldobja a táblázatot, és a modosításokat ?");
+        QString text = tr("Valóban eldobja a táblázatot, és a modosításokat ?");
         if (!cMsgBox::yes(text, this)) return;
     }
     clearRows();
@@ -527,7 +527,7 @@ void cTranslator::on_pushButtonImport_clicked()
     csv >> sTableName;
     if (csv.state(msg) != CSVE_OK) goto import_error;
     if (!enumTableForText.enumValues.contains(sTableName)) {
-        msg = trUtf8("Invalid table name in header : %1").arg(sTableName);
+        msg = tr("Invalid table name in header : %1").arg(sTableName);
         goto import_error;
     }
     ui->comboBoxObj->setCurrentIndex(pTableListModel->indexOf(sTableName));
@@ -543,7 +543,7 @@ void cTranslator::on_pushButtonImport_clicked()
         csv >> s;
         if (csv.state() == CSVE_END_OF_LINE) {
             if (langNum == 0) {
-                msg = trUtf8("A fejlécben nincs egyetlen nyelv sem.");
+                msg = tr("A fejlécben nincs egyetlen nyelv sem.");
                 goto import_error;
             }
             break;
@@ -551,12 +551,12 @@ void cTranslator::on_pushButtonImport_clicked()
         if (csv.state(msg) != CSVE_OK) goto import_error;
         langNum++;
         if (langNum > MAX_LANGUAGES) {
-            msg = trUtf8("Tul sok nyelv a fejlécben.");
+            msg = tr("Tul sok nyelv a fejlécben.");
             goto import_error;
         }
         if (selectLangs.size() < langNum) on_toolButtonAddComboBox_clicked();
         if (!selectLangs.at(langNum -1)->setCurrent(s)) {
-            msg = trUtf8("Ismeretlen nyelv a fejlécben : %1, #%2").arg(s).arg(langNum);
+            msg = tr("Ismeretlen nyelv a fejlécben : %1, #%2").arg(s).arg(langNum);
             goto import_error;
         }
     }
@@ -601,7 +601,7 @@ void cTranslator::on_pushButtonImport_clicked()
             ++col;
             if (csv.state(msg) != CSVE_OK) goto import_error;
             if (s != pTextNameEnumType->enumValues.at(h)) {
-                msg = trUtf8("Hibás szöveg azonosító : %1").arg(s);
+                msg = tr("Hibás szöveg azonosító : %1").arg(s);
                 goto import_error;
             }
             for (i = 0; i < langNum; i++) {
@@ -625,10 +625,10 @@ import_error:
 void cTranslator::setHeader(int cols)
 {
     ui->tableWidget->setColumnCount(cols);
-    ui->tableWidget->setHorizontalHeaderItem(CIX_REC_ID,     new QTableWidgetItem(trUtf8("ID")));
-    ui->tableWidget->setHorizontalHeaderItem(CIX_REC_NAME,   new QTableWidgetItem(trUtf8("Név")));
-    ui->tableWidget->setHorizontalHeaderItem(CIX_TID,        new QTableWidgetItem(trUtf8("T.ID")));
-    ui->tableWidget->setHorizontalHeaderItem(CIX_TID_NAME,   new QTableWidgetItem(trUtf8("T.név")));
+    ui->tableWidget->setHorizontalHeaderItem(CIX_REC_ID,     new QTableWidgetItem(tr("ID")));
+    ui->tableWidget->setHorizontalHeaderItem(CIX_REC_NAME,   new QTableWidgetItem(tr("Név")));
+    ui->tableWidget->setHorizontalHeaderItem(CIX_TID,        new QTableWidgetItem(tr("T.ID")));
+    ui->tableWidget->setHorizontalHeaderItem(CIX_TID_NAME,   new QTableWidgetItem(tr("T.név")));
     for (int i = CIX_FIRST_LANG; i < cols; ++i) {
         int ix = i - CIX_FIRST_LANG;
         QString s = languages.at(ix)->getName();

@@ -572,7 +572,7 @@ QWidget *cFieldEditBase::setupNullButton(bool isNull, QAbstractButton * p)
 cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
 {
     if (_pParentDialog == nullptr) {
-        QString se = trUtf8("A keresett %1 nevű mező szerkesztő objektum, nem található, nincs parent dialugus.\nMező Leiró : %2")
+        QString se = tr("A keresett %1 nevű mező szerkesztő objektum, nem található, nincs parent dialugus.\nMező Leiró : %2")
                 .arg(__fn, _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
         DERR() << se << endl;
@@ -580,7 +580,7 @@ cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
     }
     cFieldEditBase *p = (*_pParentDialog)[__fn];
     if (p == nullptr) {
-        QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.\nMező Leiró : %2")
+        QString se = tr("A keresett %1 mező, nem található a '%2'.'%3'-ból.\nMező Leiró : %2")
                 .arg(__fn, _pParentDialog->name, _colDescr.colName(), _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
         DERR() << se << endl;
@@ -752,11 +752,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
 void cFieldEditBase::togleNull(bool f)
 {
     disableEditWidget(f);
-    setFromEdit();
+    _setFromEdit();
 }
 
 // Alap változat, ha az edit widget QLineEdit, vagy pPlainTextEdit, ha nem kizárást dob
-void cFieldEditBase::setFromEdit()
+void cFieldEditBase::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -1248,15 +1248,15 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 pLineEdit->setEchoMode(QLineEdit::Password);
                 pLineEdit->setText("");
                 _value.clear();
-                connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+                connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
                 break;
             }
             pLineEdit->setText(_fr);
-            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
             break;
         case FEW_LINES:
             pPlainTextEdit->setPlainText(_fr);
-            connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+            connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
             break;
         case FEW_COMBO_BOX:
             switch (modeltype) {
@@ -1270,7 +1270,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 EXCEPTION(EPROGFAIL, 0);
 
             }
-            connect(pComboBox, SIGNAL(currentTextChanged(QString)),  this, SLOT(setFromEdit()));
+            connect(pComboBox, SIGNAL(currentTextChanged(QString)),  this, SLOT(_setFromEdit()));
             break;
         default:
             EXCEPTION(EPROGFAIL);
@@ -1346,10 +1346,10 @@ int cFieldLineWidget::set(const QVariant& v)
     return r;
 }
 
-void cFieldLineWidget::setFromEdit()
+void cFieldLineWidget::_setFromEdit()
 {
     if ((pNullButton != nullptr && pNullButton->isChecked()) || _wType != FEW_COMBO_BOX) {
-        cFieldEditBase::setFromEdit();
+        cFieldEditBase::_setFromEdit();
     }
     else {
         QString s = pComboBox->currentText();
@@ -1439,7 +1439,7 @@ int cFieldSpinBoxWidget::set(const QVariant& v)
     return r;
 }
 
-void cFieldSpinBoxWidget::setFromEdit()
+void cFieldSpinBoxWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -1549,7 +1549,7 @@ void cArrayWidget::disableEditWidget(eTristate tsf)
 
 // cArrayWidget SLOTS
 
-void cArrayWidget::setFromEdit()
+void cArrayWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -2088,7 +2088,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             }
             else {                      // Hely szerinti szűrés, ha az objektum tartalmaz hely infót (place_id mezőt)
                 ixRPlaceId = pRDescr->toIndex(_sPlaceId, EX_IGNORE);
-                if (ixRPlaceId == NULL_IX) EXCEPTION(EDATA, 0, trUtf8("A filter=palces feature ebben az esetben nem támogatott : %1").arg(_tf.identifying(false)));
+                if (ixRPlaceId == NULL_IX) EXCEPTION(EDATA, 0, tr("A filter=palces feature ebben az esetben nem támogatott : %1").arg(_tf.identifying(false)));
                 _filter = F_RPLACE;
                 _height = 3;
             }
@@ -2100,13 +2100,13 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             else if (0 == pt.compare(_sSnmp, Qt::CaseInsensitive)) _pt = P_SNMP;
             else if (0 == pt.compare(_sPatch,Qt::CaseInsensitive)) _pt = P_PATCH;
             else {
-                EXCEPTION(EDATA, 0, trUtf8("Invalid filter sub type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
+                EXCEPTION(EDATA, 0, tr("Invalid filter sub type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
             }
             _filter = F_PORT;
             _height = 4;
         }
         else {
-            EXCEPTION(EDATA, 0, trUtf8("Invalid filter type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
+            EXCEPTION(EDATA, 0, tr("Invalid filter type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
         }
     }
     if (_filter == F_PLACE) {
@@ -2205,7 +2205,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         }
         else {
             pDelete(pTableShape);
-            pButtonAdd->setDisabled(true);
+            pButtonEdit->setDisabled(true);
             pButtonAdd->setDisabled(true);
         }
         connect(pButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
@@ -2213,14 +2213,14 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 
     QString owner = _fieldShape.feature(_sOwner);   //
     if (!owner.isEmpty()) {
-        if (_filter != F_NO) EXCEPTION(EDATA, 0, trUtf8("A filter és az owner feature együttes használata nem támogatott : %1").arg(_tf.identifying(false)));
+        if (_filter != F_NO) EXCEPTION(EDATA, 0, tr("A filter és az owner feature együttes használata nem támogatott : %1").arg(_tf.identifying(false)));
         if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {  // TREE
             if (_pParentDialog == nullptr) {
-                QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+                QAPPMEMO(tr("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
             owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE); // ??????!!!!!
             if (owner_ix < 0) {
-                QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+                QAPPMEMO(tr("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
             ownerId = NULL_ID;
             if (_pParentDialog->_pOwnerTable != nullptr) {
@@ -2300,7 +2300,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 
 cFKeyWidget::~cFKeyWidget()
 {
-    delete pTableShape;
+    pDelete(pTableShape);
 }
 
 bool cFKeyWidget::setWidget()
@@ -2484,7 +2484,7 @@ bool cFKeyWidget::setConstFilter()
     return false;
 }
 
-void cFKeyWidget::setFromEdit()
+void cFKeyWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -2521,7 +2521,7 @@ void cFKeyWidget::setFilter(const QString& _s)
     }
     ix = pModel->indexOf(id);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
-    setFromEdit();
+    _setFromEdit();
 }
 
 void cFKeyWidget::setPlace(qlonglong _pid)
@@ -2533,7 +2533,7 @@ void cFKeyWidget::setPlace(qlonglong _pid)
     pModel->setOwnerId(_pid, _sPlaceId, TS_TRUE);
     ix = pModel->indexOf(id);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
-    setFromEdit();
+    _setFromEdit();
 }
 
 void cFKeyWidget::setNode(qlonglong _nid)
@@ -2545,7 +2545,7 @@ void cFKeyWidget::setNode(qlonglong _nid)
     pModel->setOwnerId(_nid, _sNodeId, TS_TRUE);
     ix = pModel->indexOf(id);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
-    setFromEdit();
+    _setFromEdit();
 }
 
 /// Egy tulajdosnság kulcs mezőben vagyunk.
@@ -2692,7 +2692,7 @@ int cDateWidget::set(const QVariant& v)
     return r;
 }
 
-void cDateWidget::setFromEdit()
+void cDateWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -2759,7 +2759,7 @@ void cTimeWidget::disableEditWidget(eTristate tsf)
 }
 
 
-void cTimeWidget::setFromEdit()
+void cTimeWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -2818,7 +2818,7 @@ int cDateTimeWidget::set(const QVariant& v)
     return r;
 }
 
-void cDateTimeWidget::setFromEdit()
+void cDateTimeWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -2861,8 +2861,8 @@ cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField&
         pValidatorDay = new QIntValidator(0, 9999, this);
         pLineEditDay->setValidator(pValidatorDay);
         view();
-        connect(pLineEditDay, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
-        connect(pTimeEdit,    SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        connect(pLineEditDay, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
+        connect(pTimeEdit,    SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
     }
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
@@ -2923,7 +2923,7 @@ void cIntervalWidget::view()
     }
 }
 
-void cIntervalWidget::setFromEdit()
+void cIntervalWidget::_setFromEdit()
 {
     setFromWidget(getFromWideget());
 }
@@ -2967,19 +2967,19 @@ void cBinaryWidget::_init()
     pRadioButtonNULL->setDisabled(_readOnly);
     pLayout->addWidget(pRadioButtonNULL);
     if (!_readOnly) {
-        pLoadButton  = new QPushButton(trUtf8("Betölt"));
+        pLoadButton  = new QPushButton(tr("Betölt"));
         pLayout->addWidget(pLoadButton);
         connect(pRadioButtonNULL, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
         connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
     }
     if (isCImage) {     // Ha egy cImage objektum része, akkor meg tudjuk jeleníteni.
-        pViewButton     = new QPushButton(trUtf8("Megjelenít"));
+        pViewButton     = new QPushButton(tr("Megjelenít"));
         pViewButton->setDefault(true);
         pLayout->addWidget(pViewButton);
-        pZoomInButton   = new QPushButton(trUtf8("+"));
+        pZoomInButton   = new QPushButton(tr("+"));
         pZoomInButton->setDisabled(true);
         pLayout->addWidget(pZoomInButton);
-        pZoomOutButton  = new QPushButton(trUtf8("-"));
+        pZoomOutButton  = new QPushButton(tr("-"));
         pZoomOutButton->setDisabled(true);
         pLayout->addWidget(pZoomOutButton);
         connect(pViewButton, SIGNAL(pressed()), this, SLOT(viewPic()));
@@ -3276,7 +3276,7 @@ void cFKeyArrayWidget::on_pushButtonAdd_pressed()
     *pArrayModel << nm;
     ids          << id;
     valueView    << ra.getNameById(*pq, id);
-    setFromEdit();
+    _setFromEdit();
     setButtons();
 }
 
@@ -3289,7 +3289,7 @@ void cFKeyArrayWidget::on_pushButtonIns_pressed()
     pArrayModel->insert(nm, actRow);
     ids.insert(actRow, id);
     valueView.insert(actRow, ra.getNameById(*pq, id));
-    setFromEdit();
+    _setFromEdit();
     setButtons();
 }
 
@@ -3335,7 +3335,7 @@ void cFKeyArrayWidget::on_pushButtonDel_pressed()
         ids.pop_back();
         valueView.pop_back();
     }
-    setFromEdit();
+    _setFromEdit();
     setButtons();
 }
 
@@ -3401,7 +3401,7 @@ void cFKeyArrayWidget::on_listView_doubleClicked(const QModelIndex & index)
     }
 }
 
-void cFKeyArrayWidget::setFromEdit()
+void cFKeyArrayWidget::_setFromEdit()
 {
     setFromWidget(list_longlong2variant(ids));
 }
@@ -3428,7 +3428,7 @@ cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
         pHBLayout->addWidget(pButton, 0);
         connect(pLineEdit, SIGNAL(textChanged(QString)),  this, SLOT(setFromEdit(QString)));
         connect(pButton,   SIGNAL(pressed()),             this, SLOT(colorDialog()));
-        sTitle = trUtf8("Szín kiválasztása");
+        sTitle = tr("Szín kiválasztása");
     }
     setColor(_value.toString());
     pHBLayout->addStretch();
@@ -3520,7 +3520,7 @@ void cFontFamilyWidget::changeFont(const QFont&)
     setFromWidget(QVariant(pFontComboBox->currentText()));
 }
 
-void cFontFamilyWidget::setFromEdit()
+void cFontFamilyWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -3627,7 +3627,7 @@ void cFontAttrWidget::disableEditWidget(eTristate tsf)
     pToolButtonStrikeout->setDisabled(f);
 }
 
-void cFontAttrWidget::setFromEdit()
+void cFontAttrWidget::_setFromEdit()
 {
     QVariant v;
     if (pNullButton != nullptr && pNullButton->isChecked()) {
@@ -3703,7 +3703,7 @@ cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, 
         pLayout->addWidget(pPlainTextEdit);
         pPlainTextEdit->setPlainText(_value.toString());
         pPlainTextEdit->setReadOnly(_readOnly);
-        connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+        connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
     }
     else {
         _wType = FEW_LTEXT;  // Widget típus azonosító
@@ -3711,7 +3711,7 @@ cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, 
         pLayout->addWidget(pLineEdit);
         pLineEdit->setText(_value.toString());
         pLineEdit->setReadOnly(_readOnly);
-        connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
     }
 }
 
@@ -3731,7 +3731,7 @@ int cLTextWidget::set(const QVariant& v)
     return 1;
 }
 
-void cLTextWidget::setFromEdit()
+void cLTextWidget::_setFromEdit()
 {
     QString  s;
     if (_wType == FEW_LTEXT) s = pLineEdit->text();
@@ -3817,10 +3817,10 @@ void cFeatureWidgetRow::clickButton(int id)
                     matrix << v;
                 }
                 QStringList head;
-                head << trUtf8("Név");
-                head << trUtf8("Érték");
+                head << tr("Név");
+                head << tr("Érték");
                 QString name = pItemKey->text();
-                QString title = trUtf8("A features %1 nevű értékébe ágyazott nevesített érték lista.")
+                QString title = tr("A features %1 nevű értékébe ágyazott nevesített érték lista.")
                         .arg(name);
                 QWidget *par = lv2g::pMainWindow;
                 popupReportWindow(par, htmlTable(head, matrix), title);
@@ -3836,7 +3836,7 @@ void cFeatureWidgetRow::listDialog()
     QVBoxLayout *   pVLayout    = new QVBoxLayout;
     cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET4(DBT_OK, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
 
-    pDialog->setWindowTitle(trUtf8("Lista szerkesztése"));
+    pDialog->setWindowTitle(tr("Lista szerkesztése"));
     pDialog->setLayout(pVLayout);
     pVLayout->addWidget(pListWidget);
     pVLayout->addWidget(pButtons->pWidget());
@@ -3869,7 +3869,7 @@ void cFeatureWidgetRow::mapDialog()
     QVBoxLayout *   pVLayout    = new QVBoxLayout;
     cDialogButtons *pButtons    = new cDialogButtons(ENUM2SET5(DBT_OK, DBT_REPORT, DBT_INSERT, DBT_DELETE, DBT_CANCEL));
 
-    pDialog->setWindowTitle(trUtf8("Map szerkesztése"));
+    pDialog->setWindowTitle(tr("Map szerkesztése"));
     pDialog->setLayout(pVLayout);
     pVLayout->addWidget(pTableWidget);
     pVLayout->addWidget(pButtons->pWidget());
@@ -3880,7 +3880,7 @@ void cFeatureWidgetRow::mapDialog()
     pTableWidget->setColumnCount(2);
     pTableWidget->horizontalHeader()->setStretchLastSection(true);
     QStringList labels;
-    labels << trUtf8("Név") << trUtf8("Érték");
+    labels << tr("Név") << tr("Érték");
     pTableWidget->setHorizontalHeaderLabels(labels);
     QTableWidgetItem *pItem;
     int _row = 0;
@@ -3924,8 +3924,8 @@ cFeatureWidget::cFeatureWidget(const cTableShape &_tm, const cTableShapeField& _
     pTable->horizontalHeader()->setStretchLastSection(true);
     QStringList headLabels;
     headLabels << _sNul << _sNul;
-    headLabels << trUtf8("Név");
-    headLabels << trUtf8("Érték");
+    headLabels << tr("Név");
+    headLabels << tr("Érték");
     pTable->setColumnCount(cFeatureWidgetRow::COL_NUMBER);
     pTable->horizontalHeader()->setMinimumSectionSize(24);
     pTable->setRowCount(0);     // empty
@@ -3933,8 +3933,8 @@ cFeatureWidget::cFeatureWidget(const cTableShape &_tm, const cTableShapeField& _
     pHLayout->addWidget(pTable, 1);
     pVLayout = new QVBoxLayout;
     pHLayout->addLayout(pVLayout);
-    pDelRow = new QPushButton(trUtf8("Töröl"));
-    pInsRow = new QPushButton(trUtf8("Beszúr"));
+    pDelRow = new QPushButton(tr("Töröl"));
+    pInsRow = new QPushButton(tr("Beszúr"));
     pVLayout->addWidget(pInsRow);
     pVLayout->addWidget(pDelRow);
     pVLayout->addStretch();
@@ -3968,7 +3968,7 @@ int cFeatureWidget::set(const QVariant& v)
         QString s = v.toString();
         if (!s.isEmpty() && s != ":") {
             if (!features.split(s, false, EX_IGNORE)) {
-                cMsgBox::error(trUtf8("Hibás features érték: '%1'").arg(s));
+                cMsgBox::error(tr("Hibás features érték: '%1'").arg(s));
             }
         }
         QStringList keys = features.keys();
@@ -3994,10 +3994,10 @@ void cFeatureWidget::clearRows()
 
 void cFeatureWidget::onChangedCell(int, int)
 {
-    if (!busy) setFromEdit();
+    if (!busy) _setFromEdit();
 }
 
-void cFeatureWidget::setFromEdit()
+void cFeatureWidget::_setFromEdit()
 {
     if (pNullButton != nullptr && pNullButton->isChecked()) {
         if (!_value.isNull()) setFromWidget(QVariant());
@@ -4650,7 +4650,7 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
     lastLinkType = int(_lnk.getId(_sPhsLinkType2));
     pComboBoxShare->setCurrentIndex(ix);
     if ((lastLinkType == LT_TERM) == _isPatch) {
-        QString msg = trUtf8("Database or program error. Port %1:%2, link type is %3.").arg(pn->getName(), p.getName(), linkType(lastLinkType, EX_IGNORE));
+        QString msg = tr("Database or program error. Port %1:%2, link type is %3.").arg(pn->getName(), p.getName(), linkType(lastLinkType, EX_IGNORE));
         EXCEPTION(EDATA, lastLinkType, msg);
     }
     pComboBoxShare->setEnabled(lastLinkType == LT_FRONT);
@@ -4994,7 +4994,7 @@ cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
     pTableWidget = new QTableWidget(par);
     if (isDialog) {
         _pWidget = new QDialog(par);
-        _pWidget->setWindowTitle(trUtf8("Paraméterek"));
+        _pWidget->setWindowTitle(tr("Paraméterek"));
         QVBoxLayout *layout = new QVBoxLayout;
         _pWidget->setLayout(layout);
         layout->addWidget(pTableWidget, 1);
@@ -5009,7 +5009,7 @@ cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
     pTableWidget->horizontalHeader()->setStretchLastSection(true);
     pTableWidget->setColumnCount(2);
     QStringList head;
-    head << trUtf8("Név") << trUtf8("Érték");
+    head << tr("Név") << tr("Érték");
     pTableWidget->setHorizontalHeaderLabels(head);
     Qt::ItemFlags flagConst = Qt::ItemIsEnabled;
     Qt::ItemFlags flagEdit  = Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;

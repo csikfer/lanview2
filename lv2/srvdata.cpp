@@ -11,13 +11,20 @@
 /* ******************************  ****************************** */
 DEFAULTCRECDEF(cServiceType, _sServiceTypes)
 
-qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, eEx __ex)
+qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool _replace, eEx __ex)
 {
     cServiceType    o;
     o.setName(__name);
     o.setName(_sServiceTypeNote, __note);
-    if (o.insert(__q, __ex)) {
-        return o.getId();
+    if (_replace) {
+        if (o.replace(__q, __ex)) {
+            return o.getId();
+        }
+    }
+    else {
+        if (o.insert(__q, __ex)) {
+            return o.getId();
+        }
     }
     return NULL_ID;
 }
@@ -30,11 +37,16 @@ void cAlarmMsg::replace(QSqlQuery& __q, qlonglong __stid, const QString& __stat,
     cAlarmMsg o;
     o.setId(_sServiceTypeId, __stid);
     o.setName(_sStatus, __stat);
-    bool e = o.fetchQuery(__q);
+    bool e = o.fetchQuery(__q, false, QBitArray(), tIntVector(), 0, 0, _sTextId);   // Read text_id if exists record
     o.setText(LTX_MESSAGE, __msg);
     o.setText(LTX_SHORT_MSG, __shortMsg);
-    if (e) o.update(__q, false);
-    else   o.insert(__q);
+    if (e) {
+        // The record contains only a text link outside the primary key.
+        o.set(_sTextId, __q.value(0));   // get text_id
+    }
+    else {
+        o.insert(__q);
+    }
     o.saveText(__q);
 }
 
@@ -107,7 +119,7 @@ const cService * cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex
     if (i < 0) {
         cService *p = new cService();
         if (!p->fetchByName(__q, __nm)) {
-            if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Ismeretlen szolgáltatás név : %1")).arg(__nm));
+            if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::tr("Ismeretlen szolgáltatás név : %1")).arg(__nm));
             delete p;
             return NULL;
         }
@@ -123,7 +135,7 @@ const cService *cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
     if (i < 0) {
         cService *p = new cService();
         if (!p->fetchById(__q, __id)) {
-            if (__ex) EXCEPTION(EFOUND, __id, QObject::trUtf8("Ismeretlen szolgáltatás azonosító."));
+            if (__ex) EXCEPTION(EFOUND, __id, QObject::tr("Ismeretlen szolgáltatás azonosító."));
             delete p;
             return NULL;
         }
@@ -266,7 +278,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     static const QString _sHostServiceId2Name = "host_service_id2name";
     QString sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
     if (sFulName.isEmpty()) {   // Törölték?
-        APPMEMO(__q, trUtf8("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
+        APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
         setBool(_sDeleted, true);
         if (_resetIfDeleted) lanView::getInstance()->reSet();
         return *this;
@@ -290,7 +302,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
         int r = _execSql(__q, sql, getId(), __st, __note, did);
         if (r == 0) {   // Nincs adat ?!
             if (tf) sqlRollback(__q, sFulName, EX_IGNORE);
-            EXCEPTION(EENODATA, 0, trUtf8("SQL függvény: %1(%2,%3,%4,%5)")
+            EXCEPTION(EENODATA, 0, tr("SQL függvény: %1(%2,%3,%4,%5)")
                       .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
                       );
         }
@@ -301,9 +313,9 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             cnt++;
             // deadlock ?
             if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= setStateMaxTry) {
-                DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.number()).arg(cnt)
-                    << trUtf8("driverText   : ") << le.driverText() << "\n"
-                    << trUtf8("databaseText : ") << le.databaseText() << endl;
+                DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.number()).arg(cnt)
+                    << tr("driverText   : ") << le.driverText() << "\n"
+                    << tr("databaseText : ") << le.databaseText() << endl;
                 QThread::msleep(200);
                 continue;   // retrying
             }
@@ -375,7 +387,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = trUtf8("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
+        QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
         switch (n) {
         case -1:    SQLQUERYERR(q);
         case  0:    EXCEPTION(EFOUND, 0, e);
@@ -421,7 +433,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = trUtf8("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
+        QString e = tr("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
         switch (n) {
         case -1:    SQLQUERYERR(q);
         case  0:    EXCEPTION(EFOUND, 0, e);
@@ -483,7 +495,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = trUtf8("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
+        QString e = tr("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
         switch (n) {
         case -1:    SQLQUERYERR(q);
         case  0:    EXCEPTION(EFOUND, 0, e);
@@ -501,7 +513,7 @@ bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, eE
     (*this)[_sDeleted]   = false;
     int r = completion(q);
     if (r != 1) {
-        QString e = trUtf8("HostService : #%1(%2):#%3(%4)")
+        QString e = tr("HostService : #%1(%2):#%3(%4)")
                 .arg(__hid).arg(cNode().   getNameById(__hid, EX_IGNORE))
                 .arg(__sid).arg(cService().getNameById(__sid, EX_IGNORE));
         if (__ex) {
@@ -527,7 +539,7 @@ bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, ql
     int r = completion(q);
     if (r != 1) {
         QSqlQuery qq = getQuery();
-        QString e = trUtf8("HostService : %1(%2):%3(%4).%5(%6)")
+        QString e = tr("HostService : %1(%2):%3(%4).%5(%6)")
                 .arg(__hid).arg(cNode().   getNameById(qq, __hid, EX_IGNORE))
                 .arg(__pid).arg(cNPort().  getFullNameById(qq, __pid))
                 .arg(__sid).arg(cService().getNameById(qq, __sid, EX_IGNORE));
@@ -601,12 +613,12 @@ QString cHostService::fullName(QSqlQuery& q, qlonglong __id, eEx __ex)
         r = q.value(0).toString();
     }
     if (r.isEmpty()) {
-        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, __id, trUtf8("Ismeretlen host_service_id"));
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, __id, tr("Ismeretlen host_service_id"));
         if (__id == NULL_ID) {
             r = cColStaticDescr::rNul;
         }
         else {
-            r = trUtf8("Invalid or deleted #%1").arg(__id);
+            r = tr("Invalid or deleted #%1").arg(__id);
         }
     }
     return r;
@@ -710,7 +722,7 @@ bool cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEve
     }
     int n = q.numRowsAffected();
     if (n > 1) {
-        EXCEPTION(EDATA, n, trUtf8("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
+        EXCEPTION(EDATA, n, tr("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
     }
     return n == 1;
 }
@@ -732,7 +744,7 @@ bool cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEven
     }
     int n = q.numRowsAffected();
     if (n > 1) {
-        EXCEPTION(EDATA, n, trUtf8("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
+        EXCEPTION(EDATA, n, tr("Is not unique : alarm #%1, user #%2, %3").arg(_uid).arg(_aid).arg(et));
     }
     return n == 1;
 }
@@ -755,7 +767,7 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
      && !a.isNull(_sSuperiorAlarmId)) {     // Riasztáshoz csatolt ticket
         // Az eredeti riasztás a ticket-hez
         isTicket = true;
-        text = trUtf8("Hiba jegy") + " :<br>";
+        text = tr("Hiba jegy") + " :<br>";
         qlonglong id = a.getId(_sSuperiorAlarmId);  // Amire a ticket készült
         pTargetRec = a.newObj();                    // Az eredeti riasztás, és jelezzük, hogy ticket
         pTargetRec->setById(q, id);
@@ -765,12 +777,12 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     cPlace place;    place.setById(q, node.       getId(_sPlaceId));
     const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
     QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
-    text += _sBr + trUtf8("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
-    text += _sBr + trUtf8("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
-    text += _sBr + trUtf8("A hállózati elem neve")    + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
-    text += _sBr + trUtf8("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
-    text += _sBr + trUtf8("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
-    text += _sBr + trUtf8("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    text += _sBr + tr("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
+    text += _sBr + tr("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
+    text += _sBr + tr("A hállózati elem neve")    + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
+    text += _sBr + tr("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
+    text += _sBr + tr("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
+    text += _sBr + tr("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
     static const QString sql =
             "SELECT s.service_var_id, s.service_var_name, s.service_var_note, s.service_var_type_id, s.host_service_id,"
                     " a.service_var_value, a.var_state, NULL AS last_time, s.features, s.deleted, a.raw_value,"
@@ -787,14 +799,14 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
             pShape = new cTableShape;
             pShape->setByName(q, _sServiceVars);
         }
-        text += _sBr + trUtf8("Változók : ") + _sBr + list2html(q, vars, *pShape);
+        text += _sBr + tr("Változók : ") + _sBr + list2html(q, vars, *pShape);
     }
     if (a.isNull(_sEndTime)) {
-        text += _sBr + trUtf8("A riasztási állapot az üzenetküdéskor még aktív volt.");
+        text += _sBr + tr("A riasztási állapot az üzenetküdéskor még aktív volt.");
     }
     else {
-        text += _sBr + trUtf8("A riasztási állapot az üzenetküdéskor már nem volt aktív.");
-        text += _sBr + trUtf8("A riasztási állapot vége : ") + "<b>" + pTargetRec->view(q, _sEndTime) + "</i></b>";
+        text += _sBr + tr("A riasztási állapot az üzenetküdéskor már nem volt aktív.");
+        text += _sBr + tr("A riasztási állapot vége : ") + "<b>" + pTargetRec->view(q, _sEndTime) + "</i></b>";
     }
 
     if (isTicket) delete pTargetRec;
@@ -1011,11 +1023,11 @@ QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, eEx __ex)
     if (n == 1) return al.first();
     QString em = __m.toString();
     if (n > 1) {
-        em = trUtf8("A %1 MAC alapján az IP nem egyértelmű.").arg(em);
+        em = tr("A %1 MAC alapján az IP nem egyértelmű.").arg(em);
         if (__ex != EX_IGNORE) EXCEPTION(AMBIGUOUS, n, em);
     }
     else {
-        em = trUtf8("A %1 MAC-hez nincs IP cím.").arg(em);
+        em = tr("A %1 MAC-hez nincs IP cím.").arg(em);
         if (__ex >= EX_WARNING) EXCEPTION(EFOUND,    n, em);
     }
     DERR() << em << endl;
@@ -1027,14 +1039,14 @@ cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, eEx __ex)
 {
     QString em;
     if (__a.isNull()) {
-        em = trUtf8("MAC keresése érvénytelen IP címmel.");
+        em = tr("MAC keresése érvénytelen IP címmel.");
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, em);
     }
     else {
         cArp arp;
         arp = __a;
         if (arp.fetch(__q, false, arp.mask(_ixIpAddress))) return arp;
-        em = trUtf8("A %1 IP címhez-hez nincs MAC.").arg(__a.toString());
+        em = tr("A %1 IP címhez-hez nincs MAC.").arg(__a.toString());
         if (__ex >= EX_WARNING) EXCEPTION(EFOUND, 0, em);
     }
     DERR() << em << endl;

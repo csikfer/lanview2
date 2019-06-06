@@ -673,12 +673,12 @@ bool cSnmp::checkOId(const cOId& __o)
     if (__o.size() > MAX_OID_LEN) EXCEPTION(EPROGFAIL);
     if (__o.status != 0) {
         status = __o.status;
-        emsg   = __o.emsg.isEmpty() ? QObject::trUtf8("Invalid OID") : __o.emsg;
+        emsg   = __o.emsg.isEmpty() ? QObject::tr("Invalid OID") : __o.emsg;
         return false;
     }
     if (__o.size() < MIN_OID_LEN) {
         status = 1;
-        emsg   = QObject::trUtf8("OID is NULL");
+        emsg   = QObject::tr("OID is NULL");
         return false;
     }
     return true;
@@ -929,7 +929,7 @@ int cSnmp::async::asyncResponse(init __op, snmp_session *__ss, int __id, snmp_pd
 
 QString snmpNotSupMsg()
 {
-    return QObject::trUtf8("Az snmp modul nincs engedélyezve");
+    return QObject::tr("Az snmp modul nincs engedélyezve");
 }
 
 #endif // SNMP_IS_EXISTS

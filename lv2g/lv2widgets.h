@@ -425,7 +425,7 @@ signals:
     void changedValue(cFieldEditBase * pSndr);
 protected slots:
     virtual void togleNull(bool f);
-    virtual void setFromEdit();
+    virtual void _setFromEdit();
 };
 
 /// @class cNullWidget
@@ -554,7 +554,7 @@ protected:
     /// Ha  ez egy jelszó
     bool    isPwd;
 protected slots:
-    void setFromEdit();
+    void _setFromEdit();
 };
 
 /// @class cFieldSpinBoxWidget
@@ -574,7 +574,7 @@ protected:
     QSpinBox *      pSpinBox;
     QDoubleSpinBox *pDoubleSpinBox;
 protected slots:
-    void setFromEdit();
+    void _setFromEdit();
     void setFromEdit(int i);
     void setFromEdit(double d);
 };
@@ -602,7 +602,7 @@ protected:
     QModelIndex actIndex;
     int         selectedNum;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
     void selectionChanged(QModelIndex cur, QModelIndex);
     void changed(QString _t);
     void addRow();
@@ -738,7 +738,7 @@ protected:
 protected slots:
     void setFromEdit(int i);
     void setFromEdit(qlonglong id);
-    void setFromEdit();
+    void _setFromEdit();
     void insertF();
     void modifyF();
     void modifyOwnerId(cFieldEditBase* pof);
@@ -763,7 +763,7 @@ public:
 protected:
     QDateEdit * pDateEdit;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
     void setFromEdit(QDate d);
 };
 
@@ -784,7 +784,7 @@ protected:
     QToolButton *pFirstButton;
     QToolButton *pLastButton;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
     void setFromEdit(QTime d);
     void setFirst();
     void setLast();
@@ -804,7 +804,7 @@ public:
 protected:
     QDateTimeEdit * pDateTimeEdit;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
     void setFromEdit(QDateTime d);
 };
 
@@ -828,7 +828,7 @@ protected:
     QTimeEdit      *pTimeEdit;
     QIntValidator  *pValidatorDay;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
 };
 
 /// @class cBinaryWidget
@@ -910,7 +910,7 @@ protected slots:
     void on_pushButtonNew_pressed();
     void on_pushButtonEdit_pressed();
     void on_listView_doubleClicked(const QModelIndex & index);
-    void setFromEdit();
+    void _setFromEdit();
 };
 
 /// @class cColorWidget
@@ -949,7 +949,7 @@ public:
     ~cFontFamilyWidget();
     virtual int set(const QVariant& v);
 protected:
-    void setFromEdit();
+    void _setFromEdit();
     QFontComboBox  *pFontComboBox;
 private slots:
     void changeFont(const QFont&);
@@ -970,7 +970,7 @@ public:
 protected:
     void setupFlagWidget(bool f, const QIcon& icon, QToolButton *& pButton);
     void disableEditWidget(eTristate tsf);
-    void setFromEdit();
+    void _setFromEdit();
     const cColEnumType *pEnumType;
     static QIcon    iconBold;
     static QIcon    iconItalic;
@@ -1008,7 +1008,7 @@ protected:
     QPlainTextEdit *pPlainTextEdit;
     int textIndex;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
 };
 
 class cFeatureWidget;
@@ -1051,7 +1051,7 @@ protected:
     cFeatures       features;
     bool            busy;
 private slots:
-    void setFromEdit();
+    void _setFromEdit();
     void onChangedCell(int, int);
     void onInsClicked();
     void onDelClicked();

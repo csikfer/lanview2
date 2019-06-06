@@ -12,7 +12,7 @@ class cSnmpDevQuery : public cIntSubObj
 {
     Q_OBJECT
 public:
-    explicit cSnmpDevQuery(QMdiArea *parent = 0);
+    explicit cSnmpDevQuery(QMdiArea *parent = nullptr);
     ~cSnmpDevQuery();
     static const enum ePrivilegeLevel rights;
     void ipTextChanged(const QString &s);

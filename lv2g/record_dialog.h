@@ -261,7 +261,7 @@ static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, in
 {
     QWidget *pWidget = pW->cellWidget(row, col);
     if (pWidget == nullptr) return -1;
-    if (!pWidget->inherits("QComboBox")) EXCEPTION(EDATA,0, QObject::trUtf8("A %1 objektum nem konvertálható QComboBox pointerré").
+    if (!pWidget->inherits("QComboBox")) EXCEPTION(EDATA,0, QObject::tr("A %1 objektum nem konvertálható QComboBox pointerré").
                                                    arg(typeid(pWidget).name()));
     QComboBox *pComboBox = qobject_cast<QComboBox *>(pWidget);
     return pComboBox->currentIndex();

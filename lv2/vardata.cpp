@@ -30,7 +30,6 @@ int serviceVarType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sDERIVE,   Qt::CaseInsensitive)) return SVT_DERIVE;
     if (0 == _n.compare(_sDDERIVE,  Qt::CaseInsensitive)) return SVT_DDERIVE;
     if (0 == _n.compare(_sABSOLUTE, Qt::CaseInsensitive)) return SVT_ABSOLUTE;
-    if (0 == _n.compare(_sCOMPUTE,  Qt::CaseInsensitive)) return SVT_COMPUTE;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, _n);
     return ENUM_INVALID;
 }
@@ -44,7 +43,6 @@ const QString& serviceVarType(int _i, eEx __ex)
     case SVT_DERIVE:    return _sDERIVE;
     case SVT_DDERIVE:   return _sDDERIVE;
     case SVT_ABSOLUTE:  return _sABSOLUTE;
-    case SVT_COMPUTE:   return _sCOMPUTE;
     }
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, _i);
     return _sNul;
@@ -189,10 +187,10 @@ const cRecStaticDescr&  cServiceVar::descr() const
         STFIELDIX(cServiceVar, Rarefaction);
         updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
                    | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
-        sInvalidValue = trUtf8("Value is invalid : %1");
-        sNotCredible  = trUtf8("Data is not credible.");
-        sFirstValue   = trUtf8("First value, no data.");
-        sRawIsNull    = trUtf8("Raw value is NULL");
+        sInvalidValue = tr("Value is invalid : %1");
+        sNotCredible  = tr("Data is not credible.");
+        sFirstValue   = tr("First value, no data.");
+        sRawIsNull    = tr("Raw value is NULL");
     }
     return *_pRecordDescr;
 }
@@ -314,7 +312,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
         return setValue(q, qlonglong(val + 0.5), state, rawChg);
     }
     if (rpt != PT_REAL) {    // supported types
-        addMsg(trUtf8("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
         noValue(q, state);
         return RS_UNREACHABLE;
     }
@@ -346,42 +344,39 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
         return rs;
     }
     rs = RS_INVALID;
-    switch (svt) {
-    case SVT_ABSOLUTE:
+    if (svt == SVT_ABSOLUTE) {
         if (val < 0) {
             val = - val;
         }
-        break;
-    case SVT_COMPUTE: {
-        QString rpn = mergedFeatures().value("rpn");
+    }
+    QString rpn = mergedFeatures().value("rpn");
+    if (!rpn.isEmpty()) {
         QString err;
         val = rpn_calc(val, rpn, mergedFeatures(), err);
         if (!err.isEmpty()) {
-            addMsg(trUtf8("RPN error : %1").arg(err));
+            addMsg(tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
         }
-    }   break;
     }
     int vpt = int(dataType(q).getId(_sParamTypeType));
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
-    case SVT_GAUGE:
-    case SVT_COMPUTE: {
+    case SVT_GAUGE: {
         switch (vpt) {
         case PT_INTEGER:    rs = updateVar(q, qlonglong(val + 0.5), state);   break;
         case PT_REAL:       rs = updateVar(q, val,                  state);   break;
         case PT_INTERVAL:   rs = updateIntervalVar(q, qlonglong(val), state); break;
         default:
-            addMsg(trUtf8("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+            addMsg(tr("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
             return rs;
         }
     }   break;
     default:
-        addMsg(trUtf8("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }
@@ -396,7 +391,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
         return setValue(q, double(val), state, rawChg);
     }
     if (rpt != PT_INTEGER && rpt != PT_INTERVAL) {    // supported types
-        addMsg(trUtf8("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
         noValue(q, state);
         return RS_UNREACHABLE;
     }
@@ -428,26 +423,23 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
     }
     rs = RS_INVALID;
     double d = val;
-    switch (svt) {
-    case SVT_ABSOLUTE:
+    if (svt == SVT_ABSOLUTE) {
         if (val < 0) {
             val = - val;
             d   = - d;
         }
-        break;
-    case SVT_COMPUTE: {
-        QString rpn = mergedFeatures().value("rpn");
+    }
+    QString rpn = mergedFeatures().value("rpn");
+    if (!rpn.isEmpty()){
         QString err;
         d = rpn_calc(d, rpn, mergedFeatures(), err);
         if (!err.isEmpty()) {
-            addMsg(trUtf8("RPN error : %1").arg(err));
+            addMsg(tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
             return rs;
         }
         val = qlonglong(d + 0.5);
-        break;
-    }
     }
     const cParamType& pt = dataType(q);
     int vpt = int(pt.getId(cParamType::ixParamTypeType()));
@@ -455,8 +447,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
-    case SVT_GAUGE:
-    case SVT_COMPUTE: {
+    case SVT_GAUGE: {
         switch (vpt) {
         case PT_INTEGER:    return updateVar(q, val,         state);
         case PT_REAL:       return updateVar(q, d,           state);
@@ -466,12 +457,12 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
                 return updateEnumVar(q, val, state);
             }
         }
-        addMsg(trUtf8("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+        addMsg(tr("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }   break;
     default:
-        addMsg(trUtf8("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }
@@ -523,14 +514,14 @@ eTristate cServiceVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& rawV
     now = QDateTime::currentDateTime();
     clear(_ixStateMsg);
     if (rawVal.isNull()) {
-        addMsg(trUtf8("Raw data is NULL."));
+        addMsg(tr("Raw data is NULL."));
         noValue(q, state);
         return TS_NULL;
     }
     bool ok;
     QString s = cParamType::paramToString(eParamType(ptRaw), rawVal, EX_IGNORE, &ok);
     if (!ok) {
-        addMsg(trUtf8("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
+        addMsg(tr("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
         postSetValue(q, ENUM_INVALID, QVariant(), RS_UNREACHABLE, state);
         return TS_NULL;
     }
@@ -548,7 +539,7 @@ bool cServiceVar::postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int
     else setName(_ixServiceVarValue, cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
     if (!ok) {
         rs = RS_UNREACHABLE;
-        addMsg(trUtf8("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+        addMsg(tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
     setId(_ixVarState, rs);
@@ -568,12 +559,12 @@ int cServiceVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
     case SVT_COUNTER:
     case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
         if (lastCount > val) {
-            addMsg(trUtf8("A számláló túlcsordult."));
+            addMsg(tr("A számláló túlcsordult."));
             delta = val + 0x100000000LL - lastCount;
             if (delta > 0x100000000LL) {
                 lastCount = val;
                 lastTime  = now;
-                addMsg(trUtf8("Többszörös túlcsordulás?"));
+                addMsg(tr("Többszörös túlcsordulás?"));
                 return noValue(q, state);
             }
             break;
@@ -725,10 +716,10 @@ eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString 
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(trUtf8("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(trUtf8("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -749,7 +740,7 @@ eTristate cServiceVar::checkIntValue(qlonglong val, qlonglong ft, const QString 
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(trUtf8("Invalid filter %1(%2) for integer type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(tr("Invalid filter %1(%2) for integer type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -776,10 +767,10 @@ eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(trUtf8("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(trUtf8("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -794,7 +785,7 @@ eTristate cServiceVar::checkRealValue(double val, qlonglong ft, const QString &_
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(trUtf8("Invalid filter %1(%2) for real numeric type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(tr("Invalid filter %1(%2) for real numeric type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -835,10 +826,10 @@ eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QSt
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(trUtf8("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(trUtf8("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -859,7 +850,7 @@ eTristate cServiceVar::checkIntervalValue(qlonglong val, qlonglong ft, const QSt
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(trUtf8("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -903,10 +894,10 @@ eTristate cServiceVar::checkEnumValue(int ix, const QStringList& evals, qlonglon
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(trUtf8("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(trUtf8("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -927,7 +918,7 @@ eTristate cServiceVar::checkEnumValue(int ix, const QStringList& evals, qlonglon
             r = (ix > p1 && ix < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(trUtf8("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -956,7 +947,7 @@ cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong hsid, const QStri
     p->setName(name);
     p->setId(_sHostServiceId, hsid);
     if (1 != p->completion(__q)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(hsid));
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::tr("Rekord azonosító : %1")).arg(hsid));
         pDelete(p);
     }
     else {
@@ -971,7 +962,7 @@ cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex)
     if (i >= 0) return serviceVars.at(i);
     cServiceVar *p = new cServiceVar();
     if (!p->fetchById(__q, svid)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(svid));
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::tr("Rekord azonosító : %1")).arg(svid));
         pDelete(p);
     }
     else {
@@ -1039,6 +1030,21 @@ bool cServiceVar::initSkeepCnt(int& delayCnt)
 }
 
 /* ---------------------------------------------------------------------------- */
+
+cServiceRrdVar::cServiceRrdVar()
+    : cServiceVar ()
+{
+    _set(cServiceRrdVar::descr());
+}
+cServiceRrdVar::cServiceRrdVar(const cServiceRrdVar& __o)
+    : cServiceVar (static_cast<const cServiceVar&>(__o))
+{
+    _cp(__o);
+}
+CRECDDCR(cServiceRrdVar, _sServiceRrdVars)
+CRECDEFD(cServiceRrdVar)
+
+/* ---------------------------------------------------------------------------- */
 // ERROR: _pFeatures inicializálás, törlés !!! (nem használlt class)
 CRECCNTR(cGraph)
 int  cGraph::_ixFeatures = NULL_IX;
@@ -1084,11 +1090,11 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
             static const char * ctokens = "+-*/";   // all
             static const char * binToks = "+-*/";   // binary
             if (nullptr == strchr(ctokens, c)) {
-                st = QObject::trUtf8("One character token %1 unknown.").arg(token);
+                st = QObject::tr("One character token %1 unknown.").arg(token);
                 return 0.0;
             }
             if (n < 2 && nullptr != strchr(binToks, c)) {
-                st = QObject::trUtf8("A binary operator %1 expects two parameters.").arg(token);
+                st = QObject::tr("A binary operator %1 expects two parameters.").arg(token);
                 return 0.0;
             }
             switch (c) {
@@ -1103,7 +1109,7 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
             QString key = token.mid(1);
             QString val = _f.value(key);
             if (val.isEmpty()) {
-                st = QObject::trUtf8("Unknown feature variable %1.").arg(key);
+                st = QObject::tr("Unknown feature variable %1.").arg(key);
                 return 0.0;
             }
             QStringList sl = val.split(sep);
@@ -1131,11 +1137,11 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
             }
         }
         if (pTok->key != T_NULL) {
-            st = QObject::trUtf8("Invalid tokan %1.").arg(token);
+            st = QObject::tr("Invalid tokan %1.").arg(token);
             return 0.0;
         }
         if (pTok->ops < n) {
-            st = QObject::trUtf8("There is not enough operand (%1 instead of just %2) for the %3 token.").arg(pTok->ops).arg(n).arg(token);
+            st = QObject::tr("There is not enough operand (%1 instead of just %2) for the %3 token.").arg(pTok->ops).arg(n).arg(token);
             return 0.0;
         }
         switch (pTok->key) {
@@ -1146,7 +1152,7 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
         }
     }
     if (stack.isEmpty()) {
-        st = QObject::trUtf8("No return value.");
+        st = QObject::tr("No return value.");
         return 0.0;
     }
     return stack.top();

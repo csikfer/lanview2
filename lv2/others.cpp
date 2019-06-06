@@ -90,14 +90,14 @@ cFeatures::cFeatures()
 
 bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 {
-    static const QString msg = QObject::trUtf8("Invalid magic string %1 : %2");
+    static const QString msg = QObject::tr("Invalid magic string %1 : %2");
     static const QChar sep = QChar(':');
     int i, n = __ms.size();
     if (n == 0 || (n == 1 && __ms[0] == sep)) return true;  // Empty, ok.
     QString field;
     if (__ms[0] != sep) {   // The first character must be a separator
         if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
-        DERR() << msg.arg(QObject::trUtf8("Missing first separator character.")).arg(__ms) << endl;
+        DERR() << msg.arg(QObject::tr("Missing first separator character.")).arg(__ms) << endl;
         return false;
     }
     QStringList sl;
@@ -130,7 +130,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
     }
     if (!field.isEmpty()) {
         if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
-        DERR() << msg.arg(QObject::trUtf8("Missing last separator character.")).arg(__ms) << endl;
+        DERR() << msg.arg(QObject::tr("Missing last separator character.")).arg(__ms) << endl;
         return false;
     }
     if (sl.isEmpty()) {
@@ -189,7 +189,7 @@ QString cFeatures::list2value(const QVariantList& l, bool f)
             else if (t == _UMTID_netAddress)    s = v.value<netAddress>().toString();
             else if (t == _UMTID_QHostAddress)  s = v.value<QHostAddress>().toString();
             else if (t == _UMTID_cMac)          s = v.value<cMac>().toString();
-            else                                EXCEPTION(EDATA, t, QObject::trUtf8("Unsupported data type : %1").arg(debVariantToString(v)));
+            else                                EXCEPTION(EDATA, t, QObject::tr("Unsupported data type : %1").arg(debVariantToString(v)));
             if (f) return  s;
             s = s.replace(list_sep, list_esep);
             r += s + list_sep;
@@ -422,24 +422,24 @@ cFeatures cFeatures::noSimple() const
 qlonglong variantToId(const QVariant& v, eEx _ex, qlonglong def)
 {
     if (v.isNull()) {
-        if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));
+        if (_ex) EXCEPTION(EDATA, -1, QObject::tr("Hiányzó numerikus adat."));
         return def;
     }
     bool    ok;
     qlonglong n = v.toLongLong(&ok);
-    if (!ok) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem numerikus adat."));
+    if (!ok) EXCEPTION(EDATA, -1, QObject::tr("Nem numerikus adat."));
     return n;
 }
 
 qlonglong stringToId(const QString& v, eEx _ex, qlonglong def)
 {
     if (v.isEmpty()) {
-        if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));
+        if (_ex) EXCEPTION(EDATA, -1, QObject::tr("Hiányzó numerikus adat."));
         return def;
     }
     bool    ok;
     qlonglong n = v.toLongLong(&ok);
-    if (!ok) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem numerikus adat."));
+    if (!ok) EXCEPTION(EDATA, -1, QObject::tr("Nem numerikus adat."));
     return n;
 }
 
@@ -644,20 +644,20 @@ int cCommaSeparatedValues::state(QString& msg)
 {
     switch (_state) {
     case CSVE_OK:                   msg.clear(); break;
-    case CSVE_STRM_ReadPastEnd:     msg = QObject::trUtf8("Stream: ReadPastEnd.");  break;
-    case CSVE_STRM_ReadCorruptData: msg = QObject::trUtf8("Stream: ReadCorruptData.");  break;
-    case CSVE_STRM_WriteFailed:     msg = QObject::trUtf8("Stream: WriteFailed.");  break;
-    case CSVE_EMPTY_LINE:           msg = QObject::trUtf8("Emoty line.");  break;
-    case CSVE_PARSE_ERROR:          msg = QObject::trUtf8("Parse error.");  break;
-    case CSVE_IS_NOT_NUMBER:        msg = QObject::trUtf8("A mező nem egész szám típus.");  break;
-    case CSVE_DROP_INVCH:           msg = QObject::trUtf8("Invalid character, dropped.");  break;
-    case CSVE_DROP_CRLF:            msg = QObject::trUtf8("Cr. or Lf. dropped.");  break;
-    case CSVE_END_OF_LINE:          msg = QObject::trUtf8("End of line.");  break;
-    case CSVE_EDD_OF_FILE:          msg = QObject::trUtf8("End of file.");  break;
-    default:                        msg = QObject::trUtf8("Invalid result state (%1).").arg(_state);  break;
+    case CSVE_STRM_ReadPastEnd:     msg = QObject::tr("Stream: ReadPastEnd.");  break;
+    case CSVE_STRM_ReadCorruptData: msg = QObject::tr("Stream: ReadCorruptData.");  break;
+    case CSVE_STRM_WriteFailed:     msg = QObject::tr("Stream: WriteFailed.");  break;
+    case CSVE_EMPTY_LINE:           msg = QObject::tr("Emoty line.");  break;
+    case CSVE_PARSE_ERROR:          msg = QObject::tr("Parse error.");  break;
+    case CSVE_IS_NOT_NUMBER:        msg = QObject::tr("A mező nem egész szám típus.");  break;
+    case CSVE_DROP_INVCH:           msg = QObject::tr("Invalid character, dropped.");  break;
+    case CSVE_DROP_CRLF:            msg = QObject::tr("Cr. or Lf. dropped.");  break;
+    case CSVE_END_OF_LINE:          msg = QObject::tr("End of line.");  break;
+    case CSVE_EDD_OF_FILE:          msg = QObject::tr("End of file.");  break;
+    default:                        msg = QObject::tr("Invalid result state (%1).").arg(_state);  break;
     }
     if (_state != CSVE_OK) {
-        msg.prepend(QObject::trUtf8("Line %1 : ").arg(_lineNo));
+        msg.prepend(QObject::tr("Line %1 : ").arg(_lineNo));
         msg += " Last line :\n" + line;
     }
     return _state;

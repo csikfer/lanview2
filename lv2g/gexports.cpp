@@ -75,7 +75,7 @@ void cExportsWidget::start()
             EXCEPTION(EPROGFAIL);
         }
     }
-    if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(pUi->comboBoxTable->currentText());
+    if (r.isEmpty()) r = tr("// %1 is empty.").arg(pUi->comboBoxTable->currentText());
     r.prepend(pUi->plainTextEdit->toPlainText());
     pUi->plainTextEdit->setPlainText(r);
 }
@@ -89,10 +89,10 @@ void cExportsWidget::changedName(const QString& tn)
 {
     QString t;
     if (tn == sGUI) {
-        t = trUtf8("Teljes GUI export (MenuItems + EnumVals + TableShapes).");
+        t = tr("Teljes GUI export (MenuItems + EnumVals + TableShapes).");
     }
     else if (tn == sSRV) {
-        t = trUtf8("Szervíz objektumok export (SericeTypes + Services + ServiceVarTypes + ...).");
+        t = tr("Szervíz objektumok export (SericeTypes + Services + ServiceVarTypes + ...).");
     }
     else {
         QSqlQuery q = getQuery();

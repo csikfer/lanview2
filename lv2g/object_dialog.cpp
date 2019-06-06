@@ -65,7 +65,7 @@ cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     , pUi(new Ui::patchSimpleDialog)
 {
     pq = newQuery();
-    if (sPortRefForm.isEmpty()) sPortRefForm = trUtf8("#%1 (%2/%3)");
+    if (sPortRefForm.isEmpty()) sPortRefForm = tr("#%1 (%2/%3)");
     pUi->setupUi(this);
     // nem ciffrázzuk ro-nal le ven titva az ok gomb
     if (ro) pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
@@ -155,7 +155,7 @@ cPatch * cPatchDialog::getPatch()
         }
         ok = ok && p->setShare(a, ab, b, bb, cd);
         if (!ok) {
-            QString msg = trUtf8("A megadott kábelmegosztás nem állítható be (bázis port #%1)").arg(i);
+            QString msg = tr("A megadott kábelmegosztás nem állítható be (bázis port #%1)").arg(i);
             cMsgBox::warning(msg, this);
             pDelete(p);
             break;
@@ -193,14 +193,14 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             qlonglong spid = pp->getId(_sSharedPortId);
             int ix = pSample->ports.indexOf(spid);  // Hivatkozott port index
             if (ix < 0) {       //
-                QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem találok.").
+                QString msg = tr("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem találok.").
                         arg(pp->getName()).arg(spid);
                 cMsgBox::warning(msg, this);
                 continue;
             }
             ix = rowsData[i]->listPortIxRow.indexOf(ix);    // Kiválasztható ?
             if (ix < 0) {                   // nem találta
-                QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem választható ki.").
+                QString msg = tr("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem választható ki.").
                         arg(pp->getName()).arg(spid);
                 cMsgBox::warning(msg, this);
                 continue;

@@ -55,7 +55,7 @@ void cRecordLink::init()
         break;
     default:
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
-                  trUtf8("TABLE %1 SHAPE %2 TYPE : %3")
+                  tr("TABLE %1 SHAPE %2 TYPE : %3")
                   .arg(pTableShape->getName(),
                        pTableShape->getName(_sTableName),
                        pTableShape->getName(_sTableShapeType))
@@ -244,7 +244,7 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     // +------------+------------+
       pHBoxL = new QHBoxLayout;
        pVBoxL2 = new QVBoxLayout;
-        QLabel *pLab = new QLabel(trUtf8("Megjegyzés a linkhez :"));
+        QLabel *pLab = new QLabel(tr("Megjegyzés a linkhez :"));
         pVBoxL2->addWidget(pLab);
          pHBoxL2 = new QHBoxLayout;
           pHBoxL2->addStretch();
@@ -265,8 +265,8 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
      pVBoxL->addLayout(pHBoxL);
      pVBoxL->addWidget(line());
 
-       pLabelCollisions      = new QLabel(trUtf8("Riport :"));
-       pCheckBoxCollisions   = new QCheckBox(trUtf8("Automatikus törlés(ek)"));
+       pLabelCollisions      = new QLabel(tr("Riport :"));
+       pCheckBoxCollisions   = new QCheckBox(tr("Automatikus törlés(ek)"));
        pToolButtonRefresh    = new QToolButton();
        pToolButtonRefresh->setIcon(QIcon(":/icons/refresh.ico"));
        pCheckBoxCollisions->setChecked(false);
@@ -288,8 +288,8 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
       tIntVector buttons;
       buttons << DBT_SPACER << DBT_DELETE<< DBT_SPACER << DBT_OK << DBT_SAVE << DBT_PREV << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
       pButtons = new cDialogButtons(buttons);
-      pButtons->button(DBT_PREV)->setToolTip(trUtf8("A port indexek léptetése lefelé."));
-      pButtons->button(DBT_NEXT)->setToolTip(trUtf8("A port indexek léptetése felfelé."));
+      pButtons->button(DBT_PREV)->setToolTip(tr("A port indexek léptetése lefelé."));
+      pButtons->button(DBT_NEXT)->setToolTip(tr("A port indexek léptetése felfelé."));
       pVBoxL->addWidget(pButtons->pWidget());
 
     collision = false;
@@ -378,11 +378,11 @@ static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortSha
     case ES_:
         break;
     case ES_NC:
-        _msg += htmlError(QObject::trUtf8("A megadott %1 portnál a hátlap nincs bekötve.\n").arg(pp.getFullName(_q)), true);
+        _msg += htmlError(QObject::tr("A megadott %1 portnál a hátlap nincs bekötve.\n").arg(pp.getFullName(_q)), true);
         return true;        // imperfect
     default:
         if (shareResultant(_sh, sc) == ES_NC) {
-            _msg += htmlError(QObject::trUtf8("A megadott %1 port megosztása nem használható (nincs összeköttetés egy érpáron sem).<br>").arg(pp.getFullName(_q)), true);
+            _msg += htmlError(QObject::tr("A megadott %1 port megosztása nem használható (nincs összeköttetés egy érpáron sem).<br>").arg(pp.getFullName(_q)), true);
             return true;    // imperfect
         }
         break;
@@ -436,7 +436,7 @@ void cLinkDialog::changed()
     QString msg;
     if (pid1 == NULL_ID && pid2 == NULL_ID) {
         pButtons->disableExcept();
-        msg = trUtf8("Nincs megadva egy port sem.");
+        msg = tr("Nincs megadva egy port sem.");
         pTextEditReport->setText(htmlWarning(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
@@ -444,7 +444,7 @@ void cLinkDialog::changed()
     }
     if (pid1 == pid2) {
         pButtons->disableExcept();
-        msg = trUtf8("A két oldal azonos.");
+        msg = tr("A két oldal azonos.");
         pTextEditReport->setText(htmlError(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
@@ -452,7 +452,7 @@ void cLinkDialog::changed()
     }
     if (pid1 == NULL_ID || pid2 == NULL_ID) {
         pButtons->disableExcept();
-        msg = trUtf8("Csak a link egyik fele van megadva.\n");
+        msg = tr("Csak a link egyik fele van megadva.\n");
         msg = htmlWarning(msg, true);
     }
     else {
@@ -475,13 +475,13 @@ void cLinkDialog::changed()
             }
             if (noteChanged) {
                 pButtons->enable(ENUM2SET2(DBT_SAVE, DBT_OK));
-                msg = htmlInfo(trUtf8("Mentett, létező link (ID:%1), de a megjegyzés mező változozott.").arg(link.getId()));
+                msg = htmlInfo(tr("Mentett, létező link (ID:%1), de a megjegyzés mező változozott.").arg(link.getId()));
             }
             else {
                 pButtons->disable(ENUM2SET2(DBT_SAVE, DBT_OK));
                 pTextEditNote->setText(note);
                 pToolButtonNoteNull->setChecked(note.isNull());
-                msg = htmlGrInf(trUtf8("Mentett, létező link (ID:%1).").arg(link.getId()));
+                msg = htmlGrInf(tr("Mentett, létező link (ID:%1).").arg(link.getId()));
             }
         }
         else if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
@@ -491,8 +491,8 @@ void cLinkDialog::changed()
 //      tRecordList<cPhsLink>   list;
         imperfect = checkShare(*pq, pid1, lt1, ps1, msg) || imperfect;
         imperfect = checkShare(*pq, pid2, lt2, ps2, msg) || imperfect;
-        msg += colLink(*pq, pid1, lt1, ps1, collision, trUtf8("Ütköző linkek a 1. porton :"));
-        msg += colLink(*pq, pid2, lt2, ps2, collision, trUtf8("Ütköző linkek a 2. porton :"));
+        msg += colLink(*pq, pid1, lt1, ps1, collision, tr("Ütköző linkek a 1. porton :"));
+        msg += colLink(*pq, pid2, lt2, ps2, collision, tr("Ütköző linkek a 2. porton :"));
         if (collision) {
             pButtons->disableExcept(ENUM2SET4(DBT_CANCEL, DBT_CLOSE, DBT_NEXT, DBT_PREV));
             pCheckBoxCollisions->setChecked(false);
@@ -501,7 +501,7 @@ void cLinkDialog::changed()
         else {
             if (imperfect) pButtons->disableExcept();
             else           pButtons->enabeAll();
-            msg += htmlGrInf(trUtf8("Nincs ütközö/törlendő fizikai link (patch)."));
+            msg += htmlGrInf(tr("Nincs ütközö/törlendő fizikai link (patch)."));
             pCheckBoxCollisions->setChecked(false);
             pCheckBoxCollisions->setCheckable(false);
         }
@@ -528,7 +528,7 @@ void cLinkDialog::changed()
             msg += linkEndEndLogReport(*pq, endPid1, endPid2, exists, msgPref);
             m  = linkEndEndMACReport(*pq, endPid1, endPid2, msgPref);
             m += linkEndEndMACReport(*pq, endPid2, endPid1, msgPref);
-            if (m.isEmpty()) msg += htmlInfo(msgPref + QObject::trUtf8("A végponti link nincs megerősítve a MAC címtáblák alapján."));
+            if (m.isEmpty()) msg += htmlInfo(msgPref + QObject::tr("A végponti link nincs megerősítve a MAC címtáblák alapján."));
             else             msg += m;
         }
     }

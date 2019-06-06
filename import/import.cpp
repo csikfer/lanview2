@@ -10,11 +10,11 @@
 
 void setAppHelp()
 {
-    lanView::appHelp  = QObject::trUtf8("-u|--user-id <id>           Set user id\n");
-    lanView::appHelp += QObject::trUtf8("-U|--user-name <name>       Set user name\n");
-    lanView::appHelp += QObject::trUtf8("-i|--input-file <path>      Set input file path\n");
-    lanView::appHelp += QObject::trUtf8("-I|--input-stdin            Set input file is stdin\n");
-    lanView::appHelp += QObject::trUtf8("-D|--daemon-mode            Set daemon mode\n");
+    lanView::appHelp  = QObject::tr("-u|--user-id <id>           Set user id\n");
+    lanView::appHelp += QObject::tr("-U|--user-name <name>       Set user name\n");
+    lanView::appHelp += QObject::tr("-i|--input-file <path>      Set input file path\n");
+    lanView::appHelp += QObject::tr("-I|--input-stdin            Set input file is stdin\n");
+    lanView::appHelp += QObject::tr("-D|--daemon-mode            Set daemon mode\n");
 }
 
 int main (int argc, char * argv[])
@@ -43,7 +43,7 @@ int main (int argc, char * argv[])
         QDir::setCurrent(actDir);
         PDEB(VVERBOSE) << "Restore act dir : " << QDir::currentPath() << endl;
         try {
-            if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva forrás fájl!"));
+            if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fájl!"));
             PDEB(VVERBOSE) << "BEGIN transaction ..." << endl;
             importParseFile(mo.fileNm);
         } catch(cError *e) {
@@ -87,12 +87,12 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         ERROR_NESTED(ipe).exception();
     }
     try {
-        PDEB(INFO) << QString(trUtf8("DB notification : %1, %2, %3.")).arg(name).arg((int)source).arg(debVariantToString(payload)) << endl;
+        PDEB(INFO) << QString(tr("DB notification : %1, %2, %3.")).arg(name).arg(int(source)).arg(debVariantToString(payload)) << endl;
         pImp = new cImport;
         pImp->setName(_sExecState, _sWait);
         pImp->fetch(*pQuery, false, pImp->mask(_sExecState), pImp->iTab(_sDateOf), 1);
         if (pImp->isEmpty_()) {
-            DWAR() << trUtf8("No waitig imports record, dropp notification.") << endl;
+            DWAR() << tr("No waitig imports record, dropp notification.") << endl;
             return;
         }
         pImp->setName(_sExecState, _sExecute);
@@ -169,10 +169,10 @@ lv2import::lv2import() : lanView(), fileNm(), in()
     }
     if (0 < (i = findArg('D', "daemon-mode", args))) {
         args.removeAt(i);;
-        PDEB(INFO) << trUtf8("Set daemon mode.") << endl;
+        PDEB(INFO) << tr("Set daemon mode.") << endl;
         daemonMode = true;
     }
-    if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(QChar(' ')) << endl;
+    if (args.count() > 1) DWAR() << tr("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
         if (daemonMode) {
             subsDbNotif();

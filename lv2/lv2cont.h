@@ -455,7 +455,7 @@ public:
         int i = indexOf(__id);
         if (i < 0) {
             if (__ex == EX_IGNORE) return nullptr;
-            EXCEPTION(EFOUND, __id, QObject::trUtf8("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
+            EXCEPTION(EFOUND, __id, QObject::tr("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
         }
         return QList<T *>::at(i);
     }
@@ -467,7 +467,7 @@ public:
         int i = indexOf(__nm);
         if (i < 0) {
             if (__ex == EX_IGNORE) return nullptr;
-            EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
+            EXCEPTION(EFOUND, 0, QObject::tr("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
         return QList<T *>::at(i);
     }
@@ -480,7 +480,7 @@ public:
         int i = indexOf(__fn, __v);
         if (i < 0) {
             if (__ex == EX_IGNORE) return nullptr;
-            EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
+            EXCEPTION(EFOUND, 0, QObject::tr("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
         }
         return QList<T *>::at(i);
     }
@@ -493,7 +493,7 @@ public:
         int i = indexOf(__ix, __v);
         if (i < 0) {
             if (__ex == EX_IGNORE) return nullptr;
-            EXCEPTION(EFOUND, __ix, QObject::trUtf8("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
+            EXCEPTION(EFOUND, __ix, QObject::tr("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
         }
         return QList<T *>::at(i);
     }
@@ -639,7 +639,9 @@ template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>
             if (i >= 0) return n##s.at(i); \
             R *p = new R(); \
             if (!p->ff(__q, ident)) { \
-                if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(ident)); \
+                if (__ex != EX_IGNORE) { \
+                    EXCEPTION(EFOUND, -1, QString(QObject::tr("%1 rekord azonosító : %2::%3")).arg(p->tableName()).arg(ident).arg(_STR(T))); \
+                } \
                 pDelete(p); \
             } \
             else { \

@@ -37,11 +37,11 @@ lv2g::lv2g() :
         zoneId = NULL_ID;
         #include "errcodes.h"
         if (dbIsOpen()) {
-            splashMessage(QObject::trUtf8("Logon..."));
+            splashMessage(QObject::tr("Logon..."));
             eLogOnResult lor = cLogOn::logOn(zoneNeeded ? &zoneId : nullptr, pMainWindow);
             if (lor != LR_OK) {
                 if (lor == LR_INVALID) {
-                    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
+                    EXCEPTION(ELOGON, LR_INVALID, tr("Tul sok hibás bejelentkezési próbálkozás."));
                 }
                 EXCEPTION(EOK);
             }
@@ -53,13 +53,13 @@ lv2g::lv2g() :
             dialogRows = pSet->value(sDialogRows, 16).toInt();
             soundFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }
-        else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
+        else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, tr("Nincs elérhető adatbázis."));
         defaultSplitOrientation = Qt::Horizontal;
         if (0 == sVertical.compare(pSet->value(sDefaultSplitOrientation).toString(), Qt::CaseInsensitive))
             defaultSplitOrientation = Qt::Vertical;
     } CATCHS(lastError)
     if (dbIsOpen()) {
-        splashMessage(QObject::trUtf8("Ellenörzések, és betöltés ..."));
+        splashMessage(QObject::tr("Ellenörzések, és betöltés ..."));
         QSqlQuery q = getQuery();
         if (!zoneNeeded) zoneId = cPlaceGroup().getIdByName(q, _sAll);
         // Enumeration types that do not appear in the database table. Direct control.
@@ -89,7 +89,7 @@ void lv2g::changeZone(QWidget * par)
     pg.setId(_sPlaceGroupType, PG_ZONE);
     QStringList items;
     items << _sAll;
-    if (!pg.fetch(q, false, pg.mask(_sPlaceGroupType), pg.iTab(_sPlaceGroupName))) EXCEPTION(EDATA,0,trUtf8("Nincsenek zónák !"));
+    if (!pg.fetch(q, false, pg.mask(_sPlaceGroupType), pg.iTab(_sPlaceGroupName))) EXCEPTION(EDATA,0,tr("Nincsenek zónák !"));
     do {
         QString s = pg.getName();
         if (s == _sAll) continue;
@@ -100,7 +100,7 @@ void lv2g::changeZone(QWidget * par)
     if (pg.fetchById(q, zoneId)) current = items.indexOf(pg.getName());
     if (current < 0) current = 0;
     bool ok;
-    QString zoneName = QInputDialog::getItem(par, trUtf8("Zóna váltás"), trUtf8("A zóna neve :"), items, current, false, &ok);
+    QString zoneName = QInputDialog::getItem(par, tr("Zóna váltás"), tr("A zóna neve :"), items, current, false, &ok);
     if (ok) {
         zoneId = pg.getIdByName(q, zoneName);
     }

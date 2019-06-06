@@ -36,7 +36,7 @@ int main (int argc, char * argv[])
     }
 
     int r = app.exec();
-    PDEB(INFO) << QObject::trUtf8("Az esemény hurok kilépett.") << endl;
+    PDEB(INFO) << QObject::tr("Az esemény hurok kilépett.") << endl;
     r = pmo->lastError == nullptr ? r : pmo->lastError->mErrorCode;
     delete pmo;
     exit(r);
@@ -168,7 +168,7 @@ void cGateway::setSubs(QSqlQuery &q, const QString &)
         getSocketParams();
     }
     else {
-        EXCEPTION(ENOTSUPP, protoServiceId(), QObject::trUtf8("A megadott proto_service nem támogatptt"))
+        EXCEPTION(ENOTSUPP, protoServiceId(), QObject::tr("A megadott proto_service nem támogatptt"))
     }
 
 }
@@ -202,7 +202,7 @@ int cGateway::open(QSqlQuery& q, QString& msg, int to)
     case EP_TCP_RS:
         r = openSocket(to);
         if (!r) {
-            msg = trUtf8("Open socket[%1:%2] time out.").arg(sockAddr.toString()).arg(sockPort);
+            msg = tr("Open socket[%1:%2] time out.").arg(sockAddr.toString()).arg(sockPort);
         }
         break;
     default:
@@ -243,9 +243,9 @@ void cGateway::getSerialParams()
 {
     DBGFN();
     if (pPort == nullptr)
-        EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva lokális soros interfész."));
+        EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva lokális soros interfész."));
     if (pPort->ifType().getName() != _sRS485 && pPort->ifType().getName() != _sRS232)
-        EXCEPTION(EDATA, -1, QObject::trUtf8("A lekérdezéshez csak RS485-típusú port adható meg."));
+        EXCEPTION(EDATA, -1, QObject::tr("A lekérdezéshez csak RS485-típusú port adható meg."));
     QString s = pPort->getName();
     const static QString devdir = "/dev/";
     if (s.indexOf("/dev/") != 0) s = devdir + s;
@@ -253,7 +253,7 @@ void cGateway::getSerialParams()
     s = feature(_sSerial);                  // A serial port beállításai
     if (s.isEmpty()) s = sSerialDefault;    // Az alapértelmezés
     QStringList sl = s.split(QChar(' '));
-    QString e = QString(trUtf8("Nem megfelelő soros port paraméter string: %1")).arg(s);    // hibaüzenet, ha nem lenne ok.
+    QString e = QString(tr("Nem megfelelő soros port paraméter string: %1")).arg(s);    // hibaüzenet, ha nem lenne ok.
     if (sl.size() < 2 || sl[1].size() != 3) EXCEPTION(EDATA, -1, e);
     bool ok;
     baudRate = sl[0].toLong(&ok);
@@ -309,11 +309,11 @@ void cGateway::getSerialParams()
 bool cGateway::openSerial(QString& msg)
 {
     DBGFN();
-    if (pSerio == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs serial objektumunk."));
+    if (pSerio == nullptr) EXCEPTION(EPROGFAIL, -1, tr("Nincs serial objektumunk."));
     if (!pSerio->open(QIODevice::ReadWrite)) {
         DERR() << "Serial port " << pSerio->portName() << " (first) open error : " << pSerio->errorString() << endl;
         if (!pSerio->open(QIODevice::ReadWrite)) {   // Elsőre nem sikerül, ha nem volt lezárva rendesen
-            msg = trUtf8("Serial port %1; Error string : %2").arg(pSerio->portName(),pSerio->errorString());
+            msg = tr("Serial port %1; Error string : %2").arg(pSerio->portName(),pSerio->errorString());
             DERR() << msg << endl;
             return false;
         }
@@ -344,9 +344,9 @@ void cGateway::getSocketParams()
         h.fetchPorts(qq);
         sockAddr = h.getIpAddress();
     }
-    if (sockAddr.isNull()) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid host address, or address not found."));
+    if (sockAddr.isNull()) EXCEPTION(EDATA, -1, QObject::tr("Invalid host address, or address not found."));
     QObject *p = useParent();
-    QString m = trUtf8("%1(%2) : current %3").arg(p2string(p), p2string(p->thread()), p2string(QThread::currentThread()));
+    QString m = tr("%1(%2) : current %3").arg(p2string(p), p2string(p->thread()), p2string(QThread::currentThread()));
     PDEB(VVERBOSE) << m << endl;
     pSock = new QTcpSocket(p);
     PDEB(VVERBOSE) << "Socket : " << sockAddr.toString() << ":" << sockPort << endl;
@@ -354,7 +354,7 @@ void cGateway::getSocketParams()
 
 bool cGateway::openSocket(int to)
 {
-    if (pSock == nullptr) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs socket objektumunk."));
+    if (pSock == nullptr) EXCEPTION(EPROGFAIL, -1, tr("Nincs socket objektumunk."));
     pSock->connectToHost(sockAddr, sockPort);
     return pSock->waitForConnected(to);
 }
@@ -431,7 +431,7 @@ bool cGateway::com_s(void * io, size_t size, cInspector *pInsp)
         return false;
     }
     unsigned long to = pInsp->stopTimeOut;
-    PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray(static_cast<char *>(io), int(size)) << endl;
+    PDEB(INFO) << QObject::tr("Küldés : ") << QByteArray(static_cast<char *>(io), int(size)) << endl;
     qint64  wr = pIO->write(static_cast<char *>(io), qint64(size));
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
     if (wr < 0) {
@@ -473,23 +473,23 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg, cInspecto
     DBGFN();
     QIODevice * pIO = getIoDev();
     if (pIO == nullptr) {
-        msg = trUtf8("IO Device is NULL.");
+        msg = tr("IO Device is NULL.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
     int to = pInsp->stopTimeOut;
     static const char kstat[] = "ONDAISCUEaiscue";
-    PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg)) << endl;
+    PDEB(INFO) << QObject::tr("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg));
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
     if (wr < 0) {
-        msg = trUtf8("Write error.");
+        msg = tr("Write error.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
     bool wt = waitForWritten(pInsp->startTimeOut);
     if (!wt) {
-        msg = trUtf8("Quit for writen error.");
+        msg = tr("Quit for writen error.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
@@ -563,23 +563,23 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg, cInspec
     DBGFN();
     QIODevice * pIO = getIoDev();
     if (pIO == nullptr) {
-        msg = trUtf8("IO Device is NULL.");
+        msg = tr("IO Device is NULL.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
     int to = pInsp->stopTimeOut;
     static const char kstat[] = "ONDAISCUEaiscue";
-    PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg2)) << endl;
+    PDEB(INFO) << QObject::tr("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg2)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg2));
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
     if (wr < 0) {
-        msg = trUtf8("Write error.");
+        msg = tr("Write error.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
     bool wt = waitForWritten(pInsp->startTimeOut);
     if (!wt) {
-        msg = trUtf8("Quit for writen error.");
+        msg = tr("Quit for writen error.");
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
@@ -656,11 +656,11 @@ int cGateway::com_err(QString &msg, const QString& data, const QString&  dropped
 {
     int st;
     if (data.isEmpty() && dropped.isEmpty()) {
-        msg = trUtf8("Időtullépés, nem jött semmilyen adat az interfésztől. ");
+        msg = tr("Időtullépés, nem jött semmilyen adat az interfésztől. ");
         st = RS_UNREACHABLE;
     }
     else {
-        msg = trUtf8("Idő tullépés, ill. adat hiba : eldobva : %1, Feldolgozva : %2. ")
+        msg = tr("Idő tullépés, ill. adat hiba : eldobva : %1, Feldolgozva : %2. ")
                 .arg(dQuoted(data), dQuoted(dropped));
         st = RS_CRITICAL;
     }
@@ -691,55 +691,55 @@ static void fromKStat(int ks, QString& sst, QString& nos, QString& ost, QString&
         break;
     case KDISA:
         sst = _sWarning;
-        nos = QObject::trUtf8("Az érzékelő le van tiltva.");
+        nos = QObject::tr("Az érzékelő le van tiltva.");
         ost = _sUnknown;
         ast = _sDown;
         break;
     case KALERT | KOLD:
     case KALERT:
         sst = _sDown;
-        nos = QObject::trUtf8("Az érzékelő jelzett.");
+        nos = QObject::tr("Az érzékelő jelzett.");
         ost = _sDown;
         ast = _sUp;
         break;
     case KINV | KOLD:
     case KINV:
         sst = _sDown;
-        nos = QObject::trUtf8("Az érzékelő jelzett, és fordítva van bekötve.");
+        nos = QObject::tr("Az érzékelő jelzett, és fordítva van bekötve.");
         ost = _sDown;
         ast = _sInvert;
         break;
     case KSHORT | KOLD:
     case KSHORT:
         sst = _sCritical;
-        nos = QObject::trUtf8("Érzékelő rövidzárat jelez. Szabotázs?");
+        nos = QObject::tr("Érzékelő rövidzárat jelez. Szabotázs?");
         ost = _sShort;
         ast = _sUp;
         break;
     case KCUT | KOLD:
     case KCUT:
         sst = _sCritical;
-        nos = QObject::trUtf8("Az érzékelő szakadást jelez. Szabotázs?");
+        nos = QObject::tr("Az érzékelő szakadást jelez. Szabotázs?");
         ost = _sBroken;
         ast = _sUp;
         break;
     case KANY | KOLD:
     case KANY:
         sst = _sUnreachable;
-        nos = QObject::trUtf8("Érzékelő mérési hiba.");
+        nos = QObject::tr("Érzékelő mérési hiba.");
         ost = _sError;
         ast = _sUp;
         break;
     case KERR | KOLD:
     case KERR:
         sst = _sUnreachable;
-        nos = QObject::trUtf8("Érzékelő hiba.");
+        nos = QObject::tr("Érzékelő hiba.");
         ost = _sError;
         ast = _sUnknown;
         break;
     default:
         sst = _sUnknown;
-        nos = QString(QObject::trUtf8("Az érzékelő állapota ismeretlen 0x%1.")).arg(ks,0,16);
+        nos = QString(QObject::tr("Az érzékelő állapota ismeretlen 0x%1.")).arg(ks,0,16);
         ast = ost = sst;
         break;
     }
@@ -775,17 +775,17 @@ cIndAlarmIf::cIndAlarmIf(QSqlQuery& q, qlonglong shid, qlonglong hoid, cInspecto
     if (seid == pIndAlarmIf1ma->getId()) {      // Interface V1 master
         type = IAIF1M;
         if (par->service()->getName() != _sRS485)
-            EXCEPTION(EDATA, par->service()->getId(), QObject::trUtf8("Nem megfelelő szülő szolgáltatás típus."));
+            EXCEPTION(EDATA, par->service()->getId(), QObject::tr("Nem megfelelő szülő szolgáltatás típus."));
     }
     else if (seid == pIndAlarmIf1sl->getId()) { // Interface V1 slave
         type = IAIF1S;
         if (par->service()->getId() != pIndAlarmIf1ma->getId())
-            EXCEPTION(EDATA, par->service()->getId(), QObject::trUtf8("Nem megfelelő szülő szolgáltatás típus."));
+            EXCEPTION(EDATA, par->service()->getId(), QObject::tr("Nem megfelelő szülő szolgáltatás típus."));
     }
     else if (seid == pIndAlarmIf2->getId()) {   // Interface V2
         type = IAIF2;
         if (par->service()->getName() != _sRS485)
-            EXCEPTION(EDATA, par->service()->getId(), QObject::trUtf8("Nem megfelelő szülő szolgáltatás típus."));
+            EXCEPTION(EDATA, par->service()->getId(), QObject::tr("Nem megfelelő szülő szolgáltatás típus."));
     }
     // A szolgáltatás portja, ha nincs kitöltve, akkor pótoljuk
     if (pPort == nullptr) {
@@ -817,33 +817,33 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
     inspectorType = IT_TIMING_TIMED;
     interval = variantToId(get(_sNormalCheckInterval), EX_IGNORE, -1);
     retryInt = variantToId(get(_sRetryCheckInterval),  EX_IGNORE, interval);
-    if (interval <= 0) EXCEPTION(EDATA, interval, QObject::trUtf8("Időzített lekérdezés, időzítés nélkül."));
+    if (interval <= 0) EXCEPTION(EDATA, interval, QObject::tr("Időzített lekérdezés, időzítés nélkül."));
     pSubordinates = new QList<cInspector *>;
     cMac    mac(interface().getMac(_sHwAddress));   // és kell még az rs485 buszon az interfész azonosító byte
     if (!mac) EXCEPTION(EDATA);                 // ami a (nem valós) MAC-ba van rejtve
     masterId = (mac.toULongLong() >> 8) & 0xff; // annak alulról a második byte-ja
     slaveId  = (mac.toULongLong()) & 0xff;      // annak legalsó byte-ja
-    if (masterId == 0) EXCEPTION(EDATA, masterId, QObject::trUtf8("Az RS485 Bus ID nem lehet nulla !"));
+    if (masterId == 0) EXCEPTION(EDATA, masterId, QObject::tr("Az RS485 Bus ID nem lehet nulla !"));
     switch (type) {
     case IAIF1M:
         PDEB(VVERBOSE) << "IaIf V1 master..." << endl;
-        if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Master interfész, de az IIC Bus ID nem nulla !"));
+        if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::tr("Master interfész, de az IIC Bus ID nem nulla !"));
         sensors1Count = IAIF1PORTS;
         sensors2Count = 0;
         break;
     case IAIF1S:
         PDEB(VVERBOSE) << "IaIf V1 slave..." << endl;
-        if (slaveId == 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Az IIC Bus ID nem lehet nulla !"));
+        if (slaveId == 0) EXCEPTION(EDATA, slaveId, QObject::tr("Az IIC Bus ID nem lehet nulla !"));
         sensors1Count = IAIF1PORTS;
         sensors2Count = 0;
         break;
     case IAIF2:
         PDEB(VVERBOSE) << "IaIf V2..." << endl;
-        if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Nincs IIC Bus, de a Bus ID nem nulla !"));
+        if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::tr("Nincs IIC Bus, de a Bus ID nem nulla !"));
         sensors1Count = IAIF2PORTS;
         sensors2Count = IAIF2SWS;
         break;
-    default:        EXCEPTION(EPROGFAIL, type, trUtf8("Invalid interface type."));
+    default:        EXCEPTION(EPROGFAIL, type, tr("Invalid interface type."));
     }
     int allSensorCount = sensors1Count + sensors2Count;
     for (int i = 0; i < allSensorCount; ++i) (*pSubordinates) << nullptr;
@@ -863,7 +863,7 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
             ap.fetchById(q, lpid);  // A linkelt port
             int ix = pp->getId(_sPortIndex); // A port idex lessz a pSubordinates konténerben is az index.
             // De ez 1-től számozódik!!
-            if (ix <= 0 || ix > allSensorCount) EXCEPTION(EDATA, ix, QObject::trUtf8("Nem megfelelő szenzor port index."));
+            if (ix <= 0 || ix > allSensorCount) EXCEPTION(EDATA, ix, QObject::tr("Nem megfelelő szenzor port index."));
             if ((*pSubordinates)[ix -1] != nullptr) EXCEPTION(EPROGFAIL, ix);
             cAttached& at = *(cAttached *)((*pSubordinates)[ix -1] = new cAttached(this));
             at.service(q, _sAttached);
@@ -887,7 +887,7 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
                 hs.setId(_sServiceId, at.serviceId());
                 hs.setId(_sSuperiorHostServiceId, hostServiceId());
                 hs.setId(_sPortId, lpid);
-                hs.setName(_sHostServiceNote, trUtf8("Autómatikusan generálva az icontsrv által."));
+                hs.setName(_sHostServiceNote, tr("Autómatikusan generálva az icontsrv által."));
                 hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az autómatikusan generált rekordhoz.
                 hs.insert(q);
                 PDEB(INFO) << "New Attached : " << at.name() << endl;

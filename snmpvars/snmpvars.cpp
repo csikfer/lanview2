@@ -26,7 +26,7 @@ int main (int argc, char * argv[])
     }
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
-    PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
+    PDEB(INFO) << QObject::tr("Event loop is exited.") << endl;
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
@@ -85,7 +85,7 @@ cDeviceSV::cDeviceSV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
 {
     // Csak SNMP device lehet
     if (__tableoid != cSnmpDevice().tableoid()) {
-        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem támogatott node típus!"));
+        EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott node típus!"));
     }
     first = true;
 }
@@ -102,16 +102,16 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
     QMap<QString, QStringList> listmap = cFeatures::value2listMap(sVars);
     varNames = listmap.keys();
     if (varNames.isEmpty()) {
-        EXCEPTION(EDATA, 0, QObject::trUtf8("Missing or empty variable list."));
+        EXCEPTION(EDATA, 0, QObject::tr("Missing or empty variable list."));
     }
     foreach (QString vname, varNames) {
         QStringList sl = listmap[vname];
         if (sl.size() != 2) {   /// OId, varTypeName
-            EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid variable list : '%1'").arg(sVars));
+            EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list : '%1'").arg(sVars));
         }
         cOId oid = cOId(sl.first());
         if (oid.isEmpty()) {
-            EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid OId : '%1'").arg(sl.first()));
+            EXCEPTION(EDATA, 0, QObject::tr("Invalid OId : '%1'").arg(sl.first()));
         }
         oidVector << oid;
         QString typeName = sl.at(1);
@@ -125,7 +125,7 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
     QBitArray bits;
     int r = snmp.checkTableColumns(oidVector, bits);
     if (r != 0) {
-        msg = trUtf8("queryInit() : SNMP error : ") + snmp.emsg;
+        msg = tr("queryInit() : SNMP error : ") + snmp.emsg;
         return RS_UNREACHABLE;
     }
     int i;
@@ -140,7 +140,7 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
     }
     int n = varNames.size();
     if (n == 0) {
-        msg = trUtf8("There is no queryable data.");
+        msg = tr("There is no queryable data.");
         return RS_UNREACHABLE;
     }
     if (n != oidVector.size() || n != varTypes.size() || !serviceVars.isEmpty()) {
@@ -184,7 +184,7 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
     qlonglong parid = parentId(EX_IGNORE);
     int r = snmp.getNext(oidVector);
     if (r) {
-        runMsg += trUtf8("SNMP get error : %1 in %2; host : %3, from %4 parent service.\n")
+        runMsg += tr("SNMP get error : %1 in %2; host : %3, from %4 parent service.\n")
                 .arg(snmp.emsg)
                 .arg(name())
                 .arg(lanView::getInstance()->selfNode().getName())
@@ -203,7 +203,7 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
             svar.setValue(q, value, rs);
         }
         else {
-            serviceVars.at(i)->setUnreachable(q, trUtf8("There is no such data in the SNMP query result."));
+            serviceVars.at(i)->setUnreachable(q, tr("There is no such data in the SNMP query result."));
             rs = RS_UNREACHABLE;
         }
         snmp.next();

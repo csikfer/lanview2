@@ -22,8 +22,7 @@ enum eServiceVarType {
     SVT_DCOUNTER,
     SVT_DERIVE,
     SVT_DDERIVE,
-    SVT_ABSOLUTE,
-    SVT_COMPUTE
+    SVT_ABSOLUTE
 };
 
 EXT_ int serviceVarType(const QString& _n, eEx __ex = EX_ERROR);
@@ -187,6 +186,16 @@ public:
     qlonglong heartbeat(QSqlQuery&__q, eEx __ex = EX_ERROR);
     bool initSkeepCnt(int& delayCnt);
 };
+
+/*!
+@class cServiceRrdVar
+@brief
+ */
+class LV2SHARED_EXPORT cServiceRrdVar : public cServiceVar {
+    CRECORD(cServiceRrdVar);
+public:
+};
+
 
 /*!
 @class cGraph

@@ -81,8 +81,14 @@ SERVICE "check_dhcp" "DHCP monitorozás" {
 }
 SERVICE "check_disk" {
     SUPERIOR SERVICE MASK "^lv2|group$";
-    COMMAND "/usr/lib/nagios/plugins/check_disk $vol";
-    FEATURES ":method=nagios:timing=timed:";
+    COMMAND "/usr/lib/nagios/plugins/check_disk -w $w -c $c -p $vol";
+    FEATURES  {
+        "c" = "4%";
+        "method" = "nagios";
+        "timing" = "timed";
+        "vol" = "/";
+        "w" = "8%";
+    }
     MAX CHECK ATTEMPTS 2;
     NORMAL CHECK INTERVAL 600;
     HEARTBEAT TIME 1800;
@@ -317,12 +323,12 @@ SERVICE "parser" "Query Parser (pure)" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "ping" "Ping check" {
-    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
     PORT 80;
     COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
     FEATURES  {
         "critical" = "20,19%";
-        "method" = "nagios";
+        "method" = "nagios,qparse";
         "timing" = "timed";
         "warning" = "10,9%";
     }
@@ -333,8 +339,8 @@ SERVICE "ping" "Ping check" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
     TYPE "check_service";
-    ON LINE GROUPS "operator", "admin";
-    OFF LINE GROUPS "admin", "operator";
+    ON LINE GROUPS "admin", "operator";
+    OFF LINE GROUPS "operator", "admin";
 }
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
@@ -666,6 +672,7 @@ PARAM "override_mac" "?" TYPE "mac";
 PARAM "packets" TYPE "integer";
 PARAM "packets_per_sec" "packets/sec" TYPE "real" "pkt/s";
 PARAM "percent" TYPE "real" "%";
+PARAM "ping_time" TYPE "real" "ms";
 PARAM "temp" "Hőmérséklet" TYPE "real" "°C";
 PARAM "text" TYPE "text";
 PARAM "time" TYPE "time";
@@ -676,91 +683,109 @@ SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
     PLAUSIBILITY "no";
     CRITICAL "no";
     WARNING "no";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifmtu" "MTU" {
     TYPE "bytes" "GAUGE";
-    PLAUSIBILITY "interval" "48", "10240";
-}
-SERVICE VAR TYPE "ifoutoctets" "Output bytes" {
-    TYPE "bytes" "GAUGE";
+    PLAUSIBILITY "interval" "47", "10241";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifpacks" "Input/output packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifpacks_err" "Input/output error/discard packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
     CRITICAL "big" "1.0";
     WARNING "big" "0.0001";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed" "Ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_10g" "Ethernet 10G port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "4294967295";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_fast" "Fast ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "100000000";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_gig" "Ethernet gigabit port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "1000000000";
+    RAW TO RRD;
+}
+SERVICE VAR TYPE "ping_time" {
+    TYPE "ping_time" "GAUGE";
+    PLAUSIBILITY "big" "0.0";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "runtime" "Egy lkérdezést futásának az ideje" {
     TYPE "interval" "GAUGE";
     CRITICAL "big" "00:00:30";
     WARNING "big" "00:00:10";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "runtime_slow" "Egy lassú lekérdezést futásának az ideje" {
     TYPE "interval" "GAUGE";
     PLAUSIBILITY "big" "00:00:01";
     CRITICAL "big" "00:01:00";
     WARNING "big" "00:00:30";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_core" "CPU/SOC core temp." {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "5", "110";
     CRITICAL "big" "80";
     WARNING INVERSE "interval" "10", "60";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_indoor" "Beltéri hőmérséklet" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "40";
     WARNING INVERSE "interval" "18", "30";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_indoor_clim" "Beltéri hőmérséklet klimatizált" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "30";
     WARNING INVERSE "interval" "15", "25";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_outdoor" "Kültéri hőmérséklet" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "-30", "50";
     CRITICAL INVERSE "interval" "-20", "45";
     WARNING INVERSE "interval" "-10", "35";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_rack_hot" "Rack hőmérséklet, szerver kiáramló levegő" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "40";
     WARNING INVERSE "interval" "18", "35";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "upsAdvBatteryRunTimeRemaining" "service : PoweNet-MIB" {
-    TYPE "interval", "bigint" "COMPUTE";
+    TYPE "interval", "bigint" "GAUGE";
     PLAUSIBILITY "litle" "1 day";
     CRITICAL "litle" "00:02:00";
     WARNING "litle" "00:10:00";
+    NO RAW TO RRD;
     FEATURES ":rpn=10 *:";
 }
 SERVICE VAR TYPE "upsBatteryStatus" "service : UPS-MIB" {
-    TYPE "text", "bigint" "GAUGE";
+    TYPE "text", "bigint";
     CRITICAL INVERSE "interval" "1", "3";
     WARNING INVERSE "equal" "batteryNormal";
     FEATURES  {
@@ -772,12 +797,14 @@ SERVICE VAR TYPE "upsBatteryTemperature" "service : UPS-MIB" {
     PLAUSIBILITY "interval" "0", "100";
     CRITICAL INVERSE "interval" "10", "40";
     WARNING INVERSE "interval" "15", "30";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "upsBatteryVoltage" "service : UPS-MIB" {
-    TYPE "voltage", "bigint" "COMPUTE";
+    TYPE "voltage", "bigint" "GAUGE";
     PLAUSIBILITY "interval" "24", "60";
     CRITICAL INVERSE "interval" "48", "58";
     WARNING INVERSE "interval" "50", "57";
+    NO RAW TO RRD;
     FEATURES ":rpn=10 /:";
 }
 SERVICE VAR TYPE "upsEstimatedChargeRemaining" "service : UPS-MIB" {
@@ -785,12 +812,14 @@ SERVICE VAR TYPE "upsEstimatedChargeRemaining" "service : UPS-MIB" {
     PLAUSIBILITY "interval" "-1", "101";
     CRITICAL "litle" "15";
     WARNING "litle" "50";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "upsEstimatedMinutesRemaining" "service : UPS-MIB" {
-    TYPE "interval", "minute" "COMPUTE";
+    TYPE "interval", "minute" "GAUGE";
     PLAUSIBILITY "litle" "1 day";
     CRITICAL "litle" "00:02:00";
     WARNING "litle" "00:10:00";
+    NO RAW TO RRD;
     FEATURES ":rpn=60 * 1000 *:";
 }
 SERVICE VAR TYPE "upsInputVoltage" "service : UPS-MIB" {
@@ -798,30 +827,37 @@ SERVICE VAR TYPE "upsInputVoltage" "service : UPS-MIB" {
     PLAUSIBILITY "interval" "100", "400";
     CRITICAL INVERSE "big" "200", "250";
     WARNING INVERSE "interval" "210", "240";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "upsOutputPercentLoad" "service : UPS-MIB" {
     TYPE "percent", "bigint" "GAUGE";
     PLAUSIBILITY "interval" "-1", "120";
     CRITICAL "big" "95";
     WARNING "big" "80";
+    RAW TO RRD;
 }
 SERVICE VAR TYPE "upsOutputVoltage" "service : UPS-MIB" {
     TYPE "voltage", "bigint" "GAUGE";
     PLAUSIBILITY "interval" "100", "400";
     CRITICAL INVERSE "big" "200", "250";
     WARNING INVERSE "interval" "210", "240";
+    RAW TO RRD;
 }
 DELETE QUERY PARSER "win_dhcp_conf";
 QUERY PARSER "win_dhcp_conf" {
-     "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)" "REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;";
-     "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)" "REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;";
-     "Dhcp\\s+Server\\s+\\\\+([\\wqd\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)" "REPLACE ARP $2 MAC(\"$3\") config $host_service_id $$note$$$4$$note$$;";
+    TEMPLATE  "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)"  "REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;";
+    TEMPLATE  "Dhcp\\s+Server\\s+\\\\+([\\w\\d\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)"  "REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;";
+    TEMPLATE  "Dhcp\\s+Server\\s+\\\\+([\\wqd\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)"  "REPLACE ARP $2 MAC(\"$3\") config $host_service_id $$note$$$4$$note$$;";
 }
 DELETE QUERY PARSER "temp.owget";
 QUERY PARSER "temp.owget" {
-     "(.+)" "EXEC &[ \"SET HOST SERVICE $host_service_id VAR $varnames = \" + REPLACE \"$1\"/\"\\\\s+\"/\", \" + \";\"];  SET HOST SERVICE $host_service_id STATE #state;";
+    TEMPLATE  "(.+)"  "EXEC &[ \"SET HOST SERVICE $host_service_id VAR $varnames = \" + REPLACE \"$1\"/\"\\\\s+\"/\", \" + \";\"];  SET HOST SERVICE $host_service_id STATE #state;";
+}
+DELETE QUERY PARSER "ping";
+QUERY PARSER "ping" {
+    TEMPLATE  "RTA\\s*=\\s*([\\d\\.]+)\\s*ms"  "SET HOST SERVICE $host_service_id VAR ping_time = $1 ;";
 }
 DELETE QUERY PARSER "soniwall_arp";
 QUERY PARSER "soniwall_arp" {
-     "^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\s+(\\w+)\\s+([A-F\\d:]{17})\\s+(.+)" "REPLACE ARP $1 $3 \"query\" $host_service_id  \"$2 $4\" ;";
+    TEMPLATE  "^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\s+(\\w+)\\s+([A-F\\d:]{17})\\s+(.+)"  "REPLACE ARP $1 $3 \"query\" $host_service_id  \"$2 $4\" ;";
 }

@@ -81,7 +81,7 @@ void cParseWidget::parseClicked()
 {
     QString src = pUi->textEditSrc->toPlainText();
     if (src.simplified().isEmpty()) {
-        pUi->textEditLog->setText(trUtf8("Üres szöveget adott át feldolgozásra, nincs művelet."));
+        pUi->textEditLog->setText(tr("Üres szöveget adott át feldolgozásra, nincs művelet."));
         return;
     }
     if (pUi->radioButtonLocal->isChecked()) localParse(src);
@@ -124,10 +124,10 @@ void cParseWidget::localParseFinished()
     cDebug::getInstance()->setGui(false);
     // OK ?
     if (pLocalError == nullptr) {
-        pUi->textEditLog->append(trUtf8("<p><b> O.K."));
+        pUi->textEditLog->append(tr("<p><b> O.K."));
     }
     else {
-        pUi->textEditLog->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pLocalError->msg()));
+        pUi->textEditLog->append(tr("<p><b> A fordító kizárást dobott. <p> %1.").arg(pLocalError->msg()));
         cErrorMessageBox::messageBox(pLocalError, this);
         pDelete(pLocalError);
     }
@@ -157,7 +157,7 @@ void cParseWidget::remoteParse(const QString &src)
     imp.setId(_sNodeId, lanView::selfNode().getId());
 
     imp.insert(*pq);
-    QString msg = trUtf8("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
+    QString msg = tr("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
     sqlNotify(*pq, "import");
     pUi->pushButtonBreak->setEnabled(true);
     int lastStat = ES_WAIT;
@@ -186,7 +186,7 @@ void cParseWidget::remoteParse(const QString &src)
         pDelete(pLoop);
 
         if (!imp.fetchById(*pq)) {
-            msg = trUtf8("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
+            msg = tr("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
             break;
         }
         int stat = imp.getId(_sExecState);
@@ -194,26 +194,26 @@ void cParseWidget::remoteParse(const QString &src)
         lastStat = stat;
         switch (stat) {
         case ES_EXECUTE:
-            msg = trUtf8("Végrehajtás alatt (ID = %1, PID = %2).").arg(imp.getId()).arg(imp.getId(_sPid));
-            if (!imp.isNull(_sStarted)) msg += trUtf8("Kezdete : %1\n").arg(imp.getName(_sStarted));
+            msg = tr("Végrehajtás alatt (ID = %1, PID = %2).").arg(imp.getId()).arg(imp.getId(_sPid));
+            if (!imp.isNull(_sStarted)) msg += tr("Kezdete : %1\n").arg(imp.getName(_sStarted));
             if (r == 0) continue;
             // BREAK
-            msg = trUtf8("A válaszra való várakozás megszakítva. Az elküldött forrás szöveg értelmezését ez nem állítja meg.");
+            msg = tr("A válaszra való várakozás megszakítva. Az elküldött forrás szöveg értelmezését ez nem állítja meg.");
             break;
         case ES_OK:
         case ES_FAILE:
         case ES_ABORTED:
-            msg = trUtf8("Végrehajtás eredménye : %1\n").arg(execState(stat));
-            if (!imp.isNull(_sStarted)) msg += trUtf8("Kezdete : %1\n").arg(imp.getName(_sStarted));
-            if (!imp.isNull(_sEnded))   msg += trUtf8("Vége : %1\n").arg(imp.getName(_sEnded));
-            if (!imp.isNull(_sResultMsg)) msg += trUtf8("Az értelmező üzenete : %1\n").arg(imp.getName(_sResultMsg));
+            msg = tr("Végrehajtás eredménye : %1\n").arg(execState(stat));
+            if (!imp.isNull(_sStarted)) msg += tr("Kezdete : %1\n").arg(imp.getName(_sStarted));
+            if (!imp.isNull(_sEnded))   msg += tr("Vége : %1\n").arg(imp.getName(_sEnded));
+            if (!imp.isNull(_sResultMsg)) msg += tr("Az értelmező üzenete : %1\n").arg(imp.getName(_sResultMsg));
             // if (!imp.isNull(_sAppLogId)) ...
             break;
         case ES_WAIT:       // Elvileg képtelenség
             EXCEPTION(EPROGFAIL);
             break;
         default:
-            msg = trUtf8("A visszaolvasott állapotjelző értelmezhetetlen: %1").arg(stat);
+            msg = tr("A visszaolvasott állapotjelző értelmezhetetlen: %1").arg(stat);
             break;
         }
         break;

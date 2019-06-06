@@ -28,14 +28,14 @@ int main(int argc, char *argv[])
     int r = mo.pSelfInspector->inspectorType;
     r = r & (IT_TIMING_POLLING | IT_PROCESS_POLLING);
     if (r) {
-        PDEB(INFO) << QObject::trUtf8("Nothing start event loop, exit OK.") << endl;
+        PDEB(INFO) << QObject::tr("Nothing start event loop, exit OK.") << endl;
         exit(0);
     }
 
-    PDEB(INFO) << QObject::trUtf8("Start event loop ...") << endl;
+    PDEB(INFO) << QObject::tr("Start event loop ...") << endl;
     r = app.exec();
 
-    PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
+    PDEB(INFO) << QObject::tr("Event loop is exited.") << endl;
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 

@@ -4,7 +4,7 @@
 cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title, bool isHtml)
     : QWidget(_par, Qt::Window)
 {
-    QString title = _title.isEmpty() ? trUtf8("Report") : _title;
+    QString title = _title.isEmpty() ? tr("Report") : _title;
     setWindowTitle(title);
     pVLayout = new QVBoxLayout;
     setLayout(pVLayout);
@@ -15,11 +15,11 @@ cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, cons
     pHLayout = new QHBoxLayout;
     pVLayout->addLayout(pHLayout, 0);
     pHLayout->addStretch();
-    pButtonSave = new QPushButton(trUtf8("Save"));
+    pButtonSave = new QPushButton(tr("Save"));
     connect(pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
     pHLayout->addWidget(pButtonSave);
     pHLayout->addStretch();
-    pButtonClose = new QPushButton(trUtf8("Close"));
+    pButtonClose = new QPushButton(tr("Close"));
     connect(pButtonClose, SIGNAL(clicked()), this, SLOT(deleteLater()));
     pHLayout->addWidget(pButtonClose);
     pHLayout->addStretch();
@@ -69,7 +69,7 @@ cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
     bind << po->getId();
     msg2 = query2html(q, "mactab_node", "node_id = ?", bind, "ORDER BY port_index ASC");
     if (!msg2.isEmpty()) {
-        msg2 = toHtmlBold(QObject::trUtf8("Cím tábla :")) + msg2;
+        msg2 = toHtmlBold(QObject::tr("Cím tábla :")) + msg2;
     }
     return popupReportWindow(par, msg1.second + msg2, msg1.first);
 }
@@ -77,7 +77,7 @@ cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
 cPopupReportWindow* popupReportByIp(QWidget *par, QSqlQuery& q, const QString& sIp)
 {
     QString msg, title;
-    title = QObject::trUtf8("Riport a %1 IP cím alapján").arg(sIp);
+    title = QObject::tr("Riport a %1 IP cím alapján").arg(sIp);
     msg = htmlReportByIp(q, sIp);
     if (msg.isEmpty()) return nullptr;
     return popupReportWindow(par, msg, title);
@@ -86,7 +86,7 @@ cPopupReportWindow* popupReportByIp(QWidget *par, QSqlQuery& q, const QString& s
 cPopupReportWindow* popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& sMAC)
 {
     QString msg, title;
-    title = QObject::trUtf8("Riport a %1 MAC alapján").arg(sMAC);
+    title = QObject::tr("Riport a %1 MAC alapján").arg(sMAC);
     msg = htmlReportByMac(q, sMAC);
     if (msg.isEmpty()) return nullptr;
     return popupReportWindow(par, msg, title);
@@ -94,10 +94,10 @@ cPopupReportWindow* popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& 
 
 /***********************************************************************************************************/
 
-const QString cMsgBox::sNotFOpen = QObject::trUtf8("A %2 nevű fájl nem nyitható meg : %1");
-const QString cMsgBox::sNotFRead = QObject::trUtf8("A megadott %1 nevű fájl nem olvasható");
-const QString cMsgBox::sNotFWrite= QObject::trUtf8("A megadott %1 nevű fájl nem irható");
-const QString cMsgBox::sNotFRdWr = QObject::trUtf8("A megadott %1 nevű fájl nem irható, és nem olvasható");
+const QString cMsgBox::sNotFOpen = QObject::tr("A %2 nevű fájl nem nyitható meg : %1");
+const QString cMsgBox::sNotFRead = QObject::tr("A megadott %1 nevű fájl nem olvasható");
+const QString cMsgBox::sNotFWrite= QObject::tr("A megadott %1 nevű fájl nem irható");
+const QString cMsgBox::sNotFRdWr = QObject::tr("A megadott %1 nevű fájl nem irható, és nem olvasható");
 
 cMsgBox::cMsgBox(eDataCharacter _dc, QWidget *par)
     : QMessageBox(par)
@@ -248,11 +248,11 @@ bool cMsgBox::tryOpenReadWrite(QFile& f, QWidget *par)
 
 /******************************************************************************************************************/
 
-const QString cFileDialog::sInpFileFilter   = QObject::trUtf8("Szöveg fájlok (*.txt *.src *.imp)");
-const QString cFileDialog::sHtmFileFilter   = QObject::trUtf8("Szöveg fájlok (*.txt *.html *.htm)");
-const QString cFileDialog::sCsvFileFilter   = QObject::trUtf8("CSV fájlok (*.csv)");
-const QString cFileDialog::sTrgFileTitle    = QObject::trUtf8("Cél fájl kiválasztása");
-const QString cFileDialog::sSrcFileTitle    = QObject::trUtf8("Forrás fájl kiválasztása");
+const QString cFileDialog::sInpFileFilter   = QObject::tr("Szöveg fájlok (*.txt *.src *.imp)");
+const QString cFileDialog::sHtmFileFilter   = QObject::tr("Szöveg fájlok (*.txt *.html *.htm)");
+const QString cFileDialog::sCsvFileFilter   = QObject::tr("CSV fájlok (*.csv)");
+const QString cFileDialog::sTrgFileTitle    = QObject::tr("Cél fájl kiválasztása");
+const QString cFileDialog::sSrcFileTitle    = QObject::tr("Forrás fájl kiválasztása");
 
 
 QFile *cFileDialog::srcFile(QString &fileName, const QString& filter, QWidget *par)

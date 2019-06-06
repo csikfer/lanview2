@@ -26,7 +26,7 @@ int main (int argc, char * argv[])
     }
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
-    PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
+    PDEB(INFO) << QObject::tr("Event loop is exited.") << endl;
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
@@ -123,7 +123,7 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
         snmpDev().open(__q, snmp);
     }
     else {  // Csak az SNMP lekérdezés támogatott (egyenlőre)
-        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem támogatott proto_service_id!"));
+        EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
 }
 
@@ -152,7 +152,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     _DBGFN() << QChar(' ') << name() << endl;
     // qlonglong parid = parentId(EX_IGNORE);
     if (!snmp.isOpened()) {
-        EXCEPTION(ESNMP,-1, QString(QObject::trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
+        EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
     {   // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
         static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
@@ -168,7 +168,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticMaps))
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, forbidMaps))
      || 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap))) {
-        runMsg = trUtf8("SNMP '%1' error : #%2/%3, '%4'.")
+        runMsg = tr("SNMP '%1' error : #%2/%3, '%4'.")
                 .arg(snmp.name().toString())
                 .arg(snmp.status).arg(r)
                 .arg(snmp.emsg);
@@ -203,7 +203,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         bool ok;
         // törlendő jelöletlen rekordok
         ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-        runMsg = trUtf8("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen/hiba.")
+        runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen/hiba.")
                  .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod).arg(ctRm).arg(ctUnkn);
     }
     DBGFNL();

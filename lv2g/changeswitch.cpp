@@ -441,7 +441,7 @@ void cCSSaver::run()
 /* ************************************************************** */
 
 const enum ePrivilegeLevel cChangeSwitch::rights = PL_ADMIN;
-const QString cChangeSwitch::sIxNote = QObject::trUtf8("A művelet csak akkor végezhető el, ha a portoknak van indexe.\n");
+const QString cChangeSwitch::sIxNote = QObject::tr("A művelet csak akkor végezhető el, ha a portoknak van indexe.\n");
 const QString cChangeSwitch::iconUnchecked = "://icons/close.ico";
 const QString cChangeSwitch::iconChecked   = "://icons/ok.ico";
 
@@ -488,16 +488,16 @@ cChangeSwitch::cChangeSwitch(QMdiArea * par)
     sizes << 600 << 100 << 100;
     pUi->splitterMain->setSizes(sizes);
     QStringList headers;
-    headers << trUtf8("Ix.");           // CIX_INDEX_SRC
-    headers << trUtf8("Régi port");     // CIX_PORT_SRC
-    headers << trUtf8("Másol: param."); // CIX_CPY_PARAM
-    headers << trUtf8("Másol: link");   // CIX_CPY_LINKED
-    headers << trUtf8("Másol: Szolg."); // CIX_CPY SERVICES
-    headers << trUtf8("Ix.");           // CIX_INDEX_TRG
-    headers << trUtf8("Új port");       // CIX_PORT_TRG
-    headers << trUtf8("Töröl: param."); // CIX_DEL_PARAM
-    headers << trUtf8("Töröl: link");   // CIX_DEL_LINK
-    headers << trUtf8("Töröl: Szolg."); // CIX_DEL SERVICES
+    headers << tr("Ix.");           // CIX_INDEX_SRC
+    headers << tr("Régi port");     // CIX_PORT_SRC
+    headers << tr("Másol: param."); // CIX_CPY_PARAM
+    headers << tr("Másol: link");   // CIX_CPY_LINKED
+    headers << tr("Másol: Szolg."); // CIX_CPY SERVICES
+    headers << tr("Ix.");           // CIX_INDEX_TRG
+    headers << tr("Új port");       // CIX_PORT_TRG
+    headers << tr("Töröl: param."); // CIX_DEL_PARAM
+    headers << tr("Töröl: link");   // CIX_DEL_LINK
+    headers << tr("Töröl: Szolg."); // CIX_DEL SERVICES
     pUi->tableWidget->setColumnCount(cCSRow::COLUMN_NUMBER);
     pUi->tableWidget->setHorizontalHeaderLabels(headers);
     setHeaderIcon(cCSRow::CIX_CPY_PAR);
@@ -568,7 +568,7 @@ void cChangeSwitch::setButtons(bool chk)
             state = ES_INSUFF;
         }
         else if (pNodeSrc->getId() == pNodeTrg->getId()) {
-            QMessageBox::warning(this, dcViewShort(DC_WARNING), trUtf8("Ugyan azt az eszközt választotta ki forrás és cél eszköznek."));
+            QMessageBox::warning(this, dcViewShort(DC_WARNING), tr("Ugyan azt az eszközt választotta ki forrás és cél eszköznek."));
             state = ES_INSUFF;
         }
         else if (state == ES_INSUFF) {
@@ -796,11 +796,11 @@ void cChangeSwitch::on_selNodeSrc_nodeIdChanged(qlonglong nid)
         pNodeSrc->fetchPorts(*pq, CV_PORT_PARAMS);
         pNodeSrc->fetchParams(*pq);
         if (!filteringPorts(pNodeSrc->ports)) {
-            e = sIxNote + trUtf8("A forrás eszköznél nincs minden portnak indexe.");
+            e = sIxNote + tr("A forrás eszköznél nincs minden portnak indexe.");
             goto discard_node_old;
         }
         if (pNodeSrc->ports.isEmpty()) {
-            e = trUtf8("Nincs mit másolni.");
+            e = tr("Nincs mit másolni.");
             goto discard_node_old;
         }
         pNodeSrc->sortPortsByIndex();
@@ -839,11 +839,11 @@ void cChangeSwitch::on_selNodeTrg_nodeIdChanged(qlonglong nid)
         pNodeTrg->fetchPorts(*pq, CV_PORT_PARAMS);
         pNodeTrg->fetchParams(*pq);
         if (!filteringPorts(pNodeTrg->ports)) {
-            e = sIxNote + trUtf8("A cél eszköznél nincs minden portnak indexe.");
+            e = sIxNote + tr("A cél eszköznél nincs minden portnak indexe.");
             goto discard_node_new;
         }
         if (pNodeTrg->ports.isEmpty()) {
-            e = trUtf8("Nincs hova másolni.");
+            e = tr("Nincs hova másolni.");
             goto discard_node_new;
         }
         pNodeTrg->sortPortsByIndex();
@@ -889,12 +889,12 @@ void cChangeSwitch::on_pushButtonRefresh_clicked()
 void cChangeSwitch::on_pushButtonCopy_clicked()
 {
     if (state != ES_DATA_READY) {
-        EXCEPTION(EPROGFAIL, state, trUtf8("Invalid state."));
+        EXCEPTION(EPROGFAIL, state, tr("Invalid state."));
     }
     if (pSaver != nullptr) {
-        EXCEPTION(EPROGFAIL, 0, trUtf8("Rerun thread?"));
+        EXCEPTION(EPROGFAIL, 0, tr("Rerun thread?"));
     }
-    static const QString msg = trUtf8("A művelet nem visszavonható! Valóban végrehajtja a változtatásokat ?");
+    static const QString msg = tr("A művelet nem visszavonható! Valóban végrehajtja a változtatásokat ?");
     int r = QMessageBox::warning(this, dcViewShort(DC_WARNING), msg, QMessageBox::Ok, QMessageBox::Cancel);
     if (r != QMessageBox::Ok) return;
     pSaver = new cCSSaver(this);
@@ -970,7 +970,7 @@ void cChangeSwitch::setTableCellColor(int row, int col, int ix, int ec)
             return;
         }
     }
-    // EXCEPTION(EPROGFAIL,0, trUtf8("Invalid cell: row = %1, col = %2").arg(row).arg(col));
+    // EXCEPTION(EPROGFAIL,0, tr("Invalid cell: row = %1, col = %2").arg(row).arg(col));
 }
 
 void cChangeSwitch::setListCellColor(int lt, int row, int ec)

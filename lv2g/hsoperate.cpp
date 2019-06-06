@@ -240,7 +240,7 @@ void cHSORow::pressCmd()
         QSqlQuery q = getQuery();
         srvName = findAppName(q, id);
         if (srvName.isEmpty()) {
-            QString msg = trUtf8("A szolgáltatáspéldányt futtató applikáció neve nem megállapítható.");
+            QString msg = tr("A szolgáltatáspéldányt futtató applikáció neve nem megállapítható.");
             QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
             return;
         }
@@ -248,11 +248,11 @@ void cHSORow::pressCmd()
     QString sPayload = pComboBoxCmd->currentText();
     sPayload += _sSpace + QString::number(id);
     if (!sqlNotify(*pq, srvName, sPayload)) {
-        QString msg = trUtf8("A NOTIFY SQL parancs kiadása sikertelen (%1, %2).").arg(srvName, sPayload);
+        QString msg = tr("A NOTIFY SQL parancs kiadása sikertelen (%1, %2).").arg(srvName, sPayload);
         QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
     }
     else {
-        QString msg = trUtf8("SQL NOTIFY O.K. (%1, %2).").arg(srvName, sPayload);
+        QString msg = tr("SQL NOTIFY O.K. (%1, %2).").arg(srvName, sPayload);
         QMessageBox::information(nullptr, dcViewLong(DC_INFO), msg);
     }
 }
@@ -347,8 +347,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
     timerId = -1;
     lockSetButton = false;
     lastAlramButtonId = -1;
-    sStart = trUtf8("Start");
-    sStop  = trUtf8("Stop");
+    sStart = tr("Start");
+    sStop  = tr("Stop");
 
     pUi->setupUi(this);
     if (TC_COUNT != pUi->tableWidget->columnCount()) EXCEPTION(EDATA);

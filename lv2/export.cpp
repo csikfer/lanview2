@@ -16,7 +16,7 @@ QList<int>  cExport::_exportPotentials;
 
 cExport::cExport(QObject *par) : QObject(par)
 {
-    sNoAnyObj = QObject::trUtf8("No any object");
+    sNoAnyObj = QObject::tr("No any object");
     actIndent = 0;
 }
 
@@ -210,7 +210,7 @@ QString cExport::features(const cRecord& o)
     if (!s.isEmpty() && s != ":") {
         cFeatures features;
         if (!features.split(s, EX_IGNORE)) {
-            r  = line(QString("// ") + trUtf8("Invalid features:"));
+            r  = line(QString("// ") + tr("Invalid features:"));
             r += line("//" + _sFEATURES + escaped(s) + _sSemicolon);
             return r;
         }
@@ -305,7 +305,7 @@ QString cExport::exportTable(const QString& name, eEx __ex)
     int ix = exportableObjects().indexOf(name);
     QString r;
     if (ix < 0) {
-        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, ix, trUtf8("Invalid or unsupported object name %1").arg(name));
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, ix, tr("Invalid or unsupported object name %1").arg(name));
     }
     else {
         r = exportTable(ix, __ex);
@@ -321,7 +321,7 @@ QString cExport::exportTable(int ix, eEx __ex)
     X_EXPORTABLE_OBJECTS
 #undef X
     default:
-        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, trUtf8("Invalid or unsupported object index %1").arg(ix));
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, tr("Invalid or unsupported object index %1").arg(ix));
     }
     return r;
 }
@@ -332,7 +332,7 @@ QString cExport::exportObject(QSqlQuery& q, cRecord &o, eEx __ex)
     QString tableName = o.tableName();
     int ix = exportableObjects().indexOf(tableName);
     if (ix < 0) {
-        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, trUtf8("Invalid or unsupported object index %1").arg(ix));
+        if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, tr("Invalid or unsupported object index %1").arg(ix));
         return r;
     }
     cExport x;
@@ -567,7 +567,7 @@ QString cExport::MenuItems(const QString& _app, qlonglong upperMenuItemId, eEx _
     QString r;
     cMenuItem o;
     if (o.fetchFirstItem(q, _app, upperMenuItemId)) do {
-        if (_app != o.getName(_sAppName)) APPMEMO(q2, QObject::trUtf8("App name is %1 : menu item %2, invalid app name : %3").arg(_app, o.identifying(false), o.getName(_sAppName)), RS_CRITICAL);
+        if (_app != o.getName(_sAppName)) APPMEMO(q2, QObject::tr("App name is %1 : menu item %2, invalid app name : %3").arg(_app, o.identifying(false), o.getName(_sAppName)), RS_CRITICAL);
         r += _export(q2, o);
     } while (o.next(q));
     else {
@@ -760,14 +760,14 @@ QString cExport::hostService(QSqlQuery& q, qlonglong _id)
         cNPort p;
         if (p.fetchById(q, id2)) {
             if (p.getId(_sNodeId) != id) {
-                r+= trUtf8("/* invalid port : %1 (#%2) */").arg(p.getFullName(q)).arg(id2);
+                r+= tr("/* invalid port : %1 (#%2) */").arg(p.getFullName(q)).arg(id2);
             }
             else {
                 r += ":" + s;
             }
         }
         else {
-            r+= trUtf8("/* invalid port_id : %1").arg(id2);
+            r+= tr("/* invalid port_id : %1").arg(id2);
         }
     }
     id = hs.getId(_sServiceId);
@@ -792,6 +792,7 @@ QString cExport::hostService(QSqlQuery& q, qlonglong _id)
 }
 
 /* ---------------------------------------------------------------------------------------- */
+// A servoce_rrd_vars -t nem kezeli, a parser sem!!!
 
 QString cExport::ServiceVars(eEx __ex)
 {
@@ -878,6 +879,11 @@ QString cExport::_export(QSqlQuery &q, cServiceVarType &o)
         if (!s.isEmpty()) b += line(s);
         s = varFilter("WARNING", o.getId(_sWarningType), o.getBool(_sWarningInverse), o.get(_sWarningParam1), o.get(_sWarningParam2));
         if (!s.isEmpty()) b += line(s);
+        if (!o.isNull(_sRawToRrd)) {
+            s = "RAW TO RRD;";
+            if (!o.getBool(_sRawToRrd)) s.prepend("NO ");
+            b += line(s);
+        }
         b += features(o);
     r  = lineEndBlock(r, b);
     return r;

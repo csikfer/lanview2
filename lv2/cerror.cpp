@@ -77,7 +77,6 @@ cError::cError()
 {
     mSrcLine = mErrorSubCode = mErrorCode = -1;
     mErrorSysCode = errno;
-    mSqlErrNum    = -1;
     mSqlErrType   = QSqlError::NoError;
     mDataLine     = -1;
     mDataPos      = -1;
@@ -101,7 +100,6 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
     mErrorCode    = _mErrorCode;
     mErrorSubCode = _mErrorSubCode;
     mErrorSubMsg  = _mErrorSubMsg;
-    mSqlErrNum    = -1;
     mSqlErrType   = QSqlError::NoError;
     mDataLine     = -1;
     mDataPos      = -1;
@@ -124,7 +122,6 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
     mErrorCode    = _mErrorCode;
     mErrorSubCode = _mErrorSubCode;
     mErrorSubMsg  = _mErrorSubMsg;
-    mSqlErrNum    = -1;
     mSqlErrType   = QSqlError::NoError;
     mDataLine     = -1;
     mDataPos      = -1;
@@ -153,11 +150,11 @@ void cError::circulation()
 
     if (errCount() > mMaxErrCount) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
-        cerr << QObject::trUtf8("*** Error circulation **** Thread object name %1").arg(mThreadName) << endl;
+        cerr << QObject::tr("*** Error circulation **** Thread object name %1").arg(mThreadName) << endl;
         int n = 1;
         foreach (cError * pe, errorList) {
             qlonglong eid = sendError(pe);
-            QString em = eid == NULL_ID ? QObject::trUtf8("\n --- A hiba rekord kiírása sikertelen.") : QObject::trUtf8("\n --- Kiírt hiba rekord id : %1").arg(eid);
+            QString em = eid == NULL_ID ? QObject::tr("\n --- A hiba rekord kiírása sikertelen.") : QObject::tr("\n --- Kiírt hiba rekord id : %1").arg(eid);
             cerr << "[#" << n++ << QChar(']') << QChar(' ') << pe->msg() << em << endl;
             ++n;
         }
@@ -171,14 +168,14 @@ void cError::exception(void)
 //      delete this;
         throw _no_init_;
     }
-    QString m = QObject::trUtf8("throw this : %1").arg(msg());
+    QString m = QObject::tr("throw this : %1").arg(msg());
     if (cDebug::getInstance() != nullptr) {
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
     throw(this);
     {
-        QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");
+        QString mm = QObject::tr("Exception (throw) is not working, exit.");
         if (cDebug::getInstance() != nullptr) {
             if (!ONDB(EXCEPT)) cDebug::cout() << m << endl;
             cDebug::cout() << mm << endl;
@@ -197,7 +194,7 @@ QString cError::errorMsg(int __ErrorCode)
     if (i != mErrorStringMap.end()) {
         return *i;
     }
-    return (QObject::trUtf8("Ismeretlen hiba kód"));
+    return (QObject::tr("Ismeretlen hiba kód"));
 }
 
 cError& cError::nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName)
@@ -238,7 +235,7 @@ QString cError::msg(void) const
         }
         if (mSqlErrType != QSqlError::NoError) {
             r += "\nSQL ERROR ";
-            if ( mSqlErrNum != -1) r +=  QChar('#') + QString::number(mSqlErrNum);
+            if (!mSqlErrCode.isEmpty()) r +=  mSqlErrCode;
             r += " : ";
             r += "; type:" + SqlErrorTypeToString(mSqlErrType) + "\n";
             r += "driverText   : " + mSqlErrDrText + "\n";
@@ -290,18 +287,18 @@ bool cError::errStat()
 QString SqlErrorTypeToString(int __et)
 {
     switch (__et) {
-    case QSqlError::NoError:            return QObject::trUtf8("No error occurred.");
-    case QSqlError::ConnectionError:    return QObject::trUtf8("Connection error.");
-    case QSqlError::StatementError:     return QObject::trUtf8("SQL statement syntax error.");
-    case QSqlError::TransactionError:   return QObject::trUtf8("Transaction failed error.");
-    case QSqlError::UnknownError:       return QObject::trUtf8("Unknown error");
+    case QSqlError::NoError:            return QObject::tr("No error occurred.");
+    case QSqlError::ConnectionError:    return QObject::tr("Connection error.");
+    case QSqlError::StatementError:     return QObject::tr("SQL statement syntax error.");
+    case QSqlError::TransactionError:   return QObject::tr("Transaction failed error.");
+    case QSqlError::UnknownError:       return QObject::tr("Unknown error");
     }
-    return QObject::trUtf8("Unknown SQL Error type.");
+    return QObject::tr("Unknown SQL Error type.");
 }
 
 /*
 QString emNoField(const QString& __t, const QString& __f)
 {
-    return QObject::trUtf8("Nincs %2 mező a %1 táblában").arg(__t, __f);
+    return QObject::tr("Nincs %2 mező a %1 táblában").arg(__t, __f);
 }
 */

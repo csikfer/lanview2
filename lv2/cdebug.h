@@ -68,23 +68,23 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// Debug üzenet kiírása egy nyomkövetendő függvény kezdetén, az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGFN()    PDEB(ENTERLEAVE) << QObject::trUtf8("Enter. ")
+#define _DBGFN()    PDEB(ENTERLEAVE) << QObject::tr("Enter. ")
 
 /// @def _DBGFNL()
 /// Debug üzenet kiírása egy nyomkövetendő függvény végén (a returm(-ok) előtt), az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGFNL()   PDEB(ENTERLEAVE) << QObject::trUtf8("Leave. ")
+#define _DBGFNL()   PDEB(ENTERLEAVE) << QObject::tr("Leave. ")
 
 /// @def DBGFN()
 /// Debug üzenet kiírása egy nyomkövetendő függvény kezdetén, az üzenet le van zárva.
 /// @relates cDebug
-#define DBGFN()     PDEB(ENTERLEAVE) << QObject::trUtf8("Enter.") << endl
+#define DBGFN()     PDEB(ENTERLEAVE) << QObject::tr("Enter.") << endl
 
 /// @def DBGFNL()
 /// Debug üzenet kiírása egy nyomkövetendő függvény végén, az üzenet le van zárva.
 /// @relates cDebug
-#define DBGFNL()    PDEB(ENTERLEAVE) << QObject::trUtf8("Leave.") << endl
+#define DBGFNL()    PDEB(ENTERLEAVE) << QObject::tr("Leave.") << endl
 
 /// @def _DBGOBJ()
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet nincs lezárva, a sor kiegészíthető,
@@ -97,7 +97,7 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// @relates cDebug
 #define DBGOBJ()    _DBGOBJ() << endl
 
-#define __DERRH(fi, li, fu) head << QObject::trUtf8("Error in ") << _HEAD(fi, li, fu)
+#define __DERRH(fi, li, fu) head << QObject::tr("Error in ") << _HEAD(fi, li, fu)
 #define _DERRH()    __DERRH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def DERR()
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) DERROR, és kiírja az
@@ -113,7 +113,7 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) WARNING, és kiírja az
 /// aktuális forrásfájl nevét abban a sotrszámot, valamint az aktuális függvény teljes nevét is.
 /// @relates cDebug
-#define __DWARH(fi, li, fu) head << QObject::trUtf8("Warning in ") << _HEAD(fi, li, fu)
+#define __DWARH(fi, li, fu) head << QObject::tr("Warning in ") << _HEAD(fi, li, fu)
 #define _DWARH()    __DWARH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define DWAR()      _PDEB(WARNING) << _DWARH()
 
@@ -183,10 +183,10 @@ Nem kizárás, a PDEB(DERROR) makróval csak a hibaüzenetet írja ki.
 */
 #define SQLQUERYERRDEB(o)  { \
     QSqlError le = (o).lastError(); \
-    DERR() << QObject::trUtf8("SQL PREPARE ERROR #") << le.number() << "\n" \
-    << QObject::trUtf8("driverText   : ") << le.driverText() << "\n" \
-    << QObject::trUtf8("databaseText : ") << le.databaseText() << "\n" \
-    << QObject::trUtf8("SQL string   : ") << (o).lastQuery () << endl; \
+    DERR() << QObject::tr("SQL PREPARE ERROR #") << le.number() << "\n" \
+    << QObject::tr("driverText   : ") << le.driverText() << "\n" \
+    << QObject::tr("databaseText : ") << le.databaseText() << "\n" \
+    << QObject::tr("SQL string   : ") << (o).lastQuery () << endl; \
   }
 
 /**
@@ -200,10 +200,10 @@ Nem kizárás, a PDEB(DERROR) makróval csak a hibaüzenetet írja ki.
 */
 #define SQLPREPERRDEB(o, t)  { \
     QSqlError le = (o).lastError(); \
-    DERR() << QObject::trUtf8("SQL PREPARE ERROR #") << le.number() << "\n" \
-    << QObject::trUtf8("driverText   : ") << le.driverText() << "\n" \
-    << QObject::trUtf8("databaseText : ") << le.databaseText() << "\n" \
-    << QObject::trUtf8("SQL string   : ") << t << endl; \
+    DERR() << QObject::tr("SQL PREPARE ERROR #") << le.number() << "\n" \
+    << QObject::tr("driverText   : ") << le.driverText() << "\n" \
+    << QObject::tr("databaseText : ") << le.databaseText() << "\n" \
+    << QObject::tr("SQL string   : ") << t << endl; \
   }
 
 /*!

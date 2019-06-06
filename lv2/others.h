@@ -11,8 +11,8 @@
 static inline bool isNumNull(const QVariant v)
 {
     int t = v.userType();
-    return (
-            (QMetaType::LongLong == t && NULL_ID == v.toLongLong())
+    return (v.isNull()
+         || (QMetaType::LongLong == t && NULL_ID == v.toLongLong())
          || (QMetaType::Int      == t && NULL_IX == v.toInt())
     );
 }

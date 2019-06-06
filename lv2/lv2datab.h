@@ -742,32 +742,32 @@ public:
     const QBitArray& autoIncrement() const          { return _autoIncrement; }
     /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int idIndex(enum eEx __ex = EX_ERROR) const     {
-        if (__ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, QObject::trUtf8("Table %1 nothing ID field.").arg(fullTableName()));
+        if (__ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, QObject::tr("Table %1 nothing ID field.").arg(fullTableName()));
         return _idIndex;
     }
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int nameIndex(enum eEx __ex = EX_ERROR) const   {
-        if (__ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, QObject::trUtf8("Table %1 nothing name field.").arg(fullTableName()));
+        if (__ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, QObject::tr("Table %1 nothing name field.").arg(fullTableName()));
         return _nameIndex;
     }
     /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int noteIndex(enum eEx __ex = EX_ERROR) const   {
-        if (__ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, QObject::trUtf8("Table %1 nothing note field.").arg(fullTableName()));
+        if (__ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, QObject::tr("Table %1 nothing note field.").arg(fullTableName()));
         return _noteIndex;
     }
     /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int deletedIndex(enum eEx __ex = EX_ERROR) const {
-        if (__ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, QObject::trUtf8("Table %1 nothing delete field.").arg(fullTableName()));
+        if (__ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, QObject::tr("Table %1 nothing delete field.").arg(fullTableName()));
         return _deletedIndex;
     }
     /// Az flag mező indexével tér vissza, ha nincs flag nevű mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int flagIndex(enum eEx __ex = EX_ERROR) const   {
-        if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, QObject::trUtf8("Table %1 nothing flag field.").arg(fullTableName()));
+        if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, QObject::tr("Table %1 nothing flag field.").arg(fullTableName()));
         return _flagIndex;
     }
     /// Az text_id mező indexével tér vissza, ha nincs text_id nevű mező, vagy nem ismert az indexe, és __ex értéke nem EX_IGNORE, akkor dob egy kizárást.
     int textIdIndex(enum eEx __ex = EX_ERROR) const   {
-        if (__ex && !isIndex(_textIdIndex)) EXCEPTION(EFOUND, _textIdIndex, QObject::trUtf8("Object nothing text_id field.").arg(fullTableName()));
+        if (__ex && !isIndex(_textIdIndex)) EXCEPTION(EFOUND, _textIdIndex, QObject::tr("Object nothing text_id field.").arg(fullTableName()));
         return _textIdIndex;
     }
 
@@ -1300,7 +1300,7 @@ public:
     const QBitArray& nameKeyMask(eEx __ex = EX_ERROR) const
     {
         if (descr()._nameKeyMask.count(true) == 0 && __ex != EX_IGNORE)
-            EXCEPTION(EDATA, -1 , QObject::trUtf8("_nameKeyMask is empty."));
+            EXCEPTION(EDATA, -1 , QObject::tr("_nameKeyMask is empty."));
         return descr()._nameKeyMask;
     }
     /// Egy bit vektorral tér vissza, ahol minden bit true, mellyel azonos indexű mező autoincrement.
@@ -1757,16 +1757,17 @@ public:
     /// ne felejtsük el a lekérdezés után törölni azt, mert a késöbbi lekérdezések viselkedését is befolyásolni fogja.
     /// @param __fm Feltétel maszk. Ha üres tömb, akkor a használt maszk az elsődleges kulcsok maszkja lessz. Ha azt akarjuk, a feltétel
     ///     legyen üres (kivéve a deleted mező), akkor a paraméter egy nem üres, de egy true értéket sem tartalmazó tömb kell legyen.
-    QString whereString(QBitArray& __fm) const;
-    /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel (bind) az __arg-ban megadott sorrendben.
-    /// A mező adatok bind-elése a mezők sorrendje szerint történik, attol nem lehet eltérni, egy mező egyszer szerepelhet.
+    ///     A hívás modosítja a maszkot, a valóban használt értékre.
+    QString whereString(QBitArray &fm) const;
+    /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel ...
+    /// A mező adatok bind-elése a magadott sorrendben szerint történik, egy mező többször is szerepelhet.
     /// @param __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
     /// @param sql A SQL query string
     /// @param __arg A vektor elemei a mező indexei, amit bind-elni kell a lekérdezéshez.
     /// @exception Ha a QSqlQuery::prepare() vagy exec() metódus sikertelen, akkor dob egy kizárást.
     void query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg) const;
-    /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel ...
-    /// A mező adatok bind-elése a magadott sorrendben szerint történik, egy mező többször is szerepelhet.
+    /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel (bind) az __arg-ban megadott sorrendben.
+    /// A mező adatok bind-elése a mezők sorrendje szerint történik, attol nem lehet eltérni, egy mező egyszer szerepelhet.
     /// @param __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
     /// @param sql A SQL query string
     /// @param __fm Bit vektor, ha a vektor elem true, akkor az azonos indexű mezőt kell bind-olni
@@ -2151,13 +2152,13 @@ public:
     template <class T> int chkObjType(enum eEx __ex = EX_ERROR) const {
         T o;
         if (typeid(T) == typeid(cRecordAny) || typeid(*this) == typeid(cRecordAny)) {
-            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::trUtf8("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
             return -1;
         }
         if (descr().tableoid() == o.descr().tableoid()) return 0;  // Azonos
-        if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::trUtf8("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+        if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::tr("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
         if (descr() > o.descr()) return 1;        // Nem azonos, de konvertálható
-        if (__ex >= EX_ERROR)   EXCEPTION(EDATA, 2, QString(QObject::trUtf8("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+        if (__ex >= EX_ERROR)   EXCEPTION(EDATA, 2, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
         return -1;
     }
     /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkObjType<T>() -t.
@@ -2924,7 +2925,7 @@ template <class R> bool _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
     QString fv = o.getName(R::ixFeatures());
     bool r = o._pFeatures->split(fv, false, EX_IGNORE);
     if (!r) {
-        QString msg = QObject::trUtf8(
+        QString msg = QObject::tr(
                     "feature mezőjének a formátuma nem megfelelő."
                     "A feature mező értéke : %1. %2").
                 arg(dQuoted(fv), o.identifying());

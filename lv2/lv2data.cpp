@@ -110,9 +110,10 @@ const cRecStaticDescr& cParamType::descr() const
     return *_pRecordDescr;
 }
 
-qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, const QString __t, const QString __di, eEx __ex)
+qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, const QString __t, const QString __di, bool _replace, eEx __ex)
 {
     cParamType pp;
+    _replace = _replace && pp.fetchByName(q, __n);
     pp.setName(__n);
     pp.set(_sParamTypeNote, __de);
     pp.set(_sParamTypeType,  __t);
@@ -121,23 +122,14 @@ qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString&
         if (__ex) EXCEPTION(EDATA, -1, __t);
         return NULL_ID;
     }
-    pp.insert(q, __ex);
-    return pp.getId();
-}
-
-qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, int __t, const QString __di, eEx __ex)
-{
-    cParamType pp;
-    pp.setName(__n);
-    pp.set(_sParamTypeNote, __de);
-    pp.set(_sParamTypeType,  __t);
-    pp.set(_sParamTypeDim,   __di);
-    if (pp.isDefective()) {
-        if (__ex) EXCEPTION(EDATA, __t);
-        return NULL_ID;
+    bool f;
+    if (_replace) {
+        f = 1 == pp.update(q, false, QBitArray(), QBitArray(), __ex);
     }
-    pp.insert(q, __ex);
-    return pp.getId();
+    else {
+        f = pp.insert(q, __ex);
+    }
+    return f ? pp.getId() : NULL_ID;
 }
 
 QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex, bool *pOk)
@@ -249,14 +241,14 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (paramTypes.count() == 0) {
         cParamType *p = new cParamType();
-        if (0 == paramTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
+        if (0 == paramTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, tr("Load cache: The if_types table is empty."));
         return;
     }
     // UPDATE
     int found = 0;              // Megtalált rekordok száma
     int n = paramTypes.count();    // Megtalálandó rekordok száma
     cParamType pt;
-    if (!pt.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
+    if (!pt.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, tr("Update cache: The if_types table is empty."));
     do {
         cParamType *pPt = paramTypes.get(pt.getId(), EX_IGNORE);    // ID alapján rákeresünk
         if (pPt == nullptr) {   // Ez egy új rekord
@@ -268,7 +260,7 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
         }
     } while (pt.next(__q));
     if (n < found) EXCEPTION(EPROGFAIL);
-    if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
+    if (n > found) EXCEPTION(EDATA, n - found, tr("Deleted if_tpes record."));
 }
 
 const cParamType& cParamType::paramType(const QString& __nm, eEx __ex)
@@ -283,7 +275,7 @@ const cParamType& cParamType::paramType(const QString& __nm, eEx __ex)
             return *paramTypes.last();
         }
         else {
-            if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid ParamType name %1 or program error.").arg(__nm));
+            if (__ex) EXCEPTION(EDATA, -1,QObject::tr("Invalid ParamType name %1 or program error.").arg(__nm));
             return *pNull;
         }
     }
@@ -302,7 +294,7 @@ const cParamType& cParamType::paramType(qlonglong __id, eEx __ex)
             return *paramTypes.last();
         }
         else {
-            if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid ParamType id or program error."));
+            if (__ex) EXCEPTION(EDATA, __id,QObject::tr("Invalid ParamType id or program error."));
             return *pNull;
         }
     }
@@ -852,7 +844,7 @@ QString cIpAddress::lookup(const QHostAddress& ha, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(ha.toString());
     if (hi.error() != QHostInfo::NoError) {
-        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("A host név nem állapítható meg a cím: '%1' alapján").arg(ha.toString()));
+        if (__ex) EXCEPTION(EDATA, hi.error(), tr("A host név nem állapítható meg a cím: '%1' alapján").arg(ha.toString()));
         return _sNul;
     }
     return hi.hostName();
@@ -862,7 +854,7 @@ QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(hn);
     if (hi.error() != QHostInfo::NoError) {
-        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("Az IP cím nem állapítható meg a host név: '%1' alapján; %2").arg(hn, hi.errorString()));
+        if (__ex) EXCEPTION(EDATA, hi.error(), tr("Az IP cím nem állapítható meg a host név: '%1' alapján; %2").arg(hn, hi.errorString()));
         return QList<QHostAddress>();
     }
     return hi.addresses();
@@ -879,7 +871,7 @@ QHostAddress cIpAddress::lookup(const QString& hn, eEx __ex)
                 als += a.toString() + ",";
             }
             als.chop(1);
-            EXCEPTION(AMBIGUOUS, n, trUtf8("A hoszt cím a név: '%1' alapján nem egyértelmű : %2").arg(hn, als));
+            EXCEPTION(AMBIGUOUS, n, tr("A hoszt cím a név: '%1' alapján nem egyértelmű : %2").arg(hn, als));
         }
         return QHostAddress();
     }
@@ -1086,14 +1078,14 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (ifTypes.count() == 0) {
         cIfType *p = new cIfType();
-        if (0 == ifTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
+        if (0 == ifTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, tr("Load cache: The if_types table is empty."));
         return;
     }
     // UPDATE
     int found = ifTypes.count();    // Megtalálandó rekordok száma
     int n = 0;                      // Megtalált rekordok számláló
     cIfType ift;
-    if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
+    if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, tr("Update cache: The if_types table is empty."));
     do {
         cIfType *pIft = ifTypes.get(ift.getId(), EX_IGNORE);    // ID alapján rákeresünk
         if (pIft == nullptr) {   // Ez egy új rekord
@@ -1105,7 +1097,7 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
         }
     } while (ift.next(__q));
     if (n > found) EXCEPTION(EPROGFAIL);
-    if (n < found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
+    if (n < found) EXCEPTION(EDATA, n - found, tr("Deleted if_tpes record."));
 }
 
 const cIfType& cIfType::ifType(const QString& __nm, eEx __ex)
@@ -1113,7 +1105,7 @@ const cIfType& cIfType::ifType(const QString& __nm, eEx __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid iftype name %1 or program error.").arg(__nm));
+        if (__ex) EXCEPTION(EDATA, -1,QObject::tr("Invalid iftype name %1 or program error.").arg(__nm));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -1124,7 +1116,7 @@ const cIfType& cIfType::ifType(qlonglong __id, eEx __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid iftype id or program error."));
+        if (__ex) EXCEPTION(EDATA, __id,QObject::tr("Invalid iftype id or program error."));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -1736,7 +1728,7 @@ cIpAddress& cInterface::addIpAddress(const cIpAddress& __a)
     _DBGFN() << " @(" << __a.toString() << ")" << endl;
     if (addresses.indexOf(cIpAddress::ixAddress(), __a.get(cIpAddress::ixAddress()))) EXCEPTION(EDATA);
     addresses << __a;
-    PDEB(VERBOSE) << QObject::trUtf8("Added, size : %1").arg(addresses.size());
+    PDEB(VERBOSE) << QObject::tr("Added, size : %1").arg(addresses.size());
     return *addresses.last();
 }
 
@@ -2089,9 +2081,9 @@ cPPort *cPatch::addPort(const QString& __name, const QString& __note, int __ix)
 {
     if (ports.count()) {
         if (0 <= ports.indexOf(__name))
-            EXCEPTION(EDATA, -1, trUtf8("Ilyen port név már létezik: %1").arg(__name));
+            EXCEPTION(EDATA, -1, tr("Ilyen port név már létezik: %1").arg(__name));
         if (0 <= ports.indexOf(cNPort::_ixPortIndex, QVariant(__ix)))
-            EXCEPTION(EDATA, __ix, trUtf8("Ilyen port index már létezik."));
+            EXCEPTION(EDATA, __ix, tr("Ilyen port index már létezik."));
     }
     cPPort  *p = new cPPort();
     p->setName(__name);
@@ -2114,7 +2106,7 @@ cPPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, i
 cNPort *cPatch::portSet(const QString& __name, const QString& __fn, const QVariant& __v)
 {
     int i = ports.indexOf(cNPort().nameIndex(), __name);
-    if (i < 0) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__name));
+    if (i < 0) EXCEPTION(ENONAME, -1, QString(QObject::tr("%1 port name not found.")).arg(__name));
     cNPort * p = ports[i];
     p->set(__fn, __v);
     return p;
@@ -2123,7 +2115,7 @@ cNPort *cPatch::portSet(const QString& __name, const QString& __fn, const QVaria
 cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariant& __v)
 {
     int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
-    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
+    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::tr("Port index not found"));
     cNPort *p = ports[i];
     p->set(__fn, __v);
     return p;
@@ -2170,7 +2162,7 @@ cNPort * cPatch::getPort(int __ix, eEx __ex)
         int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
         if (i >= 0) return ports[i];
     }
-    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port index not found.")).arg(__ix))
+    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::tr("%1 port index not found.")).arg(__ix))
     return nullptr;
 }
 
@@ -2178,7 +2170,7 @@ cNPort * cPatch::getPort(const QString& __pn, eEx __ex)
 {
     int i = ports.indexOf(cNPort().nameIndex(), __pn);
     if (i >= 0) return ports[i];
-    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__pn));
+    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::tr("%1 port name not found.")).arg(__pn));
     return nullptr;
 }
 
@@ -2186,7 +2178,7 @@ const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
 {
     qlonglong tableOID = fetchTableOId(q, __ex);
     if (tableOID < 0LL) {
-        EXCEPTION(EDATA, getId(), trUtf8("Get tableoid"));
+        EXCEPTION(EDATA, getId(), tr("Get tableoid"));
         return nullptr;
     }
     if (tableOID ==    tableoid()) return &descr();
@@ -2196,7 +2188,7 @@ const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
     if (tableOID == no.tableoid()) return &no.descr();
     cSnmpDevice sn;
     if (tableOID == sn.tableoid()) return &sn.descr();
-    if (__ex) EXCEPTION(EDATA, tableOID, trUtf8("Invalid tableoid"));
+    if (__ex) EXCEPTION(EDATA, tableOID, tr("Invalid tableoid"));
     return nullptr;
 
 }
@@ -2595,7 +2587,7 @@ cNPort *cNode::addPorts(const cIfType& __t, const QString& __np, int __noff, int
 cNPort *cNode::portModName(int __ix, const QString& __name, const QString& __note)
 {
     int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
-    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
+    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::tr("Port index not found"));
     cNPort *p = ports[i];
     p->setName(__name);
     if (!__note.isNull()) p->setName(_sPortNote, __note);
@@ -2605,12 +2597,12 @@ cNPort *cNode::portModName(int __ix, const QString& __name, const QString& __not
 cNPort *cNode::portModType(int __ix, const QString& __type, const QString& __name, const QString& __note, int __new_ix)
 {
     int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
-    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
+    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::tr("Port index not found"));
     cNPort *p = ports[i];
     const cIfType& ot = cIfType::ifType(p->getId(_sIfTypeId));
     const cIfType& nt = cIfType::ifType(__type);
     if (nt.getName(_sIfTypeObjType) != ot.getName(_sIfTypeObjType))
-        EXCEPTION(EDATA, -1, trUtf8("Invalid port type: %1 to %2").arg(ot.getName().arg(__type)));
+        EXCEPTION(EDATA, -1, tr("Invalid port type: %1 to %2").arg(ot.getName().arg(__type)));
     p->setId(_sIfTypeId, nt.getId());
     p->setName(__name);
     if (!__note.isEmpty()) p->setName(_sPortNote, __note);
@@ -2647,11 +2639,11 @@ int cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
         set(q);
         int n = q.size();
         if (n > 1) {
-            if (__ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 IP nem egyedi").arg(a.toString()));
+            if (__ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, tr("A %1 IP nem egyedi").arg(a.toString()));
         }
         return n;
     }
-    if (__ex) EXCEPTION(EFOUND,0, trUtf8("A %1 IP.").arg(a.toString()));
+    if (__ex) EXCEPTION(EFOUND,0, tr("A %1 IP.").arg(a.toString()));
     return 0;
 }
 
@@ -2669,7 +2661,7 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
         pIf->set(q, &from, pIf->cols());
         pIp->set(q, &from);
         if (q.next()) {
-            if (__ex) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 IP nem egyedi").arg(a.toString()));
+            if (__ex) EXCEPTION(AMBIGUOUS,0, tr("A %1 IP nem egyedi").arg(a.toString()));
             delete pIf;
             delete pIp;
             return false;
@@ -2678,7 +2670,7 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
         ports << pIf;
         return true;
     }
-    if (__ex) EXCEPTION(EFOUND,0, trUtf8("A %1 IP.").arg(a.toString()));
+    if (__ex) EXCEPTION(EFOUND,0, tr("A %1 IP.").arg(a.toString()));
     return false;
 }
 
@@ -2689,7 +2681,7 @@ int cNode::fetchByMac(QSqlQuery& q, const cMac& a, eEx __ex)
     if (execSql(q, sql, a.toString())) {
         int n = q.size();
         set(q);
-        if (n > 1 && __ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 MAC nem egyedi").arg(a.toString()));
+        if (n > 1 && __ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, tr("A %1 MAC nem egyedi").arg(a.toString()));
         return n;
     }
     return 0;
@@ -2721,7 +2713,7 @@ bool cNode::fetchSelf(QSqlQuery& q, eEx __ex)
         setName(lanView::testSelfName);
         if (fetch(q, false, mask(_sNodeName))) return true;
     }
-    if (__ex) EXCEPTION(EFOUND, -1, trUtf8("Self host record"));
+    if (__ex) EXCEPTION(EFOUND, -1, tr("Self host record"));
     return false;
 }
 
@@ -2860,7 +2852,7 @@ QHostAddress cNode::getIpAddress() const
 {
     DBGFN();
     if (ports.isEmpty()) {
-        _DBGFNL() << trUtf8(" A %1 elemnek nincsen portja, így IP címe sem.").arg(getName()) << endl;
+        _DBGFNL() << tr(" A %1 elemnek nincsen portja, így IP címe sem.").arg(getName()) << endl;
         return QHostAddress();
     }
     QHostAddress ra;
@@ -2884,10 +2876,10 @@ QHostAddress cNode::getIpAddress() const
         }
     }
     if (ra.isNull()) {
-        _DBGFNL() << trUtf8(" A %1 elemnek nincsen IP címe.").arg(getName()) << endl;
+        _DBGFNL() << tr(" A %1 elemnek nincsen IP címe.").arg(getName()) << endl;
     }
     else {
-        _DBGFNL() << trUtf8(" A %1 elem IP címe : %2.").arg(getName(), ra.toString()) << endl;
+        _DBGFNL() << tr(" A %1 elem IP címe : %2.").arg(getName(), ra.toString()) << endl;
     }
     return ra;
 }
@@ -2897,7 +2889,7 @@ QList<cMac> cNode::getMacs() const
     DBGFN();
     QList<cMac> r;
     if (ports.isEmpty()) {
-        _DBGFNL() << trUtf8(" A %1 elemnek nincsen portja, így MAC címe sem.").arg(getName()) << endl;
+        _DBGFNL() << tr(" A %1 elemnek nincsen portja, így MAC címe sem.").arg(getName()) << endl;
         return r;
     }
     int ix = cInterface().ixHwAddress();
@@ -2953,17 +2945,17 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 {
     QHostAddress a;
     cMac m;
-    if (ix != NULL_IX && getPort(ix, EX_IGNORE) != nullptr) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
-    if (                 getPort(pn, EX_IGNORE) != nullptr) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
+    if (ix != NULL_IX && getPort(ix, EX_IGNORE) != nullptr) EXCEPTION(EDATA, ix, tr("Nem egyedi port index"));
+    if (                 getPort(pn, EX_IGNORE) != nullptr) EXCEPTION(EDATA, -1, tr("Nem egyedi portnév: %1").arg(pn));
     if (mac != nullptr) {
         if (variantIsInteger(*mac)) {
             int i = ports.indexOf(cPPort::ixPortIndex(), *mac);
-            if (i < 0) EXCEPTION(EDATA, mac->toInt(), trUtf8("Hibás port index hivatkozás"));
+            if (i < 0) EXCEPTION(EDATA, mac->toInt(), tr("Hibás port index hivatkozás"));
             m = ports[i]->getId(_sHwAddress);
         }
         else if (variantIsString(*mac)) {
             QString sm = mac->toString();
-            if (sm != _sARP && !m.set(sm)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhető MAC : %1").arg(sm))
+            if (sm != _sARP && !m.set(sm)) EXCEPTION(EDATA, -1, tr("Nem értelmezhető MAC : %1").arg(sm))
         }
         else EXCEPTION(EDATA);
     }
@@ -2978,10 +2970,10 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
         QString sip  = ip->first;   // cím
         QString type = ip->second;  // típusa
         if (sip == _sARP) {     // A címet az ARP adatbázisból kell előkotorni
-            if (!m) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítéséhez nincs megadva MAC."));
+            if (!m) EXCEPTION(EDATA, -1, tr("Az ip cím felderítéséhez nincs megadva MAC."));
             QList<QHostAddress> al = cArp::mac2ips(q, m);
-            if (al.size() < 1) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítés sikertelen."));
-            if (al.size() > 1) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítés nem egyértelmű."));
+            if (al.size() < 1) EXCEPTION(EDATA, -1, tr("Az ip cím felderítés sikertelen."));
+            if (al.size() > 1) EXCEPTION(EDATA, -1, tr("Az ip cím felderítés nem egyértelmű."));
             a = al.first();
         }
         else if (!sip.isEmpty()) {
@@ -2991,9 +2983,9 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
     }
     if (mac != nullptr) {
         if (mac->toString() == _sARP) {
-            if (!a.isNull()) EXCEPTION(EDATA, -1, trUtf8("Az ip cím hányában a MAC nem felderíthető."));
+            if (!a.isNull()) EXCEPTION(EDATA, -1, tr("Az ip cím hányában a MAC nem felderíthető."));
             m = cArp::ip2mac(q, a);
-            if (!m) EXCEPTION(EDATA, -1, trUtf8("A MAC cím felderítés sikertelen."));
+            if (!m) EXCEPTION(EDATA, -1, tr("A MAC cím felderítés sikertelen."));
         }
         if (!m) EXCEPTION(EPROGFAIL);
         p->set(_sHwAddress, QVariant::fromValue(m));
@@ -3020,7 +3012,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
     if (__sMac != nullptr && !__sMac->isEmpty()) {
         if (*__sMac != _sARP && !ma.set(*__sMac)) {
             _stat |= ES_DEFECTIVE;
-            em = trUtf8("Nem értelmezhető MAC : %1; Node : %2").arg(*__sMac).arg(toString());
+            em = tr("Nem értelmezhető MAC : %1; Node : %2").arg(*__sMac).arg(toString());
             if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
             APPMEMO(q, em, RS_CRITICAL);
@@ -3032,7 +3024,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
         if (ips == _sARP) {     // sőt az ip-t is
             if (!ma) {
                 _stat |= ES_DEFECTIVE;
-                em = trUtf8("A név nem deríthető ki, nincs adat. Node : %1").arg(toString());
+                em = tr("A név nem deríthető ki, nincs adat. Node : %1").arg(toString());
                 if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, ma);
                 DERR() << em << endl;
                 APPMEMO(q, em, RS_CRITICAL);
@@ -3043,11 +3035,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
             if (n != 1) {
                 _stat |= ES_DEFECTIVE;
                 if (n < 1) {
-                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím.  Node : %2").arg(*__sMac).arg(toString());
+                    em = tr("A név nem deríthető ki, a %1 MAC-hez nincs IP cím.  Node : %2").arg(*__sMac).arg(toString());
                     if (__ex != EX_IGNORE) EXCEPTION(EFOUND, n, em);
                 }
                 else{
-                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik. Node : %2").arg(*__sMac).arg(toString());
+                    em = tr("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik. Node : %2").arg(*__sMac).arg(toString());
                     if (__ex != EX_IGNORE) EXCEPTION(AMBIGUOUS,n, em);
                 }
                 DERR() << em << endl;
@@ -3059,7 +3051,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
         else {
             if (!ha.setAddress(ips)) {
                 _stat |= ES_DEFECTIVE;
-                em = trUtf8("Nem értelmezhatő IP cím %1. Node : %2").arg(ips).arg(toString());
+                em = tr("Nem értelmezhatő IP cím %1. Node : %2").arg(ips).arg(toString());
                 if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
                 DERR() << em << endl;
                 APPMEMO(q, em, RS_CRITICAL);
@@ -3067,13 +3059,13 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
             }
             else if (!ma) {  // Nincs MAC, van IP
                 if (__sMac == nullptr) {
-                    em = trUtf8("Hiányzó MAC cím. Node : %1").arg(toString());
+                    em = tr("Hiányzó MAC cím. Node : %1").arg(toString());
                     if (__ex >= EX_WARNING) EXCEPTION(EDATA, -1, em);
                 }
                 else if (*__sMac == _sARP) ma = cArp::ip2mac(q, ha, __ex);
                 if (!ma) {
                     _stat |= ES_DEFECTIVE;
-                    if (em.isEmpty()) em = trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips);
+                    if (em.isEmpty()) em = tr("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips);
                     if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
                     if (__ex >= EX_WARNING) {
                         DERR() << em << endl;
@@ -3098,7 +3090,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
         }
         if (__sMac != nullptr && *__sMac == _sARP) {
             _stat |= ES_DEFECTIVE;
-            em = trUtf8("Ebben a kontexusban a MAC nem kideríthető. Node : %1").arg(toString());
+            em = tr("Ebben a kontexusban a MAC nem kideríthető. Node : %1").arg(toString());
             if (__ex) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
             APPMEMO(q, em, RS_CRITICAL);
@@ -3119,7 +3111,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
     else if (ips == _sARP) {    // Az IP a MAC-ból derítendő ki
         if (!ma) {
             _stat |= ES_DEFECTIVE;
-            em = trUtf8("Az IP csak helyes MAC-ból deríthető ki. Node : %1").arg(toString());
+            em = tr("Az IP csak helyes MAC-ból deríthető ki. Node : %1").arg(toString());
             if (__ex) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
             APPMEMO(q, em, RS_CRITICAL);
@@ -3131,7 +3123,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
         ha.setAddress(ips);
         if (ha.isNull()) {
             _stat |= ES_DEFECTIVE;
-            em = trUtf8("Nem értelmezhető ip cím : %1. Node : %2").arg(ips).arg(toString());
+            em = tr("Nem értelmezhető ip cím : %1. Node : %2").arg(ips).arg(toString());
             if (__ex) EXCEPTION(EIP,-1,em);
             DERR() << em << endl;
             APPMEMO(q, em, RS_CRITICAL);
@@ -3184,7 +3176,7 @@ int cNode::delCollisionByMac(QSqlQuery &__q)
                     n += nn;
                     cNode o;
                     o.set(__q);
-                    QString msg = trUtf8("Delete %1 node for collision MAC : %2").arg(o.toString(), mac.toString());
+                    QString msg = tr("Delete %1 node for collision MAC : %2").arg(o.toString(), mac.toString());
                     PDEB(INFO) << msg << endl;
                     APPMEMO(__q, msg, RS_WARNING);
                 }
@@ -3233,7 +3225,7 @@ int cNode::delCollisionByIp(QSqlQuery& __q)
                     n += nn;
                     cNode o;
                     o.set(__q);
-                    QString msg = trUtf8("Delete %1 node for collision IP : %2").arg(o.toString(), ip.toString());
+                    QString msg = tr("Delete %1 node for collision IP : %2").arg(o.toString(), ip.toString());
                     PDEB(INFO) << msg << endl;
                     APPMEMO(__q, msg, RS_WARNING);
                 }
@@ -3388,7 +3380,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
     QList<QHostAddress> la = fetchAllIpAddress(q);
     QString lastMsg;
     if (la.isEmpty()) {
-        lastMsg = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
+        lastMsg = tr("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, lastMsg);
         DERR() << lastMsg << endl;
         if (pEMsg != nullptr) *pEMsg = lastMsg;
@@ -3403,7 +3395,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
         static const QString o = "SNMPv2-MIB::sysDescr";
         r = snmp.getNext(o);
         if (r == 0) break;  // O.K.
-        lastMsg = trUtf8("Error snmp.getNext(%1) #%2 (%3); address: %4, node: %5")
+        lastMsg = tr("Error snmp.getNext(%1) #%2 (%3); address: %4, node: %5")
                 .arg(o).arg(r).arg(snmp.emsg, a.toString(), identifying(false));
         DWAR() << lastMsg << endl;
     }
@@ -3425,7 +3417,7 @@ cSnmpDevice * cSnmpDevice::refresh(QSqlQuery& q, const QString& _name, eEx __ex,
     if (!p->fetchByName(q, _name)) {
         delete p;
         if (__ex != EX_IGNORE) EXCEPTION(ENONAME, 0, _name);
-        if (pEMsg != nullptr) msgCat(*pEMsg, trUtf8("%1 SNMP device not found").arg(_name), _sNl);
+        if (pEMsg != nullptr) msgCat(*pEMsg, tr("%1 SNMP device not found").arg(_name), _sNl);
         return nullptr;
     }
     cSnmpDevice *r = p->refresh(q);
@@ -3439,7 +3431,7 @@ cSnmpDevice * cSnmpDevice::refresh(QSqlQuery& q, qlonglong _id, eEx __ex, QStrin
     if (!p->fetchById(q, _id)) {
         delete p;
         if (__ex != EX_IGNORE) EXCEPTION(EOID, _id);
-        if (pEMsg != nullptr) msgCat(*pEMsg, trUtf8("SNMP device ID %1 not found").arg(_id), _sNl);
+        if (pEMsg != nullptr) msgCat(*pEMsg, tr("SNMP device ID %1 not found").arg(_id), _sNl);
         return nullptr;
     }
     cSnmpDevice *r = p->refresh(q);
@@ -3572,7 +3564,7 @@ const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name, eEx __ex
     it[_sTemplateType] = type;
     it[_sTemplateName] = __name;
     if (it.completion(__q) < 1) {
-        if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("%1 template name %2 not found.")).arg(type, __name));
+        if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::tr("%1 template name %2 not found.")).arg(type, __name));
         return _sNul;
     }
     i = insert(__name, it.getName(_sTemplateText));

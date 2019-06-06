@@ -473,7 +473,7 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sLeftShapeId, mod.getId());
         else {
-            DWAR() << QObject::trUtf8("A tag %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
+            DWAR() << QObject::tr("A tag %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
             r = false;
         }
         mod.clear();
@@ -481,7 +481,7 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sRightShapeId, mod.getId());
         else {
-            DWAR() << QObject::trUtf8("A csoport %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
+            DWAR() << QObject::tr("A csoport %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
             r = false;
         }
     }*/
@@ -728,12 +728,12 @@ void cTableShape::addRightShape(QStringList& _snl)
 
 QString cTableShape::emFildsIsEmpty()
 {
-    return trUtf8("A shape Fields konténer üres.");
+    return tr("A shape Fields konténer üres.");
 }
 
 QString cTableShape::emFieldNotFound(const QString& __f)
 {
-    return trUtf8("A %1 nevű shape objektumban nincs %2 nevű mező objektum").arg(getName(), __f);
+    return tr("A %1 nevű shape objektumban nincs %2 nevű mező objektum").arg(getName(), __f);
 }
 
 const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex)
@@ -888,7 +888,7 @@ QString cTableShapeField::view(QSqlQuery &q, const cRecord& o, qlonglong fix) co
     if (fix < 0) {              // Table field name not found
         if (lastThis != this) { // Error message cache
             lastThis = this;
-            lastMsg  = trUtf8("Invalid field name : %1, in %2:%3")
+            lastMsg  = tr("Invalid field name : %1, in %2:%3")
                     .arg(getName(_ixTableFieldName), cTableShape().getNameById(q, getId(_sTableShapeId), EX_IGNORE), getName());
         }
         return lastMsg;
@@ -971,7 +971,7 @@ int cEnumVal::replace(QSqlQuery &__q, eEx __ex)
     case 0: isExist = false;  break;
     case 1: isExist = true;   break;
     default:
-        EXCEPTION(EDATA, count, QObject::trUtf8("Database data error multiple enum record: %1::%2")
+        EXCEPTION(EDATA, count, QObject::tr("Database data error multiple enum record: %1::%2")
                   .arg(quotedString(getName(_ixEnumValName)), getName(_ixEnumTypeName)) );
     }
     if (isExist) {
@@ -1014,14 +1014,14 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 int cEnumVal::toInt(eEx __ex) const
 {
     if (isNull(_ixEnumTypeName)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, trUtf8("Type name is NULL"));
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Type name is NULL"));
         return ENUM_INVALID;
     }
     QSqlQuery q = getQuery();
     const cColEnumType *t = cColEnumType::fetchOrGet(q, getName(_ixEnumTypeName), __ex);
     if (t == nullptr) return ENUM_INVALID;
     if (isNull(_ixEnumValName)) {
-        if (__ex > EX_ERROR) EXCEPTION(EDATA, 0, trUtf8("Object is type descriptor"));
+        if (__ex > EX_ERROR) EXCEPTION(EDATA, 0, tr("Object is type descriptor"));
         return ENUM_INVALID;
     }
     return (int)t->str2enum(getName(_ixEnumValName));
@@ -1125,7 +1125,7 @@ void cEnumVal::fetchEnumVals()
             isBool = (pE == nullptr);
             if (isBool) {   // Is not ENUM!
                 if (1 != typeName.contains(QChar('.'))) {   // Name convention control, bool?
-                    APPMEMO(q2, trUtf8("Invalid 'enum_vals' objet : ") + ev.toString(), RS_WARNING);
+                    APPMEMO(q2, tr("Invalid 'enum_vals' objet : ") + ev.toString(), RS_WARNING);
                     currentTypeName.clear();
                     continue;
                 }
@@ -1153,7 +1153,7 @@ void cEnumVal::fetchEnumVals()
             }
         }
         if (e == NULL_IX || !isContIx(*pActV, (e +1))) {
-            QString em = trUtf8("Wrong 'enum_vals' objekt : %1 . Delete record.") + ev.toString();
+            QString em = tr("Wrong 'enum_vals' objekt : %1 . Delete record.") + ev.toString();
             APPMEMO(q2, em, RS_WARNING);
             ev.remove(q2);
             continue;   // Drop
@@ -1186,7 +1186,7 @@ void cEnumVal::fetchEnumVals()
     }
     if (n < found) EXCEPTION(EPROGFAIL);    // Too many results. Impossible.
     if (n > found) {
-        QString em = trUtf8("Not found enum_values record(s) : \n");
+        QString em = tr("Not found enum_values record(s) : \n");
         foreach (cEnumVal *p, oldList) {
             em += p->identifying() + '\n';
             delete p;
@@ -1299,7 +1299,7 @@ int cMenuItem::delByAppName(QSqlQuery &q, const QString &__n, bool __pat) const
     sql += tableName() + " WHERE " + dQuoted(_sAppName) + (__pat ? " LIKE " : " = ") + quoted(__n);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     int n = q.numRowsAffected();
-    PDEB(VVERBOSE) << QObject::trUtf8("delByAppName SQL : \"%1\" removed %2 records.").arg(sql).arg(n) << endl;
+    PDEB(VVERBOSE) << QObject::tr("delByAppName SQL : \"%1\" removed %2 records.").arg(sql).arg(n) << endl;
     return  n;
 }
 

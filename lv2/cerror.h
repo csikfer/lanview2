@@ -32,6 +32,7 @@ Hibakezelést segítő objektumok, függvények és makrók.
 */
 
 #define DEFAULT_BACKTRACE_SIZE 16
+class cDebug;
 
 class LV2SHARED_EXPORT cBackTrace : public QStringList {
 public:
@@ -208,8 +209,8 @@ Az adattagok inicializálása után hívja a circulation() metódust
     cError &nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName);
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
-    QString shortMsg() { return QObject::trUtf8(" Hiba kód : #%1 / %2").arg(mErrorCode).arg(errorMsg()); }
-    QString longMsg() { return QObject::trUtf8("\n Részletes hibaüzenet:\n%1\n").arg(msg()); }
+    QString shortMsg() { return QObject::tr(" Hiba kód : #%1 / %2").arg(mErrorCode).arg(errorMsg()); }
+    QString longMsg() { return QObject::tr("\n Részletes hibaüzenet:\n%1\n").arg(msg()); }
     /*!
       Minden konstruktor a cError inicializálása után hívja ezt a metódust.
       A metódus feladata, hogy detektálja a töbszörös hibákat, és kivédje ebben az esetben ciklikus hibakezelésből
@@ -247,10 +248,10 @@ Az adattagok inicializálása után hívja a circulation() metódust
     int     mErrorCode;             ///< Error code
     qlonglong     mErrorSubCode;          ///< Error sub code
     int     mErrorSysCode;          ///< Sytem error code (errno)
+    int     mSqlErrType;            ///< SQL hiba esetén a hiba típusa
     QString mErrorSubMsg;           ///< Error sub message
     QString mThreadName;            ///< Thread name if available
-    int     mSqlErrNum;
-    int     mSqlErrType;            ///< SQL hiba esetén a hiba típusa
+    QString mSqlErrCode;
     QString mSqlErrDrText;          ///< SQL hiba esetén a driver hiba szöveg
     QString mSqlErrDbText;          ///< SQL hiba esetén a adatbázis hiba szöveg
     QString mSqlQuery;              ///< SQL hiba esetén a query string
@@ -292,11 +293,11 @@ static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li,
 {
     if (ONDB(DERROR)) {
         cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " ...\n";
-        cDebug::cout() << QObject::trUtf8("SQL ERROR #")     << le.number()
-                       << QObject::trUtf8("; type:") << SqlErrorTypeToString(le.type()) << "\n";
-        cDebug::cout() << QObject::trUtf8("driverText   : ") << le.driverText() << "\n";
-        cDebug::cout() << QObject::trUtf8("databaseText : ") << le.databaseText();
-        if (s.size() > 0) cDebug::cout() << QObject::trUtf8("SQL string   : ") << s << "\n";
+        cDebug::cout() << QObject::tr("SQL ERROR ")     << le.nativeErrorCode()
+                       << QObject::tr("; type:") << SqlErrorTypeToString(le.type()) << "\n";
+        cDebug::cout() << QObject::tr("driverText   : ") << le.driverText() << "\n";
+        cDebug::cout() << QObject::tr("databaseText : ") << le.databaseText();
+        if (s.size() > 0) cDebug::cout() << QObject::tr("SQL string   : ") << s << "\n";
         cDebug::cout() << flush;
     }
 }
@@ -305,15 +306,15 @@ static inline void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const
 {
     if (ONDB(DERROR)) {
         cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " " << s << "\n";
-        cDebug::cout() << QObject::trUtf8("SQL string : ") << q.lastQuery() << "\n";
-        cDebug::cout() << QObject::trUtf8("SQL bounds : ") << _sql_err_bound(q);
+        cDebug::cout() << QObject::tr("SQL string : ") << q.lastQuery() << "\n";
+        cDebug::cout() << QObject::tr("SQL bounds : ") << _sql_err_bound(q);
         cDebug::cout() << flush;
     }
 }
 
 static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
 {
-    pe->mSqlErrNum    = le.number();
+    pe->mSqlErrCode    = le.nativeErrorCode();
     pe->mSqlErrType   = le.type();
     pe->mSqlErrDrText = le.driverText();
     pe->mSqlErrDbText = le.databaseText();

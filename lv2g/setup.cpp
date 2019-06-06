@@ -106,18 +106,18 @@ void cSetupWidget::applicate()
         QString err;
         switch (st) {
             case QSettings::AccessError:
-                err = trUtf8("An access error occurred (e.g. trying to write to a read-only file).");
+                err = tr("An access error occurred (e.g. trying to write to a read-only file).");
                 break;
             case QSettings::FormatError:
-                err = trUtf8("A format error occurred (e.g. loading a malformed INI file).");
+                err = tr("A format error occurred (e.g. loading a malformed INI file).");
                 break;
             default:
-                err = trUtf8("Invalid QSettings status : ") + QString::number((int)st);
+                err = tr("Invalid QSettings status : ") + QString::number((int)st);
                 break;
         }
         QMessageBox::warning(this, dcViewShort(DC_ERROR), err);
     }
-    else QMessageBox::information(this, dcViewShort(DC_INFO), trUtf8("New settings accepted."));
+    else QMessageBox::information(this, dcViewShort(DC_INFO), tr("New settings accepted."));
     DBGFNL();
 }
 
@@ -193,7 +193,7 @@ void cSetupWidget::setLogLevel(void)
 void cSetupWidget::mibPathPlus()
 {
     DBGFN();
-    QString dir = QFileDialog::getExistingDirectory(this, trUtf8("Adja meg a MIB fájlok könyvtárát!"));
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Adja meg a MIB fájlok könyvtárát!"));
     if (dir.isEmpty() == false) {
         QList<QListWidgetItem *> l = pUi->MibPathLS->findItems(dir, Qt::MatchFixedString);
         if (l.count() == 0) {
@@ -225,7 +225,7 @@ void cSetupWidget::mibPathMinus()
 void cSetupWidget::homeSelect()
 {
     PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << ": == " << pUi->homeDirLE->text() << endl;
-    pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, trUtf8("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
+    pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, tr("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
     PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << ": == " << pUi->homeDirLE->text() << endl;
 }
 
@@ -338,7 +338,7 @@ void cSetupWidget::checkSqlLogin()
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     QSqlDatabase *pDb = SqlOpen();
     if (pDb == nullptr) return;
-    QMessageBox::information(this, dcViewShort(DC_INFO), trUtf8("Database open is successful."));
+    QMessageBox::information(this, dcViewShort(DC_INFO), tr("Database open is successful."));
     pDb->close();
     delete pDb;
 }

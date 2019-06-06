@@ -47,11 +47,11 @@ lv2UpdateOui::lv2UpdateOui()
                     "SELECT param_value FROM sys_params JOIN param_types USING(param_type_id)"
                     " WHERE param_type_name = 'text' AND sys_param_name LIKE 'oui_list_url%'";
             if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
-            if (!pq->first()) EXCEPTION(EFOUND, -1, trUtf8("Nincs megadva eggyetlen OUI forrás lista URL."));
+            if (!pq->first()) EXCEPTION(EFOUND, -1, tr("Nincs megadva eggyetlen OUI forrás lista URL."));
             do {
                 QString sUrl = pq->value(0).toString();
                 QUrl url(sUrl);
-                if (!url.isValid()) EXCEPTION(EDATA, -1, trUtf8("Hibás URL név megadása : %1").arg(sUrl));
+                if (!url.isValid()) EXCEPTION(EDATA, -1, tr("Hibás URL név megadása : %1").arg(sUrl));
                 urlQueue.push_front(url);
             } while (pq->next());
 
@@ -144,7 +144,7 @@ void Downloader::replyFinished (QNetworkReply *reply)
 {
     if(reply->error())
     {
-        QString msg = trUtf8("A '%1' letöltése sikertelen. %2").arg(url.toString()).arg(reply->errorString());
+        QString msg = tr("A '%1' letöltése sikertelen. %2").arg(url.toString()).arg(reply->errorString());
         cDbErr::insertNew(*pq, cDbErrType::_sDataWarn, msg, -1, cOui().descr().tableName(), QString(__PRETTY_FUNCTION__));
         APPMEMO(*pq, msg, RS_WARNING);
         DWAR() << msg << endl;

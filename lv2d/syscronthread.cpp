@@ -58,11 +58,11 @@ void cSysInspector::dbCron()
     } CATCHS(pe);
     if (pe != nullptr) {
         state = RS_CRITICAL;
-        statMsg += trUtf8("ERROR in dbCron() : ") + pe->msg();
+        statMsg += tr("ERROR in dbCron() : ") + pe->msg();
         delete pe;
     }
     else {
-        statMsg += trUtf8("dbCron() OK.");
+        statMsg += tr("dbCron() OK.");
     }
 }
 
@@ -116,7 +116,7 @@ void cSysInspector::mailCron()
             bool ok;
             port = sl.at(1).toInt(&ok);
             if (!ok || sl.size() != 2) {
-                APPMEMO(q, trUtf8("Invalid parameter format MailServer = %1").arg(mailServer), RS_CRITICAL);
+                APPMEMO(q, tr("Invalid parameter format MailServer = %1").arg(mailServer), RS_CRITICAL);
                 return;
             }
             mailServer = sl.first();
@@ -131,7 +131,7 @@ void cSysInspector::mailCron()
             cUser u; u.setById(q, uid);
             QStringList addresses = u.getStringList(_sAddresses);
             if (addresses.isEmpty()) {
-                cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, trUtf8("Not specified address"));
+                cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, tr("Not specified address"));
                 r = false;
             }
             else {
@@ -153,7 +153,7 @@ void cSysInspector::mailCron()
                     if (res) rr = cUserEvent::happened(q, uid, aid, UE_SENDMAIL, msg);
                     else     rr = cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, msg);
                     if (!rr) {
-                        statMsg += trUtf8("Unable to modify user event (%1 / alarm #%2) state to %3.\n")
+                        statMsg += tr("Unable to modify user event (%1 / alarm #%2) state to %3.\n")
                                 .arg(cUser().getNameById(q, uid))
                                 .arg(aid)
                                 .arg(userEventState(res ? UE_HAPPENED : UE_DROPPED));
@@ -166,7 +166,7 @@ void cSysInspector::mailCron()
     } CATCHS(pe);
     if (pe != nullptr) {
         state = RS_CRITICAL;
-        statMsg += trUtf8("ERROR in dbCron() send mail : ") + pe->msg();
+        statMsg += tr("ERROR in dbCron() send mail : ") + pe->msg();
         delete pe;
     }
 }

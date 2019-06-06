@@ -32,12 +32,12 @@ void QTelnet::init()
 bool QTelnet::open(QHostAddress &host, int to, eEx __ex)
 {
     if (host.isNull()) {
-        QString emsg = trUtf8("Invalid host address.");
+        QString emsg = tr("Invalid host address.");
         if (__ex) EXCEPTION(EDATA, -1, emsg);
         DERR() << emsg << endl;
         return false;
     }
-    PDEB(VERBOSE) << trUtf8("Telnet connecting to %1,..").arg(host.toString()) << endl;
+    PDEB(VERBOSE) << tr("Telnet connecting to %1,..").arg(host.toString()) << endl;
     socket->connectToHost(host, port);
     if (to <= 0) return true;
     return waitForConnected(to, __ex);

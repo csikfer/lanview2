@@ -245,7 +245,7 @@ QVariant cPolygonTableModel::headerData(int section, Qt::Orientation orientation
 {
     if (role == Qt::DisplayRole) switch (orientation) {
     case Qt::Vertical:      return _rowNumbers ? QVariant(section + 1) : QVariant();
-    case Qt::Horizontal:    return _viewHeader ? QVariant(section ? trUtf8("Y") : trUtf8("X")) : QVariant();
+    case Qt::Horizontal:    return _viewHeader ? QVariant(section ? tr("Y") : tr("X")) : QVariant();
     }
     return QVariant();
 }
@@ -574,7 +574,7 @@ void cRecordListModel::setPatternSlot(const QVariant &__pat)
 
 cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
 {
-    if (*pDescr != *_o.pDescr) EXCEPTION(EDATA, 0, trUtf8("Copy model type: %1 to %2").arg(pDescr->tableName(), _o.pDescr->tableName()));
+    if (*pDescr != *_o.pDescr) EXCEPTION(EDATA, 0, tr("Copy model type: %1 to %2").arg(pDescr->tableName(), _o.pDescr->tableName()));
     nullable    = _o.nullable;
     nullIdIsAll = _o.nullIdIsAll;
     only        = _o.only;

@@ -61,17 +61,17 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
     bool isConvert = pHost != nullptr && pDev != pHost;
     if (isConvert) {
         if (!convertToSnmp || isInsert) EXCEPTION(EPROGFAIL);
-        msg = trUtf8("Nem SNMP eszköz konvertálása SNMP eszközzé.\n");
+        msg = tr("Nem SNMP eszköz konvertálása SNMP eszközzé.\n");
     }
     if (isInsert) {
-        msg = trUtf8("A %1 nevű eszköz beillesztése az adatbázisba.").arg(name);
+        msg = tr("A %1 nevű eszköz beillesztése az adatbázisba.").arg(name);
         pDev->setName(name);
     }
     else if (name == pDev->getName()) {
-        msg += trUtf8("A %1 nevű eszköz frissítése az adatbázisban.").arg(name);
+        msg += tr("A %1 nevű eszköz frissítése az adatbázisban.").arg(name);
     }
     else {
-        msg += trUtf8("A %1 nevű eszköz frissítése az adatbázisban, új név %2.").arg(pDev->getName(), name);
+        msg += tr("A %1 nevű eszköz frissítése az adatbázisban, új név %2.").arg(pDev->getName(), name);
         pDev->setName(name);
     }
 
@@ -125,12 +125,12 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
     pDev->setId(_sNodeType, type);
     cExportQueue::init(false);
-    ui->textEdit->setHtml(htmlWarning(trUtf8("Lekérdezés indítása, kérem várjon!")));
+    ui->textEdit->setHtml(htmlWarning(tr("Lekérdezés indítása, kérem várjon!")));
     QString msg;
     try {
         ui->pushButtonQuery->setDisabled(true);
         if (a.isNull()) {
-            ui->textEdit->setHtml(htmlError(trUtf8("Nincs IP cím!")));
+            ui->textEdit->setHtml(htmlError(tr("Nincs IP cím!")));
             return;
         }
         f = pDev->setBySnmp(comm, EX_ERROR, &msg, &a);

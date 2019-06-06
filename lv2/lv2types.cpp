@@ -21,17 +21,17 @@ QString tristate2string(int e, eEx __ex)
 }
 
 /************************ enum converters ************************/
-QString sInvalidEnum() { return QObject::trUtf8("Invalid"); }
+QString sInvalidEnum() { return QObject::tr("Invalid"); }
 
 QString ProcessError2String(QProcess::ProcessError __e)
 {
     switch (__e) {
-        case QProcess::FailedToStart:   return QObject::trUtf8("FailedToStart");
-        case QProcess::Crashed:         return QObject::trUtf8("Crashed");
-        case QProcess::Timedout:        return QObject::trUtf8("Timedout");
-        case QProcess::WriteError:      return QObject::trUtf8("WriteError");
-        case QProcess::ReadError:       return QObject::trUtf8("ReadError");
-        case QProcess::UnknownError:    return QObject::trUtf8("UnknownError");
+        case QProcess::FailedToStart:   return QObject::tr("FailedToStart");
+        case QProcess::Crashed:         return QObject::tr("Crashed");
+        case QProcess::Timedout:        return QObject::tr("Timedout");
+        case QProcess::WriteError:      return QObject::tr("WriteError");
+        case QProcess::ReadError:       return QObject::tr("ReadError");
+        case QProcess::UnknownError:    return QObject::tr("UnknownError");
     }
     QString s = QString("QProcess::ProcessError %1 : %2").arg(sInvalidEnum()).arg(int(__e));
     DERR() << s << endl;
@@ -41,17 +41,17 @@ QString ProcessError2Message(QProcess::ProcessError __e)
 {
     switch (__e) {
         case QProcess::FailedToStart:
-            return QObject::trUtf8("The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.");
+            return QObject::tr("The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.");
         case QProcess::Crashed:
-            return QObject::trUtf8("The process crashed some time after starting successfully.");
+            return QObject::tr("The process crashed some time after starting successfully.");
         case QProcess::Timedout:
-            return QObject::trUtf8("The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.");
+            return QObject::tr("The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again.");
         case QProcess::WriteError:
-            return QObject::trUtf8("An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.");
+            return QObject::tr("An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel.");
         case QProcess::ReadError:
-            return QObject::trUtf8("An error occurred when attempting to read from the process. For example, the process may not be running.");
+            return QObject::tr("An error occurred when attempting to read from the process. For example, the process may not be running.");
         case QProcess::UnknownError:
-            return QObject::trUtf8("An unknown error occurred. This is the default return value of error().");
+            return QObject::tr("An unknown error occurred. This is the default return value of error().");
     }
     QString s = QString("QProcess::ProcessError %1 : %2").arg(sInvalidEnum()).arg(int(__e));
     DERR() << s << endl;
@@ -62,9 +62,9 @@ QString ProcessState2String(QProcess::ProcessState __e)
 {
     QString s;
     switch (__e){
-        case QProcess::NotRunning:  return QObject::trUtf8("NotRunning");
-        case QProcess::Starting:    return QObject::trUtf8("Starting");
-        case QProcess::Running:     return QObject::trUtf8("Running");
+        case QProcess::NotRunning:  return QObject::tr("NotRunning");
+        case QProcess::Starting:    return QObject::tr("Starting");
+        case QProcess::Running:     return QObject::tr("Running");
     }
     s = QString("QProcess::ProcessState %1 : %2").arg(sInvalidEnum()).arg(int(__e));
     DERR() << s << endl;
@@ -982,7 +982,7 @@ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c)
         l = _l;
         if (!_c.isEmpty()) {
             if (_c.size() == 2) c = _c;
-            else EXCEPTION(ESETTING, 0, QObject::trUtf8("Invalid country : %1, (languagr : %2)").arg(_c, _l));
+            else EXCEPTION(ESETTING, 0, QObject::tr("Invalid country : %1, (languagr : %2)").arg(_c, _l));
         }
     }
     else if (_l.size() == 5 && _c.isNull()) {
@@ -992,7 +992,7 @@ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c)
             c = sl.at(1);
         }
     }
-    if (l.isNull()) EXCEPTION(ESETTING, 0, QObject::trUtf8("Invalid language : %1, (country : %2)").arg(_l, _c));
+    if (l.isNull()) EXCEPTION(ESETTING, 0, QObject::tr("Invalid language : %1, (country : %2)").arg(_l, _c));
     qlonglong r = execSqlIntFunction(q, nullptr, "set_language", l, c);
     return int(r);
 }

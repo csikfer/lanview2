@@ -26,7 +26,7 @@ int main (int argc, char * argv[])
     }
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
-    PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
+    PDEB(INFO) << QObject::tr("Event loop is exited.") << endl;
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 

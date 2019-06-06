@@ -551,8 +551,8 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     sequence_number = int(field.shapeField.getId(_sOrdInitSequenceNumber));
     pRowName= new QLineEdit(&par);
     pType   = new QComboBox(&par);
-    pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
-    pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->trUtf8("Le"), &par);
+    pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->tr("Fel"), &par);
+    pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->tr("Le"), &par);
     pRowName->setText(field.shapeField.colName());
     pRowName->setReadOnly(true);
     types |= enum2set(OT_NO);   // Ha esetleg a nincs rendezés nem lenne benne a set-ben
@@ -589,7 +589,7 @@ QString cRecordTableOrd::ord()
         r = colName + r;
     }
     else {
-        if (colDescr.fnToName.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Az ID->név konverziós függvény nincs definiálva."));
+        if (colDescr.fnToName.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Az ID->név konverziós függvény nincs definiálva."));
         r = colDescr.fnToName + QChar('(') + colDescr.colNameQ() + QChar(')') + r;
     }
     return r;
@@ -715,10 +715,10 @@ QString cRecordTableHideRow::colTitle(int i)
 {
     QString s;
     switch (i) {
-    case HRC_NAME:      s = trUtf8("Mező név");     break;
-    case HRC_TITLE:     s = trUtf8("Oszlop név");   break;
-    case HRC_HIDE_TAB:  s = trUtf8("Táblában");     break;
-    case HRC_HIDE_TEXT: s = trUtf8("Exportban");    break;
+    case HRC_NAME:      s = tr("Mező név");     break;
+    case HRC_TITLE:     s = tr("Oszlop név");   break;
+    case HRC_HIDE_TAB:  s = tr("Táblában");     break;
+    case HRC_HIDE_TEXT: s = tr("Exportban");    break;
     default:            EXCEPTION(EPROGFAIL);
     }
     return s;
@@ -785,7 +785,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
             cols    << tsf.colName();
 //        }
     }
-    PDEB(VERBOSE) << trUtf8("Shape : %1 ; filtered fields : %2")
+    PDEB(VERBOSE) << tr("Shape : %1 ; filtered fields : %2")
                      .arg(recordView.tableShape().getName(), cols.join(_sCommaSp))
                   << endl;
     pForm->comboBoxCol->addItems(cols);
@@ -801,7 +801,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     connect(pForm->comboBoxFilt,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
     filtCol(filters.isEmpty() ? -1 : 0);
     pForm->pushButton_Default->setDisabled(true);   // Nincs implementálva !
-    pForm->tabWidget->addTab(new cRecordTableHideRows(this), trUtf8("Oszlopok láthatósága"));
+    pForm->tabWidget->addTab(new cRecordTableHideRows(this), tr("Oszlopok láthatósága"));
 }
 
 cRecordTableFODialog::~cRecordTableFODialog()
@@ -1025,8 +1025,8 @@ void cRecordTableFODialog::setGridLayoutOrder()
 QComboBox * cRecordTableFODialog::comboBoxAnyAll()
 {
     QComboBox *p = new QComboBox(this);
-    p->addItem(trUtf8("A tömb legalább egy elemére"));
-    p->addItem(trUtf8("A tömb összes elemére"));
+    p->addItem(tr("A tömb legalább egy elemére"));
+    p->addItem(tr("A tömb összes elemére"));
     connect(p, SIGNAL(currentIndexChanged(int)), &filter(), SLOT(changedAnyAll(int)));
     return p;
 }
@@ -1045,7 +1045,7 @@ void cRecordTableFODialog::setFilterDialog()
         }
     }
     if (sCheckInverse.isEmpty()) {
-        sCheckInverse = QObject::trUtf8("Fordított logika");
+        sCheckInverse = QObject::tr("Fordított logika");
     }
     pTextEdit = nullptr;   // Long text (param1)
     pLineEdit1 = nullptr;  // Filter param1
@@ -1080,7 +1080,7 @@ void cRecordTableFODialog::setFilterDialog()
         setFilterDialogComp(fType, dType);
         break;
     case FT_SQL_WHERE:
-        pLabel    = new QLabel(trUtf8("SQL kifejezés :"));
+        pLabel    = new QLabel(tr("SQL kifejezés :"));
         pTextEdit  = new QPlainTextEdit(filter().param1.toString());
         pGrid->addWidget(pLabel,    0, 0);
         pGrid->addWidget(pTextEdit, 0, 1);
@@ -1101,8 +1101,8 @@ void cRecordTableFODialog::setFilterDialog()
 
 void cRecordTableFODialog::setFilterDialogPattern(int fType, int dType)
 {
-    static const QString sLabelPattern = trUtf8("Minta :");
-    static const QString sCheckCaseSen = trUtf8("Nagybetű érzékeny");
+    static const QString sLabelPattern = tr("Minta :");
+    static const QString sCheckCaseSen = tr("Nagybetű érzékeny");
     int row = 0;
     QLabel *   pLabel      = new QLabel(sLabelPattern);
     QLineEdit *pLineEditP1 = new QLineEdit(filter().param1.toString());
@@ -1129,11 +1129,11 @@ void cRecordTableFODialog::setFilterDialogPattern(int fType, int dType)
 
 void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
 {
-    static const QString sLabelEq = trUtf8("Ezzel egyenlő :");
-    static const QString sLabelLi = trUtf8("Ennél kisebb :");
-    static const QString sLabelGt = trUtf8("Ennél nagyobb :");
-    static const QString sCheckEq = trUtf8("vagy egyenlő");
-    static const QString sLabelTy = trUtf8("Típus mint :");
+    static const QString sLabelEq = tr("Ezzel egyenlő :");
+    static const QString sLabelLi = tr("Ennél kisebb :");
+    static const QString sLabelGt = tr("Ennél nagyobb :");
+    static const QString sCheckEq = tr("vagy egyenlő");
+    static const QString sLabelTy = tr("Típus mint :");
     int row = 0;
     QLabel *   pLabel1     = nullptr;
     QLabel *   pLabel2     = nullptr;
@@ -1597,7 +1597,7 @@ void cRecordsViewBase::insert(bool _similar)
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
                         if (!ok) {
-                            cMsgBox::warning(trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"), pWidget());
+                            cMsgBox::warning(tr("A kijelölt tag felvétele az új csoportba sikertelen"), pWidget());
                             refresh();
                             break;
                         }
@@ -1608,7 +1608,7 @@ void cRecordsViewBase::insert(bool _similar)
                     continue;               // Ha Insert-et, akkor folytathatja a következővel
                 }
                 else {
-                    //QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    //QMessageBox::warning(pWidget(), tr("Az új rekord beszúrása sikertelen."), rd.errMsg());
                     continue;
                 }
             }
@@ -1643,7 +1643,7 @@ void cRecordsViewBase::insert(bool _similar)
                     continue;               // Ha Insert-et, akkor folytathatja a következővel
                 }
                 else {
-                    // QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    // QMessageBox::warning(pWidget(), tr("Az új rekord beszúrása sikertelen."), rd.errMsg());
                     continue;
                 }
             }
@@ -1944,7 +1944,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq))
         EXCEPTION(EDATA, pTableShape->getId(),
-                  trUtf8("A %1 nevű táblában nincs egyetlen oszlop sem.").arg(pTableShape->getName()));
+                  tr("A %1 nevű táblában nincs egyetlen oszlop sem.").arg(pTableShape->getName()));
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
@@ -1957,7 +1957,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
 
     if (shapeType & ENUM2SET(TS_DIALOG))
-        EXCEPTION(EDATA, 0, trUtf8("Táblázatos megjelenítés az arra alkalmatlan %1 nevű leíróval.").arg(pts->getName()));
+        EXCEPTION(EDATA, 0, tr("Táblázatos megjelenítés az arra alkalmatlan %1 nevű leíróval.").arg(pts->getName()));
 
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
@@ -1970,7 +1970,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
             fields << p;
         }
         else {
-            cErrorMessageBox::messageBox(pe, pWidget(), trUtf8("Column is ignored."));
+            cErrorMessageBox::messageBox(pe, pWidget(), tr("Column is ignored."));
             delete pe;
         }
     }
@@ -2028,7 +2028,7 @@ int cRecordsViewBase::ixToForeignKey()
         r = recDescr().ixToOwner(pUpper->recDescr().tableName(), EX_IGNORE);
         if (r < 0) {
             QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
-            QString msg = trUtf8(
+            QString msg = tr(
                     "A %1 al tábla nézetben (%2 tábla)\n a tulajdonos objektum táblára "
                     "(nézet : %3, tábla %4) mutató ID mező neve (idegen kilcs) nem állpítható meg. "
                     "A tábla nézetben a %5 feature változóban kell megadni a mező nevét, "
@@ -2044,7 +2044,7 @@ int cRecordsViewBase::ixToForeignKey()
         if (r < 0) {
             QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
             QString val = pTableShape->feature(key);
-            QString msg = trUtf8(
+            QString msg = tr(
                     "A %1 al tábla nézetben (%2 tábla) a %3 feature változó értéke %4. "
                     "Nincs ilyen nevű mező! A változónak a tulajdonos táblára "
                     "(nézet : %5, tábla %6) mutató mező nevét (idegen kulcs) kellene deifiniálnia.")
@@ -2136,7 +2136,7 @@ void cRecordsViewBase::initMaster()
     pMasterSplitter->addWidget(pLeftWidget);
 
     vlids = pTableShape->get(_sRightShapeIds).toList(); // Jobb oldali (child) lista (ID)
-    if (vlids.isEmpty()) EXCEPTION(EDATA, 0, trUtf8("A jobboldali táblákat azonosító tömb üres."));
+    if (vlids.isEmpty()) EXCEPTION(EDATA, 0, tr("A jobboldali táblákat azonosító tömb üres."));
     pRightTables = new tRecordsViewBaseList;    // A jobb oldali elemek listája (objektum)
     if ((flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
         createRightTab();                       // Ez eleve két tábla a jobb oldalon, tab widget kell.
@@ -2237,7 +2237,7 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
         QStringList rl = splitBy(refine);
         r << rl.at(0);
         if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
-            EXCEPTION(EDATA, -1, trUtf8("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));
+            EXCEPTION(EDATA, -1, tr("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));
         for (int i = 1; i < rl.size(); ++i) {  // Paraméter helyettesítések...
             QString n = rl.at(i);
             if      (0 == n.compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
@@ -2245,7 +2245,7 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
             else if (0 == n.compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
             else if (0 == n.compare(_sPlaceId,        Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId(_sPlaceId));
             else if (0 == n.compare(_sNodeId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::getInstance()->selfNode().getId());
-            else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(n));
+            else EXCEPTION(EDATA, i, tr("Ismeretlen változónév a refine mezőben %1").arg(n));
         }
     }
     return r;
@@ -2366,7 +2366,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
                         ar->set(fix, v);
                     }
                     else  {
-                        QString msg = trUtf8(
+                        QString msg = tr(
                                     "A kijelöltölt soron nincs értelmezve a modosítás : \n"
                                     "%1\n"
                                     "A sor kijelölése figyelmen kívül lesz hagyva."
@@ -2579,7 +2579,7 @@ void cRecordTable::init()
         break;
     default:
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
-                  trUtf8("TABLE %1 SHAPE %2 TYPE : %3")
+                  tr("TABLE %1 SHAPE %2 TYPE : %3")
                   .arg(pTableShape->getName(),
                        pTableShape->getName(_sTableName),
                        pTableShape->getName(_sTableShapeType))
@@ -2689,14 +2689,14 @@ void cRecordTable::putIn()
     if (((flags & RTF_NGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == nullptr) {
-            DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
+            DERR() << tr("Nincs kijelölve a tag rekord a baloldalon!") << endl;
             return;
         }
     }
     else if (((flags & RTF_NMEMBER) != 0)) {
         pG = pUpper->actRecord();
         if (pG == nullptr) {
-            DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
+            DERR() << tr("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
             return;
         }
     }
@@ -2707,7 +2707,7 @@ void cRecordTable::putIn()
     QModelIndexList mil = selectedRows();
     QBitArray rb = pTableModel()->index2map(mil);
     if (rb.count(true) == 0) {
-        DERR() << trUtf8("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
+        DERR() << tr("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
         return;
     }
 
@@ -2741,14 +2741,14 @@ void cRecordTable::takeOut()
     if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == nullptr) {
-            DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
+            DERR() << tr("Nincs kijelölve a tag rekord a baloldalon!") << endl;
             return;
         }
     }
     else if (((flags & RTF_IMEMBER) != 0)) {
         pG = pUpper->actRecord();
         if (pG == nullptr) {
-            DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
+            DERR() << tr("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
             return;
         }
     }
@@ -2759,7 +2759,7 @@ void cRecordTable::takeOut()
     QModelIndexList mil = selectedRows();
     QBitArray rb = pTableModel()->index2map(mil);
     if (rb.count(true) == 0) {
-        DERR() << trUtf8("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
+        DERR() << tr("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
         return;
     }
 
@@ -2797,12 +2797,12 @@ void cRecordTable::groupDialog(bool __add)
     QString title;
     qlonglong type = pTableShape->getId(_sTableShapeType);
     if      (type & ENUM2SET(TS_MEMBER)) {  // Add selected members to selected groups in the dialog
-        if (__add) title = trUtf8("A kijelölt tagok hozzáadása a csoportokhoz");
-        else       title = trUtf8("A kijelölt tagok kivétele a csoportokból");
+        if (__add) title = tr("A kijelölt tagok hozzáadása a csoportokhoz");
+        else       title = tr("A kijelölt tagok kivétele a csoportokból");
     }
     else if (type & ENUM2SET(TS_GROUP)) {   // Add selected groups to the members selected in the dialog
-        if (__add) title = trUtf8("A kijelölt csoportokba tagok hozzáadása");
-        else       title = trUtf8("A kijelölt csoportokból tagok kivétele");
+        if (__add) title = tr("A kijelölt csoportokba tagok hozzáadása");
+        else       title = tr("A kijelölt csoportokból tagok kivétele");
     }
     else {
         EXCEPTION(EPROGFAIL);
@@ -2901,7 +2901,7 @@ void cRecordTable::copy()
         break;
     }
     if (r.isEmpty()) {
-        cMsgBox::warning(trUtf8("Nincs adat."), pWidget());
+        cMsgBox::warning(tr("Nincs adat."), pWidget());
         return;
     }
     switch (t) {
@@ -2930,7 +2930,7 @@ void cRecordTable::copy()
                     return;
                 }
             }
-            cMsgBox::warning(trUtf8("Hiba a fájl kiírásánál."), pWidget());
+            cMsgBox::warning(tr("Hiba a fájl kiírásánál."), pWidget());
             path = dialog.getOtherPath();
         }
     }

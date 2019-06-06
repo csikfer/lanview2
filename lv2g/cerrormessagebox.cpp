@@ -27,8 +27,8 @@ void cErrorMessageBox::row(const QString& l,const QString& val, Qt::AlignmentFla
     pForm->addRow(l + " : ", pW);
 }
 
-#define _R(l, v)    row(trUtf8(l), v)
-#define IR(l, v)    row(trUtf8(l), QString::number(v), Qt::AlignRight)
+#define _R(l, v)    row(tr(l), v)
+#define IR(l, v)    row(tr(l), QString::number(v), Qt::AlignRight)
 #define NR(l, v)    if (v > 1) IR(l,v)
 #define PR(l, v)    if (v != -1) IR(l,v)
 #define ZR(l, v)    if (!v.isEmpty()) _R(l,v)

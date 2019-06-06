@@ -131,20 +131,20 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
             pid = ppl.getId(_sParentId);
         }
     }
-    r.prepend(QObject::trUtf8("Hely : "));
+    r.prepend(QObject::tr("Hely : "));
     if (zones) {
         const static QString sql =
                 "SELECT place_group_name FROM place_groups"
                 " WHERE place_group_id > 1 AND place_group_type = 'zone'::placegrouptype AND is_place_in_zone(?, place_group_id)";
         if (execSql(q, sql, _pid)) {
-            r += QObject::trUtf8(" Zónák : ");
+            r += QObject::tr(" Zónák : ");
             do {
                 r += q.value(0).toString() + ", ";
             } while (q.next());
             r.chop(2);
         }
         else {
-            r += QObject::trUtf8(" A hely nem része egyetlen zónának sem.");
+            r += QObject::tr(" A hely nem része egyetlen zónának sem.");
         }
     }
     if (cat) {
@@ -152,14 +152,14 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
                 "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id)"
                 " WHERE place_group_type = 'category'::placegrouptype AND place_id = ?";
         if (execSql(q, sql, _pid)) {
-            r += QObject::trUtf8(" Kategória : ");
+            r += QObject::tr(" Kategória : ");
             do {
                 r += q.value(0).toString() + ", ";
             } while (q.next());
             r.chop(2);
         }
         else {
-            r += QObject::trUtf8(" Nincs kategória.");
+            r += QObject::tr(" Nincs kategória.");
         }
     }
     return r;
@@ -170,12 +170,12 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
     qlonglong pid = o.getId();
     cTableShape shape;
     shape.setByName(q, _sPlaces);
-    QString t = QObject::trUtf8("%1 hely vagy helyiség riport.").arg(o.getName());
+    QString t = QObject::tr("%1 hely vagy helyiség riport.").arg(o.getName());
     QString html = htmlInfo(sReportPlace(q, pid));
     // Groups
     const static QString sql_pg = "SELECT place_groups.* FROM place_group_places JOIN place_groups USING (place_group_id) WHERE place_id = ?";
     if (execSql(q, sql_pg, pid)) {
-        html += htmlInfo(QObject::trUtf8("Csoport tagságok :"));
+        html += htmlInfo(QObject::tr("Csoport tagságok :"));
         cPlaceGroup pg;
         tRecordList<cPlaceGroup>    pgl;
         pg.set(q);
@@ -186,7 +186,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
         html += list2html(q, pgl, shape);
     }
     else {
-        html += htmlInfo(QObject::trUtf8("A hely ill. helyiség nem tagja egy csoportnak sem."));
+        html += htmlInfo(QObject::tr("A hely ill. helyiség nem tagja egy csoportnak sem."));
     }
     // pachs + nodes
     tRecordList<cPatch> patchs;
@@ -194,17 +194,17 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
     tRecordList<cNode>  nodes;
     nodes.fetch(q, false, _sPlaceId, pid);
     if (patchs.isEmpty() && nodes.isEmpty()) {
-        html += htmlInfo(QObject::trUtf8("A helyiségben nincsenek eszközök."));
+        html += htmlInfo(QObject::tr("A helyiségben nincsenek eszközök."));
     }
     else {
-        html += htmlInfo(QObject::trUtf8("A helyiségben lévő eszközök."));
+        html += htmlInfo(QObject::tr("A helyiségben lévő eszközök."));
         if (!patchs.isEmpty()) {
-            html += htmlInfo(QObject::trUtf8("Patch penelek, vagy fali csatlakozók :"));
+            html += htmlInfo(QObject::tr("Patch penelek, vagy fali csatlakozók :"));
             shape.setByName(_sPatchs);
             html += list2html(q, patchs, shape);
         }
         if (!nodes.isEmpty()) {
-            html += htmlInfo(QObject::trUtf8("Hálózati eszközök :"));
+            html += htmlInfo(QObject::tr("Hálózati eszközök :"));
             shape.setByName(_sNodes);
             html += list2html(q, nodes, shape);
         }
@@ -212,7 +212,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
     tRecordList<cUser>  users;
     users.fetch(q, false, _sPlaceId, pid);
     if (!users.isEmpty()) {
-        html += htmlInfo(QObject::trUtf8("Felhasználók :"));
+        html += htmlInfo(QObject::tr("Felhasználók :"));
         shape.setByName(_sUsers);
         html += list2html(q, users, shape);
     }
@@ -227,13 +227,13 @@ QString titleNode(int t, const cRecord& n)
     QString title = n.getName() + " #" + QString::number(n.getId()) + " ";
     switch(t) {
     case NOT_PATCH:
-        title += QObject::trUtf8("Patch port vagy fali csatlakozó");
+        title += QObject::tr("Patch port vagy fali csatlakozó");
         break;
     case NOT_NODE:
-        title += QObject::trUtf8("Passzív vagy aktív hálózati eszköz");
+        title += QObject::tr("Passzív vagy aktív hálózati eszköz");
         break;
     case NOT_SNMPDEVICE:
-        title += QObject::trUtf8("Aktív SNMP eszköz");
+        title += QObject::tr("Aktív SNMP eszköz");
         break;
     default:
         EXCEPTION(EDATA, 0, n.identifying());
@@ -288,34 +288,34 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
             s += a.toString() + _sCommaSp;
         }
         s.chop(_sCommaSp.size());
-        text += htmlInfo(QObject::trUtf8("IP cím(ek) a (DNS) név alapján : %1 .").arg(s));
+        text += htmlInfo(QObject::tr("IP cím(ek) a (DNS) név alapján : %1 .").arg(s));
     }
 */
     if (!isPatch) {
-        text += htmlInfo(QObject::trUtf8("Típus jelzők : %1").arg(node.getName(_sNodeType)));
-        text += htmlInfo(QObject::trUtf8("Állapota : %1").arg(node.getName(_sNodeStat)));
+        text += htmlInfo(QObject::tr("Típus jelzők : %1").arg(node.getName(_sNodeType)));
+        text += htmlInfo(QObject::tr("Állapota : %1").arg(node.getName(_sNodeStat)));
     }
     s = _node.getNote();
-    if (!s.isEmpty()) text += htmlInfo(QObject::trUtf8("Megjegyzés : %1").arg(s));
+    if (!s.isEmpty()) text += htmlInfo(QObject::tr("Megjegyzés : %1").arg(s));
     qlonglong pid = _node.getId(_sPlaceId);
-    if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
+    if (pid <= 1) text += htmlInfo(QObject::tr("Az eszköz helye ismeretlen"));
     else text += htmlInfo(sReportPlace(q, pid));
-    if (!_node.isNull(_sSerialNumber))    text += htmlInfo(QObject::trUtf8("Gyári szám : ")   + _node.getName(_sSerialNumber));
-    if (!_node.isNull(_sInventoryNumber)) text += htmlInfo(QObject::trUtf8("Leltári szám : ") + _node.getName(_sInventoryNumber));
-    if (!_node.isNull(_sModelName))       text += htmlInfo(QObject::trUtf8("Model név : ")    + _node.getName(_sModelName));
-    if (!_node.isNull(_sModelNumber))     text += htmlInfo(QObject::trUtf8("Model szám : ")   + _node.getName(_sModelNumber));
+    if (!_node.isNull(_sSerialNumber))    text += htmlInfo(QObject::tr("Gyári szám : ")   + _node.getName(_sSerialNumber));
+    if (!_node.isNull(_sInventoryNumber)) text += htmlInfo(QObject::tr("Leltári szám : ") + _node.getName(_sInventoryNumber));
+    if (!_node.isNull(_sModelName))       text += htmlInfo(QObject::tr("Model név : ")    + _node.getName(_sModelName));
+    if (!_node.isNull(_sModelNumber))     text += htmlInfo(QObject::tr("Model szám : ")   + _node.getName(_sModelNumber));
     /* -- PARAM -- */
     if (flags & CV_NODE_PARAMS) {
         if ((node.containerValid & CV_NODE_PARAMS) == 0) node.fetchParams(q);
         if (node.params.isEmpty()) {
-            text += htmlInfo(QObject::trUtf8("Eszköz paraméterek nincsenek."));
+            text += htmlInfo(QObject::tr("Eszköz paraméterek nincsenek."));
         }
         else {
-            text += htmlInfo(QObject::trUtf8("Eszköz paraméterek :"));
+            text += htmlInfo(QObject::tr("Eszköz paraméterek :"));
             text += sHtmlTabBeg + sHtmlRowBeg;
-            text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
-            text += sHtmlTh.arg(QObject::trUtf8("Érték"));
-            text += sHtmlTh.arg(QObject::trUtf8("Dim."));
+            text += sHtmlTh.arg(QObject::tr("Paraméter típus"));
+            text += sHtmlTh.arg(QObject::tr("Érték"));
+            text += sHtmlTh.arg(QObject::tr("Dim."));
             text += sHtmlRowEnd;
             QListIterator<cNodeParam *> li(node.params);
             while (li.hasNext()) {
@@ -332,26 +332,26 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     /* -- PORTS -- */
     if (flags & CV_PORTS) {
         if ((node.containerValid & CV_PORTS) == 0) node.fetchPorts(q);
-        text += htmlInfo(QObject::trUtf8("Portok :"));
+        text += htmlInfo(QObject::tr("Portok :"));
         node.sortPortsByIndex();
         // Table header
         text += sHtmlTabBeg + sHtmlRowBeg;
-        text += sHtmlTh.arg(QObject::trUtf8("#"));
-        text += sHtmlTh.arg(QObject::trUtf8("Port"));
-        text += sHtmlTh.arg(QObject::trUtf8("Cimke"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("Típus"));
-        text += sHtmlTh.arg(isPatch ? QObject::trUtf8("Shared") : QObject::trUtf8("MAC"));
-        text += sHtmlTh.arg(isPatch ? QObject::trUtf8("S.p.")   : QObject::trUtf8("IP cím(ek)"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("DNS név"));
+        text += sHtmlTh.arg(QObject::tr("#"));
+        text += sHtmlTh.arg(QObject::tr("Port"));
+        text += sHtmlTh.arg(QObject::tr("Cimke"));
+        if (!isPatch) text += sHtmlTh.arg(QObject::tr("Típus"));
+        text += sHtmlTh.arg(isPatch ? QObject::tr("Shared") : QObject::tr("MAC"));
+        text += sHtmlTh.arg(isPatch ? QObject::tr("S.p.")   : QObject::tr("IP cím(ek)"));
+        if (!isPatch) text += sHtmlTh.arg(QObject::tr("DNS név"));
         if (isPatch) {
-            text += sHtmlTh.arg(QObject::trUtf8("Előlapi link(ek)"));
-            text += sHtmlTh.arg(QObject::trUtf8("Hátlapi link"));
+            text += sHtmlTh.arg(QObject::tr("Előlapi link(ek)"));
+            text += sHtmlTh.arg(QObject::tr("Hátlapi link"));
         }
         else {
-            text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
-            text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
-            text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
-            text += sHtmlTh.arg(QObject::trUtf8("MAC in mactab"));
+            text += sHtmlTh.arg(QObject::tr("Fizikai link"));
+            text += sHtmlTh.arg(QObject::tr("Logikai link"));
+            text += sHtmlTh.arg(QObject::tr("LLDP link"));
+            text += sHtmlTh.arg(QObject::tr("MAC in mactab"));
         }
         text += sHtmlRowEnd;
         // Table data
@@ -505,7 +505,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
         text += sHtmlTabEnd;
     }
     else if (flags) {
-        text += sHtmlBr + sHtmlBr + QObject::trUtf8("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
+        text += sHtmlBr + sHtmlBr + QObject::tr("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
     }
     pDelete(po);
     return tStringPair(title, text);
@@ -516,17 +516,17 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     QString text;
     cMac mac(sMac);
     if (!mac) {
-        text = QObject::trUtf8("A '%1' nem valós MAC!").arg(sMac);
+        text = QObject::tr("A '%1' nem valós MAC!").arg(sMac);
         return text;
     }
     /* ** OUI ** */
     cOui oui;
     if (oui.fetchByMac(q, mac)) {
-        text += QObject::trUtf8("OUI rekord : ") + oui.getName() + sHtmlBr;
+        text += QObject::tr("OUI rekord : ") + oui.getName() + sHtmlBr;
         text += oui.getNote();
     }
     else {
-        text += QObject::trUtf8("Nincs OUI rekord.");
+        text += QObject::tr("Nincs OUI rekord.");
     }
     text += sHtmlLine;
     /* ** NODE ** */
@@ -534,7 +534,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     int n = node.fetchByMac(q, mac, EX_ERROR);
     switch (n) {
     case 0:
-        text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a MAC-kel");
+        text += QObject::tr("Nincs bejegyzett hálózati elem ezzel a MAC-kel");
         text += sHtmlLine;
         break;
     case 1:
@@ -554,10 +554,10 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     par << mac.toString();
     QString tab = query2html(q, _sArps, "hwaddress = ? ORDER BY last_time", par);
     if (tab.isEmpty()) {
-        text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-kel");
+        text += QObject::tr("Nincs találat az arps táblában a megadott MAC-kel");
     }
     else {
-        text += QObject::trUtf8("Találatok a MAC - IP (arps) táblában :");
+        text += QObject::tr("Találatok a MAC - IP (arps) táblában :");
         text += tab;
     }
     text += sHtmlLine;
@@ -565,31 +565,31 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     cMacTab mt;
     mt.setMac(_sHwAddress, mac);
     if (mt.completion(q)) {
-        text += QObject::trUtf8("Találat a switch cím táblában : <b>%1</b> (%2 - %3; %4)").arg(
+        text += QObject::tr("Találat a switch cím táblában : <b>%1</b> (%2 - %3; %4)").arg(
                     cNPort::getFullNameById(q, mt.getId(_sPortId)), // Switch port full name
                     mt.view(q, _sFirstTime),
                     mt.view(q, _sLastTime),
                     mt.view(q, _sMacTabState));
     }
     else {
-        text += QObject::trUtf8("Nincs találat a switch címtáblákban a megadott MAC-el");
+        text += QObject::tr("Nincs találat a switch címtáblákban a megadott MAC-el");
     }
     text += sHtmlLine;
     // LOG
-    text += QObject::trUtf8("Napló bejegyzések:");
+    text += QObject::tr("Napló bejegyzések:");
     text += sHtmlLine;
     // ARP LOG
     par << par.first(); // MAC 2*
     tab = query2html(q, "arp_logs", "hwaddress_new = ? OR hwaddress_old = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
-        text += QObject::trUtf8("MAC - IP változások (arp_logs) :");
+        text += QObject::tr("MAC - IP változások (arp_logs) :");
         text += tab + sHtmlLine;
     }
     // MACTAB LOG
     par.pop_back(); // MAC 1*
     tab = query2html(q, "mactab_logs", "hwaddress = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
-        text += QObject::trUtf8("A MAC mozgása a címtáblákban (mactab_logs) :");
+        text += QObject::tr("A MAC mozgása a címtáblákban (mactab_logs) :");
         text += tab + sHtmlLine;
     }
     return text;
@@ -600,7 +600,7 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
     QString text;
     QHostAddress a(sAddr);
     if (a.isNull()) {
-        text = QObject::trUtf8("A '%1' nem valós IP cím!").arg(sAddr);
+        text = QObject::tr("A '%1' nem valós IP cím!").arg(sAddr);
         return text;
     }
     cNode node;
@@ -611,7 +611,7 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
         text += sHtmlLine;
         break;
     case 0:
-        text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a IP címmel");
+        text += QObject::tr("Nincs bejegyzett hálózati elem ezzel a IP címmel");
         text += sHtmlLine;
         break;
     default:
@@ -625,21 +625,21 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
     /* ** ARP ** */
     cMac mac = cArp::ip2mac(q, a, EX_IGNORE);
     if (mac.isEmpty()) {
-        text += QObject::trUtf8("Nincs találat az arps táblában a megadott IP címmel");
+        text += QObject::tr("Nincs találat az arps táblában a megadott IP címmel");
     }
     else {
-        text += QObject::trUtf8("Találat a MAC - IP (arps) táblában táblában : %1").arg(mac.toString());
+        text += QObject::tr("Találat a MAC - IP (arps) táblában táblában : %1").arg(mac.toString());
     }
     text += sHtmlLine;
     // LOG
-    text += QObject::trUtf8("Napló bejegyzések:");
+    text += QObject::tr("Napló bejegyzések:");
     text += sHtmlLine;
     // ARP LOG
     QVariantList par;
     par << a.toString();
     QString tab = query2html(q, "arp_logs", "ipaddress = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
-        text += QObject::trUtf8("IP - MAC változások (arp_logs) :");
+        text += QObject::tr("IP - MAC változások (arp_logs) :");
         text += tab + sHtmlLine;
     }
     return text;
@@ -651,19 +651,19 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, co
     table += "\n<table border=\"1\"> ";
     QStringList head;
     if (!_verticalHeader.isEmpty()) head << "N";
-    head << QObject::trUtf8("ID")
-         << QObject::trUtf8("Port")
-         << QObject::trUtf8("Típus")
+    head << QObject::tr("ID")
+         << QObject::tr("Port")
+         << QObject::tr("Típus")
 
-         << QObject::trUtf8("Cél port")
-         << QObject::trUtf8("Típus")
+         << QObject::tr("Cél port")
+         << QObject::tr("Típus")
 
-         << QObject::trUtf8("Létrehozva")
-         << QObject::trUtf8("Felhasználó")
-         << QObject::trUtf8("Modosítva")
-         << QObject::trUtf8("Felhasználó")
+         << QObject::tr("Létrehozva")
+         << QObject::tr("Felhasználó")
+         << QObject::tr("Modosítva")
+         << QObject::tr("Felhasználó")
 
-         << QObject::trUtf8("Megjegyzés");
+         << QObject::tr("Megjegyzés");
     table += htmlTableLine(head, "th");
     int i, n = list.size();
     for (i = 0; i < n; ++i) {
@@ -776,14 +776,14 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
         }
     }
     if (exists) {
-        msg += htmlInfo(QObject::trUtf8("A megadott link már létezik."));
+        msg += htmlInfo(QObject::tr("A megadott link már létezik."));
     }
     if (list.size() > 0) {
-        msg += htmlInfo(QObject::trUtf8("A megadott link a következő link(ek)el ütközik:"));
+        msg += htmlInfo(QObject::tr("A megadott link a következő link(ek)el ütközik:"));
         msg += linksHtmlTable(q, list);
         r = true;
         if (exists) {
-            msg = QObject::trUtf8("Létező link nem ütközhet más linkekkel. Adatbázis hiba!\n") + msg;
+            msg = QObject::tr("Létező link nem ütközhet más linkekkel. Adatbázis hiba!\n") + msg;
             EXCEPTION(EDATA, 0, msg);
         }
     }
@@ -882,16 +882,16 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
         int terminalCount = endMap.size();
         switch(terminalCount) {
         case 0:
-            if (isBranch) msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, mind csonka, nem ér el a végpontig :"));
-            else          msg = htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a végpontig :"));
+            if (isBranch) msg = htmlInfo(QObject::tr("A linkek lánca elágazik, mind csonka, nem ér el a végpontig :"));
+            else          msg = htmlInfo(QObject::tr("A linkek lánca, csonka, nem ér el a végpontig :"));
             break;
         case 1:
-            if (isBranch) msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, egy végpont van:"));
-            else          msg = htmlInfo(QObject::trUtf8("A linkek lánca a végpontig:"));
+            if (isBranch) msg = htmlInfo(QObject::tr("A linkek lánca elágazik, egy végpont van:"));
+            else          msg = htmlInfo(QObject::tr("A linkek lánca a végpontig:"));
             break;
         default:
             if (!isBranch) EXCEPTION(EPROGFAIL); // :-O
-            msg = htmlInfo(QObject::trUtf8("A linkek lánca elágazik, több végpont van:"));
+            msg = htmlInfo(QObject::tr("A linkek lánca elágazik, több végpont van:"));
             break;
         }
         QStringList verticalHeader;
@@ -930,7 +930,7 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool
         switch (llnk.completion(q)) {
         case 0:
             if (saved && n == 2) {    //
-                msg = QObject::trUtf8("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
+                msg = QObject::tr("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
                 critical = true;
             }
             break;
@@ -938,18 +938,18 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool
             epid = llnk.getId(_sPortId1);
             if (epid != pids.second) {
                 if (saved) {
-                    msg = QObject::trUtf8("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2, és ütközés :\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
+                    msg = QObject::tr("Inkonzisztens logikai link tábla. Hiányzó link : %1 <==> %2, és ütközés :\n").arg(cNPort::getFullNameById(q2, _pid1), cNPort::getFullNameById(q2, _pid2));
                     critical = true;
                 }
                 else {
                     PDEB(INFO) << "Log. coll. : " << cNPort::getFullNameById(q, epid) << endl;
-                    msg += htmlError(msgPref + QObject::trUtf8("A (törlendő) logikai linkek : ").arg(cNPort::getFullNameById(q, epid)));
+                    msg += htmlError(msgPref + QObject::tr("A (törlendő) logikai linkek : ").arg(cNPort::getFullNameById(q, epid)));
                 }
                 msg += logLink2str(q2, llnk);
             }
             break;
         default:
-            msg = QObject::trUtf8("Inkonzisztens logikai link tábla, egy porthoz több link is tartozik!\n");
+            msg = QObject::tr("Inkonzisztens logikai link tábla, egy porthoz több link is tartozik!\n");
             do {
                 msg += logLink2str(q2, llnk);
             } while (llnk.next(q));
@@ -975,11 +975,11 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool
     if (ldnl.completion(q)) {
         epid = ldnl.getId(_sPortId1);
         if (epid != _pid1) {
-            msg += htmlError(msgPref + QObject::trUtf8("A végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
+            msg += htmlError(msgPref + QObject::tr("A végpont ütköző linkje az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
         }
         else {
             eq = true;
-            msg += htmlGrInf(msgPref + QObject::trUtf8("Megeggyező LLDP link."));
+            msg += htmlGrInf(msgPref + QObject::tr("Megeggyező LLDP link."));
         }
     }
     if (!eq) {
@@ -989,7 +989,7 @@ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool
             epid = ldnl.getId(_sPortId2);
             if (epid != _pid2) {
                 PDEB(INFO) << "LLDP coll. : " << cNPort::getFullNameById(q, epid) << endl;
-                msg += htmlError(msgPref + QObject::trUtf8("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
+                msg += htmlError(msgPref + QObject::tr("Az ütköző link az LLDP alapján : %1").arg(cNPort::getFullNameById(q, epid)));
             }
         }
     }
@@ -1007,14 +1007,14 @@ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, cons
         if (mt.completion(q)) {
             qlonglong mtp = mt.getId(_sPortId);
             if (_pid2 == mtp) {
-                msg = htmlGrInf(msgPref + QObject::trUtf8("A Link megerősítve a MAC címtáblák alapján."));
+                msg = htmlGrInf(msgPref + QObject::tr("A Link megerősítve a MAC címtáblák alapján."));
             }
             else {
-                msg = htmlError(msgPref + QObject::trUtf8("A Link ütközik a MAC címtáblákkal, talált port %1 .").arg(cNPort::getFullNameById(q, mtp)));
+                msg = htmlError(msgPref + QObject::tr("A Link ütközik a MAC címtáblákkal, talált port %1 .").arg(cNPort::getFullNameById(q, mtp)));
             }
         }
 //      else {
-//          msg = htmlInfo(msgPref + QObject::trUtf8("A Link nincs megerősítve a MAC címtáblák alapján."));
+//          msg = htmlInfo(msgPref + QObject::tr("A Link nincs megerősítve a MAC címtáblák alapján."));
 //      }
     }
     return msg;
@@ -1025,7 +1025,7 @@ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, cons
 tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape)
 {
     static QString s = " : ";
-    QString t = QObject::trUtf8("%1 riport.").arg(shape.getText(cTableShape::LTX_DIALOG_TITLE));
+    QString t = QObject::tr("%1 riport.").arg(shape.getText(cTableShape::LTX_DIALOG_TITLE));
     QString html;
     foreach (cTableShapeField * pf, (QList<cTableShapeField *>)shape.shapeFields) {
         static const int ixFieldFlag = pf->toIndex(_sFieldFlags);

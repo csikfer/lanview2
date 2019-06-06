@@ -91,7 +91,7 @@ void processXml::procFinished(int __exitCode, QProcess::ExitStatus exitStatus)
 
 void processXml::procError(QProcess::ProcessError error)
 {
-    QString msg = QString(trUtf8("Command : '%1'; error : %2")).arg(cmd).arg(ProcessError2Message(error));
+    QString msg = QString(tr("Command : '%1'; error : %2")).arg(cmd).arg(ProcessError2Message(error));
     pe = NEWCERROR(EPROCERR, (int)error, msg);
     PDEB(DERROR) << "processError = " << msg << endl;
 }

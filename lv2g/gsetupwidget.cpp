@@ -58,18 +58,18 @@ void cGSetupWidget::applicate()
         QString err;
         switch (st) {
             case QSettings::AccessError:
-                err = trUtf8("An access error occurred (e.g. trying to write to a read-only file).");
+                err = tr("An access error occurred (e.g. trying to write to a read-only file).");
                 break;
             case QSettings::FormatError:
-                err = trUtf8("A format error occurred (e.g. loading a malformed INI file).");
+                err = tr("A format error occurred (e.g. loading a malformed INI file).");
                 break;
             default:
-                err = trUtf8("Invalid QSettings status : ") + QString::number((int)st);
+                err = tr("Invalid QSettings status : ") + QString::number((int)st);
                 break;
         }
         cMsgBox::warning(err, this);
     }
-    else cMsgBox::info(trUtf8("New settings accepted."), this);
+    else cMsgBox::info(tr("New settings accepted."), this);
     DBGFNL();
 }
 
@@ -93,7 +93,7 @@ void cGSetupWidget::applicateAndClose()
 
 void cGSetupWidget::selectAlarmFile()
 {
-    QString fp = QFileDialog::getOpenFileName(this, trUtf8("Hang fájl kiválasztása"), trUtf8("Hang fájlok (*.wav)"));
+    QString fp = QFileDialog::getOpenFileName(this, tr("Hang fájl kiválasztása"), tr("Hang fájlok (*.wav)"));
     if (fp.isEmpty()) return;
     pUi->pushButtonAlarmTest->setEnabled(true);
     pUi->lineEditAlarm->setText(fp);
@@ -103,7 +103,7 @@ void cGSetupWidget::testAlarmFile()
 {
     QString fn = pUi->lineEditAlarm->text();
     if (fn.isEmpty()) {
-        cMsgBox::warning(trUtf8("Nincs megadva hang fájl."), this);
+        cMsgBox::warning(tr("Nincs megadva hang fájl."), this);
         return;
     }
     pDelete(pSound);
