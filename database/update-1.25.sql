@@ -63,6 +63,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER alarm_service_vars_check_value BEFORE INSERT OR UPDATE ON alarm_service_vars FOR EACH ROW EXECUTE PROCEDURE check_alarm_service_vars();
 
+-- Bugfix !!! 2019.06.11. !!!
 CREATE OR REPLACE FUNCTION service_var2service_rrd_var(vid bigint) RETURNS service_rrd_vars AS $$
 DECLARE
     sv  service_vars;
@@ -73,7 +74,7 @@ BEGIN
         PERFORM error('IdNotFound', vid, 'service_var_id', 'service_var2service_rrd_var(bigint)', 'service_vars');
         RETURN NULL;
     END IF;
-    UPDATE alarm_service_vars SET service_var_id = -vid WHERE service_var_id = vid;
+    UPDATE alarm_service_vars SET service_var_id = -vid WHERE service_var_id = -vid;
     DELETE FROM service_vars WHERE service_var_id = vid;
     INSERT INTO service_rrd_vars(
             service_var_id, service_var_name, service_var_note, service_var_type_id, 
@@ -86,7 +87,7 @@ BEGIN
             sv.deleted, sv.raw_value, sv.delegate_service_state, sv.state_msg, sv.delegate_port_state, 
             sv.disabled, sv.flag, sv.rarefaction, NULL, NULL, true)
         RETURNING * INTO srv;
-    UPDATE alarm_service_vars SET service_var_id = vid WHERE service_var_id = -vid;
+    UPDATE alarm_service_vars SET service_var_id = vid WHERE service_var_id = vid;
     RETURN srv;
 END;
 $$ LANGUAGE plpgsql;
