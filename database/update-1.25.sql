@@ -34,14 +34,14 @@ CREATE TABLE IF NOT EXISTS service_rrd_vars (
             ON UPDATE RESTRICT ON DELETE RESTRICT,
     rrd_disabled boolean NOT NULL DEFAULT false,
     PRIMARY KEY (service_var_id),
-    UNIQUE (service_var_name),
+    UNIQUE (host_service_id, service_var_name),
     CONSTRAINT service_vars_host_service_id_fkey FOREIGN KEY (host_service_id)
       REFERENCES host_services (host_service_id) MATCH FULL
       ON UPDATE RESTRICT ON DELETE CASCADE,
     CONSTRAINT service_vars_service_var_type_id_fkey FOREIGN KEY (service_var_type_id)
       REFERENCES service_var_types (service_var_type_id) MATCH FULL
       ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CHECK ((rrdhelper_id IS NULL OR rrd_beat_id IS NULL) AND NOT rrd_disabled)
+    CHECK (rrd_disabled OR (rrdhelper_id IS NOT NULL AND rrd_beat_id IS NOT NULL))
   ) INHERITS (service_vars);
 ALTER TABLE service_rrd_vars OWNER TO lanview2;
 
@@ -102,6 +102,7 @@ ALTER TYPE servicevartype OWNER TO lanview2;
 ALTER TABLE service_var_types ALTER COLUMN service_var_type SET DATA TYPE servicevartype USING service_var_type::servicevartype;
 ALTER TABLE service_var_types ADD COLUMN IF NOT EXISTS raw_to_rrd boolean DEFAULT NULL;
 
+-- bugfix: !! 2019.06.11. !!
 CREATE OR REPLACE FUNCTION check_before_service_value() RETURNS trigger AS $$
 DECLARE
     tids record;
@@ -112,7 +113,7 @@ BEGIN
             PERFORM error('IdNotUni', NEW.service_var_id, 'service_var_id', 'check_before_service_value()', TG_TABLE_NAME, TG_OP);
             RETURN NULL;
         END IF;
-        IF 0 < COUNT(*) FROM service_vars WHERE service_var_name = NEW.service_var_id AND host_service_id = NEW.host_service_id THEN
+        IF 0 < COUNT(*) FROM service_vars WHERE service_var_name = NEW.service_var_name AND host_service_id = NEW.host_service_id THEN
             PERFORM error('IdNotUni', NEW.service_var_id, 'service_var_name', 'check_before_service_value()', TG_TABLE_NAME, TG_OP);
             RETURN NULL;
         END IF;
@@ -128,7 +129,7 @@ BEGIN
             RETURN NULL;
         END IF;
         IF OLD.service_var_name <> NEW.service_var_name THEN
-            IF COUNT(*) FROM service_vars WHERE host_service_id = NEW.host_service_id AND service_var_name = NEW.service_var_name THEN
+            IF COUNT(*) FROM service_vars WHERE service_var_name = NEW.service_var_name AND host_service_id = NEW.host_service_id THEN
                 PERFORM error('IdNotUni', NEW.service_var_id, 'service_var_name', 'check_before_service_value()', TG_TABLE_NAME, TG_OP);
                 RETURN NULL;
             END IF;
@@ -151,10 +152,12 @@ END;
 $$ LANGUAGE plpgsql;
 ALTER FUNCTION check_before_service_value() OWNER TO lanview2;
 
+-- modify : 2019.06.12. (send timestamp)
 CREATE OR REPLACE FUNCTION service_rrd_value_after() RETURNS trigger AS $$
 DECLARE
     val text;
     pt paramtype;
+    payload text;
 BEGIN
     IF NOT NEW.rrd_disabled AND NEW.raw_value IS NOT NULL AND NEW.last_time IS NOT NULL THEN -- Next value?
         IF COALESCE((NEW.last_time > OLD.last_time), true) THEN
@@ -173,9 +176,14 @@ BEGIN
             END IF;
             IF pt = 'integer' OR pt = 'real' OR pt = 'interval' THEN -- Numeric
                 IF pt = 'interval' THEN
-                    val := extract(epoch FROM val::interval)::text;
+                    val := extract(EPOCH FROM val::interval)::text;
                 END IF;
-                PERFORM pg_notify('rrdhelper', 'rrd ' || NEW.rrdhelper_id::text || ' '  || val || ' ' || NEW.service_var_id::text);
+                payload := 'rrd '
+                        || NEW.rrdhelper_id::text || ' '
+                        || extract(EPOCH FROM NEW.last_time  AT TIME ZONE 'CETDST' AT TIME ZONE 'UTC')::bigint::text || ' '
+                        || val || ' ' 
+                        || NEW.service_var_id::text;
+                PERFORM pg_notify('rrdhelper', payload);
             END IF;
         END IF;
     END IF;

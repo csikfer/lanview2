@@ -1373,9 +1373,10 @@ bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
 
 /* ***************************************************************************************************** */
 
-cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
+cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par)
     : QObject(par)
     , isDialog(_isDialog)
+    , pTableShape(pTS)
     , fields()
     , inheritTableList()
     , viewName()
@@ -1384,10 +1385,8 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     isReadOnly = false;
     pq = newQuery();
     pTabQuery = newQuery();
-    pTableShape = nullptr;
     pModel = nullptr;
-    pUpper = nullptr;
-    pMaster = nullptr;
+    pMaster = pUpper = _upper;
     pRecDescr = nullptr;
     _pWidget = nullptr;
     pMasterSplitter = nullptr;
@@ -1404,6 +1403,10 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     pRecordDialog = nullptr;
     _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
 //    disableFilters = false; // alapértelmezetten vannak szűrők
+    if (pMaster != nullptr) {
+        while (pMaster->pMaster != nullptr) pMaster = pMaster->pMaster;
+    }
+    initShape();
 }
 
 cRecordsViewBase::~cRecordsViewBase()
@@ -1488,6 +1491,7 @@ void cRecordsViewBase::buttonPressed(int id)
     case DBT_RECEIPT:   receipt();      break;
     case DBT_TRUNCATE:  truncate();     break;
     case DBT_REPORT:    report();       break;
+    case DBT_EXTENSION: extension();    break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -1892,6 +1896,8 @@ void cRecordsViewBase::report()
     }
 }
 
+void cRecordsViewBase::extension() { EXCEPTION(EPROGFAIL); }
+
 qlonglong cRecordsViewBase::actId(eEx __ex)
 {
     cRecord *p = actRecord();
@@ -1905,10 +1911,8 @@ qlonglong cRecordsViewBase::actId(eEx __ex)
 
 void cRecordsViewBase::initView()
 {
-    tableInhType = eTableInheritType(pTableShape->getId(_sTableInheritType));
-    if (tableInhType == TIT_NO) return;     // Nincs öröklés, nem kell view
-    inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
-    if (inheritTableList.isEmpty()) return; // Üres a lista, mégnincs öröklés
+    if (tableInhType != TIT_LISTED_REV) return;    // Ezt támogatjuk
+    if (inheritTableList.isEmpty()) return; // Üres a lista, mégsincs öröklés
     QString schema = pTableShape->getName(_sSchemaName);
     viewName = pTableShape->getName() + "_tmp_view"; // Az ideiglenes view tábla neve
     QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
@@ -1973,6 +1977,23 @@ void cRecordsViewBase::initShape(cTableShape *pts)
             cErrorMessageBox::messageBox(pe, pWidget(), tr("Column is ignored."));
             delete pe;
         }
+    }
+    tableInhType = eTableInheritType(pTableShape->getId(_sTableInheritType));
+    switch (tableInhType) {
+    case TIT_NO:
+    case TIT_ONLY:
+    case TIT_ON:
+        break;
+    case TIT_LISTED_REV:
+        inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
+        if (inheritTableList.isEmpty()) {
+            QMessageBox::warning(lv2g::pMdiArea(), dcViewShort(DC_ERROR), tr("Az ős típusok litája üres."));
+            tableInhType = TIT_NO;
+        }
+        break;
+    default:                        // Not supported
+        QMessageBox::warning(lv2g::pMdiArea(), dcViewShort(DC_ERROR), tr("Nem támogatott örklés kezelési mód : %1").arg(tableInheritType(tableInhType, EX_IGNORE)));
+        tableInhType = TIT_NO;
     }
     initView();
     // Ha egy egyszerű táblát használnánk al táblaként, nem szívózunk, beállítjuk
@@ -2451,19 +2472,15 @@ void cRecordsViewBase::hideColumns(void)
 /* ----------------------------------------------------------------------------------------------------- */
 
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
-    : cRecordsViewBase(_isDialog, par)
+    : cRecordsViewBase(new cTableShape(_mn), nullptr, _isDialog, par)
 {
-    pTableShape = new cTableShape();
-    if (!pTableShape->fetchByName(*pq, _mn)) EXCEPTION(EDATA,-1,_mn);
-    initShape();
+    ;
 }
 
 cRecordTable::cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
-    : cRecordsViewBase(_isDialog, par)
+    : cRecordsViewBase(pts, _upper, _isDialog, par)
 {
-    pMaster = pUpper = _upper;
-    if (pMaster != nullptr && pUpper->pMaster != nullptr) pMaster = pUpper->pMaster;
-    initShape(pts);
+    ;
 }
 
 
@@ -2477,9 +2494,23 @@ void cRecordTable::init()
     pTableView = nullptr;
     // Az alapértelmezett gombok:
     buttons << DBT_SPACER;
-    if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
-        if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
-        if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;
+    bool bCopy   = pTableShape->isFeature(_sButtonCopy);
+    bool bReport = pTableShape->isFeature(_sReport);
+    sExtendFName = pTableShape->feature("extension");
+    if (bCopy || bReport || !sExtendFName.isEmpty()) {
+        if (bCopy)   buttons << DBT_COPY;
+        if (bReport) buttons << DBT_REPORT;
+        if (!sExtendFName.isEmpty()) {
+            if (tableInhType != TIT_LISTED_REV || inheritTableList.size() != 1) {
+                QMessageBox::warning(lv2g::pMdiArea(), dcViewShort(DC_ERROR), tr("Az 'extension' feature figyelmen kívül hagyva."));
+                sExtendFName.clear();
+            }
+            else {
+                sExtTname  = pTableShape->getName(_sTableName);
+                sBaseTName = inheritTableList.first();
+                buttons << DBT_EXTENSION;
+            }
+        }
         buttons << DBT_SPACER;
     }
     buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
@@ -2963,6 +2994,44 @@ void cRecordTable::report()
         sp.second = pTableModel()->toHtml();
     }
     popupReportWindow(_pWidget, sp.second, sp.first);
+}
+
+void cRecordTable::extension()
+{
+    QModelIndexList mil = selectedRows();
+    if (mil.isEmpty()) return;
+    if (sExtendFName.isEmpty() || sBaseTName.isEmpty() || sExtTname.isEmpty()) EXCEPTION(EPROGFAIL);
+    foreach (QModelIndex mi, mil) {
+        if (actRecord(mi)->tableName() != sBaseTName) {
+            pTableView->selectionModel()->select(mi, QItemSelectionModel::Deselect);
+        }
+    }
+    mil = selectedRows();
+    if (mil.isEmpty()) return;
+    if (QMessageBox::question(lv2g::pMdiArea(),
+                              tr("Figyelmeztetés"),
+                              tr("Objekum(ok) konvertálása a %1 típusból a %2 típusba. A művelet nem visszavonható!").arg(sBaseTName, sExtTname),
+                              QMessageBox::Ok, QMessageBox::Cancel)
+            != QMessageBox::Ok) return;
+    cError *pe = nullptr;
+    try {
+        sqlBegin(*pq, sExtendFName);
+        foreach (QModelIndex mi, mil) {
+            cRecord *p = actRecord(mi);
+            if (p == nullptr) EXCEPTION(EPROGFAIL, mi.row(), tr("ActRecord is NULL."));
+            qlonglong id = p->getId();
+            execSqlFunction(*pq, sExtendFName, id);
+        }
+    }
+    CATCHS(pe);
+    if (pe == nullptr) {
+        sqlCommit(*pq, sExtendFName);
+    }
+    else {
+        sqlRollback(*pq, sExtendFName);
+        cErrorMessageBox::messageBox(pe, pWidget(), tr("A konverzió (%1 -> %2) sikertelen").arg(sBaseTName, sExtTname));
+    }
+    refresh(false);
 }
 
 

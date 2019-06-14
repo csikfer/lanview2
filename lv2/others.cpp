@@ -497,6 +497,56 @@ void appReStart()
     exit(123);
 }
 
+int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pMsg, int start_to, int stop_to)
+{
+    QProcess p;
+    int r = startProcessAndWait(p, cmd, args, pMsg, start_to, stop_to);
+    if (r < 0) {
+        msgAppend(pMsg, QString::fromUtf8(p.readAll()));
+    }
+    return r;
+}
+
+int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args, QString *pMsg, int start_to, int stop_to)
+{
+    if (pMsg != nullptr) pMsg->clear();
+    p.setProcessChannelMode(QProcess::MergedChannels);
+    p.start(cmd, args, QIODevice::ReadOnly);
+    int r = -1;
+    if (p.waitForStarted(start_to)) {
+        if (p.waitForFinished(stop_to)) {
+            r = p.exitCode();
+            if (r < 0) {
+                msgAppend(pMsg, QObject::tr("Run `%1` command failed (%2 [ms]), state/error : %3/%4")
+                          .arg(joinCmd(cmd, args))
+                          .arg(stop_to)
+                          .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
+                          );
+                r = PE_ERROR;
+            }
+            else {
+                msgAppend(pMsg, QObject::tr("Return : #%1").arg(r));
+            }
+        }
+        else {
+            msgAppend(pMsg, QObject::tr("Wait stop `%1` command failed (%2 [ms]), state/error : %3/%4")
+                      .arg(joinCmd(cmd, args))
+                      .arg(stop_to)
+                      .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
+                      );
+            r = PE_STOP_TIME_OUT;
+        }
+    }
+    else {
+        msgAppend(pMsg, QObject::tr("Start `%1` command failed (%2 [ms]), state/error : %3/%4")
+                  .arg(joinCmd(cmd, args))
+                  .arg(start_to)
+                  .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
+                  );
+        r = PE_START_TIME_OUT;
+    }
+    return r;
+}
 /* ***************************************************************************************** */
 
 void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc)

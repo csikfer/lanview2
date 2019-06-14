@@ -11,8 +11,8 @@ class QTelnet : public QObject
 {
     Q_OBJECT
 public:
-    explicit QTelnet(QObject *parent = 0);
-    explicit QTelnet(QHostAddress& host, int to = -1, QObject *parent = 0);
+    explicit QTelnet(QObject *parent = nullptr);
+    explicit QTelnet(QHostAddress& host, int to = -1, QObject *parent = nullptr);
     ~QTelnet();
 
     bool open(QHostAddress& host, int to = -1, enum eEx __ex = EX_ERROR);

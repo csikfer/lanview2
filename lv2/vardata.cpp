@@ -2,7 +2,7 @@
 
 int varAggregateType(const QString& _n, eEx __ex)
 {
-    if (0 == _n.compare(_sAVARAGE, Qt::CaseInsensitive)) return VAT_AVARAGE;
+    if (0 == _n.compare(_sAVERAGE, Qt::CaseInsensitive)) return VAT_AVERAGE;
     if (0 == _n.compare(_sMIN,     Qt::CaseInsensitive)) return VAT_MIN;
     if (0 == _n.compare(_sMAX,     Qt::CaseInsensitive)) return VAT_MAX;
     if (0 == _n.compare(_sLAST,    Qt::CaseInsensitive)) return VAT_LAST;
@@ -13,7 +13,7 @@ int varAggregateType(const QString& _n, eEx __ex)
 const QString& varAggregateType(int _i, eEx __ex)
 {
     switch (_i) {
-    case VAT_AVARAGE:   return _sAVARAGE;
+    case VAT_AVERAGE:   return _sAVERAGE;
     case VAT_MIN:       return _sMIN;
     case VAT_MAX:       return _sMAX;
     case VAT_LAST:      return _sLAST;
@@ -79,9 +79,9 @@ const cRecStaticDescr&  cRrdBeat::descr() const
 {
     if (initPDescr<cRrdBeat>(_sRrdBeats)) {
         CHKENUM(_sDailyAggregates,   varAggregateType);
-        CHKENUM(_sWeeklyAggregates,  varAggregateType);
-        CHKENUM(_sMonthlyAggregates, varAggregateType);
-        CHKENUM(_sYearlyAggregates,  varAggregateType);
+        // CHKENUM(_sWeeklyAggregates,  varAggregateType);
+        // CHKENUM(_sMonthlyAggregates, varAggregateType);
+        // CHKENUM(_sYearlyAggregates,  varAggregateType);
         _ixFeatures = _descr_cRrdBeat().toIndex(_sFeatures);
     }
     return *_pRecordDescr;

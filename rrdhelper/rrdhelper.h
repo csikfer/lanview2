@@ -12,16 +12,29 @@
 
 class lv2rrdHelper;
 
+class cRrdFile {
+public:
+    cRrdFile() : varName("v") { enabled = false; ++cntAll; }
+    void enable() { enabled = true; ++cntEna; }
+    bool    enabled;
+    QString fileName;
+    QString varName;
+    static int  cntAll; ///< All object number
+    static int  cntEna; ///< Enabled object number
+};
+
 class cRrdHelper : public cInspector {
 public:
     cRrdHelper(QSqlQuery& q, const QString& __sn);
     ~cRrdHelper();
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    virtual int run(QSqlQuery& q, QString &runMsg);
     void execRrd(const QString& rrdCmd);
-protected:
-    bool createRrdFile(QSqlQuery& q, qlonglong _id, const QString& _fn);
+    bool createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator i);
     QDir    baseDir;
-    QMap<qlonglong, QString>    rrdFilePathMap;
+    QMap<qlonglong, cRrdFile>    rrdFileMap;    ///< cRrdFile index by service_var_id
+    int cntOk, cntFail;
+    QStringList daemonOption;
 };
 
 /// Helper APP main objektum

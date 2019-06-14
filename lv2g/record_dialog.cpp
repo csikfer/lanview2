@@ -151,15 +151,15 @@ void cDialogButtons::staticInit()
     if (buttonNames.isEmpty()) {
         appendCont(buttonNames, tr("Bezár"),       icons, QIcon(":/icons/close.ico"),   keys, Qt::Key_Escape, DBT_CLOSE);
         appendCont(buttonNames, tr("OK"),          icons, QIcon(":/icons/ok.ico"),      keys, Qt::Key_Enter,  DBT_OK);
-        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
+        appendCont(buttonNames, _sNul,             icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
         appendCont(buttonNames, tr("Új"),          icons, QIcon(":/icons/insert.ico"),  keys, Qt::Key_Insert, DBT_INSERT);
         appendCont(buttonNames, tr("Hasonló"),     icons, QIcon(":/icons/insert.ico"),  keys, 0,              DBT_SIMILAR);
         appendCont(buttonNames, tr("Módosít"),     icons, QIcon(":/icons/edit.ico"),    keys, 0,              DBT_MODIFY);
         appendCont(buttonNames, tr("Ment"),        icons, QIcon(":/icons/save.ico"),    keys, 0,              DBT_SAVE);
-        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
-        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/previous.ico"),keys, Qt::Key_PageUp, DBT_PREV);
-        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/next.ico"),    keys, Qt::Key_PageDown,DBT_NEXT);
-        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/last.ico"),    keys, Qt::Key_End,    DBT_LAST);
+        appendCont(buttonNames, _sNul,             icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
+        appendCont(buttonNames, _sNul,             icons, QIcon(":/icons/previous.ico"),keys, Qt::Key_PageUp, DBT_PREV);
+        appendCont(buttonNames, _sNul,             icons, QIcon(":/icons/next.ico"),    keys, Qt::Key_PageDown,DBT_NEXT);
+        appendCont(buttonNames, _sNul,             icons, QIcon(":/icons/last.ico"),    keys, Qt::Key_End,    DBT_LAST);
         appendCont(buttonNames, tr("Töröl"),       icons, QIcon(":/icons/delete.ico"),  keys, Qt::Key_Delete, DBT_DELETE);
         appendCont(buttonNames, tr("Visszaállít"), icons, QIcon(":/icons/undo.ico"),    keys, 0,              DBT_RESTORE);
         appendCont(buttonNames, tr("Elvet"),       icons, QIcon(":/icons/cancel.ico"),  keys, Qt::Key_Escape, DBT_CANCEL);
@@ -168,12 +168,13 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, tr("Kivesz"),      icons, QIcon(":/icons/minus.ico"),   keys, Qt::Key_Minus,  DBT_TAKE_OUT);
         appendCont(buttonNames, tr("Kibont"),      icons, QIcon(":/icons/zoom.ico"),    keys, Qt::Key_Plus,   DBT_EXPAND);
         appendCont(buttonNames, tr("Gyökér"),      icons, QIcon(":/icons/restore.ico"), keys, 0,              DBT_ROOT);
-        appendCont(buttonNames, _sNul,        icons,QIcon("://icons/document-export-2.ico"),keys, 0,              DBT_COPY);
+        appendCont(buttonNames, _sNul,        icons,QIcon("://icons/document-export-2.ico"),keys, 0,          DBT_COPY);
         appendCont(buttonNames, tr("Nyugtáz"),     icons, QIcon(":/icons/check.ico"),   keys, 0,              DBT_RECEIPT);
         appendCont(buttonNames, tr("Kiürít"),      icons, QIcon(":/icons/delete.ico"),  keys, 0,              DBT_TRUNCATE);
         appendCont(buttonNames, tr("Kiegészítés"), icons, QIcon(":/icons/export.ico"),  keys, 0,              DBT_COMPLETE);
-        appendCont(buttonNames, _sNul,     icons, QIcon(":/icons/document-properties.ico"), keys, Qt::Key_F2,     DBT_REPORT);
+        appendCont(buttonNames, _sNul,     icons, QIcon(":/icons/document-properties.ico"), keys, Qt::Key_F2, DBT_REPORT);
         appendCont(buttonNames, tr("Alap."),       icons, QIcon(":/icons/go-home-2.ico"),keys, Qt::Key_Home,  DBT_HOME);
+        appendCont(buttonNames, tr("Kiterjeszt"),  icons, QIcon(":/icons/configure-2.ico"),keys, 0,           DBT_EXTENSION);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

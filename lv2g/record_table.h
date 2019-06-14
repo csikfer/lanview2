@@ -262,7 +262,7 @@ typedef QList<cRecordsViewBase *>   tRecordsViewBaseList;
 class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
-    cRecordsViewBase(bool _isDialog, QWidget *par);
+    cRecordsViewBase(cTableShape *_pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par);
     ~cRecordsViewBase();
 
     QWidget& widget() const { return *_pWidget; }
@@ -313,6 +313,10 @@ public:
     QSplitter      *pMasterSplitter;
     /// Nyomógomb ID-k sorrendben
     tIntVector  buttons;
+    /// Object conver child type function name
+    QString     sExtendFName;
+    QString     sBaseTName;
+    QString     sExtTname;
     /// A nyomogombok objektuma
     cDialogButtons *pButtons;
     /// A saját táblázat megjelenítésének a layer-e
@@ -384,6 +388,7 @@ public:
     virtual void receipt();
     virtual void truncate();
     virtual void report();
+    virtual void extension();
 
     virtual void setEditButtons() = 0;
     /// Optional method to implement. By default, you are not doing anything.
@@ -492,6 +497,7 @@ public:
     void takeOut();
     void copy();
     void report();
+    void extension();
 
 
     void setEditButtons();

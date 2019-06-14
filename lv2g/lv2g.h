@@ -163,6 +163,7 @@ public:
     lv2g();
     ~lv2g();
     static lv2g*    getInstance(void) { return static_cast<lv2g *>(lanView::getInstance()); }
+    static QMdiArea *pMdiArea();
     void            changeZone(QWidget * par = nullptr);
     static bool     logonNeeded;
     static bool     zoneNeeded;

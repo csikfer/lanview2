@@ -5,12 +5,9 @@
 
 
 cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
-    : cRecordsViewBase(_isDialog, par)
+    : cRecordsViewBase(pts, _upper, _isDialog, par)
 {
-    pMaster = pUpper = _upper;
-    if (pMaster != nullptr && pUpper->pMaster != nullptr) pMaster = pUpper->pMaster;
-//    disableFilters = true;
-    initShape(pts);
+    ;
 }
 
 cRecordTree::~cRecordTree()

@@ -252,6 +252,21 @@ template <typename T> struct PtrGreat
 
 _ATR_NORET_ EXT_ void appReStart();
 
+EXT_ const QString _sSpace;
+inline QString joinCmd(const QString& cmd, const QStringList& args)
+{
+    return cmd + _sSpace + args.join(_sSpace);
+}
+#define PROCESS_START_TO    2000
+#define PROCESS_SOPP_TO    10000
+enum eProcError {
+    PE_ERROR = -1,
+    PE_START_TIME_OUT = -2,
+    PE_STOP_TIME_OUT = -3,
+};
+EXT_ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args, QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_SOPP_TO);
+EXT_ int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_SOPP_TO);
+
 /* ******************************  ****************************** */
 
 /// @class no_init_
@@ -271,7 +286,7 @@ EXT_ no_init_ _no_init_;
 
 EXT_ void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc);
 
-template <class C, class T> T avarage(C c) {
+template <class C, class T> T average(C c) {
     T r;
     foreach (T t, c) {
         r += t;
@@ -297,6 +312,7 @@ inline QString msgCat(const QString msg1, const QString& msg2, const QString& se
 
 inline const QString& msgAppend(QString *pMsg, const QString& m)
 {
+    if (m.isEmpty()) return m;
     if (pMsg != nullptr) {
         if (!pMsg->isEmpty()) *pMsg += QChar('\n');
         *pMsg += m;

@@ -37,6 +37,7 @@ void cTreeNode::addChild(cTreeNode *pn)
 void cTreeNode::addChild(cRecord *pRec)
 {
     cTreeNode *pn = new cTreeNode(pRec, this);
+    if (pChildrens == nullptr) pChildrens = new QList<cTreeNode *>;
     pChildrens->append(pn);
 }
 

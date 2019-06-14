@@ -81,6 +81,9 @@ lv2g::~lv2g()
     ;
 }
 
+QMdiArea *lv2g::pMdiArea() {
+    return pMainWindow->pMdiArea;
+}
 /// Zóna váltás dialóg
 void lv2g::changeZone(QWidget * par)
 {

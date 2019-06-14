@@ -163,7 +163,7 @@ void cOnlineAlarm::map()
             color.setAlpha(128);        // félig átlátszó
             pMap->setBrush(QBrush(color)).addDraw(vPol);
             pol = convertPolygon(vPol.value<tPolygonF>());
-            center = avarage<QPolygonF, QPointF>(pol).toPoint();
+            center = average<QPolygonF, QPointF>(pol).toPoint();
         }
         else {
             text += tr("<br><br><b>Nincs pontos hely adat.</b>");

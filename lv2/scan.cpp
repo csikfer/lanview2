@@ -52,14 +52,16 @@ int cArpTable::getByLocalProcFile(const QString& __f, QString *pEMsg)
 int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru, QString *pEMsg)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
-    QString     ru;
-    if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
-    QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
-    cmd += __f.isEmpty() ? "/proc/net/arp" : __f;
+    QString cmd = "ssh";
+    QStringList args;
+    args << __h;
+    if (__ru.isEmpty() == false) args << "-l" << __ru;
+    args << "cat";
+    args << (__f.isEmpty() ? "/proc/net/arp" : __f);
     QProcess    proc;
-    proc.start(cmd, QIODevice::ReadOnly);
-    if (false == proc.waitForStarted(  2000)
-     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
+    QString     msg;
+    int r = startProcessAndWait(proc, cmd, args, &msg);
+    if (r != 0) EXCEPTION(EPROCERR, r, msgCat(proc.readAll(), msg, "\n"));
     return getByProcFile(proc, pEMsg);
 }
 
@@ -82,14 +84,16 @@ int cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
 int cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru, qlonglong _hid)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
-    QString     ru;
-    if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
-    QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
-    cmd += __f.isEmpty() ? "/etc/dhcp3/dhcpd.conf" : __f;
+    QString cmd = "ssh";
+    QStringList args;
+    args << __h;
+    if (__ru.isEmpty() == false) args << "-l" << __ru;
+    args << "cat";
+    args <<(__f.isEmpty() ? "/etc/dhcp3/dhcpd.conf" : __f);
     QProcess    proc;
-    proc.start(cmd, QIODevice::ReadOnly);
-    if (false == proc.waitForStarted(  2000)
-     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
+    QString     msg;
+    int r = startProcessAndWait(proc, cmd, args, &msg);
+    if (r != 0) EXCEPTION(EPROCERR, r, msgCat(proc.readAll(), msg, "\n"));
     return getByDhcpdConf(proc, _hid);
 }
 
@@ -103,14 +107,16 @@ int cArpTable::getByLocalDhcpdLeases(const QString& __f)
 int cArpTable::getBySshDhcpdLeases(const QString& __h, const QString& __f, const QString& __ru)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
-    QString     ru;
-    if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
-    QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
-    cmd += __f.isEmpty() ? "/var/lib/dhcp/dhcpd.leases" : __f;
+    QString cmd = "ssh";
+    QStringList args;
+    args << __h;
+    if (__ru.isEmpty() == false) args << "-l" << __ru;
+    args << "cat";
+    args << (__f.isEmpty() ? "/var/lib/dhcp/dhcpd.leases" : __f);
     QProcess    proc;
-    proc.start(cmd, QIODevice::ReadOnly);
-    if (false == proc.waitForStarted(  2000)
-     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
+    QString     msg;
+    int r = startProcessAndWait(proc, cmd, args, &msg);
+    if (r != 0) EXCEPTION(EPROCERR, r, msgCat(proc.readAll(), msg, "\n"));
     return getByDhcpdLease(proc);
 }
 
@@ -2106,26 +2112,13 @@ void lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser)
 
 int ping(QHostAddress _ip)
 {
+    QString cmd = "ping";
+    QStringList args;
+    args << "-c4" << _ip.toString();
     QString msg;
-    QString cmd = QString("ping -c4 %1").arg(_ip.toString());
-    QProcess proc;
-    proc.start(cmd);
-    proc.setProcessChannelMode(QProcess::MergedChannels);
-    if (!proc.waitForStarted()) {
-        msg = QObject::tr("A ping parancsot nem lehet elindítani : %1").arg(proc.errorString());
-        DERR() << msg << endl;
-        expError(msg);
-        return -1;
-    }
-    if (!proc.waitForFinished()) {
-        msg = QObject::tr("Probléma a ping futtatásakor : %1").arg(proc.errorString());
-        DERR() << msg << endl;
-        expError(msg);
-        return -1;
-    }
-    QString out = QString::fromUtf8(proc.readAll());
-    expItalic(out, true); // Több soros
-    return proc.exitCode();
+    int r = startProcessAndWait(cmd, args, &msg, PROCESS_START_TO, 30000);
+    expItalic(msg, true); // Több soros
+    return r;
 }
 
 static QSet<int> queryAddr(cSnmp& snmp, const cOId& __o, cMac& __mac)

@@ -6,10 +6,11 @@
 #include "srvdata.h"
 
 enum eVarAggregateType {
-    VAT_AVARAGE =  0,
+    VAT_AVERAGE =  0,
     VAT_MIN,
     VAT_MAX,
-    VAT_LAST
+    VAT_LAST,
+    VAT_NUMBER
 };
 
 EXT_ int varAggregateType(const QString& _n, eEx __ex = EX_ERROR);
