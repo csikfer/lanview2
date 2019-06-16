@@ -1290,6 +1290,11 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     dataAlign  = Qt::AlignVCenter;
     fieldFlags = shapeField.getId(_sFieldFlags);
     if (fieldIndex == NULL_IX) {
+        int tix = recDescr.textIdIndex(EX_IGNORE);
+        if (tix < 0) {
+            QString msg = QObject::tr("Invalid field name %1.%2.").arg(recDescr.tableName(), sf.getName(_sTableFieldName));
+            EXCEPTION(ENONAME, -1, msg);
+        }
         pTextEnum = recDescr.colDescr(recDescr.textIdIndex()).pEnumType;
         if (pTextEnum == nullptr) EXCEPTION(EDATA);
         textIndex = pTextEnum->str2enum(sf.getName());

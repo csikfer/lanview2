@@ -1,5 +1,4 @@
 // Act Language : Magyar; ( default : US English ; failower : Magyar)
-DELETE ENUM "%" ;
 ENUM "addresstype" "addresstype" {
     VIEW "addresstype",@;
      "dynamic" {
@@ -943,7 +942,7 @@ TABLE SHAPE "app_errs" "Applikáció hiba napló" {
     ADD FIELD "thread_name" "thread_name" {
         TITLE "Szál","Program szál neve";
     }
-    ADD FIELD "sql_err_num" "sql_err_num" {
+    ADD FIELD "sql_err_code" {
         TITLE "SQL c.","SQL hiba kód";
     }
     ADD FIELD "sql_err_type" "sql_err_type" {
@@ -3146,7 +3145,7 @@ TABLE SHAPE "pports" "Pach panel és fali csatlakozó portok" {
         TITLE "Cimke",@;
     }
     ADD FIELD "iftype_id" "Always patch" {
-        TITLE NULL;
+        TITLE "iftype_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
         DEFAULT VALUE "4";
     }
@@ -3439,6 +3438,9 @@ TABLE SHAPE "service_rrd_vars" {
         TITLE "rrd_disabled",@;
         FLAG "batch_edit", "HTML";
     }
+    FIELD "service_var_name", "service_var_type_id", "host_service_id" ORD asc, no, desc;
+    FIELD "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "host_service_id", "service_var_name", "service_var_type_id", "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id";
 }
 TABLE SHAPE "services" {
     TITLE "Szolgáltatások","Szolgáltatás";

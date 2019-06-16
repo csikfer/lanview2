@@ -786,7 +786,7 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     static const QString sql =
             "SELECT s.service_var_id, s.service_var_name, s.service_var_note, s.service_var_type_id, s.host_service_id,"
                     " a.service_var_value, a.var_state, NULL AS last_time, s.features, s.deleted, a.raw_value,"
-                    " s.delegate_service_state, a.state_msg, s.delegate_port_state, s.disabled, s.rrd_file_id, s.flag"
+                    " s.delegate_service_state, a.state_msg, s.delegate_port_state, s.disabled, s.flag, s.rarefaction"
             " FROM service_vars AS s"
             " JOIN alarm_service_vars AS a USING(service_var_id)"
             " WHERE s.host_service_id = ? AND a.alarm_id = ?"
