@@ -2647,6 +2647,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// visszakonvertálása az eredeti típusra.
 template <class R> R * dup(R *p) { return dynamic_cast<R *>(p->dup()); }
 
+class cRecordFieldRef;
 /// @class cRecordFieldConstRef
 /// @brief Konstans referenciaként (is) használható objektum egy cRecord objektum egy mezőjére.
 ///
@@ -2677,6 +2678,7 @@ protected:
 public:
     /// Copy konstruktor
     cRecordFieldConstRef(const cRecordFieldConstRef& __r)  { _index = __r._index; _pRecord = __r._pRecord; }
+    cRecordFieldConstRef(const cRecordFieldRef& __r);
     ///
     cRecordFieldConstRef& operator =(const cRecordFieldConstRef& __r)  { _index = __r._index; _pRecord = __r._pRecord; return *this; }
     /// A hivatkozott mező értéke. Vigyázat a függvény egy referencsiát ad vissza, ami potenciálisan veszályes lehet,

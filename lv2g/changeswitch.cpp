@@ -309,10 +309,11 @@ void cCSRow::save(QSqlQuery& q)
                 setCheckBoxColor(CIX_DEL_SRV, i, ET_FATAL);
                 cHostService hs;
                 hs._toReadBack = RB_NO;
-                switch(hs.removeById(q, hsIdDelList.at(i))) {
-                case 0:  setCheckBoxColor(CIX_DEL_SRV, i, ET_WARNING); break;
-                case 1:  setCheckBoxColor(CIX_DEL_SRV, i, ET_OK);      break;
-                default: setCheckBoxColor(CIX_DEL_SRV, i, ET_ERROR);   break;
+                if (hs.removeById(q, hsIdDelList.at(i))) {
+                    setCheckBoxColor(CIX_DEL_SRV, i, ET_OK);
+                }
+                else {
+                    setCheckBoxColor(CIX_DEL_SRV, i, ET_WARNING);
                 }
             }
         }
@@ -678,10 +679,11 @@ void cChangeSwitch::save(QSqlQuery& q)
             emit doSetListCellColor(EL_DEL_SRV, i, ET_FATAL);
             cHostService hs;
             hs._toReadBack = RB_NO;
-            switch (hs.removeById(q, srvDelIdList.at(i))) {
-            case 0:  emit doSetListCellColor(EL_DEL_SRV, i, ET_WARNING);  break;
-            case 1:  emit doSetListCellColor(EL_DEL_SRV, i, ET_OK);       break;
-            default: emit doSetListCellColor(EL_DEL_SRV, i, ET_ERROR);    break;
+            if (hs.removeById(q, srvDelIdList.at(i))) {
+                emit doSetListCellColor(EL_DEL_SRV, i, ET_OK);
+            }
+            else {
+                emit doSetListCellColor(EL_DEL_SRV, i, ET_WARNING);
             }
         }
     }

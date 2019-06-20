@@ -313,7 +313,8 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
         else {
             text += htmlInfo(QObject::tr("Eszköz paraméterek :"));
             text += sHtmlTabBeg + sHtmlRowBeg;
-            text += sHtmlTh.arg(QObject::tr("Paraméter típus"));
+            text += sHtmlTh.arg(QObject::tr("Név"));
+            text += sHtmlTh.arg(QObject::tr("Típus"));
             text += sHtmlTh.arg(QObject::tr("Érték"));
             text += sHtmlTh.arg(QObject::tr("Dim."));
             text += sHtmlRowEnd;
@@ -321,7 +322,8 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
             while (li.hasNext()) {
                  cNodeParam * p = li.next();
                  text += sHtmlRowBeg;
-                 text += sHtmlTd.arg(p->name());
+                 text += sHtmlTd.arg(p->getName());
+                 text += sHtmlTd.arg(p->typeName());
                  text += sHtmlTd.arg(p->value().toString());
                  text += sHtmlTd.arg(p->dim());
                  text += sHtmlRowEnd;
@@ -764,8 +766,8 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
     tRecordList<cPhsLink> list; // Ütközők listája
     bool r;
     exists = false;
-    link.collisions(q, list, _pl.getId(_sPortId1), (ePhsLinkType)_pl.getId(_sPhsLinkType1), (ePortShare)_pl.getId(_sPortShared));
-    link.collisions(q, list, _pl.getId(_sPortId2), (ePhsLinkType)_pl.getId(_sPhsLinkType2), (ePortShare)_pl.getId(_sPortShared));
+    link.collisions(q, list, _pl.getId(_sPortId1), ePhsLinkType(_pl.getId(_sPhsLinkType1)), ePortShare(_pl.getId(_sPortShared)));
+    link.collisions(q, list, _pl.getId(_sPortId2), ePhsLinkType(_pl.getId(_sPhsLinkType2)), ePortShare(_pl.getId(_sPortShared)));
     if (list.size()) {
         list.removeDuplicates();    // Beolvasott rekordok, van ID,
         for (int i = 0; i < list.size(); ++i) { // Ha esetleg már létezik a rekord, az is a listában lesz, meg kell keresni

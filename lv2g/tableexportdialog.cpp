@@ -10,7 +10,7 @@ cTableExportDialog::cTableExportDialog(QWidget *parent, const QString& _objName)
     ui(new Ui::cTableExportDialog)
 {
     ui->setupUi(this);
-    isExportableObject = cExport::isExportable(objectName);
+    isExportableObject = cExport::isExportable(objectName) & ~EXPORT_INH;
 }
 
 cTableExportDialog::~cTableExportDialog()

@@ -632,6 +632,7 @@ class cNPort;
 /// Port paraméter érték
 class LV2SHARED_EXPORT cPortParam : public cRecord {
     // friend class tOwnParams<cPortParam>;
+    friend class cPPort;
     friend class cNPort;
     friend class cInterface;
     CRECORD(cPortParam);
@@ -644,7 +645,7 @@ public:
     /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
     virtual bool 	toEnd (int i);
     /// A port paraméter nevével tér vissza
-    QString name()   const { return paramType.getName(); }
+    QString typeName()   const { return paramType.getName(); }
     /// A port paraméter típus enumerációs értékkel tér vissza
     qlonglong type()   const { return paramType.getId(_sParamTypeType); }
     /// A port paraméter dimenzió ill. mértékegység nevével tér vissza
@@ -1065,7 +1066,7 @@ public:
     /// Nincs ilyen id-vel Node_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
     virtual bool 	toEnd (int i);
     /// A Node paraméter nevével tér vissza
-    QString name()   const { return paramType.getName(); }
+    QString typeName()   const { return paramType.getName(); }
     /// A Node paraméter típus enumerációs értékkel tér vissza
     qlonglong type()   const { return paramType.getId(_sParamTypeType); }
     /// A Node paraméter dimenzió ill. mértékegység nevével tér vissza
@@ -1141,7 +1142,7 @@ protected:
         cPatch::descr();
         containerValid = 0;
     }
-    cNPort *portSetParam(cNPort * __port, const QString& __par, const QVariant &__val);
+    cNPort *portSetParam(cNPort * __port, const QString& __name, const QVariant &__val, const QString& __type);
 public:
     virtual void clearToEnd();
     virtual void toEnd();
@@ -1165,7 +1166,7 @@ public:
     /// Feltölti az adatbázisból a params konténert.
     int fetchParams(QSqlQuery& q);
     /// Paraméter létrehozása, vagy értékének a modosítása
-    void setParam(const QString& __par, const QVariant& __val);
+    void setParam(const QString& __name, const QVariant& __val, const QString &__type);
 
     // Csak a cPatch-ban támogatott virtualis metódusok, a cNode-ban ujraimplementált metódusok kizárást dobnak.
     /// Törli a port bekötéseket tartalmazó konténert. Amennyiben a konténer még nincs megallokálva, akkor megallokálja az üres konténert.
@@ -1223,23 +1224,23 @@ public:
     /// @param __port A port neve
     /// @param __par A paraméter neve
     /// @param __val A paraméter új értéke.
-    cNPort *portSetParam(const QString& __port, const QString& __par, const QVariant& __val) {
-        return portSetParam(getPort(__port), __par, __val);
+    cNPort *portSetParam(const QString& __port, const QString& __name, const QVariant& __val, const QString& __type) {
+        return portSetParam(getPort(__port), __name, __val, __type);
     }
 
     /// A sorszám/index szerint megadott port paraméter hozzáadása ill. modosítása
     /// @param __port_index A port sorszáma ill. indexe
     /// @param __par A paraméter neve
     /// @param __val A paraméter új értéke.
-    cNPort *portSetParam(int __port_index, const QString& __par, const QVariant& __val) {
-        return portSetParam(getPort(__port_index), __par, __val);
+    cNPort *portSetParam(int __port_index, const QString& __name, const QVariant& __val, const QString& __type) {
+        return portSetParam(getPort(__port_index), __name, __val, __type);
     }
 
     /// A sorszám/index szerint megadott portok paraméter hozzáadása ill. modosítása
     /// @param __port_index A port sorszáma ill. indexe
     /// @param __par A paraméter neve
     /// @param __val A paraméter új értékei, rendre a következő surszámú porthoz rendelve.
-    cNPort *portSetParam(int __port_index, const QString& __par, const QVariantList& __val);
+    cNPort *portSetParam(int __port_index, const QString& __name, const QVariantList& __val, const QString& __type);
 
     /// A port keresése az index mező értéke alapján.
     cNPort * getPort(int __ix, enum eEx __ex = EX_ERROR);
@@ -1312,7 +1313,7 @@ protected:
 
 /// A sablon metódus a megadott ID-vel és a típus paraméternek megfelelő típusú
 /// objektumot hozza létre (new) és tölti be az adatbázisból
-template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, enum eEx __ex = EX_ERROR)
+template<class P> inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, enum eEx __ex = EX_ERROR)
 {
     P *p = new P();
     p->setId(__id);
@@ -1479,7 +1480,7 @@ public:
     cInterface *portSetVlans(const QString& __port, const QVariantList &_ids);
     cInterface *portSetVlans(int __port_index, const QVariantList &_ids);
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
-    QHostAddress getIpAddress() const;
+    QHostAddress getIpAddress(tRecordList<cNPort>::const_iterator *ppi = nullptr) const;
     /// Ha nincsenek beolvasva a portok, akkor beolvassa azokat.
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress(QSqlQuery& q);
@@ -1514,7 +1515,7 @@ public:
     /// @param __d megjegyzés/leírás mező értéke.
     /// @param __place Az eszköz helyét azonosító place_id
     /// @return Az objektum referenciája
-    cNode& asmbWorkstation(QSqlQuery &q, const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place = 0);
+    cNode& asmbWorkstation(QSqlQuery &q, const QString& __n, const tStringPair *__addr, const QString *__mac, const QString& __d, qlonglong __place = 0);
     /// Egy új port összeállítása
     /// @param ix Port index, vagy NULL_IX, ha az index NULL lessz-
     /// @param pt port típus név string.

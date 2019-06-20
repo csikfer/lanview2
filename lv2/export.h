@@ -31,7 +31,10 @@ enum eExportPotential {
     EXPORT_NOT    = 0,
     EXPORT_TABLE  = 1,
     EXPORT_OBJECT = 2,
-    EXPORT_ANY    = EXPORT_TABLE | EXPORT_OBJECT
+    EXPORT_INH    = 4,
+    EXPORT_ANY    = EXPORT_TABLE | EXPORT_OBJECT,
+    EXPORT_ANY_INH= EXPORT_ANY | EXPORT_INH,
+    EXPORT_OBJ_INH= EXPORT_OBJECT | EXPORT_INH
 };
 
 #define X_EXPORTABLE_OBJECTS \
@@ -45,7 +48,10 @@ enum eExportPotential {
     X(MenuItem,     EXPORT_TABLE) \
     X(EnumVal,      EXPORT_ANY) \
     X(ServiceVarType,EXPORT_ANY) \
-    X(ServiceVar,   EXPORT_ANY)
+    X(ServiceVar,   EXPORT_ANY) \
+    X(Patch,        EXPORT_ANY) \
+    X(Node,         EXPORT_ANY_INH) \
+    X(SnmpDevice,   EXPORT_ANY_INH)
 
 enum eExportableObjects {
 #define X(e, f)       EO_##e,
@@ -57,6 +63,7 @@ class LV2SHARED_EXPORT cExport : public QObject {
 public:
     cExport(QObject *par = nullptr);
     static QString escaped(const QString& s);
+    static QString escaped(const QStringList& sl);
 protected:
     QString sNoAnyObj;
     int     actIndent;
@@ -119,8 +126,11 @@ protected:
     QString line(const QString& s) { return QString(actIndent * EXPORT_INDENT_SIZE, QChar(' ')) + s + '\n'; }
     static QString head(const QString& kw, const QString& s, const QString &n);
     static QString head(const QString& kw, const cRecord &o) { return head(kw, o.getName(), o.getNote()); }
-    static QString str(const cRecordFieldRef& fr, bool sp = true);
-    static QString str_z(const cRecordFieldRef &fr, bool sp = true);
+    static QString name(const cRecord& o, bool sp = true) { return str(o[o.nameIndex()], sp); }
+    static QString note(const cRecord& o, bool sp = true) { return str_z(o[o.noteIndex()], sp, true); }
+    static QString str(const cRecordFieldConstRef& fr, bool sp = true);
+    static QString str_z(const cRecordFieldConstRef &fr, bool sp = true, bool skipEmpty = false);
+    static QString int_z(const cRecordFieldConstRef &fr, bool sp = true);
     static QString value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
     static QString langComment();
     QString lineText(const QString &kw, const cRecord& o, int _tix);
@@ -138,7 +148,8 @@ protected:
     QString lineEndBlock(const QString& s, const QString& b);
     QString hostService(QSqlQuery& q, qlonglong _id);
 public:
-    static const QStringList exportableObjects();
+    static const QStringList& exportableObjects();
+    static QStringList exportable(int msk);
     static int isExportable(int ix)              { return isContIx(_exportPotentials, ix) ? _exportPotentials[ix] : EXPORT_NOT; }
     static int isExportable(const QString& name) { return isExportable(exportableObjects().indexOf(name));  }
     static int isExportable(const cRecord& o)    { return isExportable(o.tableName()); }
@@ -168,8 +179,20 @@ public:
     QString ServiceVarTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cServiceVarType& o);
     QString QueryParsers(eEx __ex = EX_NOOP);
-    /// ?! Kilóg a sorból, nem csinál semmit
-    QString _export(QSqlQuery& q, cQueryParser& o);
+    QString _export(QSqlQuery&, cQueryParser&);
+    QString Patchs(eEx __ex = EX_NOOP, bool only = true);
+    QString _export(QSqlQuery& q, cPatch& o, bool only = true);
+    QString Nodes(eEx __ex = EX_NOOP, bool only = false);
+    QString _export(QSqlQuery& q, cNode& o, bool only = true);
+    QString SnmpDevices(eEx __ex, bool only = false);
+    QString _export(QSqlQuery& q, cSnmpDevice& o);
+private:
+    template <class O, class P> QString oParam(tOwnRecords<P, O>& list);
+    QString oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first = 0);
+    QString fieldSetLine(QSqlQuery& q, cRecord &o, const QString fn) {
+        static const QString sFSet = "SET \"%1\" =";
+        return paramLine(q, sFSet.arg(fn), o[fn]);
+    }
 };
 
 #endif // EXPORT_H

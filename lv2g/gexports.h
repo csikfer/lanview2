@@ -24,6 +24,7 @@ private:
     bool isStop;
 //    cExportThread *pThread;
     QString lineFragment;
+    QStringList exportableTable;
 protected slots:
     void start();
     void save();

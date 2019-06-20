@@ -541,13 +541,15 @@ void cArpServerDef::updateArpTable(QSqlQuery& q)
 }
 
 /* --------------------------------------------------------------------------------------------------- */
-static qlonglong newAttachedNode(const QString& __n, const QString& __d)
+static void setLastPort(cNPort *p);
+static void newAttachedNode(const QString& __n, const QString& __d)
 {
-    cNode   node;
-    node.asmbAttached(__n, __d, gPlace());
-    node.containerValid = CV_ALL_HOST;
-    node.insert(qq(), EX_ERROR);
-    return node.ports.first()->getId();
+    cNode   *pNode = new cNode;
+    pNode->asmbAttached(__n, __d, gPlace());
+    pNode->containerValid = CV_ALL_HOST;
+    if (pPatch != nullptr) EXCEPTION(EPROGFAIL);
+    pPatch = pNode;
+    setLastPort(pNode->ports.first());
 }
 
 static qlonglong replaceAttachedNode(const QString& __n, const QString& __d)
@@ -559,39 +561,23 @@ static qlonglong replaceAttachedNode(const QString& __n, const QString& __d)
     return node.ports.first()->getId();
 }
 
-static void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
+static void newWorkstation(const QString& __n, const tStringPair * __addr, const QString * __mac, const QString& __d)
 {
-    QString name, descr;
-    for (int i = __from; i <= __to; i++) {
-        name  = nameAndNumber(__np, i);
-        descr = nameAndNumber(__dp, i);
-        newAttachedNode(name, descr);
-    }
-}
-
-static void replaceAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
-{
-    QString name, descr;
-    for (int i = __from; i <= __to; i++) {
-        name  = nameAndNumber(__np, i);
-        descr = nameAndNumber(__dp, i);
-        replaceAttachedNode(name, descr);
-    }
-}
-
-static qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
-{
-    cNode host;
-    host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
-    host.containerValid = CV_ALL_HOST;
-    host.insert(qq(), EX_ERROR);
-    return host.ports.first()->getId();
+    cNode *pHost = new cNode;
+    pHost->asmbWorkstation(qq(), __n, __addr, __mac, __d, gPlace());
+    pHost->containerValid = CV_ALL_HOST;
+    if (pPatch != nullptr) EXCEPTION(EPROGFAIL);
+    pPatch = pHost;
+    setLastPort(pHost->ports.first());
 }
 
 static qlonglong replaceWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
 {
     cNode host;
-    host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
+    tStringPair *pAddr = new tStringPair(QString(), _sDynamic);
+    QString *pMac = new QString(__mac.toString());
+    host.asmbWorkstation(qq(), __n, pAddr, pMac, __d, gPlace());
+    delete pAddr;
     host.containerValid = CV_ALL_HOST;
     host.replace(qq(), EX_ERROR);
     return host.ports.first()->getId();
@@ -845,6 +831,18 @@ static cNPort *portAddAddress(int ix, tStringPair *ip, QString *d)
     return portAddAddress(p, ip, d);
 }
 
+static void changeIfType(const QString& ifn)
+{
+    if (node().ports.size() != 1) {
+        yyerror(QObject::tr("Port change ifType : Invalid context."));
+    }
+    cNPort *pp = node().ports.first();
+    const cIfType& ift = cIfType::ifType(ifn);
+    if (ift.getName(_sIfTypeObjType) != pp->ifType().getName(_sIfTypeObjType)) {
+        yyerror(QObject::tr("Port change ifType : The type of object cannot change."));
+    }
+    pp->setId(_sIfTypeId, ift.getId());
+}
 
 static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
 {
@@ -1213,6 +1211,13 @@ inline static cNPort * setLastPort(const QString& n) {
     if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     cNPort * p = pPatch->ports.get(_sPortName, QVariant(n));
     setLastPort(p);
+    return p;
+}
+
+inline cNPort *lastPort() {
+    QString n = svars[sPortNm];
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
+    cNPort * p = pPatch->ports.get(n);
     return p;
 }
 
@@ -1644,6 +1649,7 @@ static inline cEnumVal& actEnum()
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T RAW_T  RRD_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
+%token      OS_T VERSION_T INDEX_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1654,12 +1660,12 @@ static inline cEnumVal& actEnum()
 %type  <i>  vlan_id place_id iptype pix pix_z image_id image_idz tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
-%type  <i>  node_h node_ts srvvt_id reattr
+%type  <i>  node_h node_ts srvvt_id reattr nodetype
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool_ bool_on bool ifdef exclude replfl prefered inverse
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from features
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from features osver
 %type  <sl> strs strsz strs_z strs_zz alert list_m nsws nsws_
 %type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
@@ -1884,7 +1890,7 @@ iexpr   : int_                      { $$ = $1; }
         | '(' iexpr ')'             { $$ = $2; }
         | INTEGER_T '(' fexpr ')'   { $$ = $3; }
         ;
-ix_z    :                           { $$ = NULL_IX; }
+ix_z    :                           { $$ = NULL_ID; }
         | int                       { $$ = $1; }
         ;
 /*ints    : int                       { $$ = new intList; *$$ << $1; }
@@ -2262,10 +2268,12 @@ patch_ps: patch_p patch_ps
 patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
         | SET_T str '=' value ';'               { pPatch->set(sp2s($2), vp2v($4)); }
-        | PARAM_T str '=' value ';'             { pPatch->setParam(sp2s($2), vp2v($4)); }
+        | PARAM_T str '=' value ':' ':' str ';' { pPatch->setParam(sp2s($2), vp2v($4), sp2s($7)); }
         | INVENTORY_T NUMBER_T str ';'          { pPatch->setName(_sInventoryNumber, sp2s($3)); }
         | SERIAL_T NUMBER_T str ';'             { pPatch->setName(_sSerialNumber, sp2s($3)); }
         | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5), $3)); }
+        | ADD_T PORT_T int str str_z TAG_T str ';'
+                                                { cNPort *p = pPatch->addPort(sp2s($4), sp2s($5), $3); setLastPort(p); p->setName(_sPortTag, sp2s($7)); }
         | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
         | PORT_T pix NOTE_T strs ';'            { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
@@ -2274,8 +2282,8 @@ patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp
         | PORT_T pnm TAG_T str ';'              { setLastPort(pPatch->portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4), vp2v($6))); }
-        | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(pPatch->portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
-        | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(pPatch->portSetParam($2, sp2s($4), vlp2vl($6))); }
+        | PORT_T pnm PARAM_T str '=' value ':' ':' str ';'  { setLastPort(pPatch->portSetParam(sp2s($2), sp2s($4), vp2v($6), sp2s($9))); }
+        | PORT_T pix PARAM_T str '=' vals ':' ':' str ';'   { setLastPort(pPatch->portSetParam($2, sp2s($4), vlp2vl($6), sp2s($9))); }
         | PORTS_T p_seqs SHARED_T strs ';'      { portSetShare($2, $4); }
         | PORT_T  p_seqs NC_T ';'               { portSetNC($2); }
         | for_m
@@ -2308,7 +2316,7 @@ pix_z   : INTEGER_V                     { $$ = $1; }
         | '#' '[' iexpr ']'             { $$ = $3; }
         | '#' '@'                       { $$ = vint(sPortIx); }
         | '#' '+' '@'                   { $$ = (vint(sPortIx) += 1); }
-        |                               { $$ = NULL_IX; }
+        |                               { $$ = NULL_ID; }
         ;
 // Port név magdásának a lehetőségie
 pnm     : str                                   { $$ = $1; }
@@ -2367,21 +2375,20 @@ spport  : PORTS_T p_seqs SHARED_T strs ';'      { portUpdateShare($2, $4); }
 node_h  : NODE_T replace node_ts                { $$ = $3; setReplace($2); }
         ;
 node_ts :                                       { $$ = ENUM2SET(NT_NODE); }
-        | '(' strs ')'                          { $$ = 0; foreach (QString s, *$2) { $$ |= ENUM2SET(nodeType(s)); } delete $2; }
+        | '(' nodetype ')'                      { $$ = $2; }
         ;
-node    : node_h str str_z                          { newHost($1, $2, nullptr, nullptr, $3); pPatch->containerValid = CV_ALL_NODE; }
-                node_cf node_e                      { writeAndDel(pPatch); }
-        | ATTACHED_T replfl str str_z ';'           { if ($2) replaceAttachedNode(sp2s($3), sp2s($4));
-                                                      else        newAttachedNode(sp2s($3), sp2s($4)); }
-        | ATTACHED_T replfl str str_z FROM_T int TO_T int ';'
-                                                    { if ($2) replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8);
-                                                      else        newAttachedNodes(sp2s($3), sp2s($4), $6, $8);}
-        | node_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
-            node_cf node_e                          { writeAndDel(pPatch); }
-        | WORKSTATION_T replfl str mac str_z ';'    { if ($2) replaceWorkstation(sp2s($3), *$4, sp2s($5));
-                                                      else        newWorkstation(sp2s($3), *$4, sp2s($5));
-                                                      delete $4; }
-        | SNMP_T NODE_T str REFRESH_T ';'           { pPatch = cSnmpDevice::refresh(qq(), sp2s($3)); pDelete(pPatch); }
+nodetype: strs                                  { $$ = 0; foreach (QString s, *$1) { $$ |= ENUM2SET(nodeType(s)); } delete $1; }
+        ;
+node    : node_h str str_z                      { newHost($1, $2, nullptr, nullptr, $3); pPatch->containerValid = CV_ALL_NODE; }
+                node_cf node_e                  { writeAndDel(pPatch); }
+        | ATTACHED_T replace str str_z { setReplace($2); newAttachedNode(sp2s($3), sp2s($4)); }
+                node_e                          { writeAndDel(pPatch); }
+        | node_h name_q ip_q mac_q str_z        { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
+            node_cf node_e                      { writeAndDel(pPatch); }
+        | WORKSTATION_T replace name_q ip_q mac_q str_z ';'
+                                                { setReplace($2); newWorkstation(sp2s($3), $4, $5, sp2s($6)); delete $4; delete $5; }
+                node_e                          { writeAndDel(pPatch); }
+        | SNMP_T NODE_T str REFRESH_T ';'       { pPatch = cSnmpDevice::refresh(qq(), sp2s($3)); pDelete(pPatch); }
         ;
 node_e  : '{' node_ps '}'
         | ';'
@@ -2393,15 +2400,23 @@ node_cf :
         | TEMPLATE_T str    { templates.get(_sNodes, sp2s($2)); }   node_ps
         | READ_T            { node().setByName(qq()); node().fetchAllChilds(qq()); }
         ;
-node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2s($2)); }
+node_p  : TYPE_T '+' nodetype ';'               { node().setId(_sNodeType, node().getId(_sNodeType) | $3); }
+        | NOTE_T str ';'                        { node().setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { node().setId(_sPlaceId, $2); }
         | SET_T str '=' value ';'               { node().set(sp2s($2), vp2v($4)); }
-        | PARAM_T str '=' value ';'             { node().setParam(sp2s($2), vp2v($4)); }
+        | PARAM_T str '=' value ':' ':' str ';' { node().setParam(sp2s($2), vp2v($4), sp2s($7)); }
         | INVENTORY_T NUMBER_T str ';'          { node().setName(_sInventoryNumber, sp2s($3)); }
         | SERIAL_T NUMBER_T str ';'             { node().setName(_sSerialNumber, sp2s($3)); }
+        | OS_T str_z osver ';'                  { if (!$2->isNull()) node().setName(_sOsName, *$2);
+                                                  if (!$3->isNull()) node().setName(_sOsVersion, *$3);
+                                                  delete $2; delete $3;
+                                                }
+        | PORT_T pix { setLastPort($2); }       '{' np_ps '}'
+        | PORT_T pnm { setLastPort(sp2s($2)); } '{' np_ps '}'
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(node().addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
-        | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(node().addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
+        | ADD_T PORT_T pix_z str str str_z      { setLastPort(node().addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
+                np_pp
         | DELETE_T PORT_T str ';'               { cNPort *p = node().ports.pull(sp2s($3), EX_IGNORE); pDelete(p); }
         | DELETE_T PORT_T int ';'               { cNPort *p = node().ports.pull(_sPortIndex, QVariant($3), EX_IGNORE); pDelete(p); }
         | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(node().portModType($2, sp2s($5), sp2s($6), sp2s($7), $4)); }
@@ -2412,11 +2427,12 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | PORT_T pnm TAG_T str ';'              { setLastPort(node().portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(node().portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(node().portSet($2, sp2s($4), vlp2vl($6)));; }
-        | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(node().portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
-        | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(node().portSetParam($2, sp2s($4), vlp2vl($6))); }
+        | PORT_T pnm PARAM_T str '=' value ':' ':' str ';'  { setLastPort(node().portSetParam(sp2s($2), sp2s($4), vp2v($6), sp2s($9))); }
+        | PORT_T pix PARAM_T str '=' vals ':' ':' str ';'   { setLastPort(node().portSetParam($2, sp2s($4), vlp2vl($6), sp2s($9))); }
         /* host */
         | DELETE_T PORT_T mac ';'               { cNPort *p; while (nullptr != (p = node().ports.pull(_sHwAddress, QVariant::fromValue(*$3), EX_IGNORE))) { delete p; } delete $3; }
-        | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
+        | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
+                np_pp
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
         | ADD_T SENSORS_T offs FROM_T int TO_T int offs str ip ';'  /* index offset ... név offset */
@@ -2475,6 +2491,22 @@ vlan_ids: vlan_id                               { *($$ = new QVariantList) << $1
         ;
 name_q  : str                                   { $$ = $1; }
         | LOOKUP_T                              { $$ = new QString(); }
+        ;
+osver   :                                       { $$ = new QString(); }
+        | VERSION_T str                         { $$ = $2; }
+        ;
+np_pp   : ';'
+        | '{' np_ps '}'
+        ;
+np_ps   : np_p np_ps
+        |
+        ;
+np_p    : PARAM_T str '=' value ':' ':' str ';'  { node().portSetParam(svars[sPortNm], sp2s($2), vp2v($4), sp2s($7)); }
+        | ADD_T ADDRESS_T ip_a str_z ';'         { portAddAddress(new QString(svars[sPortNm]), $3, $4); }
+        | TAG_T str ';'                          { node().portSet(svars[sPortNm], _sPortTag, sp2s($2)); }
+        | NAME_T str ';'                         { node().portSet(svars[sPortNm], _sPortName, *$2); svars[sPortNm] = sp2s($2); }
+        | INDEX_T ix_z ';'                       { node().portSet(svars[sPortNm], _sPortIndex, $2); }
+        | IFTYPE_T str ';'                       { changeIfType(sp2s($2)); }
         ;
 arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
                 { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::SNMP, sp2s($4), QString(), sp2s($8))); }
@@ -3197,6 +3229,7 @@ static const struct token {
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED) TOK(RAW)  TOK(RRD)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
+    TOK(OS) TOK(VERSION) TOK(INDEX)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },

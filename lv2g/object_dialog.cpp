@@ -116,14 +116,14 @@ cPatch * cPatchDialog::getPatch()
         p->ports << pp;
     }
     for (i = 0; i < n && p != nullptr; i++) {
-        int sh = (int)p->ports[i]->getId(_sSharedCable);
+        int sh = int(p->ports[i]->getId(_sSharedCable));
         if (!(sh == ES_A || sh == ES_AA)) continue;
         int a = i, b = -1, ab = -1, bb  = -1;
         bool cd = false;
         bool ok = true;
         for (int j = 0; ok && j < n && p != nullptr; j++) {
             if (rowsData.at(j)->sharedPortRow == i) {
-                sh = (int)p->ports[j]->getId(_sSharedCable);
+                sh = int(p->ports[j]->getId(_sSharedCable));
                 switch (sh) {
                 case ES_AB:
                     ok = ab == -1;
@@ -180,7 +180,7 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             setTableItemText(pp->getNote(),              pUi->tableWidgetPorts, i, CPP_NOTE);
             setTableItemText(pp->getName(_sPortTag),     pUi->tableWidgetPorts, i, CPP_TAG);
             setTableItemText(pp->getName(_sPortIndex),   pUi->tableWidgetPorts, i, CPP_INDEX);
-            int s = (int)pp->getId(__sSharedCable);
+            int s = int(pp->getId(__sSharedCable));
             setPortShare(i, s);
         }
         // Másodlagos megosztáshoz tartozó elsődleges portok
@@ -390,6 +390,17 @@ QString cPatchDialog::refName(int row)
                         getTableItemText(pUi->tableWidgetPorts, row, CPP_INDEX));
 }
 
+QList<int>  cPatchDialog::selectedRows() const
+{
+    QModelIndexList mil = pUi->tableWidgetPorts->selectionModel()->selectedRows();
+    QList<int>  rows;   // Törlendő sorok sorszámai
+    foreach (QModelIndex mi, mil) {
+        rows << mi.row();
+    }
+    // sorba rendezzük, mert majd a vége felül törlünk
+    std::sort(rows.begin(), rows.end());
+    return rows;
+}
 
 /* SLOTS */
 void cPatchDialog::changeName(const QString& name)
@@ -465,13 +476,7 @@ void cPatchDialog::addPorts()
 
 void cPatchDialog::delPorts()
 {
-    QModelIndexList mil = pUi->tableWidgetPorts->selectionModel()->selectedRows();
-    QList<int>  rows;   // Törlendő sorok sorszámai
-    foreach (QModelIndex mi, mil) {
-        rows << mi.row();
-    }
-    // sorba rendezzük, mert majd a vége felül törlünk
-    std::sort(rows.begin(), rows.end());
+    QList<int>  rows = selectedRows();   // Törlendő sorok sorszámai, rendezett
     // A hivatkozásokat töröljük a törlendő sorokra
     for (int j = 0; j < rowsData.size(); ++j) {
         int i = rowsData[j]->sharedPortRow;
@@ -566,8 +571,38 @@ void cPatchDialog::cellChanged(int row, int col)
 void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection &)
 {
     QModelIndexList mil = pUi->tableWidgetPorts->selectionModel()->selectedRows();
-    pUi->pushButtonDelPort->setDisabled(mil.isEmpty());
+    int n = mil.size();
+    bool empty = n == 0;
+    pUi->pushButtonDelPort->setDisabled(empty);
+    pUi->pushButtonShDel->setDisabled(empty);
+    pUi->pushButtonShAB->setDisabled(n < 2 || 0 != (n % 2));
 }
+
+void cPatchDialog::on_pushButtonShAB_clicked()
+{
+    QList<int>  rows = selectedRows();   // Kijelölt sorok sorszámai, rendezett
+    int i, n = rows.size();
+    for (i = 0; (i + 1) < n; i += 2) {
+        int ixA = i;
+        int ixB = i +1;
+        setPortShare(ixA, ES_A);
+        setPortShare(ixB, ES_B);
+        cPPortTableLine * rowB = rowsData.at(ixB);
+        int cix = rowB->listPortIxRow.indexOf(ixA);
+        if (cix >= 0) rowB->comboBoxPortIx->setCurrentIndex(cix +1);    // First item is NULL
+    }
+
+}
+
+void cPatchDialog::on_pushButtonShDel_clicked()
+{
+    QList<int>  rows = selectedRows();   // Kijelölt sorok sorszámai, rendezett
+    int i, n = rows.size();
+    for (i = 0; i < n; i++) {
+        setPortShare(i   , ES_);
+    }
+}
+
 
 cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {
@@ -1341,4 +1376,3 @@ cEnumValsEdit::~cEnumValsEdit()
 {
 
 }
-

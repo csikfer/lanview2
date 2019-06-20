@@ -4419,6 +4419,13 @@ bool cRecord::saveText(QSqlQuery& _q)
 
 
 /* ******************************************************************************************************* */
+cRecordFieldConstRef::cRecordFieldConstRef(const cRecordFieldRef& __r)
+{
+    _index = __r.index();
+    _pRecord = &__r.record();
+}
+
+
 cRecordFieldRef::cRecordFieldRef(const cRecordFieldRef& __r)
     : _record(__r._record)
 {

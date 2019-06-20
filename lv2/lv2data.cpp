@@ -1998,16 +1998,18 @@ int cPatch::fetchParams(QSqlQuery& q)
     return params.fetch(q);
 }
 
-void cPatch::setParam(const QString& __par, const QVariant& __val)
+void cPatch::setParam(const QString& __name, const QVariant& __val, const QString& __type)
 {
-    qlonglong typeId = cParamType::paramTypeId(__par);
-    cNodeParam *param = params.get(_sParamTypeId, typeId);
+    qlonglong typeId = cParamType::paramTypeId(__type);
+    cNodeParam *param = params.get(_sNodeParamName, __name, EX_IGNORE);
     if (param == nullptr) {
         param = new cNodeParam();
-        param->setId(_sParamTypeId, typeId);
+        param->setName(__name);
+        param->setType(typeId);
         params << param;
     }
-    param->value() = __val;
+    cParamType type = cParamType::paramType(typeId);
+    param->value() = type.paramToString(__val);
 }
 
 void cPatch::clearShares()
@@ -2132,25 +2134,27 @@ cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __vl)
     return p;
 }
 
-cNPort *cPatch::portSetParam(cNPort *port, const QString& __par, const QVariant& __val)
+cNPort *cPatch::portSetParam(cNPort *port, const QString& __name, const QVariant& __val, const QString &__type)
 {
-    qlonglong typeId = cParamType::paramTypeId(__par);
-    cPortParam *param = port->params.get(_sParamTypeId, typeId);
+    qlonglong typeId = cParamType::paramTypeId(__type);
+    cPortParam *param = port->params.get(__name);
     if (param == nullptr) {
         param = new cPortParam();
+        param->setName(__name);
         param->setId(_sParamTypeId, typeId);
         port->params << param;
     }
-    param->value() = __val;
+    cParamType type = cParamType::paramType(typeId);
+    param->value() = type.paramToString(__val);
     return port;
 }
 
-cNPort *cPatch::portSetParam(int __ix, const QString& __par, const QVariantList &__val)
+cNPort *cPatch::portSetParam(int __ix, const QString& __name, const QVariantList &__val, const QString &__type)
 {
     cNPort *p = nullptr;
     int ix = __ix;
     foreach (const QVariant& v, __val) {
-        p = portSetParam(ix, __par, v);
+        p = portSetParam(ix, __name, v, __type);
         ++ix;
     }
     return p;
@@ -2848,7 +2852,7 @@ QHostAddress cNode::getIpAddress(QSqlQuery& q)
     return getIpAddress();
 }
 
-QHostAddress cNode::getIpAddress() const
+QHostAddress cNode::getIpAddress(tRecordList<cNPort>::const_iterator *ppi) const
 {
     DBGFN();
     if (ports.isEmpty()) {
@@ -2861,7 +2865,7 @@ QHostAddress cNode::getIpAddress() const
     for (tRecordList<cNPort>::const_iterator pi = ports.constBegin(); pi < ports.constEnd(); ++pi) {
         const cNPort *pp = *pi;
         if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
-            const cInterface& i = *(const cInterface *)pp;
+            const cInterface& i = *pp->creconvert<cInterface>();
             for (tOwnRecords<cIpAddress, cInterface>::const_iterator ii = i.addresses.constBegin(); ii < i.addresses.constEnd(); ++ii) {
                 const cIpAddress& ip = **ii;
                 QHostAddress a = ip.address();
@@ -2870,6 +2874,7 @@ QHostAddress cNode::getIpAddress() const
                 }
                 if (ra.isNull() || (!ip.isNull(ixPreferred) && preferred > ip.getId(ixPreferred))) {
                     ra =  a;
+                    if (ppi != nullptr) *ppi = pi;
                     if (!ip.isNull(ixPreferred)) preferred = ip.getId(ixPreferred);
                 }
             }
@@ -2918,26 +2923,10 @@ cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __p
     return *this;
 }
 
-cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place)
+cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const tStringPair *__addr, const QString * __mac, const QString& __d, qlonglong __place)
 {
-    setName(__n);
-    setNote(__d);
-    setId(_sPlaceId, __place);
-    setId(_sNodeType, enum2set(NT_HOST, NT_WORKSTATION));
-    addPort(_sEthernet, _sEthernet, _sNul, 1);
-    cInterface *pi = ports.first()->reconvert<cInterface>();
-    *pi = __mac;
-    QHostAddress ha;
-    QList<QHostAddress> al = cArp().mac2ips(q, __mac);
-    if (al.size() == 1) ha = al[0];
-    if (ha.isNull()) {
-        QHostInfo hi = QHostInfo::fromName(__n);         // Név alapján lekérdezzük az IP címet
-        al = hi.addresses();
-        if (al.size() == 1) ha = al[0];
-    }
-    if (!ha.isNull()) {     // Ha van ip, akkor beállítjuk
-        pi->addIpAddress(ha, _sDynamic);
-    }
+    tStringPair port(_sEthernet, _sEthernet);
+    asmbNode(q, __n, &port, __addr, __mac, __d, __place);
     return *this;
 }
 
@@ -2999,7 +2988,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *_
     QString em;
     QString name = __name;
     clear();
-    setName(_sNodeNote, __note);
+    setNote(__note);
     setId(_sPlaceId, __place);
     QString ips, ipt, ifType, pnm;
     if (__addr != nullptr) { ips = __addr->first; ipt = __addr->second; }      // IP cím és típus

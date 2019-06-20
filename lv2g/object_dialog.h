@@ -53,8 +53,6 @@ class cPPortTableLine;
         QComboBox *         comboBoxPortIx;
         /// Másodlagos megosztáshoz tartozó választható elsődleges portok listája (sor indexek).
         QList<int>          listPortIxRow;
-    private:
-        bool lockSlot;
     protected slots:
         void changeShared(int sh);
         void changePortIx(int ix);
@@ -98,6 +96,7 @@ protected:
         return sPortRefForm.arg(row +1).arg(name, ix);
     }
     QString refName(int row);
+    QList<int>  selectedRows() const;
 
 private slots:
     void changeName(const QString& name);
@@ -110,6 +109,8 @@ private slots:
     void changeTo(int i);
     void cellChanged(int row, int col);
     void selectionChanged(const QItemSelection &, const QItemSelection &);
+    void on_pushButtonShAB_clicked();
+    void on_pushButtonShDel_clicked();
 };
 
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);

@@ -1467,12 +1467,17 @@ const cRecStaticDescr& cRecordsViewBase::inhRecDescr(qlonglong i) const
 const cRecStaticDescr& cRecordsViewBase::inhRecDescr(const QString& tn) const
 {
     if (pInhRecDescr == nullptr) EXCEPTION(EPROGFAIL);
+
+    const cRecStaticDescr * pr = nullptr;
     QMap<qlonglong,const cRecStaticDescr *>::const_iterator i, e = pInhRecDescr->constEnd();
     for (i = pInhRecDescr->constBegin(); i != e; ++i) {
-        const cRecStaticDescr& r = **i;
-        if (r.tableName() == tn) return r;
+        if (i.value()->tableName() == tn) {
+            pr = i.value();
+            break;
+        }
     }
-    EXCEPTION(EDATA, -1, tn);
+    if (pr == nullptr) EXCEPTION(EDATA, -1, tn);
+    return *pr;
 }
 
 void cRecordsViewBase::buttonPressed(int id)

@@ -23,12 +23,13 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
 //    pThread = NULL;
     isStop  = false;
     QSqlQuery q = getQuery();
-    QStringList ol = cExport::exportableObjects();
-    ol << sGUI << sSRV;
+    exportableTable = cExport::exportable(EXPORT_TABLE);
     pUi->setupUi(this);
-    pUi->comboBoxTable->addItems(ol);
+    pUi->comboBoxTable->addItems(exportableTable);
+    pUi->comboBoxTable->addItem(sGUI);
+    pUi->comboBoxTable->addItem(sSRV);
     pUi->pushButtonStop->hide();    // Not working
-    changedName(ol.first());
+    changedName(exportableTable.first());
     connect(pUi->pushButtonExport, SIGNAL(clicked()),     this, SLOT(start()));
     connect(pUi->pushButtonSave,   SIGNAL(clicked()),     this, SLOT(save()));
     connect(pUi->comboBoxTable,    SIGNAL(currentTextChanged(QString)), this, SLOT(changedName(QString)));
@@ -51,20 +52,20 @@ void cExportsWidget::disable(bool f)
 void cExportsWidget::start()
 {
     pUi->pushButtonExport->setDisabled(true);
-    int ix = pUi->comboBoxTable->currentIndex();
+    QString tn = pUi->comboBoxTable->currentText();
+    int ix = cExport::exportableObjects().indexOf(tn);
     QString r;
     cExport e;
-    if (ix < cExport::exportableObjects().size()) {
+    if (ix >= 0) {
         r = e.exportTable(ix);
     }
     else {
-        QString s = pUi->comboBoxTable->currentText();
-        if (sGUI == s) {
+        if (sGUI == tn) {
             r  = e.EnumVals(EX_IGNORE);
             r += e.TableShapes(EX_IGNORE);
             r += e.MenuItems(EX_IGNORE);
         }
-        else if (sSRV == s) {
+        else if (sSRV == tn) {
             r  = e.ServiceTypes(EX_IGNORE);
             r += e.Services(EX_IGNORE);
             r += e.ParamTypes(EX_IGNORE);

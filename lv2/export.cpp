@@ -8,8 +8,16 @@ static const QString _sDELETE_      = "DELETE ";
 static const QString _sTITLE        = "TITLE";
 static const QString _sWHATS_THIS   = "WHATS THIS";
 static const QString _sTOOL_TIP     = "TOOL TIP";
+static const QString _sNAME         = "NAME";
 static const QString _sPARAM        = "PARAM";
 static const QString _sFEATURES     = "FEATURES ";
+static const QString _sPLACE        = "PLACE";
+static const QString _sINENTORY     = "INVENTORY NUMBER";
+static const QString _sSERIAL       = "SERIAL NUMBER";
+static const QString _sSET          = "SET ";
+static const QString _sPORT         = "PORT ";
+static const QString _sADD_PORT     = "ADD PORT ";
+
 
 QStringList cExport::_exportableObjects;
 QList<int>  cExport::_exportPotentials;
@@ -46,6 +54,16 @@ QString cExport::escaped(const QString& s)
     return r + _sDq;
 }
 
+QString cExport::escaped(const QStringList& sl)
+{
+    QString r;
+    foreach (QString s, sl) {
+        r += escaped(s) + _sCommaSp;
+    }
+    r.chop(_sCommaSp.size());
+    return r;
+}
+
 QString cExport::head(const QString& kw, const QString& s, const QString& n)
 {
     QString r = kw + _sSp + escaped(s);
@@ -53,7 +71,7 @@ QString cExport::head(const QString& kw, const QString& s, const QString& n)
     return r;
 }
 
-QString cExport::str(const cRecordFieldRef &fr, bool sp)
+QString cExport::str(const cRecordFieldConstRef &fr, bool sp)
 {
     QString r;
     if (fr.isNull()) {
@@ -65,12 +83,25 @@ QString cExport::str(const cRecordFieldRef &fr, bool sp)
     return r;
 }
 
-QString cExport::str_z(const cRecordFieldRef& fr, bool sp)
+QString cExport::str_z(const cRecordFieldConstRef& fr, bool sp, bool skipEmpty)
+{
+    QString r;
+    bool skip;
+    if (skipEmpty) skip = fr.toString().isEmpty();
+    else           skip = fr.isNull();
+    if (!skip) {
+        r = str(fr, sp);
+    }
+    return r;
+}
+
+QString cExport::int_z(const cRecordFieldConstRef &fr, bool sp)
 {
     QString r;
     if (!fr.isNull()) {
-        r = str(fr, sp);
+        r = fr.toString();
     }
+    if (sp) r.prepend(_sSp);
     return r;
 }
 
@@ -118,13 +149,8 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
         r = fr.view(q);
         break;
     case cColStaticDescr::FT_TEXT_ARRAY:
-    case cColStaticDescr::FT_SET: {
-        QStringList l = v.toStringList();
-        foreach (QString s, l) {
-            r += escaped(s) + _sCommaSp;
-        }
-        r.chop(2);
-    }
+    case cColStaticDescr::FT_SET:
+        r = escaped(v.toStringList());
         break;
     case cColStaticDescr::FT_INTEGER_ARRAY:
         if (fk) {
@@ -290,7 +316,7 @@ QString cExport::lineEndBlock(const QString& s, const QString& b)
 /* ======================================================================================== */
 
 
-const QStringList cExport::exportableObjects()
+const QStringList& cExport::exportableObjects()
 {
     if (_exportableObjects.isEmpty()) {
 #define X(e, f)    _exportableObjects << _s##e##s; _exportPotentials << f;
@@ -298,6 +324,15 @@ const QStringList cExport::exportableObjects()
 #undef X
     }
     return _exportableObjects;
+}
+
+QStringList cExport::exportable(int msk)
+{
+    QStringList sl;
+#define X(e, f)    if (f & msk) { sl << _s##e##s; }
+        X_EXPORTABLE_OBJECTS
+#undef X
+    return sl;
 }
 
 QString cExport::exportTable(const QString& name, eEx __ex)
@@ -368,8 +403,8 @@ QString cExport::_export(QSqlQuery& q, cParamType& o)
 {
     (void)q;
     QString r;
-    r  = _sPARAM +  str(o[_sParamTypeName]) + str_z(o[_sParamTypeNote]);
-    r += " TYPE" + str(o[_sParamTypeType]) + str_z(o[_sParamTypeDim]) + _sSemicolon;
+    r  = _sPARAM +  str(o.cref(_sParamTypeName)) + str_z(o.cref(_sParamTypeNote));
+    r += " TYPE" + str(o.cref(_sParamTypeType)) + str_z(o.cref(_sParamTypeDim)) + _sSemicolon;
     return line(r);
 }
 
@@ -383,7 +418,7 @@ QString cExport::SysParams(eEx __ex)
 QString cExport::_export(QSqlQuery& q, cSysParam& o)
 {
     QString r;
-    r  = "SYS" + value(q, o[_sParamTypeId]) + _sSp + _sPARAM + str(o[_sSysParamName]);
+    r  = "SYS" + value(q, o[_sParamTypeId]) + _sSp + _sPARAM + str(o.cref(_sSysParamName));
     r += " =" + value(q, o[_sParamValue]) + _sSemicolon;
     return line(r);
 }
@@ -939,9 +974,409 @@ QString cExport::QueryParsers(eEx __ex)
     return r;
 }
 
-QString cExport::_export(QSqlQuery& q, cQueryParser& o)
+/// Not supported
+QString cExport::_export(QSqlQuery&, cQueryParser&)
 {
-    (void)q;
-    (void)o;
-    return QString();
+    EXCEPTION(ENOTSUPP);
+}
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::Patchs(eEx __ex, bool only)
+{
+    cPatch o;
+    QSqlQuery q = getQuery();
+    QSqlQuery q2 = getQuery();
+    QString r;
+    if (o.fetch(q, only, QBitArray(1, false), o.iTab(_sNodeName))) {
+        do {
+            r += _export(q2, o, only);
+        } while (o.next(q));
+    }
+    else {
+        if (__ex >= EX_NOOP) EXCEPTION(EDATA, 0, sNoAnyObj);
+    }
+    return r;
+}
+
+template <class O, class P> QString cExport::oParam(tOwnRecords<P, O>& list)
+{
+    QString r;
+    foreach (P *p, list.list()) {
+        r += line(_sPARAM + str((*p)[p->nameIndex()]) + " =" + str((*p)[_sParamValue]) + "::" + escaped(p->typeName()) + _sSemicolon);
+    }
+    return r;
+}
+
+QString cExport::_export(QSqlQuery& q, cPatch& o, bool only)
+{
+    if (!only) {
+        qlonglong table_oid = o.fetchTableOId(q);
+        if (o.tableoid() != table_oid) {
+            cNode no;
+            if (no.tableoid() == table_oid) {
+                no.setId(o.getId());
+                if (!no.completion(q)) EXCEPTION(EDATA, o.getId(), o.identifying());
+                return _export(q, no, true);
+            }
+            else {
+                cSnmpDevice so;
+                if (so.tableoid() == table_oid) {
+                    so.setId(o.getId());
+                    if (!so.completion(q)) EXCEPTION(EDATA, o.getId(), o.identifying());
+                    return _export(q, so);
+                }
+                else {
+                    EXCEPTION(EDATA, table_oid, o.identifying());
+                }
+            }
+        }
+    }
+    o.fetchPorts(q);
+    o.fetchParams(q);
+    QString r, b, s;
+
+    r  = lineBeginBlock(head("PATCH", o));
+        b  = paramLine(q, _sPLACE,    o[_sPlaceId]);
+        b += paramLine(q, _sINENTORY, o[_sInventoryNumber]);
+        b += paramLine(q, _sSERIAL,   o[_sSerialNumber]);
+        b += oParam(o.params);
+        QList<cNPort *> pl = o.ports.list();
+        QStringList nc; // Not connected port indexes
+        QMap<qlonglong, tStringPair> shared;
+        foreach (cNPort *pp, pl) {
+            cPPort& port = *(pp->reconvert<cPPort>());
+            QString six = port.getName(_sPortIndex);
+            ePortShare sh = ePortShare(port.getId(_sSharedCable));
+            // Not connected
+            if      (sh == ES_NC) nc << six;
+            // Shares? Main cable
+            else if (sh != ES_ && port.isNull(__sSharedPortId)) shared[port.getId()] = tStringPair(six, portShare(sh)) ;
+            if (!six.isEmpty()) six += _sSp;
+            s = _sADD_PORT + six + name(port) + note(port);
+            if (!port.isNull(_sPortTag)) s += " TAG " + str(port[_sPortTag], false);
+            b += line (s + _sSemicolon);
+            b += oParam(pp->params);
+        }
+        // Not connected list
+        if (!nc.isEmpty()) b += line(_sPORT + nc.join(_sCommaSp) + " NC;");
+        // Shares
+        if (!shared.isEmpty()) {
+            // Short ports by share type
+            std::sort(pl.begin(), pl.end(),
+                      [](cNPort *pa, cNPort *pb) { return pa->getId(_sSharedCable) < pb->getId(_sSharedCable); }
+                      );
+            while (!pl.isEmpty() && pl.first()->getId(_sSharedCable) == ES_) pl.pop_front();    // drop unshared ports from list
+            foreach (qlonglong id, shared.keys()) {
+                QStringList ports;
+                QStringList shs;
+                ports << shared[id].first;
+                shs   << shared[id].second;
+                foreach (cNPort *pp, pl) {
+                    if (id == pp->getId(_sSharedPortId)) {
+                        ports << pp->getName(_sPortIndex);
+                        shs   << pp->getName(_sSharedCable);
+                    }
+                }
+                s.clear();
+                if (shs.size() < 2 || shs.size() > 4) s = "// Invalid share : ";
+                s += "PORTS " + shs.join(_sCommaSp) + " SHARED " + ports.join(_sCommaSp) + _sSemicolon;
+                b += line(s);
+            }
+        }
+    r = lineEndBlock(r, b);
+    return r;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+
+QString cExport::Nodes(eEx __ex, bool only)
+{
+    cNode o;
+    QSqlQuery q = getQuery();
+    QSqlQuery q2 = getQuery();
+    QString r;
+    if (o.fetch(q, only, QBitArray(1, false), o.iTab(_sNodeName))) {
+        do {
+            r += _export(q2, o, only);
+        } while (o.next(q));
+    }
+    else {
+        if (__ex >= EX_NOOP) EXCEPTION(EDATA, 0, sNoAnyObj);
+    }
+    return r;
+
+}
+
+static inline QString _address(cIpAddress *a)
+{
+    return a->address().toString() + "/" + a->getName(_sIpAddressType);
+}
+
+QString cExport::oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first)
+{
+    QString r;
+    QList<cIpAddress *>& list = as.list();
+    foreach (cIpAddress *a, list.mid(first)) {
+        r += line("ADD ADDRESS " + _address(a) + _sSemicolon);
+    }
+    return r;
+}
+
+#define NODE_COMMON \
+    b += paramLine(q, _sPLACE,    o[_sPlaceId], UNKNOWN_PLACE_ID);  \
+    b += paramLine(q, _sINENTORY, o[_sInventoryNumber]);            \
+    b += paramLine(q, _sSERIAL,   o[_sSerialNumber]);               \
+    if (!o.isNull(_sOsName) || !o.isNull(_sOsVersion)) {            \
+        s = "OS " + str_z(o[_sOsName], false);                      \
+        if (!o.isNull(_sOsVersion)) s += " VERSION " + str(o[_sOsVersion], false);  \
+        b += line(s + _sSemicolon);                                 \
+    }                                                               \
+    b += oParam(o.params);
+
+
+QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
+{
+    if (!only) {
+        qlonglong table_oid = o.fetchTableOId(q);
+        if (o.tableoid() != table_oid) {
+            cSnmpDevice so;
+            if (so.tableoid() == table_oid) {
+                so.setId(o.getId());
+                if (!so.completion(q)) EXCEPTION(EDATA, o.getId(), o.identifying());
+                return _export(q, so);
+            }
+            else {
+                EXCEPTION(EDATA, table_oid, o.identifying());
+            }
+        }
+    }
+
+    o.fetchPorts(q);
+    o.fetchParams(q);
+    QString r, b, bb, s;
+
+    qlonglong type = o.getId(_sNodeType);
+    bool isHost = type & ENUM2SET(NT_HOST) && !o.ports.isEmpty();
+    if (o.ports.size() == 1) {  // Only one port
+        cNPort *pp = o.ports.first();
+        if (isHost) {
+            if (type & ENUM2SET(NT_WORKSTATION)
+             && pp->ifType().getName() == _sEthernet    // type is ethernet
+             && pp->getMac(_sHwAddress).isValid()       // valid MAC
+             && pp->reconvert<cInterface>()->addresses.size() == 1) {   // Only one IP address
+                // WORKSTATION ...
+                s = "WORKSTATION" + name(o);
+                cIpAddress *a = pp->reconvert<cInterface>()->addresses.first();
+                if (a->address().isNull()) s += " DYNAMIC";
+                else                       s += _sSp + _address(a);
+                s += _sSp + pp->getMac(_sHwAddress).toString();
+                r = lineBeginBlock(s + note(o));
+                    if (type != ENUM2SET2(NT_HOST, NT_WORKSTATION)) {
+                        type = type & ~ENUM2SET2(NT_HOST, NT_WORKSTATION);
+                        QStringList ant = o.descr()[_sNodeType].enumType().set2lst(type);
+                        if (ant.isEmpty()) {
+                            b += line (tr("// Warning : Invalid node type : %1").arg(o.getName(_sNodeType)));
+                        }
+                        else {
+                            b += line("TYPE + " + escaped(ant));
+                        }
+                    }
+                    NODE_COMMON
+                    ++actIndent;
+                        bb += paramLine(q, _sNAME, (*pp)[_sPortName], _sEthernet);
+                        if (pp->getId(_sPortIndex) != 1) bb += line("INDEX " + int_z((*pp)[_sPortIndex]) + _sSemicolon);
+                        bb += paramLine(q, "TAG", (*pp)[_sPortTag]);
+                        bb += oParam(pp->params);
+                    --actIndent;
+                    if (!bb.isEmpty()) {
+                        b += lineBeginBlock(_sPORT + "#@");
+                        b += bb;
+                        b += lineEndBlock();
+                    }
+                r = lineEndBlock(r, b);
+                return r;
+            }
+        }
+        else {
+            if (pp->ifType().getName() == _sAttach) {   // Only one attach type port : ATTACH
+                // ATTACH ...
+                r = lineBeginBlock("ATTACHED" + name(o) + note(o));
+                    NODE_COMMON
+                    ++actIndent;
+                        bb += paramLine(q, _sNAME, (*pp)[_sPortName], _sAttach);
+                        if (pp->getId(_sPortIndex) != 1) bb += line("INDEX " + int_z((*pp)[_sPortIndex]) + _sSemicolon);
+                        bb += paramLine(q, "TAG", (*pp)[_sPortTag]);
+                        bb += oParam(pp->params);
+                    --actIndent;
+                    if (!bb.isEmpty()) {
+                        b += lineBeginBlock(_sPORT + "#@");
+                        b += bb;
+                        b += lineEndBlock();
+                    }
+                r = lineEndBlock(r, b);
+                return r;
+            }
+        }
+    }
+
+    s = "NODE ";
+    if (0 != (type & ~ENUM2SET(NT_NODE))) s += "(" + escaped(o.getStringList(_sNodeType)) + ") ";
+    s += name(o) + _sSp;
+    tRecordList<cNPort>::const_iterator pi;
+    QHostAddress a = o.getIpAddress(&pi);
+    QStringList wMsgs;
+    if (isHost) {
+        if (!a.isNull()) {
+            if (pi != o.ports.begin()) o.ports.swap(0, pi - o.ports.begin());   // set first port
+            tOwnRecords<cIpAddress, cInterface>& addresses = o.ports.first()->reconvert<cInterface>()->addresses;
+            if (addresses.isEmpty()) EXCEPTION(EPROGFAIL);  // Imposible
+            if (a != addresses.first()->address()) {    // Find address
+                int i, n = addresses.size();
+                for (i = 1; i < n; ++i) {
+                    if (addresses.at(i)->address() == a) {
+                        addresses.swap(0, i);           // Set first address in first port
+                        break;
+                    }
+                }
+                if (i >= n) EXCEPTION(EPROGFAIL);   // Address is not found. Imposible
+            }
+            s += a.toString() + "/" + addresses.first()->getName(_sIpAddressType) + _sSp;
+        }
+        else {
+            wMsgs << tr("// Warning :  Missing IP address.");
+            // The first port must be an interface
+            if (o.ports.first()->chkObjType<cInterface>(EX_IGNORE) < 0) {   // First port object type is not interface
+                for (pi = o.ports.begin() + 1; pi < o.ports.end(); ++pi) {
+                    if ((*pi)->chkObjType<cInterface>(EX_IGNORE) == 0) {
+                        o.ports.swap(0, pi - o.ports.begin());
+                        break;
+                    }
+                }
+                if (pi >= o.ports.end()) {  // There is no interface type port
+                    wMsgs << tr("It's a host, but there's no interface type port.");
+                    isHost = false;
+                }
+            }
+            if (isHost) s += "DYNAMIC ";
+        }
+        if (isHost) {
+            cMac mac = o.ports.first()->getMac(_sHwAddress);
+            if (mac.isValid()) s += mac.toString() + _sSp;
+            else               s += "NULL ";
+        }
+    }
+    s += note(o);
+    r  = lineBeginBlock(s);
+        foreach (QString wmsg, wMsgs) {
+            b += line(wmsg);
+        }
+        QList<cNPort *> pl = o.ports.list();
+        cNPort *pp;
+        cInterface *pif;
+        if (isHost) {
+            // First port
+            pp = pl.first();
+            pif = pp->reconvert<cInterface>();
+            // If the first port is different from the default
+            if (pp->getName() != _sEthernet             // Default port name
+             || pif->ifType().getName() != _sEthernet    // Default type
+             || pif->addresses.size() > 1                // More than one ip address
+             || !pp->isNull(_sPortTag)                  // Port tag
+             || !pp->params.isEmpty()) {                // Port parameters
+                b += lineBeginBlock(_sPORT + "#@");
+                    b += paramLine(q, _sNAME, (*pp)[pp->nameIndex()], _sEthernet);
+                    b += paramLine(q, "IFTYPE", (*pp)[pp->ixIfTypeId()], cIfType::ifTypeId(_sEthernet));
+                    b += paramLine(q, "TAG", (*pp)[_sPortTag]);
+                    b += oParam(pp->params);            // parameters, if any
+                    b += oAddress(pif->addresses, 1);    // more ip addresses, if any
+                b += lineEndBlock();
+            }
+            pl.pop_front(); // Drop first port (exported all data)
+        }
+        NODE_COMMON
+        // Ports (Sort by index or name if index is NULL.
+        std::sort(pl.begin(), pl.end(),
+                  [](cNPort *pa, cNPort *pb)
+        {
+            if (pa->isNull(pa->ixPortIndex())) {
+                if (!pb->isNull(pb->ixPortIndex())) return false;
+                return pa->getName() < pb->getName();
+            }
+            return pa->getId(pa->ixPortIndex()) < pb->getId(pb->ixPortIndex());
+        }
+                  );
+        foreach (pp, pl) {
+            bool isInterface = 0 == pp->chkObjType<cInterface>(EX_IGNORE);
+            pif = isInterface ? pp->reconvert<cInterface>() : nullptr;
+            QString six = pp->getName(_sPortIndex);
+            if (!six.isEmpty()) six += _sSp;
+            // Port header
+            s = _sADD_PORT + six + escaped(pp->ifType().getName()) + name(*pp) + _sSp;
+            if (isInterface) {
+                if (pif->addresses.isEmpty()) s += _sNULL;
+                else {
+                    s += _address(pif->addresses.first());
+                    pif->addresses.pop_front();
+                }
+                cMac mac = pif->getMac(_sHwAddress);
+                s += _sSp + (mac.isValid() ? mac.toString() : _sNULL);
+            }
+            s += _sSp + note(*pp);
+            b += lineBeginBlock(s);
+                bb.clear();
+                if (!pp->isNull(_sPortTag)) bb += " TAG " + str((*pp)[_sPortTag], false) + _sSemicolon;
+                bb += oParam(pp->params);
+                if (isInterface) bb += oAddress(pif->addresses);
+            b  = lineEndBlock(b, bb);
+        }
+    r = lineEndBlock(r, b);
+    return r;
+}
+
+/// Not supported
+QString cExport::SnmpDevices(eEx __ex, bool only)
+{
+    if (only) {
+        cSnmpDevice o;
+        return sympleExport(o, o.toIndex(_sNodeName), __ex);
+    }
+    else {
+        return Nodes(__ex, false);
+    }
+}
+
+QString cExport::_export(QSqlQuery& q, cSnmpDevice& o)
+{
+    o.fetchPorts(q);
+    o.fetchParams(q);
+    QString r  = _export(q, static_cast<cNode&>(o));
+    QString s;
+    actIndent++;
+    s  = paramLine(q, "READ COMMUNITY", o[_sCommunityRd]);
+    s += paramLine(q, "WRITE COMMUNITY", o[_sCommunityWr]);
+    s += fieldSetLine(q, o, _sSysDescr);
+    s += fieldSetLine(q, o, _sSysObjectId);
+    s += fieldSetLine(q, o, _sSysUpTime);
+    s += fieldSetLine(q, o, _sSysContact);
+    s += fieldSetLine(q, o, _sSysName);
+    s += fieldSetLine(q, o, _sSysLocation);
+    s += fieldSetLine(q, o, _sSysServices);
+    if (s.isEmpty()) {
+        actIndent--;
+    }
+    else {
+        r.chop(1);  // drop last newline
+        if (r.endsWith(QChar(';'))) {
+            r.chop(1);
+            r = lineBeginBlock(r);
+            r = lineEndBlock(r, s);
+        }
+        else {
+            int lix = r.lastIndexOf(QChar('\n'), -1);
+            r = r.mid(0, lix + 1);  // drop last line
+            r += s;
+            r += lineEndBlock();
+        }
+    }
+    return r;
 }
