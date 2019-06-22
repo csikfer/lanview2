@@ -1122,17 +1122,20 @@ QString cExport::oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first)
     return r;
 }
 
-#define NODE_COMMON \
-    b += paramLine(q, _sPLACE,    o[_sPlaceId], UNKNOWN_PLACE_ID);  \
-    b += paramLine(q, _sINENTORY, o[_sInventoryNumber]);            \
-    b += paramLine(q, _sSERIAL,   o[_sSerialNumber]);               \
-    if (!o.isNull(_sOsName) || !o.isNull(_sOsVersion)) {            \
-        s = "OS " + str_z(o[_sOsName], false);                      \
-        if (!o.isNull(_sOsVersion)) s += " VERSION " + str(o[_sOsVersion], false);  \
-        b += line(s + _sSemicolon);                                 \
-    }                                                               \
+QString cExport::nodeCommon(QSqlQuery& q, cNode &o)
+{
+    QString b;
+    b += paramLine(q, _sPLACE,    o[_sPlaceId], UNKNOWN_PLACE_ID);
+    b += paramLine(q, _sINENTORY, o[_sInventoryNumber]);
+    b += paramLine(q, _sSERIAL,   o[_sSerialNumber]);
+    if (!o.isNull(_sOsName) || !o.isNull(_sOsVersion)) {
+        QString s = "OS " + str_z(o[_sOsName], false);
+        if (!o.isNull(_sOsVersion)) s += " VERSION " + str(o[_sOsVersion], false);
+        b += line(s + _sSemicolon);
+    }
     b += oParam(o.params);
-
+    return  b;
+}
 
 QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
 {
@@ -1181,7 +1184,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
                             b += line("TYPE + " + escaped(ant));
                         }
                     }
-                    NODE_COMMON
+                    b += nodeCommon(q, o);
                     ++actIndent;
                         bb += paramLine(q, _sNAME, (*pp)[_sPortName], _sEthernet);
                         if (pp->getId(_sPortIndex) != 1) bb += line("INDEX " + int_z((*pp)[_sPortIndex]) + _sSemicolon);
@@ -1201,7 +1204,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
             if (pp->ifType().getName() == _sAttach) {   // Only one attach type port : ATTACH
                 // ATTACH ...
                 r = lineBeginBlock("ATTACHED" + name(o) + note(o));
-                    NODE_COMMON
+                    b += nodeCommon(q, o);
                     ++actIndent;
                         bb += paramLine(q, _sNAME, (*pp)[_sPortName], _sAttach);
                         if (pp->getId(_sPortIndex) != 1) bb += line("INDEX " + int_z((*pp)[_sPortIndex]) + _sSemicolon);
@@ -1293,7 +1296,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
             }
             pl.pop_front(); // Drop first port (exported all data)
         }
-        NODE_COMMON
+        b += nodeCommon(q, o);
         // Ports (Sort by index or name if index is NULL.
         std::sort(pl.begin(), pl.end(),
                   [](cNPort *pa, cNPort *pb)

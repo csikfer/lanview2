@@ -3453,7 +3453,7 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
     for (int ix = 0; ix < cols; ++ix) {           // ix: mező index a rekordban
         if (!isNull(ix)) bind(ix, __q, i++);
     }
-    PDEB(VVERBOSE) << "Insert :" << sql << " / Bind { " + _sql_err_bound(__q) + "}" << endl;
+    PDEB(VVERBOSE) << "Insert :" << sql << _sql_err_bound(__q, " / Bound : ") << endl;
     _EXECSQL(__q);
     if (rbMask.count(true) == 0) {
         if (_toReadBack == RB_NO_ONCE) _toReadBack = _toReadBackDefault;

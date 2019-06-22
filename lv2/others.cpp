@@ -501,7 +501,7 @@ int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pM
 {
     QProcess p;
     int r = startProcessAndWait(p, cmd, args, pMsg, start_to, stop_to);
-    if (r < 0) {
+    if (r >= 0) {
         msgAppend(pMsg, QString::fromUtf8(p.readAll()));
     }
     return r;
@@ -509,7 +509,9 @@ int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pM
 
 int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args, QString *pMsg, int start_to, int stop_to)
 {
+    PDEB(VERBOSE) << cmd << _sSpace << args.join(_sSpace) << endl;
     if (pMsg != nullptr) pMsg->clear();
+    QString msg;
     p.setProcessChannelMode(QProcess::MergedChannels);
     p.start(cmd, args, QIODevice::ReadOnly);
     int r = -1;
@@ -517,33 +519,42 @@ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args
         if (p.waitForFinished(stop_to)) {
             r = p.exitCode();
             if (r < 0) {
-                msgAppend(pMsg, QObject::tr("Run `%1` command failed (%2 [ms]), state/error : %3/%4")
+                msg = msgAppend(pMsg, QObject::tr("Run `%1` command failed (%2 [ms]), state/error : %3/%4")
                           .arg(joinCmd(cmd, args))
                           .arg(stop_to)
                           .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
                           );
                 r = PE_ERROR;
+                PDEB(DERROR) << msg << endl;
             }
             else {
-                msgAppend(pMsg, QObject::tr("Return : #%1").arg(r));
+                msg = msgAppend(pMsg, QObject::tr("%1 return : #%2").arg(cmd).arg(r));
+                if (r) {
+                    PDEB(WARNING) << msg << endl;
+                }
+                else {
+                    PDEB(VERBOSE) << msg << endl;
+                }
             }
         }
         else {
-            msgAppend(pMsg, QObject::tr("Wait stop `%1` command failed (%2 [ms]), state/error : %3/%4")
+            msg = msgAppend(pMsg, QObject::tr("Wait stop `%1` command failed (%2 [ms]), state/error : %3/%4")
                       .arg(joinCmd(cmd, args))
                       .arg(stop_to)
                       .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
                       );
             r = PE_STOP_TIME_OUT;
+            PDEB(DERROR) << msg << endl;
         }
     }
     else {
-        msgAppend(pMsg, QObject::tr("Start `%1` command failed (%2 [ms]), state/error : %3/%4")
+        msg = msgAppend(pMsg, QObject::tr("Start `%1` command failed (%2 [ms]), state/error : %3/%4")
                   .arg(joinCmd(cmd, args))
                   .arg(start_to)
                   .arg(ProcessState2String(p.state()),ProcessError2String(p.error()))
                   );
         r = PE_START_TIME_OUT;
+        PDEB(DERROR) << msg << endl;
     }
     return r;
 }

@@ -87,6 +87,7 @@ cRrdHelper::cRrdHelper(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
     cntOk = cntFail = 0;
+    accesType = RAT_LOCAL;
 }
 
 cRrdHelper::~cRrdHelper()
@@ -94,37 +95,55 @@ cRrdHelper::~cRrdHelper()
     ;
 }
 
+inline void dirCat(QDir& dir, const QString& _to) { dir.setPath(dir.filePath(_to)); }
 
 void cRrdHelper::postInit(QSqlQuery &q, const QString &qs)
 {
     cInspector::postInit(q, qs);
-    static const QString _sBaseDir = "base_dir";
-    QString sBaseDir = feature(_sBaseDir);
-    QString sSubDir;
-    if (sBaseDir.isEmpty()) {
-        sBaseDir = cSysParam::getTextSysParam(q, _sBaseDir, lanView::getInstance()->homeDir);
-        sSubDir  = "rrd";
-        baseDir.setPath(sBaseDir);
-    }
-    else {
-        baseDir.setPath(sBaseDir);
-        sSubDir  = baseDir.dirName();
-        baseDir.cdUp();
-    }
-    if (!baseDir.exists(sSubDir)) {
-        if (!baseDir.mkdir(sSubDir)) {
-            EXCEPTION(ENODIR, 0, baseDir.path());
-        }
-        PDEB(INFO) << tr("The RRD Base Folder (%1) was created").arg(sBaseDir) << endl;
-    }
-    baseDir.cd(sSubDir);
-    if (!QFileInfo(baseDir.path()).isWritable()) {
-        EXCEPTION(EFOPEN, 0, baseDir.path());
-    }
+    // RRD access: Local or by daemon
     QString daemon = feature("daemon");
     if (!daemon.isEmpty()) {
         daemonOption << "-d";
         daemonOption << daemon;
+        if (daemon.startsWith("unix:")) accesType = RAT_LOCAL_BY_DAEMON;
+        else                            accesType = RAT_REAMOTE_BY_DAEMON;
+    }
+    // Base dir ...
+    static const QString _sBaseDir = "base_dir";    // Feature OR sys_param name
+    QString sBaseDir = feature(_sBaseDir);          // base dir in feature?
+    QString sSubDir  = "rrd";;
+    if (accesType == RAT_REAMOTE_BY_DAEMON) {
+        // No check base directory
+        if (sBaseDir.isEmpty()) {                       // no feature, get sys_param or home dir
+            sBaseDir = cSysParam::getTextSysParam(q, _sBaseDir, lanView::getInstance()->homeDir);
+            baseDir.setPath(sBaseDir);
+            dirCat(baseDir, sSubDir);
+        }
+        else {  // In the feature, the name of the RRD folder is specified
+            baseDir.setPath(sBaseDir);
+        }
+    }
+    else {
+        // Check base directory, and change current
+        if (sBaseDir.isEmpty()) {                       // no feature, get sys_param or home dir
+            sBaseDir = cSysParam::getTextSysParam(q, _sBaseDir, lanView::getInstance()->homeDir);
+            baseDir.setPath(sBaseDir);
+        }
+        else {  // In the feature, the name of the RRD folder is specified
+            baseDir.setPath(sBaseDir);
+            sSubDir  = baseDir.dirName();
+            baseDir.cdUp();
+        }
+        if (!baseDir.exists(sSubDir)) {
+            if (!baseDir.mkdir(sSubDir)) {
+                EXCEPTION(ENODIR, 0, baseDir.path());
+            }
+            PDEB(INFO) << tr("The RRD Base Folder (%1) was created").arg(sBaseDir) << endl;
+        }
+        baseDir.cd(sSubDir);
+        if (!QDir::setCurrent(baseDir.path()) || !QFileInfo(baseDir.path()).isWritable()) {
+            EXCEPTION(EFOPEN, 0, baseDir.path());
+        }
     }
 }
 
@@ -147,6 +166,7 @@ int cRrdHelper::run(QSqlQuery& q, QString &runMsg)
     cntOk = cntFail = 0;
     return r;
 }
+
 enum ixRRDPar { RP_RRD, RP_HELPER_ID_IX, RP_TIMESTAMP, RP_VALUE_IX, RP_SERVICE_VAR_ID_IX, RP_FIELD_NUM };
 void cRrdHelper::execRrd(const QString& payload)
 {
@@ -186,53 +206,48 @@ void cRrdHelper::execRrd(const QString& payload)
             APPMEMO(q, tr("The service_rrd_vars record not found (ID : %2) : '%1'").arg(payload).arg(serviceVarId), RS_CRITICAL);
             return;
         }
-        QString node    = q.value(0).toString();
-        QString port;
-        bool port_is_null = q.isNull(1);
-        if (!port_is_null) port = q.value(1).toString();
-        QString service = q.value(2).toString();
-        QString var     = q.value(3).toString();
-        QDir dir = baseDir;
-        // check <base_dir>/<node>
-        if (!dir.exists(node)) {
-            if (!dir.mkdir(node)) {
-                APPMEMO(q, tr("I can't create the %2 (node) folder : '%1'").arg(payload, dir.filePath(node)), RS_CRITICAL);
+        const QString nodeName    = q.value(0).toString();
+        const bool port_is_null   = q.isNull(1);
+        const QString portName    = port_is_null ? _sNul : q.value(1).toString();
+        const QString serviceName = q.value(2).toString();
+        const QString varName     = q.value(3).toString();
+        QString subDir;
+        subDir = nodeName;
+        if (!port_is_null) subDir += QDir::separator() + portName;
+        subDir += QDir::separator() + serviceName;
+        i.value().fileName = subDir + QDir::separator() + varName + ".rrd";
+        if (accesType != RAT_REAMOTE_BY_DAEMON) {
+            // Check dir
+            if (!baseDir.mkpath(subDir)) {
+                APPMEMO(q, tr("The service_rrd_vars record not found (ID : %2) : '%1'").arg(payload).arg(serviceVarId), RS_CRITICAL);
                 return;
             }
-            PDEB(INFO) << tr("Created the %2 (node) folder : '%1'").arg(payload, dir.filePath(node)) << endl;
         }
-        dir.cd(node);
-        // check <base_dir>/<node>/<port> if port is not null
-        if (!port_is_null) {
-            if (!dir.exists(port)) {
-                if (!dir.mkdir(port)) {
-                    APPMEMO(q, tr("I can't create the %2 (port) folder : '%1'").arg(payload, dir.filePath(port)), RS_CRITICAL);
-                    return;
-                }
-                PDEB(INFO) << tr("Created the %2 (port) folder : '%1'").arg(payload, dir.filePath(port)) << endl;
+        // if (accesType == RAT_REAMOTE_BY_DAEMON) Az rrdcached-t eddig nem sikerült rávenni, hogy létrehozza a konyvtárakat hiába adtam meg a -B -R opciókat.
+        if (accesType == RAT_LOCAL) {
+            QFileInfo fi(i.value().fileName);
+            if (fi.exists() && fi.isRelative() && fi.isWritable()) {
+                i.value().enable();
             }
-            dir.cd(port);
-        }
-        // check <base_dir>/<node>[/<port>]/<service>
-        if (!dir.exists(service)) {
-            if (!dir.mkdir(service)) {
-                APPMEMO(q, tr("I can't create the %2 (service) folder : '%1'").arg(payload, dir.filePath(service)), RS_CRITICAL);
-                return;
-            }
-            PDEB(INFO) << tr("Created the %2 (service) folder : '%1'").arg(payload, dir.filePath(service)) << endl;
-        }
-        dir.cd(service);
-        i.value().fileName = dir.filePath(var + ".rrd");
-        if (dir.exists(var)) {
-            i.value().enable();
         }
         else {
+            QStringList args;
+            args << "info";
+            args << daemonOption;
+            args << i.value().fileName;
+            QString msg;
+            int r = startProcessAndWait(sRrdTool, args, &msg);
+            if (r == 0) {   // File exists, and accessible
+                i.value().enable();
+            }
+        }
+        if (i.value().enabled != true) {
             if (createRrdFile(q, i)) {
                 i.value().enable();
-                PDEB(INFO) << tr("Created the %2 RRD file : '%1'").arg(payload, dir.filePath(var)) << endl;
+                PDEB(INFO) << tr("Created the %2 RRD file : '%1'").arg(payload, i.value().fileName) << endl;
             }
             else {
-                APPMEMO(q, tr("I can't create the %2 RRD file : '%1'").arg(payload, dir.filePath(var)), RS_CRITICAL);
+                APPMEMO(q, tr("I can't create the %2 RRD file : '%1'").arg(payload, i.value().fileName), RS_CRITICAL);
                 return;
             }
         }
@@ -261,30 +276,31 @@ enum eFXX { FXX_STEP, FXX_SIZE, FXX_AGREGATES, FXX_NUMBER };
 
 bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator i)
 {
-    cRrdBeat beat;
+    PDEB(INFO) << "RRD file : " << i.value().fileName << endl;
+    cRrdBeat rrdBeat;
     static const int indexes[RRA_NUMBER][FXX_NUMBER] = {
         //             FXX_STEP                     FXX_SIZE                     FXX_AGREGATES
-        { beat.toIndex(_sDailyStep),   beat.toIndex(_sDailyStep),   beat.toIndex(_sDailyAggregates)   },  // RRA_DAILY
-        { beat.toIndex(_sWeeklyStep),  beat.toIndex(_sWeeklyStep),  beat.toIndex(_sWeeklyAggregates)  },  // RRA_WEEKLY
-        { beat.toIndex(_sMonthlyStep), beat.toIndex(_sMonthlyStep), beat.toIndex(_sMonthlyAggregates) },  // RRA_MONTHLY
-        { beat.toIndex(_sYearlyStep),  beat.toIndex(_sYearlyStep),  beat.toIndex(_sYearlyAggregates)  },  // RRA_YEARLY
+        { rrdBeat.toIndex(_sDailyStep),   rrdBeat.toIndex(_sDailySize),   rrdBeat.toIndex(_sDailyAggregates)   },  // RRA_DAILY
+        { rrdBeat.toIndex(_sWeeklyStep),  rrdBeat.toIndex(_sWeeklySize),  rrdBeat.toIndex(_sWeeklyAggregates)  },  // RRA_WEEKLY
+        { rrdBeat.toIndex(_sMonthlyStep), rrdBeat.toIndex(_sMonthlySize), rrdBeat.toIndex(_sMonthlyAggregates) },  // RRA_MONTHLY
+        { rrdBeat.toIndex(_sYearlyStep),  rrdBeat.toIndex(_sYearlySize),  rrdBeat.toIndex(_sYearlyAggregates)  },  // RRA_YEARLY
     };
-    cServiceRrdVar var;
-    cServiceVarType type;
-    cParamType ptyp;
+    cServiceRrdVar  serviceRrdVar;
+    cServiceVarType serviceVarType;
+    cParamType      paramType;
 
-    var.setById(q, i.key());
-    type.setById(q, var.getId(_sServiceVarTypeId));
-    beat.setById(q, var.getId(_sRrdBeatId));
-    ptyp.setById(q, type.getId(_sRawParamTypeId));
+    serviceRrdVar.setById(q, i.key());
+    serviceVarType.setById(q, serviceRrdVar.getId(_sServiceVarTypeId));
+    rrdBeat.setById(q, serviceRrdVar.getId(_sRrdBeatId));
+    paramType.setById(q, serviceVarType.getId(_sRawParamTypeId));
     QString min = "0";
     QString max = "2000000000";
-    eFilterType pft = eFilterType(type.getId(_sPlausibilityType));
-    bool        pin = type.getBool(_sPlausibilityInverse);
+    eFilterType pft = eFilterType(serviceVarType.getId(_sPlausibilityType));
+    bool        pin = serviceVarType.getBool(_sPlausibilityInverse);
     if (pft == FT_INTERVAL) {
         if (!pin) {
-            min = type.getName(_sPlausibilityParam1);   // !! interval !!
-            max = type.getName(_sPlausibilityParam2);   // !! interval !!
+            min = serviceVarType.getName(_sPlausibilityParam1);   // !! interval !!
+            max = serviceVarType.getName(_sPlausibilityParam2);   // !! interval !!
         }
     }
     else {
@@ -294,8 +310,8 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
         default:        break;
         }
         switch (pft) {
-        case FT_BIG:    min = type.getName(_sPlausibilityParam1);    break; // !! interval !!
-        case FT_LITLE:  max = type.getName(_sPlausibilityParam1);    break; // !! interval !!
+        case FT_BIG:    min = serviceVarType.getName(_sPlausibilityParam1);    break; // !! interval !!
+        case FT_LITLE:  max = serviceVarType.getName(_sPlausibilityParam1);    break; // !! interval !!
         default:        break;
         }
     }
@@ -303,25 +319,27 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
     QStringList args;
     args << "create" << i.value().fileName;
     args << daemonOption;
-    args << "-s" << QString::number(beat.getId(_sStep) / 1000); // step [sec]
+    args << "-s" << QString::number(rrdBeat.getId(_sStep) / 1000); // step [sec], getId(_sStep) returns millisec
     args << QString("DS:%1:%2:%3:%4:%5")
             .arg(i.value().varName)                 // name
-            .arg(type.getName(_sServiceVarType))    // Type
-            .arg(beat.getId(_sHeartbeat) / 1000)    // heatrbeat [sec]
+            .arg(serviceVarType.getName(_sServiceVarType))    // Type
+            .arg(rrdBeat.getId(_sHeartbeat) / 1000)    // heatrbeat [sec]
             .arg(min, max);                         // min, max
     for (int rra = 0; rra < RRA_NUMBER; rra++) {
-        QStringList averages = beat.getStringList(indexes[rra][FXX_AGREGATES]);
+        QStringList averages = rrdBeat.getStringList(indexes[rra][FXX_AGREGATES]);
+        qlonglong step = rrdBeat.getId(indexes[rra][FXX_STEP]);
+        qlonglong size = rrdBeat.getId(indexes[rra][FXX_SIZE]);
+        PDEB(VVERBOSE) << "RRA " << averages.join(_sCommaSp) << _sCommaSp << step << _sCommaSp << size << endl;
         foreach (QString average, averages) {
-            args << QString("RRA:%1:0.5:%2:%3")
-                    .arg(average)
-                    .arg(beat.getId(indexes[rra][FXX_STEP]))
-                    .arg(beat.getId(indexes[rra][FXX_SIZE]));
+            args << QString("RRA:%1:0.5:%2:%3").arg(average).arg(step).arg(size);
         }
     }
     QString msg;
     int r = startProcessAndWait(sRrdTool, args, &msg);
     if (r != 0) {
-        APPMEMO(q, tr("I can't create the %1 RRD file\n%2").arg(i.value().fileName, msg), RS_CRITICAL);
+        msg = tr("I can't create the %1 RRD file\n%2").arg(i.value().fileName, msg);
+        APPMEMO(q, msg, RS_CRITICAL);
+        PDEB(DERROR) << msg << endl;
         return false;
     }
     return true;

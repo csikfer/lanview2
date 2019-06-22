@@ -189,6 +189,7 @@ public:
 private:
     template <class O, class P> QString oParam(tOwnRecords<P, O>& list);
     QString oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first = 0);
+    QString nodeCommon(QSqlQuery& q, cNode &o);
     QString fieldSetLine(QSqlQuery& q, cRecord &o, const QString fn) {
         static const QString sFSet = "SET \"%1\" =";
         return paramLine(q, sFSet.arg(fn), o[fn]);

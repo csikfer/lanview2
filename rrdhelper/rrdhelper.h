@@ -23,6 +23,10 @@ public:
     static int  cntEna; ///< Enabled object number
 };
 
+enum eRRD_AccessType {
+    RAT_LOCAL, RAT_LOCAL_BY_DAEMON, RAT_REAMOTE_BY_DAEMON
+};
+
 class cRrdHelper : public cInspector {
 public:
     cRrdHelper(QSqlQuery& q, const QString& __sn);
@@ -34,6 +38,7 @@ public:
     QDir    baseDir;
     QMap<qlonglong, cRrdFile>    rrdFileMap;    ///< cRrdFile index by service_var_id
     int cntOk, cntFail;
+    eRRD_AccessType accesType;
     QStringList daemonOption;
 };
 

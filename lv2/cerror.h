@@ -255,7 +255,7 @@ Az adattagok inicializálása után hívja a circulation() metódust
     QString mSqlErrDrText;          ///< SQL hiba esetén a driver hiba szöveg
     QString mSqlErrDbText;          ///< SQL hiba esetén a adatbázis hiba szöveg
     QString mSqlQuery;              ///< SQL hiba esetén a query string
-    QString mSqlBounds;             ///< SQL Query adatok
+    QString mSqlBounds;             ///< SQL Query paraméterek
     int     mDataLine;
     int     mDataPos;
     QString mDataMsg;               ///< Source file name
@@ -276,24 +276,34 @@ public:
 
 /// Egy SQL hiba típus konstanst stringgé kovertál.
 EXT_ QString SqlErrorTypeToString(int __et);
-///
-static inline QString _sql_err_bound(QSqlQuery& q)
+
+/// Az SQL Query paraméterek szöveges megjelenítése.
+inline QString _sql_err_bound(QSqlQuery& q, const QString& pref = QString())
 {
+    if (q.boundValues().isEmpty()) {
+        return QString();
+    }
     QMapIterator<QString, QVariant> i(q.boundValues());
     QString r;
     while (i.hasNext()) {
         i.next();
         r += i.key() + " = " + debVariantToString(i.value()) + "; ";
     }
-    if (r.size() > 0) r.chop(2);
-    return  r;
+    r.chop(2);
+    return  pref + r;
 }
-///
-static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s = QString())
+
+/// SQL Query hiba debug üzenet
+/// @param le SQL hiba objektum
+/// @param _fi A forrás fájl neve
+/// @param _li A forrás fájlban a sor sorszáma
+/// @param _fu A függvény neve
+/// @param s Az SQL Query string, opcionális
+inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s = QString())
 {
     if (ONDB(DERROR)) {
         cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " ...\n";
-        cDebug::cout() << QObject::tr("SQL ERROR ")     << le.nativeErrorCode()
+        cDebug::cout() << QObject::tr("SQL ERROR ") << le.nativeErrorCode()
                        << QObject::tr("; type:") << SqlErrorTypeToString(le.type()) << "\n";
         cDebug::cout() << QObject::tr("driverText   : ") << le.driverText() << "\n";
         cDebug::cout() << QObject::tr("databaseText : ") << le.databaseText();
@@ -302,17 +312,23 @@ static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li,
     }
 }
 
-static inline void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s = QString())
+/// SQL Query hiba debug üzenet
+/// @param q SQL query objektum
+/// @param _fi A forrás fájl neve
+/// @param _li A forrás fájlban a sor sorszáma
+/// @param _fu A függvény neve
+/// @param s Járulékos üzenet, opcionális
+inline void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s = QString())
 {
     if (ONDB(DERROR)) {
         cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " " << s << "\n";
-        cDebug::cout() << QObject::tr("SQL string : ") << q.lastQuery() << "\n";
-        cDebug::cout() << QObject::tr("SQL bounds : ") << _sql_err_bound(q);
+        cDebug::cout() << QObject::tr("SQL string : ") << q.lastQuery();
+        cDebug::cout() << _sql_err_bound(q, QObject::tr("\nSQL bounds : "));
         cDebug::cout() << flush;
     }
 }
 
-static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
+inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
 {
     pe->mSqlErrCode    = le.nativeErrorCode();
     pe->mSqlErrType   = le.type();
@@ -322,7 +338,7 @@ static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& s
     pe->mSqlBounds    = bound;
 }
 
-static inline void _sql_derr_ex(cError *pe, QSqlQuery& q)
+inline void _sql_derr_ex(cError *pe, QSqlQuery& q)
 {
     pe->mSqlQuery     = q.lastQuery();
     pe->mSqlBounds    = _sql_err_bound(q);
@@ -376,7 +392,7 @@ SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
  */
 #define SQLQUERYNEWERR(pe, o)  { \
         QSqlError le = (o).lastError(); \
-        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + " / Bind { " + _sql_err_bound(o) + "}"); \
+        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + _sql_err_bound(o, " / Bound : ")); \
         pe = NEWCERROR(EQUERY, le.number(), le.text()); \
         _sql_err_ex(pe, le, (o).lastQuery(), _sql_err_bound(o)); \
     }
