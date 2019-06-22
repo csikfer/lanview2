@@ -20,12 +20,6 @@ lv2.subdirs = lv2
     lv2d.depends = lv2
 }
 
-!exists(rrdhelper/miss) {
-    SUBDIRS += rrdhelper
-    lv2d.subdirs = rrdhelper
-    lv2d.depends = lv2
-}
-
 !exists(updt_oui/miss) {
     SUBDIRS += updt_oui
     updt_oui.subdirs = updt_oui
@@ -67,6 +61,12 @@ unix {
     SUBDIRS += snmpvars
     snmpvars.subdirs = snmpvars
     snmpvars.depends = lv2
+  }
+
+  !exists(rrdhelper/miss) {
+    SUBDIRS += rrdhelper
+    lv2d.subdirs = rrdhelper
+    lv2d.depends = lv2
   }
 
 }

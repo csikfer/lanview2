@@ -978,6 +978,7 @@ QString cExport::QueryParsers(eEx __ex)
 QString cExport::_export(QSqlQuery&, cQueryParser&)
 {
     EXCEPTION(ENOTSUPP);
+    return QString();
 }
 /* ---------------------------------------------------------------------------------------- */
 
