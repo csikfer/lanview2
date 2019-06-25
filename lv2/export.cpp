@@ -313,6 +313,17 @@ QString cExport::lineEndBlock(const QString& s, const QString& b)
     }
 }
 
+QString cExport::block(const QString& head, const QString& bb)
+{
+    QString b;
+    if (!bb.isEmpty()) {
+        b  = lineBeginBlock(head);
+        b += bb;
+        b += lineEndBlock();
+    }
+    return b;
+}
+
 /* ======================================================================================== */
 
 
@@ -1140,6 +1151,7 @@ QString cExport::nodeCommon(QSqlQuery& q, cNode &o)
 
 QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
 {
+    static const QString sLastPort = _sPORT + "#@";
     if (!only) {
         qlonglong table_oid = o.fetchTableOId(q);
         if (o.tableoid() != table_oid) {
@@ -1192,11 +1204,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
                         bb += paramLine(q, "TAG", (*pp)[_sPortTag]);
                         bb += oParam(pp->params);
                     --actIndent;
-                    if (!bb.isEmpty()) {
-                        b += lineBeginBlock(_sPORT + "#@");
-                        b += bb;
-                        b += lineEndBlock();
-                    }
+                    b += block(sLastPort, bb);
                 r = lineEndBlock(r, b);
                 return r;
             }
@@ -1207,16 +1215,12 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
                 r = lineBeginBlock("ATTACHED" + name(o) + note(o));
                     b += nodeCommon(q, o);
                     ++actIndent;
-                        bb += paramLine(q, _sNAME, (*pp)[_sPortName], _sAttach);
-                        if (pp->getId(_sPortIndex) != 1) bb += line("INDEX " + int_z((*pp)[_sPortIndex]) + _sSemicolon);
-                        bb += paramLine(q, "TAG", (*pp)[_sPortTag]);
+                        bb += paramLine(q, _sNAME,  (*pp)[_sPortName], _sAttach);
+                        bb += paramLine(q, "INDEX ",(*pp)[_sPortIndex], 1LL);
+                        bb += paramLine(q, "TAG",   (*pp)[_sPortTag]);
                         bb += oParam(pp->params);
                     --actIndent;
-                    if (!bb.isEmpty()) {
-                        b += lineBeginBlock(_sPORT + "#@");
-                        b += bb;
-                        b += lineEndBlock();
-                    }
+                    b += block(sLastPort, bb);
                 r = lineEndBlock(r, b);
                 return r;
             }
@@ -1229,10 +1233,12 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
     tRecordList<cNPort>::const_iterator pi;
     QHostAddress a = o.getIpAddress(&pi);
     QStringList wMsgs;
+    QList<cNPort *> pl = o.ports.list();
     if (isHost) {
         if (!a.isNull()) {
-            if (pi != o.ports.begin()) o.ports.swap(0, pi - o.ports.begin());   // set first port
-            tOwnRecords<cIpAddress, cInterface>& addresses = o.ports.first()->reconvert<cInterface>()->addresses;
+            int plix = pi - o.ports.constBegin();
+            if (plix != 0) pl.swap(0, plix);   // set first port
+            tOwnRecords<cIpAddress, cInterface>& addresses = pl.first()->reconvert<cInterface>()->addresses;
             if (addresses.isEmpty()) EXCEPTION(EPROGFAIL);  // Imposible
             if (a != addresses.first()->address()) {    // Find address
                 int i, n = addresses.size();
@@ -1249,14 +1255,14 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
         else {
             wMsgs << tr("// Warning :  Missing IP address.");
             // The first port must be an interface
-            if (o.ports.first()->chkObjType<cInterface>(EX_IGNORE) < 0) {   // First port object type is not interface
-                for (pi = o.ports.begin() + 1; pi < o.ports.end(); ++pi) {
+            if (pl.first()->chkObjType<cInterface>(EX_IGNORE) < 0) {   // First port object type is not interface
+                for (pi = pl.begin() + 1; pi < pl.end(); ++pi) {
                     if ((*pi)->chkObjType<cInterface>(EX_IGNORE) == 0) {
-                        o.ports.swap(0, pi - o.ports.begin());
+                        pl.swap(0, pi - pl.begin());
                         break;
                     }
                 }
-                if (pi >= o.ports.end()) {  // There is no interface type port
+                if (pi >= pl.end()) {  // There is no interface type port
                     wMsgs << tr("It's a host, but there's no interface type port.");
                     isHost = false;
                 }
@@ -1264,7 +1270,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
             if (isHost) s += "DYNAMIC ";
         }
         if (isHost) {
-            cMac mac = o.ports.first()->getMac(_sHwAddress);
+            cMac mac = pl.first()->getMac(_sHwAddress);
             if (mac.isValid()) s += mac.toString() + _sSp;
             else               s += "NULL ";
         }
@@ -1274,27 +1280,22 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
         foreach (QString wmsg, wMsgs) {
             b += line(wmsg);
         }
-        QList<cNPort *> pl = o.ports.list();
         cNPort *pp;
         cInterface *pif;
         if (isHost) {
-            // First port
+            // First port (in header)
             pp = pl.first();
             pif = pp->reconvert<cInterface>();
             // If the first port is different from the default
-            if (pp->getName() != _sEthernet             // Default port name
-             || pif->ifType().getName() != _sEthernet    // Default type
-             || pif->addresses.size() > 1                // More than one ip address
-             || !pp->isNull(_sPortTag)                  // Port tag
-             || !pp->params.isEmpty()) {                // Port parameters
-                b += lineBeginBlock(_sPORT + "#@");
-                    b += paramLine(q, _sNAME, (*pp)[pp->nameIndex()], _sEthernet);
-                    b += paramLine(q, "IFTYPE", (*pp)[pp->ixIfTypeId()], cIfType::ifTypeId(_sEthernet));
-                    b += paramLine(q, "TAG", (*pp)[_sPortTag]);
-                    b += oParam(pp->params);            // parameters, if any
-                    b += oAddress(pif->addresses, 1);    // more ip addresses, if any
-                b += lineEndBlock();
-            }
+            actIndent++;
+                bb  = paramLine(q, "IFTYPE", (*pp)[pp->ixIfTypeId()], cIfType::ifTypeId(_sEthernet));
+                bb += paramLine(q, _sNAME,   (*pp)[pp->nameIndex()], _sEthernet);
+                bb += paramLine(q, "INDEX",  (*pp)[_sPortIndex], 1LL);
+                bb += paramLine(q, "TAG",    (*pp)[_sPortTag]);
+                bb += oParam(pp->params);             // parameters, if any
+                bb += oAddress(pif->addresses, 1);    // more ip addresses, if any
+            actIndent--;
+            b += block(sLastPort, bb);
             pl.pop_front(); // Drop first port (exported all data)
         }
         b += nodeCommon(q, o);

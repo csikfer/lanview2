@@ -1414,7 +1414,6 @@ static void newHost(qlonglong t, QString *name, tStringPair *ip, QString *mac, Q
     if (t & ENUM2SET(NT_SNMP)) pNode = new cSnmpDevice();
     else                       pNode = new cNode();
     pPatch = pNode;
-    pNode->setId(_sNodeType, t);
     if (ip == nullptr) {
         pNode->setName(*name);
         if (d != nullptr) pNode->setNote(*d);
@@ -1424,6 +1423,7 @@ static void newHost(qlonglong t, QString *name, tStringPair *ip, QString *mac, Q
         pNode->asmbNode(qq(), *name, nullptr, ip, mac, *d, gPlace());
         setLastPort(pNode->ports.first());
     }
+    pNode->setId(_sNodeType, t);
     pDelete(name); pDelete(ip); pDelete(mac); pDelete(d);
 }
 

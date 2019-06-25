@@ -146,6 +146,7 @@ protected:
     QString lineBeginBlock(const QString& s) { QString r = line(s + " {"); actIndent++; return r; }
     QString lineEndBlock();
     QString lineEndBlock(const QString& s, const QString& b);
+    QString block(const QString& head, const QString& bb);
     QString hostService(QSqlQuery& q, qlonglong _id);
 public:
     static const QStringList& exportableObjects();
