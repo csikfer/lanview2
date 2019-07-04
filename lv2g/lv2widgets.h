@@ -161,7 +161,7 @@ signals:
     void changed(const QVariant& val);
 };
 
-inline static QFrame *line(int __w, int __mw, QWidget *par = nullptr)
+inline QFrame *line(int __w, int __mw, QWidget *par = nullptr)
 {
     QFrame *line = new QFrame(par);
     line->setLineWidth(__w);
@@ -171,7 +171,7 @@ inline static QFrame *line(int __w, int __mw, QWidget *par = nullptr)
     return line;
 }
 
-inline static QFrame *line(QWidget *par = nullptr)
+inline QFrame *line(QWidget *par = nullptr)
 {
     QFrame *line = new QFrame(par);
     line->setFrameShape(QFrame::HLine);

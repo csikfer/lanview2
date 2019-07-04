@@ -1024,13 +1024,13 @@ const cRecStaticDescr&  cIfType::descr() const
     return *_pRecordDescr;
 }
 
-tRecordList<cIfType> cIfType::ifTypes;
-cIfType *cIfType::pNull = nullptr;
+tRecordList<cIfType> cIfType::_ifTypes;
+cIfType *cIfType::_pNull = nullptr;
 
 bool cIfType::insert(QSqlQuery &__q, eEx __ex)
 {
     if (cRecord::insert(__q, __ex)) {
-        ifTypes << *this;
+        _ifTypes << *this;
         return true;
     }
     return false;
@@ -1039,7 +1039,7 @@ bool cIfType::insert(QSqlQuery &__q, eEx __ex)
 bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, eEx __ex)
 {
     if (cRecord::update(__q, __only, __set, __where, __ex)) {
-        cIfType *pIft = ifTypes.get(getId());
+        cIfType *pIft = _ifTypes.get(getId());
         pIft->set(*this);
         return true;
     }
@@ -1074,70 +1074,84 @@ qlonglong cIfType::insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, cons
 
 void cIfType::fetchIfTypes(QSqlQuery& __q)
 {
-    if (pNull == nullptr) pNull = new cIfType();
+    if (_pNull == nullptr) _pNull = new cIfType();
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
-    if (ifTypes.count() == 0) {
+    if (_ifTypes.count() == 0) {
         cIfType *p = new cIfType();
-        if (0 == ifTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, tr("Load cache: The if_types table is empty."));
-        return;
+        if (0 == _ifTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, tr("Load cache: The if_types table is empty."));
     }
-    // UPDATE
-    int found = ifTypes.count();    // Megtalálandó rekordok száma
-    int n = 0;                      // Megtalált rekordok számláló
-    cIfType ift;
-    if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, tr("Update cache: The if_types table is empty."));
-    do {
-        cIfType *pIft = ifTypes.get(ift.getId(), EX_IGNORE);    // ID alapján rákeresünk
-        if (pIft == nullptr) {   // Ez egy új rekord
-            ifTypes << ift;
-        }
-        else {                // Frissít
-            pIft->set(ift);
-            ++n;
-        }
-    } while (ift.next(__q));
-    if (n > found) EXCEPTION(EPROGFAIL);
-    if (n < found) EXCEPTION(EDATA, n - found, tr("Deleted if_tpes record."));
+    else {
+        // UPDATE
+        int found = _ifTypes.count();    // Megtalálandó rekordok száma
+        int n = 0;                      // Megtalált rekordok számláló
+        cIfType ift;
+        if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, tr("Update cache: The if_types table is empty."));
+        do {
+            cIfType *pIft = _ifTypes.get(ift.getId(), EX_IGNORE);    // ID alapján rákeresünk
+            if (pIft == nullptr) {   // Ez egy új rekord
+                _ifTypes << ift;
+            }
+            else {                // Frissít
+                pIft->set(ift);
+                ++n;
+            }
+        } while (ift.next(__q));
+        if (n > found) EXCEPTION(EPROGFAIL);
+        if (n < found) EXCEPTION(EDATA, n - found, tr("Deleted if_tpes record."));
+    }
+    std::sort(_ifTypes.begin(), _ifTypes.end(),
+              [](cIfType *pa, cIfType *pb)
+                {
+                    if (pa->getId(_sIfTypeIanaId) == pb->getId(_sIfTypeIanaId)) {
+                        if (pb->getBool(_sPreferred)) return true;
+                        if (pa->getBool(_sPreferred)) return false;
+                        return pa->getId() < pb->getId();
+                    }
+                    return pa->getId(_sIfTypeIanaId) < pb->getId(_sIfTypeIanaId);
+                }
+              );
 }
 
 const cIfType& cIfType::ifType(const QString& __nm, eEx __ex)
 {
     checkIfTypes();
-    int i = ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
+    int i = _ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
     if (i < 0) {
         if (__ex) EXCEPTION(EDATA, -1,QObject::tr("Invalid iftype name %1 or program error.").arg(__nm));
-        return *pNull;
+        return *_pNull;
     }
-    return *(ifTypes[i]);
+    return *(_ifTypes[i]);
 }
 
 const cIfType& cIfType::ifType(qlonglong __id, eEx __ex)
 {
     checkIfTypes();
-    int i = ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
+    int i = _ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
     if (i < 0) {
         if (__ex) EXCEPTION(EDATA, __id,QObject::tr("Invalid iftype id or program error."));
-        return *pNull;
+        return *_pNull;
     }
-    return *(ifTypes[i]);
+    return *(_ifTypes[i]);
 }
 
-const cIfType *cIfType::fromIana(int _iana_id)
+const cIfType *cIfType::fromIana(int _iana_id, bool recursive, bool preferdOnly)
 {
     checkIfTypes();
+    const cIfType * r = nullptr;
     QList<cIfType *>::const_iterator    i;
-    for (i = ifTypes.constBegin(); i < ifTypes.constEnd(); i++) {
+    for (i = _ifTypes.constBegin(); i < _ifTypes.constEnd(); i++) {
         const cIfType *pift = *i;
         if (pift->getId(_sIfTypeIanaId) == _iana_id) {
-            if (pift->isNull(_sIanaIdLink)) {
+            if (recursive == false || pift->isNull(_sIanaIdLink)) {
                 if (pift->getBool(_sPreferred)) return pift;
+                if (preferdOnly == false && r == nullptr) r = pift;
             }
             else {
-                return fromIana(pift->getId(_sIanaIdLink));
+                return fromIana(int(pift->getId(_sIanaIdLink)), false, preferdOnly);
             }
         }
     }
-    return nullptr;
+    return r;
 }
 
 /* ------------------------------ cNPort ------------------------------ */
@@ -3315,7 +3329,7 @@ int cSnmpDevice::snmpVersion() const
     return -1;  // Inactive
 }
 
-bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHostAddress *ip)
+bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHostAddress *ip, cTable * _pTable)
 {
     QString msgDummy;
     QString *pEs = __pEs == nullptr ? &msgDummy :__pEs;
@@ -3343,7 +3357,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
             return false;
         }
     }
-    if (setSysBySnmp(*this, __ex, pEs, ip) > 0 && setPortsBySnmp(*this, __ex, pEs, ip)) {
+    if (setSysBySnmp(*this, __ex, pEs, ip) > 0 && setPortsBySnmp(*this, __ex, pEs, ip, _pTable)) {
         if (isNull(_sNodeType)) {   // Ha nics típus beállítva
             qlonglong nt = enum2set(NT_HOST, NT_SNMP);
             if (ports.size() > 7) nt |= enum2set(NT_SWITCH); // több mint 7 port, meghasaljuk, hogy switch

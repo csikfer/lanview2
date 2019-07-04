@@ -862,7 +862,7 @@ void cEnumListModel::joinWith(QComboBox *_pComboBox)
     pComboBox = _pComboBox;
     pComboBox->setModel(this);
     palette   = pComboBox->palette();
-    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCurrentIndex(int)));
 }
 
 void cEnumListModel::clear()
@@ -936,10 +936,43 @@ int cEnumListModel::indexOf(const QString& s) const
     return -1;
 }
 
-void cEnumListModel::currentIndex(int i)
+int cEnumListModel::currentInt()
+{
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
+    return atInt(pComboBox->currentIndex());
+}
+
+QString cEnumListModel::current()
+{
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
+    return at(pComboBox->currentIndex());
+}
+
+int cEnumListModel::setCurrent(const QString& s)
+{
+    if (pComboBox == nullptr) return -1;
+    int ix = indexOf(s);
+    if (ix < 0) return -1;
+    setCurrentIndex(ix);
+    return ix;
+}
+
+int cEnumListModel::setCurrent(int e)
+{
+    if (pComboBox == nullptr) return -1;
+    int ix = indexOf(e);
+    if (ix < 0) return -1;
+    setCurrentIndex(ix);
+    return ix;
+}
+
+
+void cEnumListModel::setCurrentIndex(int i)
 {
     QPalette pal = palette;
     if (!isContIx(enumVals, i)) return ;
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
+    if (pComboBox->currentIndex() != i) pComboBox->setCurrentIndex(i);
     const cEnumVal& ev = *enumVals[i];
     QString type = ev.getName(cEnumVal::ixEnumTypeName());
     int     eval = ev.toInt();
@@ -1059,4 +1092,120 @@ int cResourceIconsModel::indexOf(const QString& s)
 {
     if (s.isEmpty()) return 0;
     return list.indexOf(s);
+}
+
+/************************************************ cIfTypesModel ****************************************************/
+
+QList<const cIfType *>  cIfTypesModel::ifTypes;
+QFont * cIfTypesModel::pFontBold = nullptr;
+QFont * cIfTypesModel::pFontStrikeOut = nullptr;
+
+cIfTypesModel::cIfTypesModel()
+{
+    if (ifTypes.isEmpty()) {
+        int n = cIfType::size();
+        for (int i = 0; i < n; ++i) {
+            const cIfType *p = cIfType::at(i);
+            if (p->getName(_sIfTypeObjType) == _sPPort) continue;   // Exclude patch port type
+            ifTypes << p;
+        }
+        pFontBold = new QFont;
+        pFontBold->setBold(true);
+        pFontStrikeOut = new QFont;
+        pFontStrikeOut->setStrikeOut(true);
+    }
+    pComboBox = nullptr;
+}
+
+int cIfTypesModel::rowCount(const QModelIndex &parent) const
+{
+    (void)parent;
+    return ifTypes.size();
+}
+
+QVariant cIfTypesModel::data(const QModelIndex &index, int role) const
+{
+    QVariant r;
+    int row = index.row();
+    if (isContIx(ifTypes, row)) {
+        QString o;
+        switch (role) {
+        case Qt::DisplayRole:
+            r = ifTypes.at(row)->getName();
+            break;
+        case Qt::ToolTipRole:
+            r = ifTypes.at(row)->getName(_sIfTypeObjType);
+            break;
+        case Qt::FontRole:
+            o = ifTypes.at(row)->getName(_sIfTypeObjType);
+            if      (o == _sUnknown)   r = *pFontStrikeOut;
+            else if (o == _sInterface) r = *pFontBold;
+            break;
+        default:
+            break;
+        }
+    }
+    return r;
+}
+
+void cIfTypesModel::joinWith(QComboBox * _pComboBox)
+{
+    pComboBox = _pComboBox;
+    pComboBox->setModel(this);
+}
+
+int cIfTypesModel::setCurrent(const QString& s)
+{
+    if (pComboBox == nullptr) return -1;
+    int ix = indexOf(s);
+    if (ix < 0) return -1;
+    pComboBox->setCurrentIndex(ix);
+    return ix;
+}
+
+int cIfTypesModel::setCurrent(qlonglong id)
+{
+    if (pComboBox == nullptr) return -1;
+    int ix = indexOf(id);
+    if (ix < 0) return -1;
+    pComboBox->setCurrentIndex(ix);
+    return ix;
+}
+
+int cIfTypesModel::indexOf(const QString& s)
+{
+    int r = -1;
+    int i, n = ifTypes.size();
+    for (i = 0; i < n; ++i) {
+        if (s == ifTypes.at(i)->getName()) {
+            r = i;
+            break;
+        }
+    }
+    return r;
+}
+
+int cIfTypesModel::indexOf(qlonglong id)
+{
+    int r = -1;
+    int i, n = ifTypes.size();
+    for (i = 0; i < n; ++i) {
+        if (id == ifTypes.at(i)->getId()) {
+            r = i;
+            break;
+        }
+    }
+    return r;
+}
+
+const cIfType * cIfTypesModel::current()
+{
+    const cIfType *r = nullptr;
+    if (pComboBox != nullptr) {
+        int ix = pComboBox->currentIndex();
+        if (isContIx(ifTypes, ix)) {
+            r = at(ix);
+        }
+    }
+    return r;
 }

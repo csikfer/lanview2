@@ -427,6 +427,10 @@ public:
     QString at(int ix) const;
     int indexOf(int e) const;
     int indexOf(const QString& s) const;
+    int currentInt();
+    QString current();
+    int setCurrent(const QString& s);
+    int setCurrent(int e);
 protected:
     QSqlQuery *         pq;
     eNullType           nullType;
@@ -435,7 +439,7 @@ protected:
     QComboBox  *        pComboBox;
     QPalette palette;
 private slots:
-    void currentIndex(int i);
+    void setCurrentIndex(int i);
 signals:
     void currentEnumChanged(int e);
 };
@@ -474,5 +478,24 @@ protected:
     QComboBox  *        pComboBox;
 };
 
+class LV2GSHARED_EXPORT cIfTypesModel : public QAbstractListModel {
+    Q_OBJECT
+public:
+    cIfTypesModel();
+    virtual int rowCount(const QModelIndex &parent) const;
+    virtual QVariant data(const QModelIndex &index, int role) const;
+    void joinWith(QComboBox * _pComboBox);
+    int setCurrent(const QString& s);
+    int setCurrent(qlonglong id);
+    int indexOf(const QString& s);
+    int indexOf(qlonglong id);
+    const cIfType * at(int ix) { return ifTypes.at(ix); }
+    const cIfType * current();
+protected:
+    QComboBox  *    pComboBox;
+    static QList<const cIfType *>  ifTypes;
+    static QFont *  pFontBold;
+    static QFont *  pFontStrikeOut;
+};
 
 #endif // LV2MODELS_H

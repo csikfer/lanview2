@@ -364,7 +364,63 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
         if (pEs != nullptr) *pEs += es + "\n"; \
     }   return  false; }
 
-bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
+static cMac portSetMac(QSqlQuery& q, cSnmpDevice& node, cNPort& p, cTable& table, int i, QString& note)
+{
+    cMac            mac(table[_sIfPhysAddress][i].toByteArray());
+    if (mac.isValid()) {
+        // MAC collisions are not allowed, but it happens
+        cInterface colIf;
+        colIf.setMac(_sHwAddress, mac);
+        if (colIf.completion(q) && colIf.getId(_sNodeId) != node.getId()) {
+            note += QObject::tr("MAC %1 collision by %2, clear MAC.").arg(mac.toString(), colIf.getFullName(q));
+            expError(note);
+            // Create app_memos (log) record : We do not know, this is a mistake or coincidence
+            QString msg = QObject::tr("Scan %1 : %2 port ").arg(node.getName(), p.getName()) + note;
+            APPMEMO(q, msg, RS_WARNING);
+            mac.clear();    // Dropp MAC
+        }
+        p.setMac(_sHwAddress, mac);
+    }
+    return mac;
+}
+
+static void portSetAddress(QSqlQuery& q, cSnmpDevice& node, QHostAddress& hostAddr, cNPort & p, QHostAddress& addr, bool& found, bool& foundMyIp, bool& foundJoint)
+{
+    if (!addr.isNull()) {   // Van IP címünk
+        cInterface *pIf = p.reconvert<cInterface>();
+        cIpAddress& pa = pIf->addIpAddress(addr);
+        if (pa.thisIsExternal(q)) {  // Ez lehet külső cím is !! Ha nincs hozzá subnet
+            expWarning(QObject::tr("A %1 cím külső cim lesz, mert nincs hozzá subnet.").arg(addr.toString()));
+        }
+        else {
+            switch (pa.thisIsJoint(q, node.getId())) {
+            case TS_NULL:   // Nincs címütközés, OK
+                break;
+            case TS_FALSE:  // Cím ütközés !!!
+                expError(QObject::tr("%1 címmel már van bejegyzett eszköz!").arg(addr.toString()));
+                break;
+            case TS_TRUE:   // Ütközik, de a típus 'joint'
+                expInfo(QObject::tr("%1 címmel már van bejegyzett eszköz. A cím típusa 'joint' lessz.").arg(addr.toString()));
+                foundJoint = true;
+                break;
+            }
+        }
+        // A paraméterként megadott címet preferáltnak vesszük
+        if (addr == hostAddr) {   // Ez az
+            pa.setId(_sPreferred, 0);
+            foundMyIp = true;
+        }
+        found = true;
+    }
+}
+static QHostAddress portSetAddress(QSqlQuery& q, cSnmpDevice& node, QHostAddress hostAddr, cNPort & p, cTable& table, int i, bool& found, bool& foundMyIp, bool& foundJoint)
+{
+    QHostAddress addr(table[_sIpAdEntAddr][i].toString());
+    portSetAddress(q, node, hostAddr, p, addr, found, foundMyIp, foundJoint);
+    return addr;
+}
+
+bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip, cTable *_pTable)
 {
     QString es;
     // Előszedjük a címet
@@ -386,16 +442,16 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
 
     cSnmp   snmp(hostAddr.toString(), node.getName(_sCommunityRd), node.snmpVersion());
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
-    cTable      tab;    // Interface table container
+    cTable     *ptab = _pTable == nullptr ? new cTable : _pTable;    // Interface table container
     QStringList cols;   // Table col names container
-    cols << _sIfIndex << _sIfDescr << _sIfType << _sIfMtu << _sIfSpeed << _sIfPhysAddress;
-    int r = snmp.getTable(_sIfMib, cols, tab);
+    cols << _sIfIndex << _sIfDescr << _sIfType << /* _sIfMtu << _sIfSpeed << */ _sIfPhysAddress;
+    int r = snmp.getTable(_sIfMib, cols, *ptab);
     if (r) EX(ESNMP, r, snmp.emsg);
     PDEB(VVERBOSE) << "*************************************************" << endl;
-    PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
+    PDEB(VVERBOSE) << "SNMP TABLE : " << endl << ptab->toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
     // A getTable() kizárást dob, ha az egyik oszlop nem kérdezhető le, ifName pedig nem mindíg van.
-    tab << _sIfName;
+    *ptab << _sIfName;
     cOId oid;
     oid.set(_sIfMib + _sIfName);
     // A név oszlop kitöltése, ha van
@@ -403,139 +459,102 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
         if (!(snmp.name() > oid)) break;
         cOId name  = snmp.name();
         cOId oidIx = name - oid;
-        int i = oidIx.last();
-        QVariant *p = tab.find(_sIfIndex, i, _sIfName);
+        int i = int(oidIx.last());
+        QVariant *p = ptab->find(_sIfIndex, i, _sIfName);
         if (oidIx.size() != 1 || p == nullptr) {
             EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIfName));
         }
         p->setValue(snmp.value().toString());
     } while (0 == snmp.getNext());
     // A getTable() metódus nem tudja lekérdezni az IP címet, ezért ezt az oszlopot külön kérdezzük le.
-    tab << _sIpAdEntAddr; // Add ip address (empty column) to table
+    *ptab << _sIpAdEntAddr; // Add ip address (empty column) to table
     oid.set(_sIpMib + _sIpAdEntIfIndex);
     bool ok;
     // Kitöltjük az IP cím oszlopot
-    if (0 == snmp.getNext(oid)) do {
-        if (nullptr == snmp.first()) EX(ESNMP, -1, _sNul);
-        // Az első az interface snmp indexe az OID-ben pedig az IP cím
-        cOId name    = snmp.name();
-        cOId oidAddr = name - oid;
-        if (!oidAddr) break;    // Ha a végére értünk
-        int  i    = snmp.value().toInt(&ok);
-        if (!ok) EX(EDATA, -1, QString("SNMP index: %1 '%2'").arg(name.toString()).arg(snmp.value().toString()));
-        QString sAddr = oidAddr.toNumString();
-        QHostAddress addr(sAddr);   // ellenörzés
-        if (addr.isNull()) EX(EDATA, -1, QString("%1/%2").arg(sAddr, oidAddr.toNumString()));
-        if (addr != QHostAddress(QHostAddress::Any)) {  // A 0.0.0.0 címet eldobjuk
-            QVariant *p = tab.find(_sIfIndex, i, _sIpAdEntAddr);
-            if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
-            p->setValue(sAddr);
-            found = true;   // Van IP címünk (a táblázatban)
-        }
-    } while (0 == snmp.getNext());
+    if (0 == snmp.getNext(oid)) {   // first get
+        do {
+            if (nullptr == snmp.first()) EX(ESNMP, -1, _sNul);
+            // Az első az interface snmp indexe az OID-ben pedig az IP cím
+            cOId name    = snmp.name();
+            cOId oidAddr = name - oid;
+            if (!oidAddr) break;    // Ha a végére értünk
+            int  i    = snmp.value().toInt(&ok);
+            if (!ok) EX(EDATA, -1, QString("SNMP index: %1 '%2'").arg(name.toString()).arg(snmp.value().toString()));
+            QString sAddr = oidAddr.toNumString();  // IP address string
+            QHostAddress addr(sAddr);               // check
+            if (addr.isNull()) EX(EDATA, -1, QString("%1/%2").arg(sAddr, oidAddr.toNumString()));
+            if (addr != QHostAddress(QHostAddress::Any)) {  // If address is 0.0.0.0, then dropp
+                QVariant *p = ptab->find(_sIfIndex, i, _sIpAdEntAddr);
+                if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
+                p->setValue(sAddr);
+                found = true;   // Van IP címünk (a táblázatban)
+            }
+        } while (0 == snmp.getNext());
+    }
     PDEB(VVERBOSE) << "*************************************************" << endl;
-    PDEB(VVERBOSE) << "SNMP TABLE+ : " << endl << tab.toString() << endl;
+    PDEB(VVERBOSE) << "SNMP TABLE+ : " << endl << ptab->toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
     // Ha nincs IP címünk, az gáz
     if (!found) EX(EDATA, 0, QString("IP not found"));
     found = false;  // A tábla feldolgozása után is kell lennie! Az sem jó, ha eldobtuk
     QSqlQuery q = getQuery();
-    int n = tab.rows();
+    int n = ptab->rows();
     int i;
-    // Az SNMP lekérdezés eredmény táblájából legyártjuk a ports konténert
+    // Make ports container from snmp query results
     for (i = 0; i < n; i++) {
-        QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
-        QString         name;
         QString         note;
-        QString         ifDescr = name;
-        int             ifType = tab[_sIfType][i].toInt(&ok);
-        name = tab[_sIfName][i].toString();
-        // Ha nincs (üres) az ifName, akkor a név az ifDescr lessz.
-        if (name.isEmpty()) name = tab[_sIfDescr][i].toString();
-        if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
-        int             ifIndex = tab[_sIfIndex][i].toInt(&ok);
-        if (!ok) EX(EDATA, -1, QString("SNMP ifIndex: '%1'").arg(tab[_sIfIndex][i].toString()));
-        // IANA típusból következtetünk az objektum típusára és iftype_name -ra
+        QString         ifName  = (*ptab)[_sIfName] [i].toString();
+        QString         ifDescr = (*ptab)[_sIfDescr][i].toString();
+        int             ifType  = (*ptab)[_sIfType] [i].toInt(&ok);
+        // ifType is numeric ?
+        if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg((*ptab)[_sIfType][i].toString()));
+        int             ifIndex = (*ptab)[_sIfIndex][i].toInt(&ok);
+        if (!ok) EX(EDATA, -1, QString("SNMP ifIndex: '%1'").arg((*ptab)[_sIfIndex][i].toString()));
+        // If ifname is empty, then ifName is ifDescr
+        if (ifName.isEmpty()) ifName = ifDescr;
+        // IANA type (ifType) -->  port object type
         const cIfType  *pIfType = cIfType::fromIana(ifType);
         if (pIfType == nullptr) {
             QString msg = QObject::tr("Unhandled interface type %1 : #%2 %3")
-                    .arg(ifType).arg(ifIndex).arg(name);
+                    .arg(ifType).arg(ifIndex).arg(ifName);
             PDEB(VERBOSE) << msg << endl;
             expInfo(msg);
             continue;
         }
-        name.prepend(pIfType->getName(_sIfNamePrefix));       // Esetleges előtag, a név ütközések elkerülésére
+        ifName.prepend(pIfType->getName(_sIfNamePrefix));  // Set name prefix, avoid name collisions
         QString         ifTypeName = pIfType->getName();
         cNPort *pPort = cNPort::newPortObj(*pIfType);
         if (pPort->descr().tableName() != _sInterfaces) {
             EX(EDATA, -1, QObject::tr("Invalid port object type"));
         }
-        cMac            mac(tab[_sIfPhysAddress][i].toByteArray());
-        if (mac.isValid()) {
-            // MAC ütközések, sajnos előfordulhat Windows-oknál.
-            cInterface colIf;
-            colIf.setMac(_sHwAddress, mac);
-            if (colIf.completion(q) && colIf.getId(_sNodeId) != node.getId()) {
-                note += QObject::tr("MAC %1 collision by %2, clear MAC.").arg(mac.toString(), colIf.getFullName(q));
-                expError(note);
-                // LOG, ha esetleg ez tényleg egy hiba miatt van
-                QString msg = QObject::tr("Scan %1 : %2 port ").arg(hostAddr.toString(), name) + note;
-                APPMEMO(q, msg, RS_WARNING);
-                mac.clear();
-            }
-        }
-        // Windows (Egyedi baromságai)
+        cMac mac = portSetMac(q, node, *pPort, *ptab, i, note);
+        // Host is windows
         if (node.getBool(_sNodeType, NT_WINDOWS)) {
-            // A név lehet ékezetes, de nem unicode
-            QByteArray ban = tab[_sIfDescr][i].toByteArray();
-            name = QString::fromLatin1(ban);
-            if (ifType == IFTYPE_IANA_ID_ETH) {    // Megtippeljük, kik a valódi ethernet interfészek
-                QRegExp pat("#[0-9]+$");   // A fizikai interface-re illeszkedő minta  pl.: ... #34
-                if (0 > pat.indexIn(name)) {
-                    pIfType = &cIfType::ifType("veth");
+            // The name can be accented, but not unicode
+            QByteArray ban = (*ptab)[_sIfDescr][i].toByteArray();
+            ifName = QString::fromLatin1(ban);
+            if (ifType == IFTYPE_IANA_ID_ETH) {    // Guess at who the real Ethernet interfaces
+                QRegExp pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
+                if (0 > pat.indexIn(ifName)) {
+                    pIfType = &cIfType::ifType("veth"); // Is virtual (maybe)
                 }
             }
         }
-        // A SonicWall használhatatlan portneveket ad vissza, lekapjuk róla a megjegyzés részt
+        // SonicWall returns useless portnames, catches the comment section
         else if (sysdescr.contains("sonicwall", Qt::CaseInsensitive)) {
-            QStringList sl = name.split(QChar(' '));
+            QStringList sl = ifName.split(QChar(' '));
             if (sl.size() > 1) {
-                pPort->setNote(name);
-                name = sl[0];
+                note = msgCat(note, ifName);
+                ifName = sl[0];
             }
         }
-        pPort->setName(name);
+        (*ptab)[_sIfName][i] = ifName;    // That the name in the table always matches the name in the ports container
+        pPort->setName(ifName);
         pPort->setNote(note);
         pPort->setName(_sIfDescr.toLower(), ifDescr);
         pPort->set(_sPortIndex, ifIndex);
         pPort->set(_sIfTypeId, pIfType->getId());
-        if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
-        if (!addr.isNull()) {   // Van IP címünk
-            cInterface *pIf = pPort->reconvert<cInterface>();
-            cIpAddress& pa = pIf->addIpAddress(addr);
-            if (pa.thisIsExternal(q)) {  // Ez lehet külső cím is !! Ha nincs hozzá subnet
-                expWarning(QObject::tr("A %1 cím külső cim lesz, mert nincs hozzá subnet.").arg(addr.toString()));
-            }
-            else {
-                switch (pa.thisIsJoint(q, node.getId())) {
-                case TS_NULL:   // Nincs címütközés, OK
-                    break;
-                case TS_FALSE:  // Cím ütközés !!!
-                    expError(QObject::tr("%1 címmel már van bejegyzett eszköz!").arg(addr.toString()));
-                    break;
-                case TS_TRUE:   // Ütközik, de a típus 'joint'
-                    expInfo(QObject::tr("%1 címmel már van bejegyzett eszköz. A cím típusa 'joint' lessz.").arg(addr.toString()));
-                    foundJoint = true;
-                    break;
-                }
-            }
-            // A paraméterként megadott címet preferáltnak vesszük
-            if (addr == hostAddr) {   // Ez az
-                pa.setId(_sPreferred, 0);
-                foundMyIp = true;
-            }
-            found = true;
-        }
+        QHostAddress addr = portSetAddress(q, node, hostAddr, *pPort, *ptab, i, found, foundMyIp, foundJoint);
         PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
         expInfo(QObject::tr("Port #%1 %2 (%3) %4 %5").arg(
                     pPort->getName(_sPortIndex),
@@ -545,72 +564,76 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
                     (addr.isNull() ? _sNul : addr.toString())
                     ) );
         node.ports << pPort;
-        // Trunk port hozzárendelések lekérdezése
-        if (ifTypeName == _sMultiplexor) {
-            cOId oid;
-            oid.set("IF-MIB::ifStackStatus");
-            oid << ifIndex;
-            if (snmp.getNext(oid)) {
-                DERR() << "cSnmp::getNext(" << oid.toString() << ") error : " << snmp.emsg << endl;
-            }
-            else do {
-                cOId o = snmp.name() - oid;
-                PDEB(VVERBOSE) << "OID : " << snmp.name().toString() << " / " << o.toNumString() << endl;
-                if (o.isEmpty()) break;     // túl szaladtunk;
-                if (o.size() != 1) EX(EDATA, ifIndex, o.toNumString()); // egy eleműnek kellene lennie (a keresett port indexe).
-                if (o.at(0) == 0) continue; // töltelék, nem kell...
-                cInterface *pif = dynamic_cast<cInterface *>(pPort);
-                pif->addTrunkMember(int(o.at(0)));
-            } while (!snmp.getNext());
-        }
     }
-    if (!found) {   // Nincs IP címünk!!!
-        for (i = 0; i < n; i++) {   // Nekifutunk mégegyszer a táblázatnak
-            int             type = tab[_sIfType][i].toInt(&ok);
+    // Trunk port hozzárendelések lekérdezése
+    // Van hogy a trunk port a típus alapján első menetben ki lett szorva!
+    oid.set("IF-MIB::ifStackStatus");
+    qlonglong trunkIfTypeId = cIfType::ifTypeId(_sMultiplexor);
+    ok = false;
+    if (snmp.getNext(oid)) {
+        QString msg = QObject::tr("cSnmp::getNext(%1) error : %2").arg(oid.toString(), snmp.emsg);
+        expError(msg);
+        DERR() << msg << endl;
+    }
+    else do {
+        cOId o = snmp.name() - oid;
+        PDEB(VVERBOSE) << "OID : " << snmp.name().toString() << " / " << o.toNumString() << endl;
+        if (o.size() != 2) {
+            if (!o.isEmpty()) {
+                QString msg = QObject::tr("Nem értelmezhető next OID : %1 -> %2").arg(oid.toString(), snmp.name().toString());
+                expError(msg);
+                PDEB(WARNING) << msg << endl;
+            }
+            if (!ok) expWarning(QObject::tr("Nincs információ a trunk-ökről."));
+            break;     // túl szaladtunk, vagy hibás válasz
+        }
+        ok = true;
+        QVariant v = snmp.value().toInt();
+        if (v.toInt() != 1) continue;   // Active(1) ?
+        int tix = int(o[0]);    // trunk port index
+        if (tix <= 0) continue; // ?
+        int mix = int(o[1]);    // menber port index
+        if (mix <= 0) continue; // ?
+        cNPort *pMem = node.ports.get(_sPortIndex, QVariant(mix), EX_IGNORE);
+        if (pMem == nullptr || !pMem->ifType().isLinkage()) continue;  // It's not likely to trunk
+        cNPort *pTrk = node.ports.get(_sPortIndex, QVariant(tix), EX_IGNORE);
+        if (pTrk == nullptr) {  // Not found as valid port
+            int row = ptab->row(_sIfIndex, tix);
+            if (row < 0) continue;  // Port not found in table by index
+            pTrk = cNPort::newPortObj(cIfType::ifType(trunkIfTypeId));
+            pTrk->setName((*ptab)[_sIfName][row].toString());
+            QString note = QObject::tr("Feltételezett trunk port (ifType = %1)").arg((*ptab)[_sIfType][row].toString());
+            portSetMac(q, node, *pTrk, *ptab, tix, note);
+            pTrk->setNote(note);
+            portSetAddress(q, node, hostAddr, *pTrk, *ptab, tix, found, foundMyIp, foundJoint);
+            node.ports << pTrk;
+        }
+        else {
+            if (pTrk->getId(_sIfTypeId) != trunkIfTypeId) continue; // ?
+        }
+        pTrk->reconvert<cInterface>()->addTrunkMember(mix);
+    } while (!snmp.getNext());
+
+    if (!found) {   // Primary IP address is not found
+        for (i = 0; i < n; i++) {   // Rescan table
+            int             type = (*ptab)[_sIfType][i].toInt(&ok);
             const cIfType  *pIfType = cIfType::fromIana(type);
-            if (pIfType == nullptr) {  // Unknown types
-                QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
-                if (addr.isNull()) continue;    // no address
-                pIfType = &cIfType::ifType(_sVEth);  // "Kinevezzük" virtuális ethernet-nek (nem kezelt típus, mert az elöbb eldobtuk)
-                QString         name = tab[_sIfDescr][i].toString();
-                name.prepend(pIfType->getName(_sIfNamePrefix));       // Esetleges előtag, a név ütközések elkerülésére
+            if (pIfType == nullptr) {  // Unknown types. This was discarded in the first round
+                QHostAddress    addr((*ptab)[_sIpAdEntAddr][i].toString());
+                if (addr.isNull()) continue;    // If there is no address, then we will drop it now
+                pIfType = &cIfType::ifType(_sVEth);  // The address belongs to this, then it should be virtual ethernet
+                QString         name = (*ptab)[_sIfName][i].toString();
                 cNPort *pPort = cNPort::newPortObj(*pIfType);
                 if (pPort->descr().tableName() != _sInterfaces) {
                     EX(EDATA, -1, QObject::tr("Invalid port object type"));
                 }
-                cMac            mac(tab[_sIfPhysAddress][i].toByteArray());
-                if (pPort->descr().tableName() == _sNPorts && mac.isValid()) {
-                    DWAR() << "Interface " << name << " Drop HW address " << mac.toString() << endl;
-                    mac.clear();
-                }
                 pPort->setName(name);
-                int ifIndex = tab[_sIfIndex][i].toInt();
-                pPort->set(_sPortIndex, ifIndex);
+                pPort->set(_sIfDescr.toLower(), (*ptab)[_sIfDescr][i]);
+                pPort->set(_sPortIndex, (*ptab)[_sIfIndex][i]);
                 pPort->set(_sIfTypeId, pIfType->getId());
-                if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
-                cInterface *pIf = pPort->reconvert<cInterface>();
-                cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
-                if (pa.thisIsExternal(q)) {  // Ez lehet külső cím is !! Ha nincs hozzá subnet
-                    expWarning(QObject::tr("A %1 cím külső cim lesz, mert nincs hozzá sunbet.").arg(addr.toString()));
-                }
-                else {
-                    switch (pa.thisIsJoint(q, node.getId())) {
-                    case TS_NULL:   // Nincs címütközés, OK
-                        break;
-                    case TS_FALSE:  // Cím ütközés !!!
-                        expError(QObject::tr("%1 címmel már van bejegyzett eszköz!").arg(addr.toString()));
-                        break;
-                    case TS_TRUE:   // Ütközik, de a típus 'joint'
-                        expInfo(QObject::tr("%1 címmel már van bejegyzett eszköz. A cím típusa 'joint' lessz.").arg(addr.toString()));
-                        foundJoint = true;
-                        break;
-                    }
-                }
-                // A paraméterként megadott címet preferáltnak vesszük
-                if (addr == hostAddr) {   // Ez az
-                    pa.setId(_sPreferred, 0);
-                    foundMyIp = true;
-                }
+                QString note;
+                portSetMac(q, node, *pPort, *ptab, i, note);
+                portSetAddress(q, node, hostAddr, *pPort, addr, found, foundMyIp, foundJoint);
                 PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
                 node.ports << pPort;
                 expInfo(QObject::tr("Port #%1 %2 (%3) %4").arg(
@@ -632,6 +655,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
         node.enum2setOn(_sNodeType, NT_CLUSTER);
     }
     _DBGFNL() << "OK, node : " << node.toString() << endl;
+    if (_pTable == nullptr) delete ptab;
     return true;
 }
 
@@ -718,7 +742,7 @@ QString lookup(const QHostAddress& ha, eEx __ex)
     QHostInfo hi = QHostInfo::fromName(ha.toString());
     QString r = hi.hostName();
     if (hi.error() != QHostInfo::NoError || ha.toString() == r) {
-        if (__ex) EXCEPTION(EFOUND, (int)hi.error(), QObject::tr("A hoszt név nem állapítható meg"));
+        if (__ex) EXCEPTION(EFOUND, int(hi.error()), QObject::tr("A hoszt név nem állapítható meg"));
         return _sNul;
     }
     return r;

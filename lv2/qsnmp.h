@@ -74,6 +74,11 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     /// A tábla sorainak számával tér vissza, feltételezve, hogy minden oszlop azonos számú elemet tartalmaz.
     ///
     int rows(void) const    { return size() ? constBegin()->size() : 0; }
+    /// Egy sor keresése
+    /// Ha van találat, akkor a sor sorszáma, egyébként -1.
+    /// @param __in Az index oszlop neve
+    /// @param __ix Az index érték, az index oszlopban, megadja a keresett sort
+    int row(const QString __in, QVariant __ix);
     /// Egy elem keresése
     /// Ha van találat, akkor az elem pointere, egyébként NULL
     /// @param __in Az index oszlop neve

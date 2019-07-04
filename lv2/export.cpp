@@ -1076,7 +1076,7 @@ QString cExport::_export(QSqlQuery& q, cPatch& o, bool only)
             // Short ports by share type
             std::sort(pl.begin(), pl.end(),
                       [](cNPort *pa, cNPort *pb) { return pa->getId(_sSharedCable) < pb->getId(_sSharedCable); }
-                      );
+                     );
             while (!pl.isEmpty() && pl.first()->getId(_sSharedCable) == ES_) pl.pop_front();    // drop unshared ports from list
             foreach (qlonglong id, shared.keys()) {
                 QStringList ports;
@@ -1302,13 +1302,13 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
         // Ports (Sort by index or name if index is NULL.
         std::sort(pl.begin(), pl.end(),
                   [](cNPort *pa, cNPort *pb)
-        {
-            if (pa->isNull(pa->ixPortIndex())) {
-                if (!pb->isNull(pb->ixPortIndex())) return false;
-                return pa->getName() < pb->getName();
-            }
-            return pa->getId(pa->ixPortIndex()) < pb->getId(pb->ixPortIndex());
-        }
+                    {
+                        if (pa->isNull(pa->ixPortIndex())) {
+                            if (!pb->isNull(pb->ixPortIndex())) return false;
+                            return pa->getName() < pb->getName();
+                        }
+                        return pa->getId(pa->ixPortIndex()) < pb->getId(pb->ixPortIndex());
+                    }
                   );
         foreach (pp, pl) {
             bool isInterface = 0 == pp->chkObjType<cInterface>(EX_IGNORE);

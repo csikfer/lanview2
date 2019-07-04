@@ -68,18 +68,29 @@ QBitArray   bitString2Array(u_char *__bs, size_t __os)
 
 /* *********************************************************************************************** */
 
-QVariant *cTable::find(const QString __in, QVariant __ix, const QString __col)
+int cTable::row(const QString __in, QVariant __ix)
 {
-    // Ha bármelyik megadott oszlop név hiányzik
-    if (contains(__in) == 0 || contains(__col) == 0) return nullptr;
+    // Index or values column is not found
+    if (!contains(__in)) return -1;
+    // Index column
     QVariantVector& vv = (*this)[__in];
     int row;
     for (row = 0; row < vv.size(); row++) {
         if (vv[row] == __ix) break;
     }
-    // Nem találtuk a megadott index értéket
-    if (row >= vv.size()) return nullptr;
-    return &((*this)[__col][row]);
+    // If not found
+    if (row >= vv.size()) return -1;
+    return row;
+}
+
+QVariant *cTable::find(const QString __in, QVariant __ix, const QString __col)
+{
+    // Index or values column is not found
+    if (!contains(__col)) return nullptr;
+    // Index column
+    int r = row(__in, __ix);
+    if (r < 0) return nullptr;
+    return &((*this)[__col][r]);
 }
 
 cTable& cTable::operator<<(const QString& __cn)

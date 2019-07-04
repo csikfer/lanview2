@@ -710,10 +710,10 @@ public:
 protected:
     /// Az összes if_types rekordot tartalmazó konténer
     /// Nem frissül automatikusan, ha változik az adattábla.
-    static tRecordList<cIfType> ifTypes;
+    static tRecordList<cIfType> _ifTypes;
     /// Egy üres objektumra mutató pointer.
     /// Az ifTypes feltöltésekor hozza létre az abjektumot a fetchIfTypes();
-    static cIfType *pNull;
+    static cIfType *_pNull;
 public:
     /// Feltölti az adatbázisból az ifTypes adattagot, ha nem üres a konténer, akkor frissíti.
     /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
@@ -738,18 +738,22 @@ public:
     /// Visszakeresi az ifTypes konténer azon elemét, melynek az iftype_iana_id értéke megeggyezik a
     /// a paraméterben magadott értékkel, és a preferred értéke true. Ha van ilyen objektum a
     /// konténerben, akkor az első pointerével, ha nincs NULL pointerrel tér vissza.
-    /// Ha a talált rekordban az iana_id_link mező nem NULL, akkor annak értékével hívja a metódust rekorzívan.
-    /// A metódus nem tartalmaz védelmet az esetleges végtelen rekurzióra!
-    static const cIfType *fromIana(int _iana_id);
+    /// Ha a talált rekordban az iana_id_link mező nem NULL, és recursive nem false, akkor annak értékével hívja a metódust rekorzívan.
+    /// A rekurzió csak egyszeres.
+    /// @param _iana_id A kereset IANA ID
+    /// @param recursive Ha értéke true (ez az alapértelmezés) akkor ha iana_id_link nem NULL, akkor azzal az IANA id-vel hívja önmagát rekurzívan, maximum egyszer.
+    static const cIfType *fromIana(int _iana_id, bool recursive = true, bool preferdOnly = true);
     ///
     bool isLinkage() const {
         eLinkType lt = eLinkType(getId(_sIfTypeLinkType));
         return lt == LT_PTP || lt == LT_BUS || lt == LT_PATCH;
     }
+    static int size() { return _ifTypes.size(); }
+    static const cIfType * at(int i) { return isContIx(_ifTypes, i) ? _ifTypes.at(i) : nullptr; }
 protected:
     /// Ha nincs feltöltve az ifTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchIfTypes(QSqlQuery& __q); metódust.
-    static void checkIfTypes() { if (pNull == nullptr) { QSqlQuery q = getQuery(); fetchIfTypes(q); } }
+    static void checkIfTypes() { if (_pNull == nullptr) { QSqlQuery q = getQuery(); fetchIfTypes(q); } }
 };
 
 /* ======================================================================== */
@@ -1043,8 +1047,8 @@ public:
     /// A MAC cím mező indexe
     STATICIX(cInterface, HwAddress)
     cMac mac() { return getMac(_ixHwAddress); }
-protected:
-    /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
+// protected:
+    /// Trunk port esetén a trunk tagjainak az indexe (port_index mező)
     /// Nincs automatikusan feltöltve.
     tIntVector trunkMembers;
 };
@@ -1544,6 +1548,7 @@ public:
 
 };
 
+class cTable;
 
 class LV2SHARED_EXPORT cSnmpDevice : public cNode {
     CRECORD(cSnmpDevice);
@@ -1562,7 +1567,7 @@ public:
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot
-    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *__pEs = nullptr, QHostAddress *ip = nullptr);
+    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *__pEs = nullptr, QHostAddress *ip = nullptr, cTable *_pTable = nullptr);
     /// Inicializálja az SNMP session-t. És próbaképpen lekéri a SNMPv2-MIB::sysDescr -t.
     /// Sorra végigveszi az eszköz IP címeit, ha nem sikerül a lekérdezés.
     /// Ha a próba lekérdezés sikertelen, és elfogytak a címek, akkor ha __ex értéke
