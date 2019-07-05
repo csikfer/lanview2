@@ -1092,7 +1092,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     soids <<  QString("LLDP-MIB::lldpLocPortId.%1")       .arg(port_ix);
 
     a = pDev->getIpAddress();
-    snmp.open(a.toString(), pDev->getName(_sCommunityRd), pDev->getId(_sSnmpVer));
+    snmp.open(a.toString(), pDev->getName(_sCommunityRd), int(pDev->getId(_sSnmpVer)));
     e = snmp.get(soids);
     if  (e) {
         HEREINWE(em, QObject::tr("A %1 LLDP indexű lokális port sikertelen azonosítás: snmp error #%2.").arg(port_ix).arg(e), RS_WARNING);
@@ -1325,7 +1325,7 @@ inline int snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix)
     const netsnmp_variable_list *p;
     p = (n == 0) ? snmp.first() : snmp.next();
     if (nullptr == p) {
-        em = QObject::tr("Nincs SNMP adat #%1, OID:%2; %3").arg(n).arg(cLldpScan::sOids[n], snmp.name().toString());
+        em = QObject::tr("Nincs SNMP adat #%1, OID: %2; %3").arg(n).arg(cLldpScan::sOids[n], snmp.name().toString());
         return -1;
     }
     if (!(cLldpScan::oids[n] < snmp.name())) {
@@ -1380,7 +1380,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         return;
     }
     // ----- Egy eszköz lekérdezése
-    em = QObject::tr("**** SNMP eszköz %1 lekérdezése (SNMP/LLDP)...").arg(pDev->getName());
+    em = QObject::tr("**** SNMP eszköz %1 lekérdezése (SNMP/LLDP) [%2] ...").arg(pDev->getName(), sOids.join(_sCommaSp));
     PDEB(INFO) << em << endl;
     expInfo(em);
     rRows.clear();
