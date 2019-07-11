@@ -19,8 +19,6 @@
  ***************************************************************************/
 #include "lanview.h"
 
-#ifdef SNMP_IS_EXISTS
-
 const QString&  snmpIfStatus(int __i, eEx __ex)
 {
     switch(__i) {
@@ -51,52 +49,43 @@ int  snmpIfStatus(const QString& __s, eEx __ex)
 
 /* *********************************************************************************************** */
 
-QBitArray   bitString2Array(u_char *__bs, size_t __os)
+int cTable::getRowIndex(const QString &ixColName, const QVariant& ixValue, eEx __ex)
 {
-    QBitArray   r(__os * 8, false);
-    int         i;
-    for (i = 0; __os > 0; ++__bs, --__os) {
-        u_char  b = *__bs;
-        for (int ii = 8; ii > 0; --ii, ++i, b <<= 1) {
-            if (b & 0x80) {
-                r.setBit(i, true);
-            }
+    // Index or values column is not found
+    if (!contains(ixColName)) {
+        if (__ex != EX_IGNORE) EXCEPTION(ENONAME, -1, QObject::tr("Invalid index column name : %1").arg(ixColName));
+        return NULL_IX;
+    }
+    // Index column
+    tVariantVector& indexColumn = (*this)[ixColName];
+    int rowIndex;
+    for (rowIndex = 0; rowIndex < indexColumn.size(); rowIndex++) {
+        if (indexColumn[rowIndex] == ixValue) {
+            return rowIndex;
         }
     }
-    return r;
-}
-
-/* *********************************************************************************************** */
-
-int cTable::row(const QString __in, QVariant __ix)
-{
-    // Index or values column is not found
-    if (!contains(__in)) return -1;
-    // Index column
-    QVariantVector& vv = (*this)[__in];
-    int row;
-    for (row = 0; row < vv.size(); row++) {
-        if (vv[row] == __ix) break;
-    }
     // If not found
-    if (row >= vv.size()) return -1;
-    return row;
+    if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QObject::tr("Index value %1 not found in %2 index column.").arg(debVariantToString(ixValue), ixColName));
+    return NULL_IX;
 }
 
-QVariant *cTable::find(const QString __in, QVariant __ix, const QString __col)
+QVariant *cTable::getCellPtr(const QString& ixColName, const QVariant& ixValue, const QString& colName, eEx __ex)
 {
-    // Index or values column is not found
-    if (!contains(__col)) return nullptr;
-    // Index column
-    int r = row(__in, __ix);
-    if (r < 0) return nullptr;
-    return &((*this)[__col][r]);
+    // Values column is not found
+    if (!contains(colName)) {
+        if (__ex != EX_IGNORE) EXCEPTION(ENONAME, -1, QObject::tr("Invalid column name : %1").arg(colName));
+        return nullptr;
+    }
+    // Row index by index value
+    int rowIndex = getRowIndex(ixColName, ixValue, __ex);
+    if (rowIndex < 0) return nullptr;
+    return &((*this)[colName][rowIndex]);
 }
 
 cTable& cTable::operator<<(const QString& __cn)
 {
     if (contains(__cn)) EXCEPTION(EDATA);
-    QVariantVector col(rows());
+    tVariantVector col(rows());
     insert(__cn, col);
     return *this;
 }
@@ -113,7 +102,7 @@ QString cTable::toString(void) const
     r += QChar('\n');
     for (i = 0; i < nr; i++) {
         foreach (key, keylst) {
-            const QVariantVector&  vv = operator[](key);
+            const tVariantVector&  vv = operator[](key);
             if (vv.size() <= i) EXCEPTION(EPROGFAIL);
             QVariant v = vv[i];
             if (v.type() == QVariant::ByteArray && v.toByteArray().contains((char)0)) {
@@ -123,6 +112,24 @@ QString cTable::toString(void) const
         }
         r.chop(1);
         r += QChar('\n');
+    }
+    return r;
+}
+
+/* *********************************************************************************************** */
+#ifdef SNMP_IS_EXISTS
+
+QBitArray   bitString2Array(u_char *__bs, size_t __os)
+{
+    QBitArray   r(__os * 8, false);
+    int         i;
+    for (i = 0; __os > 0; ++__bs, --__os) {
+        u_char  b = *__bs;
+        for (int ii = 8; ii > 0; --ii, ++i, b <<= 1) {
+            if (b & 0x80) {
+                r.setBit(i, true);
+            }
+        }
     }
     return r;
 }

@@ -38,13 +38,6 @@ Egyébb használlt MIB-ek útvonalával is ki kell egészíteni!
 
 EXT_ QString snmpNotSupMsg();
 
-// NET-SNMP EXISTS?
-#ifdef SNMP_IS_EXISTS
-
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#include <string.h>
-
 /// Hálózati interfész SNMP statuszok
 enum eIfStatus {
     IF_UP           = 1,
@@ -59,12 +52,12 @@ enum eIfStatus {
 EXT_ const QString&  snmpIfStatus(int __i, enum eEx __ex = EX_ERROR);
 EXT_ int             snmpIfStatus(const QString& __s, enum eEx __ex = EX_ERROR);
 
-typedef QVector<QVariant> QVariantVector;
+typedef QVector<QVariant> tVariantVector;
 /// @class cTable
 /// Egy táblázat konténer.
 /// A táblázat oszlopai név szerint érhatőek el, a sorok pedig sorszám alapján.
 /// A táblázat (mátrix) elemei QVariant-ok.
-class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
+class LV2SHARED_EXPORT cTable : public QMap<QString, tVariantVector >
 {
    public:
     /// A konstruktor egy üres táblát hoz létre
@@ -76,15 +69,15 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     int rows(void) const    { return size() ? constBegin()->size() : 0; }
     /// Egy sor keresése
     /// Ha van találat, akkor a sor sorszáma, egyébként -1.
-    /// @param __in Az index oszlop neve
-    /// @param __ix Az index érték, az index oszlopban, megadja a keresett sort
-    int row(const QString __in, QVariant __ix);
+    /// @param ixColName Az index oszlop neve
+    /// @param ixValue Az index érték, az index oszlopban, megadja a keresett sort
+    int getRowIndex(const QString& ixColName, const QVariant &ixValue, eEx __ex = EX_IGNORE);
     /// Egy elem keresése
     /// Ha van találat, akkor az elem pointere, egyébként NULL
-    /// @param __in Az index oszlop neve
-    /// @param __ix Az index érték, az index oszlopban, megadja a keresett sort
+    /// @param ixColName Az index oszlop neve
+    /// @param ixValue Az index érték, az index oszlopban, megadja a keresett sort
     /// @param __com A keresett oszlop neve
-    QVariant *find(const QString __in, QVariant __ix, const QString __col);
+    QVariant *getCellPtr(const QString &ixColName, const QVariant& ixValue, const QString& colName, eEx __ex = EX_IGNORE);
     /// Egy üres oszlop hozzáadása a konténerhez.
     /// Ha volt első oszlop, és abban voltak sorok, akkor az új oszlopban is
     /// ennyi üres sor lessz.
@@ -94,10 +87,18 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     QString toString(void) const;
 };
 
+// NET-SNMP EXISTS?
+#ifdef SNMP_IS_EXISTS
+
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <string.h>
+
 /// Bit string konvertálása QBitArray-ba
 /// @param __bs Bit string pointerek
 /// @param __os A bit string mérete byte-ban (__os*8 == bitek száma)
 EXT_ QBitArray   bitString2Array(u_char *__bs, size_t __os);
+
 
 class LV2SHARED_EXPORT netSnmp {
    protected:
