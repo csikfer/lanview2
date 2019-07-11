@@ -613,9 +613,9 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
     return r;
 }
 
-QVariantVector  cSnmp::values()
+tVariantVector  cSnmp::values()
 {
-    QVariantVector  vv;
+    tVariantVector  vv;
     for (first(); actVar != nullptr; next()) {
         vv << value();
     }
@@ -822,7 +822,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
             const QString&  col = columns[i];   // Column name
             const cOId&     oib = Ids[i];       // Column base OID
             const cOId      oia = name();       // Cell OID
-            QVariantVector& vv  = result[col];  // Result table column reference
+            tVariantVector& vv  = result[col];  // Result table column reference
             PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
             if (oib < oia) {                    // Overrun? (if no)
                 if (i == 0) {                   // First column

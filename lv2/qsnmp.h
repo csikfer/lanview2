@@ -357,7 +357,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     QVariant value(void) const                  { return value(actVar); }
     cOId name(void) const                       { return name(actVar); }
     int type(void) const                        { return actVar->type; }
-    QVariantVector  values();
+    tVariantVector  values();
     cOIdVector names();
     bool isOpened() const                       { return ss != nullptr;  }
     const netsnmp_variable_list *var() const    { return actVar; }

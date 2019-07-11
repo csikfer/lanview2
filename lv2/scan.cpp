@@ -45,10 +45,6 @@ int cArpTable::getByLocalProcFile(const QString& __f, QString *pEMsg)
     return getByProcFile(procFile, pEMsg);
 }
 
-/// Az ARP tábla lekérdezése a proc fájlrendszeren keresztül, egy távoli gépen SSH-val
-/// @param __h A távoli hoszt név, vagy ip cím
-/// @param __f A fájl neve a proc fájlrendszerben
-/// @param __ru Opcionális, a felhasználó név a távoli gépen.
 int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru, QString *pEMsg)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
@@ -65,9 +61,6 @@ int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QS
     return getByProcFile(proc, pEMsg);
 }
 
-/// @param __f File name, optional.
-/// @param _hid host_service_id opcional
-/// @return Number of results or -1 if there was an error.
 int cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
 {
     //_DBGFN() << " @(" << __f << ")" << endl;
@@ -76,11 +69,6 @@ int cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
     return getByDhcpdConf(dhcpdConf, _hid);
 }
 
-/// @param __h Host address
-/// @param __f File name, optional.
-/// @param __ru Remote user name, optional
-/// @param _hid host_service_id opcional
-/// @return Number of results or -1 if there was an error.
 int cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru, qlonglong _hid)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
@@ -460,7 +448,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
         cOId name  = snmp.name();
         cOId oidIx = name - oid;
         int i = int(oidIx.last());
-        QVariant *p = ptab->find(_sIfIndex, i, _sIfName);
+        QVariant *p = ptab->getCellPtr(_sIfIndex, i, _sIfName);
         if (oidIx.size() != 1 || p == nullptr) {
             EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIfName));
         }
@@ -484,7 +472,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             QHostAddress addr(sAddr);               // check
             if (addr.isNull()) EX(EDATA, -1, QString("%1/%2").arg(sAddr, oidAddr.toNumString()));
             if (addr != QHostAddress(QHostAddress::Any)) {  // If address is 0.0.0.0, then dropp
-                QVariant *p = ptab->find(_sIfIndex, i, _sIpAdEntAddr);
+                QVariant *p = ptab->getCellPtr(_sIfIndex, i, _sIpAdEntAddr);
                 if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
                 p->setValue(sAddr);
                 found = true;   // Van IP címünk (a táblázatban)
@@ -598,7 +586,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
         if (pMem == nullptr || !pMem->ifType().isLinkage()) continue;  // It's not likely to trunk
         cNPort *pTrk = node.ports.get(_sPortIndex, QVariant(tix), EX_IGNORE);
         if (pTrk == nullptr) {  // Not found as valid port
-            int row = ptab->row(_sIfIndex, tix);
+            int row = ptab->getRowIndex(_sIfIndex, tix);
             if (row < 0) continue;  // Port not found in table by index
             pTrk = cNPort::newPortObj(cIfType::ifType(trunkIfTypeId));
             pTrk->setName((*ptab)[_sIfName][row].toString());
@@ -886,7 +874,7 @@ inline void staticAddOid(QString __s, int i)
     if (cLldpScan::sOids.size() != i || cLldpScan::oids.size() != i) EXCEPTION(EPROGFAIL);
     cLldpScan::sOids << __s;
     cLldpScan::oids  << cOId(cLldpScan::sOids.last());
-    if (!cLldpScan::oids.last()) EXCEPTION(EOID, -1, cLldpScan::sOids.last());
+    if (!cLldpScan::oids.last()) EXCEPTION(EOID, i, cLldpScan::sOids.last());
 }
 
 void cLldpScan::staticInit() {
@@ -1047,7 +1035,7 @@ static bool nodeCompare(QSqlQuery& q, qlonglong nidByMac, qlonglong& nidByIp, cI
 }
 
 // DEBUG
-#define LLDP_WRITE_CSV  0
+#define LLDP_WRITE_CSV  1
 
 void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData& row)
 {
@@ -1421,14 +1409,35 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
 
 #if LLDP_WRITE_CSV
         {
+            QString sRemChassisIdSubtype, sRemPortIdSubtype;
+            switch (RemChassisIdSubtype) {
+            case 1: sRemChassisIdSubtype = "chassisComponent";  break;
+            case 2: sRemChassisIdSubtype = "interfaceAlias";    break;
+            case 3: sRemChassisIdSubtype = "portComponent";     break;
+            case 4: sRemChassisIdSubtype = "macAddress";        break;
+            case 5: sRemChassisIdSubtype = "networkAddress";    break;
+            case 6: sRemChassisIdSubtype = "interfaceName";     break;
+            case 7: sRemChassisIdSubtype = "local";             break;
+            default:sRemChassisIdSubtype = QString::number(RemChassisIdSubtype);    break;
+            }
+            switch (RemPortIdSubtype) {
+            case 1: sRemPortIdSubtype = "interfaceAlias";   break;
+            case 2: sRemPortIdSubtype = "portComponent";    break;
+            case 3: sRemPortIdSubtype = "macAddress";       break;
+            case 4: sRemPortIdSubtype = "networkAddress";   break;
+            case 6: sRemPortIdSubtype = "agentCircuitId";   break;
+            case 5: sRemPortIdSubtype = "interfaceName";    break;
+            case 7: sRemPortIdSubtype = "local";            break;
+            default:sRemPortIdSubtype = QString::number(RemChassisIdSubtype);    break;
+            }
             const QString sep = ";";
             QFile f("lldp_test_gets.csv");
             f.open(QIODevice::WriteOnly | QIODevice::Append);
             QTextStream strm(&f);
             strm << quotedString(pDev->getName()) << sep << index << sep
-                 << RemChassisIdSubtype << sep
+                 << sRemChassisIdSubtype << sep
                  << quotedString(RemChasisId.toString()) << sep << dump(RemChasisId.toByteArray()) << sep
-                 << RemPortIdSubtype << sep
+                 << sRemPortIdSubtype << sep
                  << quotedString(RemPortId.toString()) << sep << dump(RemPortId.toByteArray()) << sep
                  << quotedString(RemPortDesc) << sep
                  << quotedString(RemSysDesc) << sep

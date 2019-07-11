@@ -352,7 +352,7 @@
          </column>
          <column>
           <property name="text">
-           <string>Restart</string>
+           <string>Parancs</string>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás/lekérdezés újraindítása, ha ez táűmogatott.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
