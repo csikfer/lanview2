@@ -1169,7 +1169,6 @@ cQueryParser::cQueryParser() : cRecord()
     pVarMap       = nullptr;
     pCommands     = nullptr;
     pParserThread = nullptr;
-    slave = false;
     _set(cQueryParser::descr());
 }
 
@@ -1183,7 +1182,6 @@ cQueryParser::cQueryParser(const cQueryParser& __o) : cRecord()
     pVarMap       = nullptr;
     pCommands     = nullptr;
     pParserThread = nullptr;
-    slave = false;
     _cp(__o);
 }
 
@@ -1293,10 +1291,9 @@ int cQueryParser::post(cError *& pe)
 
 cQueryParser *cQueryParser::newChild(cInspector * _isp)
 {
-    if (slave || pParserThread == nullptr) EXCEPTION(EPROGFAIL);
+    if (pParserThread == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
     cQueryParser *p = new cQueryParser;
-    slave = true;
     int r = p->load(q, _isp->serviceId(), false, false);
     if (R_NOTFOUND == r && nullptr != _isp->pPrimeService) r = p->load(q, _isp->primeServiceId(), false, false);
     if (R_NOTFOUND == r && nullptr != _isp->pProtoService) r = p->load(q, _isp->protoServiceId(), false, false);

@@ -392,7 +392,6 @@ protected:
     QString getParValue(const QString& name, const QStringList &args);
     QString substitutions(const QString& _cmd, const QStringList& args);
     int execute(cError *&pe, const QString& _cmd, const QStringList& args = QStringList());
-    bool                slave;
     QStringList         *pListCmd;          ///< interpreter parancsok listája
     QList<QRegExp>      *pListRExp;         ///< Reguláris kifelyezések listája (sorrend azonos mint a pListCmd-ben)
     QList<qlonglong>    *pListReAttr;       ///< Reguláris kifelyezések attributumainak listája (sorrend azonos mint a pListCmd-ben)

@@ -158,7 +158,7 @@ cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& s
     , pLayout(_horizontal ? static_cast<QLayout *>(new QHBoxLayout) : static_cast<QLayout *>(new QVBoxLayout))
     , pComboBox(new QComboBox)
     , pNullButton(new QToolButton)
-    , pModel(new cRecFieldSetOfValueModel(_cfr, sqlWhere))
+    , pModel(new cRecFieldSetOfValueModel(_cfr, QStringList(sqlWhere)))
 {
     pComboBox->setEditable(true);
     pModel->joinWith(pComboBox);
@@ -1199,7 +1199,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pEditWidget = pComboBox = new QComboBox;
         pComboBox->setEditable(true);
         pLayout->addWidget(pComboBox);
-        cRecFieldSetOfValueModel *pm = new cRecFieldSetOfValueModel(_fr, _fieldShape.feature(sSetOfValue));
+        cRecFieldSetOfValueModel *pm = new cRecFieldSetOfValueModel(_fr, _fieldShape.features().slValue(sSetOfValue));
         pModel = pm;
         pm->joinWith(pComboBox);
         modeltype = SETOF_MODEL;

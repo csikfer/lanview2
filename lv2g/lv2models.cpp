@@ -985,17 +985,18 @@ void cEnumListModel::setCurrentIndex(int i)
 
 /************************************************ cRecFieldSetOfValueModel ****************************************************/
 
-cRecFieldSetOfValueModel::cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QString& sqlWhere)
+cRecFieldSetOfValueModel::cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QStringList &_feature)
     :   QSqlQueryModel()
 {
     pComboBox = nullptr;
     q = getQuery();
     QString fieldName = _cfr.columnName();
-    QString tableName = _cfr.recDescr().tableName();
+    QString tableName = _feature.size() > 1 ? _feature.at(1) : _cfr.recDescr().tableName();
+    QString filter    = !_feature.isEmpty() ? _feature.at(0) : _sNul;
     sql = "SELECT DISTINCT(" + fieldName + ")"
         + " FROM " + tableName
         + " WHERE " + fieldName + " IS NOT NULL AND " + fieldName + " <> ''";
-    if (!sqlWhere.isEmpty()) sql += " AND " + sqlWhere;
+    if (!filter.isEmpty()) sql += " AND " + filter;
     sql += " ORDER BY " + fieldName + " ASC";
     refresh();
 }

@@ -450,7 +450,12 @@ signals:
 class LV2GSHARED_EXPORT cRecFieldSetOfValueModel : public QSqlQueryModel {
     Q_OBJECT
 public:
-    cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QString& sqlWhere);
+    /// Konstruktor
+    /// @param _cfr A szerkesztendő mező referencia objektuma
+    /// @param _feature Feature érték lista: első árték egy szűrő, a második pedig a tábla név.
+    ///     Mindkét érték opcionális, további lista értékek figyelmen kívül lesznek hagyva.
+    ///     Az alapértelmezett tábla név, a _cfr tábla neve.
+    cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QStringList& _feature);
     void refresh();
     void joinWith(QComboBox * _pComboBox);
     void setCurrent(const QString& s);
