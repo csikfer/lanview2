@@ -554,7 +554,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
         node.ports << pPort;
     }
     // Trunk port hozzárendelések lekérdezése
-    // Van hogy a trunk port a típus alapján első menetben ki lett szorva!
+    // Van hogy a trunk port a típus alapján (1, unknown) az első menetben ki lett szórva!
     oid.set("IF-MIB::ifStackStatus");
     qlonglong trunkIfTypeId = cIfType::ifTypeId(_sMultiplexor);
     ok = false;
@@ -580,7 +580,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
         if (v.toInt() != 1) continue;   // Active(1) ?
         int tix = int(o[0]);    // trunk port index
         if (tix <= 0) continue; // ?
-        int mix = int(o[1]);    // menber port index
+        int mix = int(o[1]);    // member port index
         if (mix <= 0) continue; // ?
         cNPort *pMem = node.ports.get(_sPortIndex, QVariant(mix), EX_IGNORE);
         if (pMem == nullptr || !pMem->ifType().isLinkage()) continue;  // It's not likely to trunk
@@ -590,9 +590,11 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             if (row < 0) continue;  // Port not found in table by index
             pTrk = cNPort::newPortObj(cIfType::ifType(trunkIfTypeId));
             pTrk->setName((*ptab)[_sIfName][row].toString());
+            pTrk->setId(_sPortIndex, tix);
+            pTrk->setName(_sIfDescr.toLower(), (*ptab)[_sIfDescr][row].toString());
             QString note = QObject::tr("Feltételezett trunk port (ifType = %1)").arg((*ptab)[_sIfType][row].toString());
-            portSetMac(q, node, *pTrk, *ptab, tix, note);
             pTrk->setNote(note);
+            portSetMac(q, node, *pTrk, *ptab, tix, note);
             portSetAddress(q, node, hostAddr, *pTrk, *ptab, tix, found, foundMyIp, foundJoint);
             node.ports << pTrk;
         }
