@@ -41,30 +41,7 @@ public:
 
 #define NEWCERROR(ec, ...) new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__)
 
-/*!
-@def EXCEPTION(ec...)
-Létrehoz egy cError objekrumot, feltölti a paraméterek, és a hívási pozició alapján,
-és az objektum pointerével dob egy kizárást.
-@par Hívása:
-@code
-EXCEPTION(ec[, sc[, sm]]);
-@endcode
-@param ec Hiba kód. Egy az eError névtérben definiált enumerációs konstans érték
-          ezt követheti sc az opcionális Másodlagos hiba kód, ill. numerikus hiba paraméter. Típusa int, ill. int-té lesz konvertálva,
-          valamint sm az ugyancsak opcionális  Hiba szöveges paraméter. Típusa const QString&, vagy const char *.
-@par Példa a használatára
-@code
-if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
-@endcode
-@relates cError
- */
-#define EXCEPTION(ec, ...) (new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__))->exception();
-
-#define ERROR_NESTED(pe) pe->nested(__FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define CHKNULL(p)  if (p == nullptr) EXCEPTION(EPROGFAIL)
-
-// Error codes
+// Include error codes
 #include "errcodes.h"
 
 /*!
@@ -197,15 +174,8 @@ Az adattagok inicializálása után hívja a circulation() metódust
     virtual ~cError();
     /// Dob egy kizárást a this pointerrel.
     /// @return A metódus nem tér vissza
-    _ATR_NORET_ virtual void exception(void);
-
-    static void exception(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
-           int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString())
-    {
-        (new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg))->exception();
-    }
-
-    ///
+    virtual LV2_ATR_NORET_ void exception(void);
+    /// Hiba a hiba feldolgozásakor.
     cError &nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName);
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
@@ -274,24 +244,43 @@ public:
     static const QMap<int, QString>& errorMap() { return mErrorStringMap; }
 };
 
+/*!
+Dob egy kizárást a létrehozott cError objektum pointerével.
+@param _mSrcName    Forrás program fájl neve.
+@param _mSrcLine    Forrás program fájlban a sor pozició.
+@param _mFuncName   A függvény teljes neve
+@param _mErrorCode  Numerikus hiba kód
+@param _mErrorSubCode   Numerikus másodlagos hiba kód
+@param _mErrorSubMsg    Szöveges másodlagos hiba kód, név, vagy azonosító.
+@return A metódus nem tér vissza
+*/
+LV2_ATR_NORET_ void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString &_mFuncName, int _mErrorCode,
+       qlonglong _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
+
+/*!
+Dob egy kizárást a létrehozott cError objektum pointerével.
+@param _mSrcName    Forrás program fájl neve.
+@param _mSrcLine    Forrás program fájlban a sor pozició.
+@param _mFuncName   A függvény teljes neve
+@param _mErrorCode  Numerikus hiba kód
+@param _mErrorSubCode   Numerikus másodlagos hiba kód
+@param _mErrorSubMsg    Szöveges másodlagos hiba kód, név, vagy azonosító.
+@return A metódus nem tér vissza
+*/
+inline LV2_ATR_NORET_ void cErrorException(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
+       qlonglong _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString())
+{
+    QString mSrcName  = QString(_mSrcName);
+    QString mFuncName = QString(_mFuncName);
+    cErrorException(mSrcName, _mSrcLine, mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
+}
+
+
 /// Egy SQL hiba típus konstanst stringgé kovertál.
 EXT_ QString SqlErrorTypeToString(int __et);
 
 /// Az SQL Query paraméterek szöveges megjelenítése.
-inline QString _sql_err_bound(QSqlQuery& q, const QString& pref = QString())
-{
-    if (q.boundValues().isEmpty()) {
-        return QString();
-    }
-    QMapIterator<QString, QVariant> i(q.boundValues());
-    QString r;
-    while (i.hasNext()) {
-        i.next();
-        r += i.key() + " = " + debVariantToString(i.value()) + "; ";
-    }
-    r.chop(2);
-    return  pref + r;
-}
+EXT_  QString _sql_err_bound(QSqlQuery& q, const QString& pref = QString());
 
 /// SQL Query hiba debug üzenet
 /// @param le SQL hiba objektum
@@ -299,18 +288,7 @@ inline QString _sql_err_bound(QSqlQuery& q, const QString& pref = QString())
 /// @param _li A forrás fájlban a sor sorszáma
 /// @param _fu A függvény neve
 /// @param s Az SQL Query string, opcionális
-inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s = QString())
-{
-    if (ONDB(DERROR)) {
-        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " ...\n";
-        cDebug::cout() << QObject::tr("SQL ERROR ") << le.nativeErrorCode()
-                       << QObject::tr("; type:") << SqlErrorTypeToString(le.type()) << "\n";
-        cDebug::cout() << QObject::tr("driverText   : ") << le.driverText() << "\n";
-        cDebug::cout() << QObject::tr("databaseText : ") << le.databaseText();
-        if (s.size() > 0) cDebug::cout() << QObject::tr("SQL string   : ") << s << "\n";
-        cDebug::cout() << flush;
-    }
-}
+EXT_  void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s = QString());
 
 /// SQL Query hiba debug üzenet
 /// @param q SQL query objektum
@@ -318,34 +296,36 @@ inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const 
 /// @param _li A forrás fájlban a sor sorszáma
 /// @param _fu A függvény neve
 /// @param s Járulékos üzenet, opcionális
-inline void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s = QString())
-{
-    if (ONDB(DERROR)) {
-        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " " << s << "\n";
-        cDebug::cout() << QObject::tr("SQL string : ") << q.lastQuery();
-        cDebug::cout() << _sql_err_bound(q, QObject::tr("\nSQL bounds : "));
-        cDebug::cout() << flush;
-    }
-}
+EXT_  void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s = QString());
 
-inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
-{
-    pe->mSqlErrCode    = le.nativeErrorCode();
-    pe->mSqlErrType   = le.type();
-    pe->mSqlErrDrText = le.driverText();
-    pe->mSqlErrDbText = le.databaseText();
-    pe->mSqlQuery     = sql;
-    pe->mSqlBounds    = bound;
-}
+EXT_ LV2_ATR_NORET_ void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString());
 
-inline void _sql_derr_ex(cError *pe, QSqlQuery& q)
-{
-    pe->mSqlQuery     = q.lastQuery();
-    pe->mSqlBounds    = _sql_err_bound(q);
-    pe->exception();
-}
+EXT_ LV2_ATR_NORET_ void _sql_derr_ex(cError *pe, QSqlQuery& q);
 
-#define _SQLERR(le, e)  { \
+/*!
+@def EXCEPTION(ec...)
+Létrehoz egy cError objekrumot, feltölti a paraméterek, és a hívási pozició alapján,
+és az objektum pointerével dob egy kizárást.
+@par Hívása:
+@code
+EXCEPTION(ec[, sc[, sm]]);
+@endcode
+@param ec Hiba kód. Egy az eError névtérben definiált enumerációs konstans érték
+          ezt követheti sc az opcionális Másodlagos hiba kód, ill. numerikus hiba paraméter. Típusa int, ill. int-té lesz konvertálva,
+          valamint sm az ugyancsak opcionális  Hiba szöveges paraméter. Típusa const QString&, vagy const char *.
+@par Példa a használatára
+@code
+if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
+@endcode
+@relates cError
+ */
+#define EXCEPTION(ec, ...) cErrorException(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__)
+
+#define ERROR_NESTED(pe) pe->nested(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+
+#define CHKNULL(p)  if (p == nullptr) EXCEPTION(EPROGFAIL)
+
+#define LV2_SQLERR(le, e)  { \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         _sql_err_ex(NEWCERROR(e, le.number(), le.text()), le); \
     }

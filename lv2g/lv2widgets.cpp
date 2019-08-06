@@ -666,7 +666,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFieldSpinBoxWidget/double" << endl;
             return p;
         }
-//    [[fallthrough]];
+    LV2_FALLTHROUGH
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
@@ -712,7 +712,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFKeyArrayWidget" << endl;
             return p;
         }
-//    [[clang::fallthrough]];
+        LV2_FALLTHROUGH
     case cColStaticDescr::FT_REAL_ARRAY:
     case cColStaticDescr::FT_TEXT_ARRAY: {
          cArrayWidget *p = new cArrayWidget(_tm, _tf, _fr, ro, _par);
@@ -1340,7 +1340,7 @@ int cFieldLineWidget::set(const QVariant& v)
             }
             break;
         default:
-            EXCEPTION(EPROGFAIL, _wType)
+            EXCEPTION(EPROGFAIL, _wType);
         }
     }
     return r;

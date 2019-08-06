@@ -319,7 +319,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
                 QThread::msleep(200);
                 continue;   // retrying
             }
-            _SQLERR(le, EQUERY);    // no return
+            LV2_SQLERR(le, EQUERY);    // no return
         }
         else if (r == 1) {
             for (int i = 0; i < readBackFieldIxs.size(); ++i) {
@@ -389,9 +389,9 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     if (r < 0) {
         QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
         switch (n) {
-        case -1:    SQLQUERYERR(q);
-        case  0:    EXCEPTION(EFOUND, 0, e);
-        default:    EXCEPTION(AMBIGUOUS, n, e);
+        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH;
+        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH;
+        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH;
         }
     }
     return n;
@@ -435,9 +435,9 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString&
     if (r < 0) {
         QString e = tr("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
         switch (n) {
-        case -1:    SQLQUERYERR(q);
-        case  0:    EXCEPTION(EFOUND, 0, e);
-        default:    EXCEPTION(AMBIGUOUS, n, e);
+        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH
+        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH
+        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH
         }
     }
     return n;
@@ -497,9 +497,9 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     if (r < 0) {
         QString e = tr("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
         switch (n) {
-        case -1:    SQLQUERYERR(q);
-        case  0:    EXCEPTION(EFOUND, 0, e);
-        default:    EXCEPTION(AMBIGUOUS, n, e);
+        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH
+        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH
+        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH
         }
     }
     return n;

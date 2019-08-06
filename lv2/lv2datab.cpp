@@ -324,13 +324,11 @@ void cColEnumType::checkEnum(tE2S e2s, tS2E s2e) const
         const QString& s = enumValues[i];
         int ii = (*s2e)(s, EX_IGNORE);
         if (i != ii) {
-            EXCEPTION(EENUMVAL, 1, QObject::tr("%1 : #%2/%3 : s2e(%3) ~ %4")
-                      .arg(toString()).arg(i).arg(s).arg(ii) )
+            EXCEPTION(EENUMVAL, 1, QObject::tr("%1 : #%2/%3 : s2e(%3) ~ %4").arg(toString()).arg(i).arg(s).arg(ii) );
         }
         const QString& ss = (*e2s)(i, EX_IGNORE);
         if (0 != s.compare(ss, Qt::CaseInsensitive)) {
-            EXCEPTION(EENUMVAL, 4, QObject::tr("%1 : #%2/%3 : e2s(%4) ~ %5")
-                      .arg(toString()).arg(i).arg(s).arg(ii).arg(ss) )
+            EXCEPTION(EENUMVAL, 4, QObject::tr("%1 : #%2/%3 : e2s(%4) ~ %5").arg(toString()).arg(i).arg(s).arg(ii).arg(ss) );
         }
     }
     const QString e = (*e2s)(i, EX_IGNORE);
@@ -462,34 +460,35 @@ enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cCol
     cColStaticDescr::eValueCheck r = VC_INVALID;
     if (v.isNull() || isNumNull(v)
      || (eColType != FT_TEXT && variantIsString(v) && v.toString().isEmpty())) {
-        return ifExcep(checkIfNull(), acceptable, v);
+        r = checkIfNull();
     }
-    switch (eColType) {
+    else switch (eColType) {
     case FT_INTEGER:
         if (v.canConvert(QVariant::LongLong)) switch (v.type()) {
         case QVariant::Int:
         case QVariant::LongLong:    r = VC_OK;      break;
         default:                    r = VC_CONVERT; break;
         }
-        return ifExcep(r, acceptable, v);
+        break;
     case FT_REAL:
         if (v.canConvert(QVariant::Double)) switch (v.type()) {
         case QVariant::Double:      r = VC_OK;      break;
         default:                    r = VC_CONVERT; break;
         }
-        return ifExcep(r, acceptable, v);
+        break;
     case FT_BINARY:
-        return ifExcep(v.canConvert(QVariant::ByteArray)? VC_OK : VC_INVALID, acceptable, v);
+        r = v.canConvert(QVariant::ByteArray)? VC_OK : VC_INVALID;
+        break;
     case FT_TEXT:
         if (v.canConvert(QVariant::String)) {
             if (chrMaxLenghr > 0 && chrMaxLenghr < v.toString().size()) r = VC_TRUNC;
             else r = v.type() == QVariant::String ? VC_OK : VC_CONVERT;
         }
-        return ifExcep(r, acceptable, v);
+        break;
     default:
         EXCEPTION(EPROGFAIL, eColType);
     }
-    // return ifExcep(VC_INVALID, acceptable, v);
+    return ifExcep(r, acceptable, v);
 }
 
 QVariant cColStaticDescr::fromSql(const QVariant& _f) const
@@ -654,36 +653,27 @@ void cColStaticDescr::typeDetect()
 void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, const char *fn) const
 {
     if (pEnumType == nullptr) {       // Ez nem is enum.
-        cError::exception(src, lin, fn, eError::EPROGFAIL,
-                          1, QObject::tr("A %1 mező men enumerációs típusú.").arg(colName()));
+        cErrorException(src, lin, fn, eError::EPROGFAIL, 1, QObject::tr("A %1 mező men enumerációs típusú.").arg(colName()));
     }
     int n = pEnumType->enumValues.size();
     int i;
     if (n == 0) { // Ez nem hihető.
-        cError::exception(src, lin, fn, eError::EPROGFAIL,
-                          2, QObject::tr("A %1 enumerációs típusnak nincs értékkészlete.").arg(*pEnumType));
+        cErrorException(src, lin, fn, eError::EPROGFAIL, 2, QObject::tr("A %1 enumerációs típusnak nincs értékkészlete.").arg(*pEnumType));
     }
     for (i = 0; i < n; ++i) {
         const QString& s = pEnumType->enumValues[i];
-/*        if (s.isEmpty()) {
-            EXCEPTION(EENUMVAL, 3, QObject::tr("%1 : #%2 is empty")
-                      .arg(*pEnumType).arg(i) )
-        }*/
         int ii = (*s2e)(s, EX_IGNORE);
         if (i != ii) {
-            EXCEPTION(EENUMVAL, 1, QObject::tr("%1 : #%2/%3 : s2e(%3) ~ %4")
-                      .arg(*pEnumType).arg(i).arg(s).arg(ii) )
+            EXCEPTION(EENUMVAL, 1, QObject::tr("%1 : #%2/%3 : s2e(%3) ~ %4").arg(*pEnumType).arg(i).arg(s).arg(ii) );
         }
         const QString& ss = (*e2s)(i, EX_IGNORE);
         if (0 != s.compare(ss, Qt::CaseInsensitive)) {
-            EXCEPTION(EENUMVAL, 4, QObject::tr("%1 : #%2/%3 : e2s(%4) ~ %5")
-                      .arg(*pEnumType).arg(i).arg(s).arg(ii).arg(ss) )
+            EXCEPTION(EENUMVAL, 4, QObject::tr("%1 : #%2/%3 : e2s(%4) ~ %5").arg(*pEnumType).arg(i).arg(s).arg(ii).arg(ss) );
         }
     }
     const QString e = (*e2s)(i, EX_IGNORE);
     if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
-        EXCEPTION(EENUMVAL, 5, QObject::tr("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
-                  .arg(*pEnumType).arg(i).arg(e))
+        EXCEPTION(EENUMVAL, 5, QObject::tr("A %1 adatvázis típus hiényos, extra elem : #%2/%3").arg(*pEnumType).arg(i).arg(e));
     }
 }
 
@@ -953,51 +943,57 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     if (QMetaType::QVariantList == t)  switch (eColType) {
     case FT_INTEGER_ARRAY:
     case FT_REAL_ARRAY:
-        return _f;
+        break;
     case FT_TEXT_ARRAY:
         foreach (QVariant v, _f.toList()) {
             sl << QVariantToString(v, &ok);
             if (!ok) str |= ES_DEFECTIVE;
         }
-        return QVariant(sl);
+        r = QVariant(sl);
+        break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    if (QMetaType::QStringList == t)  switch (eColType) {
+    else if (QMetaType::QStringList == t)  switch (eColType) {
     case FT_TEXT_ARRAY:
-        return _f;
+        break;
     case FT_INTEGER_ARRAY:
         foreach (QString s, _f.toStringList()) {
             vl << QVariant(s.toLongLong(&ok));
             if (!ok) str |= ES_DEFECTIVE;
         }
-        return QVariant(vl);
+        r = QVariant(vl);
+        break;
     case FT_REAL_ARRAY:
         foreach (QString s, _f.toStringList()) {
             vl << QVariant(s.toDouble(&ok));
             if (!ok) str |= ES_DEFECTIVE;
         }
-        return QVariant(vl);
+        r = QVariant(vl);
+        break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    switch (eColType) {
+    else switch (eColType) {
     case FT_TEXT_ARRAY:
         sl << QVariantToString(_f, &ok);
         if (!ok) str |= ES_DEFECTIVE;
-        return QVariant(sl);
+        r = QVariant(sl);
+        break;
     case FT_INTEGER_ARRAY:
         if (_f.canConvert<qlonglong>()) vl << _f.toLongLong();
         else str |= ES_DEFECTIVE;
-        return QVariant(vl);
+        r = QVariant(vl);
+        break;
     case FT_REAL_ARRAY:
         if (_f.canConvert<double>()) vl << _f.toDouble();
         else str |= ES_DEFECTIVE;
-        return QVariant(vl);
+        r = QVariant(vl);
+        break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    // return _f; // Csak a warning miatt
+    return r;
 }
 QString   cColStaticDescrArray::toName(const QVariant& _f) const
 {
@@ -2880,11 +2876,6 @@ cRecord::cRecord() : QObject(), _fields(), _likeMask()
     _toReadBack = _toReadBackDefault = RB_YES;  // RB_DEFAULT ?
     pTextList = nullptr;
     containerValid  = 0;
-}
-
-cRecord::cRecord(const cRecord& o) : QObject(), _fields(), _likeMask()
-{
-    EXCEPTION(ENOTSUPP, -1, o.identifying());
 }
 
 cRecord::~cRecord()

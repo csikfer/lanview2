@@ -168,7 +168,7 @@ void cGateway::setSubs(QSqlQuery &q, const QString &)
         getSocketParams();
     }
     else {
-        EXCEPTION(ENOTSUPP, protoServiceId(), QObject::tr("A megadott proto_service nem támogatptt"))
+        EXCEPTION(ENOTSUPP, protoServiceId(), QObject::tr("A megadott proto_service nem támogatptt"));
     }
 
 }

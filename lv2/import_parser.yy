@@ -107,12 +107,16 @@ class cTemplateMapMap : public QMap<QString, cTemplateMap> {
     }
     /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
     void set(const QString& __type, const QString& __name, const QString& __cont) {
-        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Üres minta."))
+        if (__cont.isEmpty()) {
+            EXCEPTION(EDATA, -1, QObject::tr("Üres minta."));
+        }
         (*this)[__type].set(__name, __cont);
     }
     /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
     void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
-        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Üres minta."))
+        if (__cont.isEmpty()) {
+            EXCEPTION(EDATA, -1, QObject::tr("Üres minta."));
+        }
         (*this)[__type].save(qq(), __name, __cont, __descr);
     }
     /// Egy adott nevű template törlése a konténerből, és az adatbázisból.

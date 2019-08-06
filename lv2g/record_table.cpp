@@ -267,12 +267,12 @@ inline QString arrayAnyAll(bool isArray, bool any, QString o, QString n, int t =
     return r;
 }
 
-QString cRecordTableFilter::whereLike(const QString& n, bool isArray)
+QString cRecordTableFilter::whereLike(const QString& _fieldName, bool isArray)
 {
     QString o = "LIKE";
     if (csi)     o.prepend('I');
     if (inverse) o.prepend("NOT ");
-    return arrayAnyAll(isArray, any, o, n, PT_TEXT);
+    return arrayAnyAll(isArray, any, o, _fieldName, PT_TEXT);
 }
 
 QString cRecordTableFilter::whereLitle(const QString& n, bool af, bool inv, bool clo)
@@ -331,6 +331,7 @@ QString cRecordTableFilter::where(QVariantList& qparams)
         switch (eColType) {
         case cColStaticDescr::FT_TEXT_ARRAY:
             isArray = true;
+            LV2_FALLTHROUGH
         case cColStaticDescr::FT_TEXT:
             // toType = ????;
             break;
@@ -1003,7 +1004,6 @@ int cRecordTableFODialog::indexOf(cRecordTableOrd * _po)
         if (_po == ords[i]) return i;
     }
     EXCEPTION(EPROGFAIL);
-    return -1;
 }
 
 void cRecordTableFODialog::setGridLayoutOrder()
@@ -2556,7 +2556,7 @@ void cRecordTable::init()
         break;
     case ENUM2SET2(TS_OWNER, TS_MEMBER):
         flags = RTF_OVNER;
-        // Continue
+        LV2_FALLTHROUGH
     case ENUM2SET(TS_MEMBER):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_MEMBER;
@@ -2564,7 +2564,7 @@ void cRecordTable::init()
         break;
     case ENUM2SET2(TS_OWNER, TS_GROUP):
         flags = RTF_OVNER;
-        // Continue
+        LV2_FALLTHROUGH
     case ENUM2SET(TS_GROUP):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_GROUP;

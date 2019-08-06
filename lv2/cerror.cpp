@@ -173,7 +173,9 @@ void cError::exception(void)
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
+#if LV2_THROW
     throw(this);
+#else
     {
         QString mm = QObject::tr("Exception (throw) is not working, exit.");
         if (cDebug::getInstance() != nullptr) {
@@ -186,6 +188,7 @@ void cError::exception(void)
         sendError(this);
         exit(mErrorCode);
     }
+#endif
 }
 
 QString cError::errorMsg(int __ErrorCode)
@@ -284,6 +287,12 @@ bool cError::errStat()
     return r;
 }
 
+void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode, qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
+{
+    cError *pe = new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
+    pe->exception();
+}
+
 QString SqlErrorTypeToString(int __et)
 {
     switch (__et) {
@@ -296,9 +305,58 @@ QString SqlErrorTypeToString(int __et)
     return QObject::tr("Unknown SQL Error type.");
 }
 
-/*
-QString emNoField(const QString& __t, const QString& __f)
+QString _sql_err_bound(QSqlQuery& q, const QString& pref)
 {
-    return QObject::tr("Nincs %2 mező a %1 táblában").arg(__t, __f);
+    if (q.boundValues().isEmpty()) {
+        return QString();
+    }
+    QMapIterator<QString, QVariant> i(q.boundValues());
+    QString r;
+    while (i.hasNext()) {
+        i.next();
+        r += i.key() + " = " + debVariantToString(i.value()) + "; ";
+    }
+    r.chop(2);
+    return  pref + r;
 }
-*/
+
+void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s)
+{
+    if (ONDB(DERROR)) {
+        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " ...\n";
+        cDebug::cout() << QObject::tr("SQL ERROR ") << le.nativeErrorCode()
+                       << QObject::tr("; type:") << SqlErrorTypeToString(le.type()) << "\n";
+        cDebug::cout() << QObject::tr("driverText   : ") << le.driverText() << "\n";
+        cDebug::cout() << QObject::tr("databaseText : ") << le.databaseText();
+        if (s.size() > 0) cDebug::cout() << QObject::tr("SQL string   : ") << s << "\n";
+        cDebug::cout() << flush;
+    }
+}
+
+void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s)
+{
+    if (ONDB(DERROR)) {
+        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " " << s << "\n";
+        cDebug::cout() << QObject::tr("SQL string : ") << q.lastQuery();
+        cDebug::cout() << _sql_err_bound(q, QObject::tr("\nSQL bounds : "));
+        cDebug::cout() << flush;
+    }
+}
+
+void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql, const QString& bound)
+{
+    pe->mSqlErrCode   = le.nativeErrorCode();
+    pe->mSqlErrType   = le.type();
+    pe->mSqlErrDrText = le.driverText();
+    pe->mSqlErrDbText = le.databaseText();
+    pe->mSqlQuery     = sql;
+    pe->mSqlBounds    = bound;
+    pe->exception();
+}
+
+void _sql_derr_ex(cError *pe, QSqlQuery& q)
+{
+    pe->mSqlQuery     = q.lastQuery();
+    pe->mSqlBounds    = _sql_err_bound(q);
+    pe->exception();
+}

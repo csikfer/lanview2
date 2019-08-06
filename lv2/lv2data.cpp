@@ -2180,7 +2180,7 @@ cNPort * cPatch::getPort(int __ix, eEx __ex)
         int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
         if (i >= 0) return ports[i];
     }
-    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::tr("%1 port index not found.")).arg(__ix))
+    if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::tr("%1 port index not found.")).arg(__ix));
     return nullptr;
 }
 
@@ -2958,7 +2958,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
         }
         else if (variantIsString(*mac)) {
             QString sm = mac->toString();
-            if (sm != _sARP && !m.set(sm)) EXCEPTION(EDATA, -1, tr("Nem értelmezhető MAC : %1").arg(sm))
+            if (sm != _sARP && !m.set(sm)) EXCEPTION(EDATA, -1, tr("Nem értelmezhető MAC : %1").arg(sm));
         }
         else EXCEPTION(EDATA);
     }
@@ -3686,7 +3686,7 @@ qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QSt
     cAppMemo o;
     o.herein(_memo, _imp, _func_name, _src, _lin);
     o.insert(q);
-    if (_imp & RS_BREAK) (new cError(_src, _lin, _func_name, eError::EBREAK, o.getId(), _memo))->exception();
+    if (_imp & RS_BREAK) cErrorException(_src, _lin, _func_name, eError::EBREAK, o.getId(), _memo);
     return o.getId();
 }
 

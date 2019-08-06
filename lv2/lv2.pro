@@ -1,4 +1,5 @@
 CONFIG -= debug_and_release
+CONFIG += C++11
 
 REVISION = $$system(git rev-list --count HEAD)
 DEFINES += REVISION=$$REVISION

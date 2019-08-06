@@ -31,7 +31,7 @@ cParseWidget::cParseWidget(QMdiArea *par)
     pUi->textEditQP->hide();
     QList<int> sizes;
     sizes << 0 << 100 << 100;
-    pUi->splitter->setSizes(sizes);
+    pUi->splitterMain->setSizes(sizes);
     static const QString sql =
             "SELECT DISTINCT(service_name) FROM query_parsers JOIN services USING (service_id) WHERE parse_type = 'parse'";
     if (execSql(*pq, sql)) {
@@ -189,7 +189,7 @@ void cParseWidget::remoteParse(const QString &src)
             msg = tr("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
             break;
         }
-        int stat = imp.getId(_sExecState);
+        int stat = int(imp.getId(_sExecState));
         if (stat == lastStat) continue;
         lastStat = stat;
         switch (stat) {
@@ -211,7 +211,6 @@ void cParseWidget::remoteParse(const QString &src)
             break;
         case ES_WAIT:       // Elvileg képtelenség
             EXCEPTION(EPROGFAIL);
-            break;
         default:
             msg = tr("A visszaolvasott állapotjelző értelmezhetetlen: %1").arg(stat);
             break;
@@ -255,7 +254,7 @@ void cParseWidget::debugLine()
     if (re.exactMatch(s)) {
         bool ok;
         QString sm = re.cap(1);
-        qlonglong m = sm.toULongLong(&ok, 16);
+        qulonglong m = sm.toULongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL);
         if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
             s = re.cap(2).trimmed();
@@ -322,7 +321,7 @@ void cParseWidget::on_checkBoxQP_toggled(bool checked)
 {
     QList<int> sizes;
     sizes << (checked ? 100 : 0) << 100 << 100;
-    pUi->splitter->setSizes(sizes);
+    pUi->splitterMain->setSizes(sizes);
 }
 
 void cParseWidget::on_pushButtonRepSave_clicked()

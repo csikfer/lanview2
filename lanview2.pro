@@ -3,6 +3,8 @@ TEMPLATE = subdirs
 lv2.subdir = lv2
 SUBDIRS += lv2
 lv2.subdirs = lv2
+CONFIG += c++11
+
 
 !exists(lv2g/miss) {
     SUBDIRS += lv2g lv2gui

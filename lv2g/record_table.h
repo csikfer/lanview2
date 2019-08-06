@@ -68,7 +68,7 @@ public:
     QList<const cEnumVal *> filterTypeList;   ///< A választható szűrés típusok
     qlonglong   type2filter();      ///< A lehetséges szűrő típusok, és a TEXT-hez rendelt lehetséges típuskonverziók (SET + SET)
 private:
-    QString whereLike(const QString &n, bool isArray);
+    QString whereLike(const QString &_fieldName, bool isArray);
     QString whereLitle(const QString& n, bool af, bool inv, bool clo);
     QString whereEnum(const QString &n, QVariantList& qparams);
     QString whereSet(const QString &n, QVariantList& qparams);

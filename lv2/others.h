@@ -250,7 +250,7 @@ template <typename T> struct PtrGreat
     }
 };
 
-_ATR_NORET_ EXT_ void appReStart();
+LV2_ATR_NORET_ EXT_ void appReStart();
 
 EXT_ const QString _sSpace;
 inline QString joinCmd(const QString& cmd, const QStringList& args)

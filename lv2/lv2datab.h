@@ -2381,8 +2381,8 @@ protected:
     {
         const_cast<cRecStaticDescr *>(pD)->_nameKeyMask = __m;
     }
-    /// Copy constructor. Nem támogatott konstruktor. Dob egy kizárást.
-    cRecord(const cRecord& o);
+    /// Copy constructor. Nem támogatott konstruktor.
+    cRecord(const cRecord& o) = delete;
     /// átmásolja ellenörzés nélkül az objektum adattagjait, a mező adatok kivételével.
     void __cp(const cRecord& __o) {
         _stat    = __o._stat;

@@ -13,7 +13,7 @@ cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
     DBGFN();
     cOId oid("IP-MIB::ipNetToMediaPhysAddress");
     PDEB(VVERBOSE) << "Base oid : " << oid.toNumString() << endl;
-    if (__snmp.getNext(oid)) EXCEPTION(ESNMP, __snmp.status, "First getNext().")
+    if (__snmp.getNext(oid)) EXCEPTION(ESNMP, __snmp.status, "First getNext().");
     do {
         if (!(oid < __snmp.name())) break;
         PDEB(VVERBOSE) << "oid : " << __snmp.name().toNumString() << " = " << dump(__snmp.value().toByteArray()) << endl;
@@ -345,7 +345,7 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
 #define IFTYPE_IANA_ID_ETH  6
 
 #define EX(ec,ei,_es) {\
-    if (__ex) { EXCEPTION(ec, ei, _es) } \
+    if (__ex) { EXCEPTION(ec, ei, _es); } \
     else {  \
         es = cError::errorMsg(eError::ec) + " : " + _es + " "; \
         DERR() << es << endl; \
@@ -1578,7 +1578,7 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         o = snmp.name();
         o -= *pAddrOid;
         if (o.size() < 2) continue;
-        index = (int)o[1];
+        index = int(o[1]);
         // IPV4 !!
         if (o.size() == 9 && o[3] == 1 && o[4] == 4) {   // ?.index.?.1.4.IPV4
             QHostAddress a = o.toIPV4();
@@ -1699,7 +1699,7 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
         /* - */
         o -= oid;
         if (o.size() >= 1) {
-            r = (int)o[0];
+            r = int(o[0]);
             QString n = snmp.value().toString();
             PDEB(VVERBOSE) << "#" << r << "; compare : " << quotedString(n) << " == " << quotedString(pdescr) << endl;
             if (n == pdescr) return r;

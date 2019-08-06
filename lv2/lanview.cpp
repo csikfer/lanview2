@@ -262,7 +262,7 @@ lanView::lanView()
         cXSignal::setupUnixSignalHandlers();
         connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)));
 #endif // MUST_USIGNAL
-        if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::tr("A lanView objektumból csak egy példány lehet."))
+        if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::tr("A lanView objektumból csak egy példány lehet."));
         instance = this;
         // Connect database, if need
         if (sqlNeeded != SN_NO_SQL) {

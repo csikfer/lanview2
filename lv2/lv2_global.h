@@ -21,6 +21,8 @@ This file is part of LanView2.
 #include <QtCore/qglobal.h>
 #include <QtCore>
 
+#define LV2_THROW 1
+
 
 #if defined(LV2_LIBRARY)
 #  define LV2SHARED_EXPORT Q_DECL_EXPORT
@@ -33,11 +35,32 @@ This file is part of LanView2.
 #define EXT_ extern LV2SHARED_EXPORT
 
 #ifdef Q_CC_GNU
-#define _ATR_NORET_ __attribute__((noreturn))
+#   define LV2_ATR_NORET_ __attribute__((noreturn))
+    // C++17
+#   if __cplusplus >= 201703L
+#       define LV2_FALLTHROUGH [[fallthrough]];
+/*
+    // C++14
+#   elif __cplusplus >= 201402L
+#       define LV2_FALLTHROUGH [[gnu::fallthrough]];
+    // C++11
+#   elif __cplusplus >= 201103L
+#       define LV2_FALLTHROUGH [[gnu::fallthrough]];
+*/
+#   else
+//#     define LV2_FALLTHROUGH [[clang::fallthrough]]
+#       define LV2_FALLTHROUGH __attribute__ ((fallthrough));
+#   endif
 #elif  Q_CC_MSVC
-#define _ATR_NORET_ __declspec(noreturn)
+#   define LV2_ATR_NORET_ __declspec(noreturn)
+#   if __cplusplus >= 201703L
+#       define LV2_FALLTHROUGH [[fallthrough]];
+#   else
+#       define LV2_FALLTHROUGH
+#   endif
 #else
-#define _ATR_NORET_
+#   define LV2_ATR_NORET_
+#   define LV2_FALLTHROUGH
 #endif
 
 /// @def NULL_ID
