@@ -3371,6 +3371,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
 #else // SNMP_IS_EXISTS
     (void)__com;
     (void)ip;
+    (void)_pTable;
     if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
     if (pEs != NULL) *pEs = snmpNotSupMsg();
 #endif // SNMP_IS_EXISTS

@@ -254,7 +254,7 @@ Dob egy kizárást a létrehozott cError objektum pointerével.
 @param _mErrorSubMsg    Szöveges másodlagos hiba kód, név, vagy azonosító.
 @return A metódus nem tér vissza
 */
-LV2_ATR_NORET_ void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString &_mFuncName, int _mErrorCode,
+EXT_ LV2_ATR_NORET_ void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString &_mFuncName, int _mErrorCode,
        qlonglong _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
 
 /*!
