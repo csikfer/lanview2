@@ -1320,7 +1320,14 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
             pQparser = pPar->pQparser;
             if (pQparser != nullptr) break;     // Megtaláltuk
         }
-        if (pQparser == nullptr) EXCEPTION(EFOUND,0,name());
+        if (pQparser == nullptr) {
+            QString msg = tr(
+                        "A '%1' parancs nem hajtható végre.\n"
+                        "A %2 szolgáltatás példány kontexusa hibás\n"
+                        "Nem qparse típus, és nincs qparse típusú szülő sem!"
+                             ).arg(text, name());
+            EXCEPTION(EFOUND,0,msg);
+        }
         pQparser = pQparser->newChild(this);
     }
     pQparser->setInspector(this);   // A kliens beállítása...

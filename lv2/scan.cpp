@@ -1392,19 +1392,19 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         // The clear numeric identifier of a remote port no information.
         // Interpretation of the data was based on the available tools:
         // ProCurve switch, HPE (3Com) switch, HP Access Point, Cisco router switch.
-        NEXTSNMPDATA(LLDP_REM_CID_TYPE);        // first : set index : local port index
+        NEXTSNMPDATA(LLDP_REM_CID_TYPE)        // first : set index : local port index
         RemChassisIdSubtype = snmp.value().toInt(); // lldpRemChassisIdSubtype
-        NEXTSNMPDATA(LLDP_REM_CID);
+        NEXTSNMPDATA(LLDP_REM_CID)
         RemChasisId = snmp.value();                 // lldpRemChassisId
-        NEXTSNMPDATA(LLDP_REM_PID_TYPE);
+        NEXTSNMPDATA(LLDP_REM_PID_TYPE)
         RemPortIdSubtype = snmp.value().toInt();    // lldpRemPortIdSubtype
-        NEXTSNMPDATA(LLDP_REM_PID);
+        NEXTSNMPDATA(LLDP_REM_PID)
         RemPortId = snmp.value();                   // lldpRemPortId
-        NEXTSNMPDATA(LLDP_REM_PDSC);
+        NEXTSNMPDATA(LLDP_REM_PDSC)
         RemPortDesc = snmp.value().toString();      // lldpRemPortDesc
-        NEXTSNMPDATA(LLDP_REM_SDSC);
+        NEXTSNMPDATA(LLDP_REM_SDSC)
         RemSysDesc  = snmp.value().toString();      // lldpRemSysDesc
-        NEXTSNMPDATA(LLDP_REM_SNAME);
+        NEXTSNMPDATA(LLDP_REM_SNAME)
         RemSysName  = snmp.value().toString();      // lldpRemSysName
 
         lPrefix = QObject::tr("[#%1] ==> ").arg(index);
@@ -1661,7 +1661,7 @@ bool cLldpScan::setRPortFromMac(rowData &row, cAppMemo &em)
             return true;
         }
     }
-    HEREINWE(em, lPrefix + QObject::tr("Talált, és regisztrált '%1'-nek nincs megfelelő portja %2 címmel.").arg(row.name, row.cmac.toString()), RS_WARNING);
+    HEREINWE(em, lPrefix + QObject::tr("Talált, és regisztrált '%1'-nek nincs megfelelő portja %2 címmel.").arg(row.name, row.cmac.toString()), RS_WARNING)
     return false;
 }
 
@@ -1670,19 +1670,19 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
     _DBGFN() << "@(,," << ha.toString() << ", " << pdescr << ",)" << endl;
     (void)q;
     if (pdescr.isEmpty()) {
-        HEREINWE(em, lPrefix + QObject::tr("Hiányzik a port azonosító név."), RS_CRITICAL);
+        HEREINWE(em, lPrefix + QObject::tr("Hiányzik a port azonosító név."), RS_CRITICAL)
         return -1;
     }
     int r = snmp.open(ha.toString());
     if (r) {
-        HEREINWE(em, lPrefix + QObject::tr("Port index keresése. Az SNMP megnyitás sikertelen #%1").arg(r), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::tr("Port index keresése. Az SNMP megnyitás sikertelen #%1").arg(r), RS_WARNING)
         return -1;
     }
     cOId oid(_sIfMib + _sIfDescr);
     if (oid.isEmpty()) EXCEPTION(ESNMP,0,_sIfMib + _sIfDescr);
     r = snmp.getNext(oid);
     if (r) {
-        HEREINWE(em, lPrefix + QObject::tr("Port index %1 keresése. Sikertelen SNMP (%2, first) lekérdezés #%3").arg(pdescr, ha.toString()).arg(r), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::tr("Port index %1 keresése. Sikertelen SNMP (%2, first) lekérdezés #%3").arg(pdescr, ha.toString()).arg(r), RS_WARNING)
         return -1;
     }
     do {

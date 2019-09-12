@@ -946,13 +946,21 @@ cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong hsid, const QStri
     cServiceVar *p = new cServiceVar();
     p->setName(name);
     p->setId(_sHostServiceId, hsid);
-    if (1 != p->completion(__q)) {
-        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::tr("Rekord azonosító : %1")).arg(hsid));
+    int n =  p->completion(__q);
+    if (n != 1) {
+        if (__ex != EX_IGNORE) {
+            if (n  == 0) {
+                EXCEPTION(EFOUND, -1, QString(QObject::tr("Ismeretlen service_var rekord : %1.%2")).arg(cHostService::fullName(__q, hsid), name));
+            }
+            else {
+                EXCEPTION(EFOUND, -1, QString(QObject::tr("Több service_var rekord (%1 ?!) : %2.%3")).arg(n).arg(cHostService::fullName(__q, hsid), name));
+            }
+        }
         pDelete(p);
     }
     else {
         serviceVars << p;
-    } \
+    }
     return p;
 }
 
