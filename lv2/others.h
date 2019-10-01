@@ -8,7 +8,7 @@
 #include <QFile>
 #include <QBitArray>
 
-static inline bool isNumNull(const QVariant v)
+inline bool isNumNull(const QVariant v)
 {
     int t = v.userType();
     return (v.isNull()
@@ -23,7 +23,7 @@ static inline bool isNumNull(const QVariant v)
 /// @param i Az 1-be álítandó bit indexe
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
-static inline QBitArray _mask(int s, int i) { QBitArray m(s); m.setBit(i); return m; }
+inline QBitArray _mask(int s, int i) { QBitArray m(s); m.setBit(i); return m; }
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak két megadot
 /// bitjét 1-be állítja.
 /// @param s A bit tömb mérete
@@ -31,7 +31,7 @@ static inline QBitArray _mask(int s, int i) { QBitArray m(s); m.setBit(i); retur
 /// @param i2 Az másik 1-be álítandó bit indexe
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
-static inline QBitArray _mask(int s, int i1, int i2) { QBitArray m = _mask(s, i1); m.setBit(i2); return m; }
+inline QBitArray _mask(int s, int i1, int i2) { QBitArray m = _mask(s, i1); m.setBit(i2); return m; }
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak három megadot
 /// bitjét 1-be állítja.
 /// @param s A bit tömb mérete
@@ -40,7 +40,7 @@ static inline QBitArray _mask(int s, int i1, int i2) { QBitArray m = _mask(s, i1
 /// @param i3 A további 1-be álítandó bit indexe
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
-static inline QBitArray _mask(int s, int i1, int i2, int i3) { QBitArray m = _mask(s, i1, i2); m.setBit(i3); return m; }
+inline QBitArray _mask(int s, int i1, int i2, int i3) { QBitArray m = _mask(s, i1, i2); m.setBit(i3); return m; }
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak négy megadot
 /// bitjét 1-be állítja.
 /// @param s A bit tömb mérete
@@ -50,57 +50,57 @@ static inline QBitArray _mask(int s, int i1, int i2, int i3) { QBitArray m = _ma
 /// @param i4 Az negyedik 1-be álítandó bit indexe
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
-static inline QBitArray _mask(int s, int i1, int i2, int i3, int i4) { QBitArray m = _mask(s, i1, i2, i3); m.setBit(i4); return m; }
+inline QBitArray _mask(int s, int i1, int i2, int i3, int i4) { QBitArray m = _mask(s, i1, i2, i3); m.setBit(i4); return m; }
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és az utolsó
 /// bitjét 1-be állítja.
 /// @param i Az 1-be álítandó bit indexe. (Tömb méret i +1)
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
-static inline QBitArray _bit(int i) { return _mask(i+1,i); }
+inline QBitArray _bit(int i) { return _mask(i+1,i); }
 /// Létrehoz egy max(i1,i2) +1 méretű csupa 0 elemű bit tömböt, és az
 /// i1, i2 indexű bitjeit 1-be állítja.
 /// @param i1 Az 1-be álítandó bit indexe.
 /// @param i2 Az 1-be álítandó bit indexe.
 /// @return A megkreállt bit tömb objektum
-static inline QBitArray _bits(int i1, int i2) { return _mask(qMax(i1, i2) +1,i1, i2); }
+inline QBitArray _bits(int i1, int i2) { return _mask(qMax(i1, i2) +1,i1, i2); }
 
 /// Az enumerációs értéket a set-ben reprezentáló bit visszaadása.
-static inline qlonglong enum2set(int e) { return (qlonglong(1)) << e; }
-static inline qlonglong enum2set(int e1, int e2) { return enum2set(e1) | enum2set(e2); }
-static inline qlonglong enum2set(int e1, int e2, int e3) { return enum2set(e1, e2) | enum2set(e3); }
-static inline qlonglong enum2set(int e1, int e2, int e3, int e4) { return enum2set(e1, e2, e3) | enum2set(e4); }
-static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5) { return enum2set(e1, e2, e3, e4) | enum2set(e5); }
-static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6) { return enum2set(e1, e2, e3, e4, e5) | enum2set(e6); }
-static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7) { return enum2set(e1, e2, e3, e4, e5, e6) | enum2set(e7); }
-static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8) { return enum2set(e1, e2, e3, e4, e5, e6, e7) | enum2set(e8); }
+inline qlonglong enum2set(int e) { return (qlonglong(1)) << e; }
+inline qlonglong enum2set(int e1, int e2) { return enum2set(e1) | enum2set(e2); }
+inline qlonglong enum2set(int e1, int e2, int e3) { return enum2set(e1, e2) | enum2set(e3); }
+inline qlonglong enum2set(int e1, int e2, int e3, int e4) { return enum2set(e1, e2, e3) | enum2set(e4); }
+inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5) { return enum2set(e1, e2, e3, e4) | enum2set(e5); }
+inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6) { return enum2set(e1, e2, e3, e4, e5) | enum2set(e6); }
+inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7) { return enum2set(e1, e2, e3, e4, e5, e6) | enum2set(e7); }
+inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8) { return enum2set(e1, e2, e3, e4, e5, e6, e7) | enum2set(e8); }
 
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e, enum eEx __ex = EX_ERROR) {
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e, enum eEx __ex = EX_ERROR) {
     int i = f(e, __ex);
     if (i < 0) return -1;
     return enum2set(i);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, enum eEx __ex = EX_ERROR) {
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, __ex) | enum2set(f, e2, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, enum eEx __ex = EX_ERROR) {
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, __ex) | enum2set(f, e3, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4, enum eEx __ex = EX_ERROR) {
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, __ex) | enum2set(f, e4, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
                                  const QString& e5, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, __ex) | enum2set(f, e5, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
                                  const QString& e5, const QString& e6, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, __ex) | enum2set(f, e6, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
                                  const QString& e5, const QString& e6, const QString& e7, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, e6, __ex) | enum2set(f, e7, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
                                  const QString& e5, const QString& e6, const QString& e7, const QString& e8, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, e6, e7, __ex) | enum2set(f, e8, __ex);
 }
@@ -117,7 +117,7 @@ EXT_ QStringList set2lst(const QString&(&f)(int e, eEx __ex), qlonglong _set, en
 #define ENUM2SET5(n,n2,n3,n4,n5)    ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)) | (1LL << (n4)) | (1LL << (n5)))
 
 /// Megvizsgálja hogy a set ként értelmezett s bitmap-ban az e-vel reprezentált enumerációs érték be van-e állítva
-static inline bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }
+inline bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }
 
 EXT_ int onCount(qlonglong _set);
 
@@ -381,7 +381,8 @@ protected:
     QTextStream *pStream;
 };
 
-inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &)) { return (*__pf)(__s); }
+inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &))
+{ return (*__pf)(__s); }
 
 
 #endif // OTHERS_H

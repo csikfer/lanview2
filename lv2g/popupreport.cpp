@@ -1,5 +1,7 @@
 #include "popupreport.h"
 #include <QMessageBox>
+#include <QPrinter>
+#include <QPrintDialog>
 
 cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title, bool isHtml)
     : QWidget(_par, Qt::Window)
@@ -16,8 +18,11 @@ cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, cons
     pVLayout->addLayout(pHLayout, 0);
     pHLayout->addStretch();
     pButtonSave = new QPushButton(tr("Save"));
+    pButtonPrint = new QPushButton(tr("Print"));
     connect(pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
+    connect(pButtonPrint, SIGNAL(clicked()), this, SLOT(print()));
     pHLayout->addWidget(pButtonSave);
+    pHLayout->addWidget(pButtonPrint);
     pHLayout->addStretch();
     pButtonClose = new QPushButton(tr("Close"));
     connect(pButtonClose, SIGNAL(clicked()), this, SLOT(deleteLater()));
@@ -37,8 +42,8 @@ void cPopupReportWindow::resizeByText()
     int h, w, sp, bs;
     sp = pHLayout->spacing();
     bs = pButtonClose->size().height();
-    h = std::min(screenSize.height(), (int)sf.height());
-    w = std::min(screenSize.width(),  (int)sf.width());
+    h = std::min(screenSize.height(), int(sf.height()));
+    w = std::min(screenSize.width(),  int(sf.width()));
     // pTextEdit->resize(w, h); // nem műkodik
     h +=  bs * 2 + sp * 3 + 8;
     w +=  sp * 4 + 16;
@@ -49,6 +54,14 @@ void cPopupReportWindow::save()
 {
     static QString fn;
     cFileDialog::textEditToFile(fn, pTextEdit, this);
+}
+
+void cPopupReportWindow::print()
+{
+    QPrinter prn;
+    QPrintDialog dialog(&prn, this);
+    if (QDialog::Accepted != dialog.exec()) return;
+    pTextEdit->print(&prn);
 }
 
 cPopupReportWindow* popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)

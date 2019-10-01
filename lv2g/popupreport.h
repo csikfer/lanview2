@@ -14,9 +14,11 @@ public:
     QHBoxLayout *pHLayout;
     QPushButton *pButtonClose;
     QPushButton *pButtonSave;
+    QPushButton *pButtonPrint;
     QSize  screenSize;
 private slots:
     void save();
+    void print();
 };
 
 inline cPopupReportWindow* popupReportWindow(QWidget* _par, const QString& _text, const QString& _title = QString())
