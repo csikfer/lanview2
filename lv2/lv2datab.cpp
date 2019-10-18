@@ -3840,12 +3840,6 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
             bind(i, __q, j++);
         }
     }
-    // TEST
-#if 0
-    PDEB(INFO) << "SQL : " << sql << endl;;
-    PDEB(INFO) << "Bound : " << _sql_err_bound(__q) << endl;
-    return 1;
-#else
     _EXECSQL(__q);
     int n = 0;
     if (rbMask.count(true) == 0) {
@@ -3867,7 +3861,6 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
     }
     return n;
-#endif
 }
 
 cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, eTristate __tr)

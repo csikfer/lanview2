@@ -351,12 +351,12 @@ void    cSysParam::clearToEnd()
 QVariant cSysParam::value(eEx __ex) const
 {
     QString v = getName(_ixParamValue);
-    return cParamType::paramFromString((enum eParamType)valueType(), v, __ex);
+    return cParamType::paramFromString(eParamType(valueType()), v, __ex);
 }
 
 cSysParam& cSysParam::setValue(const QVariant& __v, eEx __ex)
 {
-    QString v = cParamType::paramToString((enum eParamType)valueType(), __v, __ex);
+    QString v = cParamType::paramToString(eParamType(valueType()), __v, __ex);
     setName(_ixParamValue, v);
     return *this;
 }
@@ -431,8 +431,8 @@ const cRecStaticDescr&  cImage::descr() const
         STFIELDIX(cImage, ImageType);
         STFIELDIX(cImage, ImageData);
         STFIELDIX(cImage, ImageHash);
-        CHKENUM(_ixImageType, imageType);
-        CHKENUM(_sUsabilityes, usability);
+        CHKENUM(_ixImageType, imageType)
+        CHKENUM(_sUsabilityes, usability)
     }
     return *_pRecordDescr;
 }
@@ -579,7 +579,7 @@ CRECDEFD(cPlaceGroup)
 const cRecStaticDescr&  cPlaceGroup::descr() const
 {
     if (initPDescr<cPlaceGroup>(_sPlaceGroups)) {
-        CHKENUM(_sPlaceGroupType, placeGroupType);
+        CHKENUM(_sPlaceGroupType, placeGroupType)
     }
     return *_pRecordDescr;
 }
@@ -650,7 +650,7 @@ const cRecStaticDescr&  cSubNet::descr() const
         STFIELDIX(cSubNet, NetAddr);
         STFIELDIX(cSubNet, VlanId);
         STFIELDIX(cSubNet, SubnetType);
-        CHKENUM(_ixSubnetType, subNetType);
+        CHKENUM(_ixSubnetType, subNetType)
     }
     return *_pRecordDescr;
 }
@@ -766,7 +766,7 @@ const cRecStaticDescr&  cIpAddress::descr() const
         _ixAddress       = _pRecordDescr->toIndex(_sAddress);
         _ixSubNetId      = _pRecordDescr->toIndex(_sSubNetId);
         _ixIpAddressType = _pRecordDescr->toIndex(_sIpAddressType);
-        CHKENUM(_ixIpAddressType, addrType);
+        CHKENUM(_ixIpAddressType, addrType)
     }
     return *_pRecordDescr;
 }
@@ -1018,8 +1018,8 @@ CRECCNTR(cIfType) CRECDEFD(cIfType)
 const cRecStaticDescr&  cIfType::descr() const
 {
     if (initPDescr<cIfType>(_sIfTypes)) {
-        CHKENUM(_sIfTypeLinkType, linkType);
-        CHKENUM(_sIfTypeObjType, portObjeType);
+        CHKENUM(_sIfTypeLinkType, linkType)
+        CHKENUM(_sIfTypeObjType, portObjeType)
     }
     return *_pRecordDescr;
 }
@@ -1036,14 +1036,26 @@ bool cIfType::insert(QSqlQuery &__q, eEx __ex)
     return false;
 }
 
-bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, eEx __ex)
+int cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, eEx __ex)
 {
-    if (cRecord::update(__q, __only, __set, __where, __ex)) {
+    int n = cRecord::update(__q, __only, __set, __where, __ex);
+    switch (n) {
+    case 0:
+        break;
+    case 1: {
         cIfType *pIft = _ifTypes.get(getId());
         pIft->set(*this);
-        return true;
+      }
+        break;
+    default: {
+        QSqlQuery q = getQuery();
+        foreach (cIfType *p, _ifTypes) {
+            p->setById(q);
+        }
+        break;
+      }
     }
-    return false;
+    return n;
 }
 
 qlonglong cIfType::insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, int __lid)
@@ -1389,7 +1401,6 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     else if (__tableoid == _tableoid_pports)     return getPortObjByIdT<cPPort>       (q, __port_id, __ex);
     else if (__tableoid == _tableoid_interfaces) return getPortObjByIdT<cInterface>   (q, __port_id, __ex);
     else                                        EXCEPTION(EDATA);
-    return nullptr;
 }
 
 cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, eEx __ex)
@@ -1422,7 +1433,7 @@ int cNPort::delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, 
     QString sql = "DELETE FROM nports"
           " WHERE port_name" + QString(__pat ? " LIKE " : " = ") + quoted(_pn)
           + " AND node_id = " + QString::number(nid);
-    EXECSQL(q, sql);
+    EXECSQL(q, sql)
     int n = q.numRowsAffected();
     return  n;
 }
@@ -1518,7 +1529,7 @@ qlonglong       cPPort::_ifTypePatch = NULL_ID;
 const cRecStaticDescr&  cPPort::descr() const
 {
     if (initPDescr<cPPort>(_sPPorts)) {
-        CHKENUM(_sSharedCable, portShare);
+        CHKENUM(_sSharedCable, portShare)
         _ifTypePatch = cIfType::ifTypeId(_sPatch); // Minden portnak ez a típusa
     }
     return *_pRecordDescr;
@@ -1563,7 +1574,7 @@ const cRecStaticDescr&  cInterface::descr() const
 {
     if (initPDescr<cInterface>(_sInterfaces)) {
         _ixHwAddress = _pRecordDescr->toIndex(_sHwAddress);
-        CHKENUM(_sPortOStat, ifStatus);
+        CHKENUM(_sPortOStat, ifStatus)
     }
     return *_pRecordDescr;
 }
@@ -1873,7 +1884,7 @@ cPatch& cPatch::clone(const cRecord &__o)
 const cRecStaticDescr&  cPatch::descr() const
 {
     if (initPDescr<cPatch>(_sPatchs)) {
-        CHKENUM(_sNodeType, nodeType);
+        CHKENUM(_sNodeType, nodeType)
     }
     return *_pRecordDescr;
 }
@@ -2084,7 +2095,7 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
 {
     if (__clr) {
         QString sql = "UPDATE pports SET shared_cable = DEFAULT, shared_port_id = DEFAULT WHERE port_id = " + QString::number(getId());
-        EXECSQL(__q, sql);
+        EXECSQL(__q, sql)
     }
     if (shares().isEmpty()) return true;
     foreach (const cShareBack& s, shares()) {
@@ -2096,10 +2107,12 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
 cPPort *cPatch::addPort(const QString& __name, const QString& __note, int __ix)
 {
     if (ports.count()) {
-        if (0 <= ports.indexOf(__name))
+        if (0 <= ports.indexOf(__name)) {
             EXCEPTION(EDATA, -1, tr("Ilyen port név már létezik: %1").arg(__name));
-        if (0 <= ports.indexOf(cNPort::_ixPortIndex, QVariant(__ix)))
+        }
+        if (0 <= ports.indexOf(cNPort::ixPortIndex(), QVariant(__ix))) {
             EXCEPTION(EDATA, __ix, tr("Ilyen port index már létezik."));
+        }
     }
     cPPort  *p = new cPPort();
     p->setName(__name);
@@ -2197,7 +2210,6 @@ const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
     qlonglong tableOID = fetchTableOId(q, __ex);
     if (tableOID < 0LL) {
         EXCEPTION(EDATA, getId(), tr("Get tableoid"));
-        return nullptr;
     }
     if (tableOID ==    tableoid()) return &descr();
     cPatch pa;
@@ -2431,16 +2443,16 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 const cRecStaticDescr&  cNode::descr() const
 {
     if (initPDescr<cNode>(_sNodes)) {
-        CHKENUM(_sNodeStat, notifSwitch);
+        CHKENUM(_sNodeStat, notifSwitch)
     }
     return *_pRecordDescr;
 }
 
 void cNode::clearShares()                                       { EXCEPTION(ENOTSUPP); }
-bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOTSUPP); return false; }
-bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOTSUPP); return false; }
-cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return nullptr; }
-cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return nullptr; }
+bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOTSUPP); }
+bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOTSUPP); }
+cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); }
+cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); }
 void cNode::insertPort(QSqlQuery&, int, const QString&, const QString&, const QString&) { EXCEPTION(ENOTSUPP); }
 void cNode::updateShared(QSqlQuery&, int, int, int, int, bool)  { EXCEPTION(ENOTSUPP); }
 
@@ -2477,7 +2489,7 @@ bool cNode::insert(QSqlQuery &__q, eEx __ex)
         while (i.hasNext()) {
             const cNPort *pp = i.next();
             if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
-                const cInterface *pi = (const cInterface *)pp;
+                const cInterface *pi = pp->creconvert<cInterface>();
                 if (!pi->addresses.isEmpty()) {
                     nt = enum2set(NT_HOST);
                     break;
@@ -2563,7 +2575,7 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, eEx __ex) const
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     __q.bindValue(0,__n);
     __q.bindValue(1,_sSearchDomain);
-    _EXECSQL(__q);
+    _EXECSQL(__q)
     if (__q.first()) return __q.value(0).toLongLong();
     if (__ex) EXCEPTION(EFOUND,0,__n);
     return NULL_ID;
@@ -2768,12 +2780,16 @@ cInterface *cNode::portSetVlans(const QString& __port, const QVariantList& _ids)
 {
     cInterface *p = getPort(__port)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
+    int n = 0;
     foreach(QVariant v, _ids) {
         bool ok;
         qlonglong id = v.toLongLong(&ok);
-        EXCEPTION(EDATA);
+        if (!ok) {
+            EXCEPTION(EDATA, n, debVariantToString(v));
+        }
         p->joinVlan(id, t, ST_MANUAL);
         t = VT_TAGGED;
+        ++n;
     }
     return p;
 }
@@ -2782,12 +2798,16 @@ cInterface *cNode::portSetVlans(int __port_index, const QVariantList& _ids)
 {
     cInterface *p = getPort(__port_index)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
+    int n = 0;
     foreach(QVariant v, _ids) {
         bool ok;
         qlonglong id = v.toLongLong(&ok);
-        EXCEPTION(EDATA);
+        if (!ok) {
+            EXCEPTION(EDATA, n, debVariantToString(v));
+        }
         p->joinVlan(id, t, ST_MANUAL);
         t = VT_TAGGED;
+        ++n;
     }
     return p;
 }
@@ -3326,7 +3346,6 @@ int cSnmpDevice::snmpVersion() const
     if (v == "2c")   return SNMP_VERSION_2c;
     if (v == "3")    return SNMP_VERSION_3;
     EXCEPTION(EDATA);
-    return -1;  // Inactive
 }
 
 bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHostAddress *ip, cTable * _pTable)
@@ -3670,8 +3689,8 @@ const cRecStaticDescr&  cPortVlan::descr() const
         _ixVlanId   = _descr_cPortVlan().toIndex(_sVlanId);
         _ixVlanType = _descr_cPortVlan().toIndex(_sVlanType);
         _ixSetType  = _descr_cPortVlan().toIndex(_sSetType);
-        CHKENUM(_ixVlanType, vlanType);
-        CHKENUM(_ixSetType, setType);
+        CHKENUM(_ixVlanType, vlanType)
+        CHKENUM(_ixSetType, setType)
     }
     return *_pRecordDescr;
 }

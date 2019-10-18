@@ -159,7 +159,6 @@ void cSetDialog::clickedCheckBox(int id)
             case Qt::Checked:           on |=  m; off &= ~m; break;
             case Qt::Unchecked:         on &= ~m; off |=  m; break;
             case Qt::PartiallyChecked:  on &= ~m; off &= ~m; break;
-            default:                    EXCEPTION(EPROGFAIL, id);
             }
         }
         else {
@@ -675,8 +674,8 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
     }
     cPhsLink link;
     tRecordList<cPhsLink> list;
-    ePhsLinkType type = (ePhsLinkType)pSelLinked->currentType();
-    ePortShare   sh   = (ePortShare)pSelLinked->currentShare();
+    ePhsLinkType type = ePhsLinkType(pSelLinked->currentType());
+    ePortShare   sh   = ePortShare(pSelLinked->currentShare());
     pl.setId(_sPortId2, lpid);
     pl.setId(_sPhsLinkType2, type);
     pl.setId(_sPortShared, sh);
@@ -1055,7 +1054,6 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
 
 void cWorkstation::on_lineEditPMAC_textChanged(const QString &arg1)
 {
-    (void)arg1;
     if (pif != nullptr) {
         if (arg1.isEmpty()) pif->clear(_sHwAddress);
         else pif->setMac(_sHwAddress, cMac(arg1));
@@ -1306,7 +1304,30 @@ void cWorkstation::on_pushButtonSave_clicked()
     }
     sqlBegin(*pq, _sWorkstation);
     if (isModify) {
-        ok = cErrorMessageBox::condMsgBox(node.tryUpdateById(*pq), this, tr("Az eszköz modosítása sikertelen."));
+        cError *pe = nullptr;
+        try {
+            int n;
+            n = node.update(*pq, false, QBitArray(), QBitArray(), EX_ERROR);    // Update only node.
+            switch (n) {
+            case 0:     EXCEPTION(EFOUND, 0, tr("Nincs meg a modosítandó eszköz."));
+            case 1:     break;
+            default:    EXCEPTION(ESTAT, n, tr("Több eszköz modosítása ID alapján nem lehetséges."));
+            }
+            n = pnp->update(*pq, false, QBitArray(), QBitArray(), EX_ERROR);    // Update port
+            switch (n) {
+            case 0:     EXCEPTION(EFOUND, 0, tr("Nincs meg a modosítandó port."));
+            case 1:     break;
+            default:    EXCEPTION(ESTAT, n, tr("Több port modosítása ID alapján nem lehetséges."));
+            }
+            pip->setId(_sPortId, pnp->getId()).remove(*pq, false, pip->mask(_sPortId), EX_ERROR);
+            pip->insert(*pq);
+            ok = true;
+        } CATCHS(pe)
+        if (pe != nullptr) {
+            ok = false;
+            cErrorMessageBox::messageBox(pe, this);
+            delete pe;
+        }
     }
     else {
         if (pip != nullptr) pip->clearId();
@@ -1315,7 +1336,7 @@ void cWorkstation::on_pushButtonSave_clicked()
         node.clear(_sNodeStat);
         ok = cErrorMessageBox::condMsgBox(node.tryInsert(*pq), this, tr("Az eszköz regisztrálása sikertelen."));
     }
-    if (ok) {
+    if (ok) {   // if OK then next: save link
         qlonglong pid = pnp->getId();
         QString msgPost = tr(" Az egész művelet visszavonásra kerül.");
         if (!pl.isNull(_sPortId2)) {                // Van link
@@ -1329,10 +1350,10 @@ void cWorkstation::on_pushButtonSave_clicked()
             ok = cErrorMessageBox::condMsgBox(pl.tryRemove(*pq), this, tr("Az eszköz fizikai linkjjének (patch) törlése sikertelen.") + msgPost);
         }
     }
-    if (ok) {
+    if (ok) {   // OK: commit
         sqlCommit(*pq, _sWorkstation);
     }
-    else {
+    else {      // Not OK: rollback
         sqlRollback(*pq, _sWorkstation);
     }
     pSelNode->refresh(false);

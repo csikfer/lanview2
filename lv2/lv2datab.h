@@ -1870,7 +1870,7 @@ public:
     ///                összes elemét kiválasztja.
     /// @param __ex Ha EX_NOOP, és nincs egyetlen modosított rekord sem, akkor dob egy kizárást.
     /// @return A modosított rekordok száma.
-    int update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), enum eEx __ex = EX_NOOP);
+    virtual int update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), enum eEx __ex = EX_NOOP);
     /// Hasonló, mint az update metódus, azt hívja egy try blokkban.
     /// Hiba esetén, vagyis, ha a hívott update metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha a __tr paraméter értéke TS_TRUE, vagy TS_NULL és nem vagyunk egy lezáratlan tranzakción bellül, akkor az update() metódus hívását egy
