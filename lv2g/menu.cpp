@@ -15,6 +15,7 @@
 #include "snmpdevquery.h"
 #include "translator.h"
 #include "changeswitch.h"
+#include "reportwidget.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
@@ -75,6 +76,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         SETINTWIN("snmpdquery", INT_SNMPDQUERY, cSnmpDevQuery)
         SETINTWIN("translator", INT_TRANSLATOR, cTranslator)
         SETINTWIN("changeswitch",INT_CHANGESWITCH,cChangeSwitch)
+        SETINTWIN("reportwidget",INT_REPORTWIDGET,cReportWidget)
 #undef SETINTWIN
 #undef _SETINTWIN
         else {
@@ -174,6 +176,7 @@ A jelenleg implementállt lehetőségek:
 | enumedit    | INT_ENUMEDIT    | cEnumValsEdit   | Enumerációk                  |
 | translator  | INT_TRANSLATOR  | cTranslator     | Nyelvi szövegek, fordítás    |
 | changeswitch| INT_CHANGESWITCH| cChangeSwitch   | Switch csere, linkek másolása|
+| reportwidget| INT_REPORTWIDGET| cReportWidget   | Riortok                      |
  */
 void cMenuAction::initInt()
 {
@@ -192,7 +195,8 @@ void cMenuAction::initInt()
     CREATEINTWIN(INT_SNMPDQUERY, cSnmpDevQuery);
     CREATEINTWIN(INT_ENUMEDIT,   cEnumValsEdit);
     CREATEINTWIN(INT_TRANSLATOR, cTranslator);
-    CREATEINTWIN(INT_CHANGESWITCH, cChangeSwitch);
+    CREATEINTWIN(INT_CHANGESWITCH,cChangeSwitch);
+    CREATEINTWIN(INT_REPORTWIDGET,cReportWidget);
 #undef CREATEINTWIN
     default:
         EXCEPTION(EPROGFAIL);

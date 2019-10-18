@@ -51,7 +51,7 @@ class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cWorkstation(QMdiArea *parent = 0);
+    cWorkstation(QMdiArea *parent = nullptr);
     ~cWorkstation();
     static const enum ePrivilegeLevel rights;
 private:

@@ -29,7 +29,8 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_SNMPDQUERY,     /// SNMP device query; insert/refresh
     INT_ENUMEDIT,
     INT_TRANSLATOR,
-    INT_CHANGESWITCH
+    INT_CHANGESWITCH,
+    INT_REPORTWIDGET
 };
 
 class cRecordsViewBase;

@@ -21,6 +21,7 @@ SOURCES += \
     record_table_model.cpp \
     cerrormessagebox.cpp \
     menu.cpp \
+    reportwidget.cpp \
     setup.cpp \
     gparse.cpp \
     logon.cpp \
@@ -59,6 +60,7 @@ HEADERS +=\
     record_table.h \
     cerrormessagebox.h \
     menu.h \
+    reportwidget.h \
     setup.h \
     gparse.h \
     logon.h \
@@ -89,6 +91,7 @@ HEADERS +=\
 
 FORMS += \
     column_filter.ui \
+    reportwidget.ui \
     setup_logl.ui \
     setup.ui \
     gparse.ui \
