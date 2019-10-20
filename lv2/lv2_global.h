@@ -88,6 +88,7 @@ enum eEx {
 
 inline enum eEx bool2ex(bool b, eEx ex = EX_ERROR) { return b ? ex : EX_IGNORE; }
 
+/// Nem értelmezhető numrikus enumerációs érték.
 #define ENUM_INVALID    -1
 
 enum eTristate {

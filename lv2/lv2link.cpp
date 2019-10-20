@@ -465,10 +465,10 @@ int cLogLink::replace(QSqlQuery &, eEx __ex)
     return false;
 }
 
-bool cLogLink::update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool)
+int cLogLink::update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool)
 {
     EXCEPTION(ENOTSUPP);
-    return false;
+    return 0;
 }
 
 CRECDEFD(cLogLink)

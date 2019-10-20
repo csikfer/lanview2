@@ -136,7 +136,7 @@ public:
     /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
     virtual int replace(QSqlQuery &, eEx __ex = EX_ERROR);
     /// A tábla írása automatikus, az update metódus tiltott, kizárást dob.
-    virtual bool update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
+    virtual int update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
     /// @param A port id, melyel linkelt portot keressük.

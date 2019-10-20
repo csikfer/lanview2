@@ -28,7 +28,7 @@ private slots:
     void on_comboBoxType_currentIndexChanged(int index);
     void on_pushButtonClear_clicked();
 protected slots:
-    void appendHtml(const QString& html);
+    void msgReady();
     void threadReady();
 private:
     Ui::reportWidget *ui;
@@ -41,6 +41,7 @@ class cReportThread : public QThread {
     Q_OBJECT
 public:
     cReportThread(cReportWidget::eReportTypes _rt);
+    QQueue<QString> queue;
 protected:
     cReportWidget::eReportTypes reportType;
     void run();
@@ -49,8 +50,12 @@ private:
     void linksReport();
     void mactabReport();
     void uplinkVlansReport();
+    void sendMsg(const QString& msg) {
+        queue.enqueue(msg);
+        emit msgQueued();
+    }
 signals:
-    void sendHtml(const QString& html);
+    void msgQueued();
 };
 
 #endif // REPORTWIDGET_H
