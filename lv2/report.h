@@ -129,8 +129,17 @@ inline QString toHtmlStrikethrough(const QString& text, bool chgBreaks = false, 
     return "<s>" + toHtml(text, chgBreaks, esc) + "</s>";
 }
 
+inline QString toGreen(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<span style=\"color:green\">" + toHtml(text, chgBreaks, esc) + "</span>";
+}
+
+inline QString toRed(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<span style=\"color:red\">" + toHtml(text, chgBreaks, esc) + "</span>";
+}
+
+
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = QString(), bool esc = true);
-EXT_ QString htmlTable(QStringList head, QList<QStringList> matrix, bool esc = true);
+EXT_ QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc = true, int padding_pix = 0);
 
 /// Egy rekord set HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
 /// @param q Az adatbázis műveletekhez használható query objektum.

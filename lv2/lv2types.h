@@ -119,6 +119,13 @@ static inline eTristate tsOr(eTristate a, eTristate b) {
 
 EXT_ QString tristate2string(int e, eEx __ex = EX_ERROR);
 
+inline eTristate compareId(qlonglong id1, qlonglong id2) {
+    if (id1 == NULL_ID || id2 == NULL_ID) return TS_NULL;
+    if (id1 == id2) return TS_TRUE;
+    return TS_FALSE;
+}
+
+
 /// Hiba string
 EXT_ QString sInvalidEnum();
 /*!

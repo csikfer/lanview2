@@ -78,10 +78,11 @@ QString htmlTableLine(const QStringList& fl, const QString& ft, bool esc)
     return r + "\n";
 }
 
-QString htmlTable(QStringList head, QList<QStringList> matrix, bool esc)
+QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc, int padding_pix)
 {
     QString table;
-    table += "\n<table border=\"1\"> ";
+    if (padding_pix == 0) table += "\n<table border=\"1\" > ";
+    else table = QString("\n<table border=\"1\" cellpadding = \"%1\" > ").arg(padding_pix);
     if (!head.isEmpty()) table += htmlTableLine(head, "th", esc);
     foreach (QStringList line, matrix) {
         table += htmlTableLine(line, "td", esc);

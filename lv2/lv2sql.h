@@ -104,6 +104,7 @@ static inline QVariantList sqlToIntegerList(const QString& _s)
 /// @param _s A kiolvasott QVariant típusú érték.
 static inline QVariantList sqlToIntegerList(const QVariant& _v)
 {
+    if (_v.isNull()) return QVariantList();
     return sqlToIntegerList(_v.toString());
 }
 /// Egy SQL lekérdezésben a visszaadott numerikus tömb érték konvertálása.
@@ -120,6 +121,7 @@ static inline QVariantList sqlToDoubleList(const QString& _s)
 /// @param _s A kiolvasott QVariant típusú érték.
 static inline QVariantList sqlToDoubleList(const QVariant& _v)
 {
+    if (_v.isNull()) return QVariantList();
     return sqlToDoubleList(_v.toString());
 }
 
@@ -349,6 +351,10 @@ EXT_ bool sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload
 
 EXT_ int getListFromQuery(QSqlQuery q, QStringList& list, int __ix = 0);
 
+inline qlonglong getId(QSqlQuery q, int ix) {
+    QVariant v = q.value(ix);
+    return v.isNull() ? NULL_ID : v.toLongLong();
+}
 
 class LV2SHARED_EXPORT cNamedList {
 private:

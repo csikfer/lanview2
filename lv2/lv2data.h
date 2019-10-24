@@ -910,6 +910,9 @@ protected:
     static qlonglong _tableoid_pports;
     static qlonglong _tableoid_interfaces;
 public:
+    static QString catFullName(const QString& nodeName, const QString& portName) {
+        return nodeName + ":" + portName;
+    }
     static qlonglong tableoid_nports()      { return _tableoid_nports; }
     static qlonglong tableoid_pports()      { return _tableoid_pports; }
     static qlonglong tableoid_interfaces()  { return _tableoid_interfaces; }
