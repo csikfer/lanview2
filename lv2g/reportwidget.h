@@ -79,6 +79,12 @@ private:
         emit msgQueued();
     }
     static const QString sqlCount;
+    static QString sNodeHead;
+    static QString sLogical;
+    static QString sLldp;
+    static QString sLogicalAndLldp;
+    static QString sLinkCaveat;
+
 signals:
     void msgQueued();
     void progres(int percent);

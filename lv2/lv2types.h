@@ -881,6 +881,7 @@ EXT_ QString tIntVectorToString(const tIntVector& __iv);
 EXT_ QString QBitArrayToString(const QBitArray& __ba);
 EXT_ QString QSqlRecordToString(const QSqlRecord& __r);
 EXT_ QString QStringListToString(const QStringList& _v);
+EXT_ QString _QVariantListToString(const QVariantList& _v, bool *pOk = nullptr);
 EXT_ QString QVariantListToString(const QVariantList& _v, bool *pOk = nullptr);
 EXT_ QString QPointTosString(const QPoint& p);
 EXT_ QString QPointFTosString(const QPointF& p);

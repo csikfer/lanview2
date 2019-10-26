@@ -148,12 +148,25 @@ void cReportWidget::threadReady()
 /* ******************************************************************************************* */
 
 const QString cReportThread::sqlCount  = "SELECT COUNT(*)";
+QString cReportThread::sNodeHead;
+QString cReportThread::sLogical;
+QString cReportThread::sLldp;
+QString cReportThread::sLogicalAndLldp;
+QString cReportThread::sLinkCaveat;
+
 
 cReportThread::cReportThread(int _rt, int _l, int _st)
     : QThread(), reportType(_rt), reportLevel(_l), subType(_st)
 {
     tableCellPaddingPix = 2;
     pLastError = nullptr;
+    if (sLogical.isEmpty()) {
+        sNodeHead = tr("Node : %1");
+        sLogical = tr("Logikai");
+        sLldp    = tr("LLDP");
+        sLogicalAndLldp = tr("Logikai és LLDP");
+        sLinkCaveat = tr("Ellentmondó linkek!");
+    }
 }
 
 void cReportThread::run()
@@ -170,7 +183,7 @@ void cReportThread::run()
 
 void cReportThread::nodeHead(eTristate ok, const QString& nodeName, const QStringList& tableHead, const QList<QStringList>& matrix)
 {
-    QString s = tr("Node : %1").arg(nodeName);
+    QString s = sNodeHead.arg(nodeName);
     switch (ok) {
     case TS_TRUE:
         if (reportLevel != cReportWidget::RL_ALL) return;   // Skeep
@@ -191,7 +204,7 @@ void cReportThread::nodeHead(eTristate ok, const QString& nodeName, const QStrin
 
 void cReportThread::nodeHead(eTristate ok, const QString &nodeName, const QString &html)
 {
-    QString s = tr("Node : %1").arg(nodeName);
+    QString s = sNodeHead.arg(nodeName);
     switch (ok) {
     case TS_TRUE:
         if (reportLevel != cReportWidget::RL_ALL) return;   // Skeep
@@ -521,8 +534,8 @@ void cReportThread::linksReport()
     }
     QStringList head;
     appendCont(head, tr("Port"), C_PORT1);
-    appendCont(head, subType == cReportWidget::RLT_LOG_LINKS ? tr("Logikai") : tr("LLDP"), C_PORT2);
-    appendCont(head, subType != cReportWidget::RLT_LOG_LINKS ? tr("Logikai") : tr("LLDP"), C_PORT3);
+    appendCont(head, subType == cReportWidget::RLT_LOG_LINKS ? sLogical : sLldp, C_PORT2);
+    appendCont(head, subType != cReportWidget::RLT_LOG_LINKS ? sLogical : sLldp, C_PORT3);
     appendCont(head, tr("mactab/MAC"), C_PORT4);
     appendCont(head, tr("mactab/ID"),  C_PORT5S);
     // 1..: kiindulási port
@@ -578,7 +591,7 @@ void cReportThread::linksReport()
     recordNumber = q.value(0).toInt();
     if (recordNumber == 0) {
         sendMsg(tr("Nincs egyetlen %1 link rekordunk sem.")
-                .arg(subType == cReportWidget::RLT_LOG_LINKS ? tr("logikai") : tr("LLDP")));
+                .arg(subType == cReportWidget::RLT_LOG_LINKS ? sLogical : sLldp));
         return;
     }
     int n = 0;
@@ -695,11 +708,192 @@ void cReportThread::mactabReport()
 
 /* ------------------------------------------ VLAN ------------------------------------------- */
 
+class cQueueForScan {
+public:
+    cQueueForScan(QList<qlonglong> _stock, qlonglong first) : stock(_stock), queue() { enqueue(first); }
+    int size()    const { return queue.size(); }
+    int isEmpty() const { return queue.isEmpty(); }
+    int handled() const { return handleds.size(); }
+    eTristate enqueue(qlonglong id) {
+        if (!stock.contains(id)) return TS_NULL;
+        if (handleds.contains(id)) return TS_FALSE;
+        handleds << id;
+        queue.enqueue(id);
+        return TS_TRUE;
+    }
+    qlonglong dequeue() {
+        if (isEmpty()) return NULL_ID;
+        return queue.dequeue();
+    }
+private:
+    QList<qlonglong>    stock;
+    QQueue<qlonglong>   queue;
+    QList<qlonglong>    handleds;
+};
+
 void cReportThread::uplinkVlansReport()
 {
-    static const QString sql =
-            "SELECT "
+    enum eColumns { C_PORT, C_VLANS, C_LINKED, C_LINK_TYPE, C_VLANS_LINKED, C_NOTE, C_COLUMNS };
+    static QStringList header;
+    static QStringList emptyRow;
+    if (header.isEmpty()) {
+        appendCont(header, tr("Port"),        emptyRow, _sNul, C_PORT);
+        appendCont(header, tr("VLAN-ok"),     emptyRow, _sNul, C_VLANS);
+        appendCont(header, tr("Linked port"), emptyRow, _sNul, C_LINKED);
+        appendCont(header, tr("Link típusa"), emptyRow, _sNul, C_LINK_TYPE);
+        appendCont(header, tr("VLAN-ok"),     emptyRow, _sNul, C_VLANS_LINKED);
+        appendCont(header, tr("Megjegyzés"),  emptyRow, _sNul, C_VLANS_LINKED);
+    }
+    QSqlQuery q = getQuery();
+    // Central switch
+    QString   centralSwitchName = cSysParam::getTextSysParam(q, "central_switch_name");
+    if (centralSwitchName.isEmpty()) {
+        sendMsg(tr("Nincs 'central_switch_name' nevű rendszerváltozó, nem ismert a kiindulási switch neve."));
+        return;
+    }
+    qlonglong centralSwitchId = cNode().getIdByName(q, centralSwitchName, EX_IGNORE);
+    if (centralSwitchId == NULL_ID) {
+        sendMsg(tr("A 'central_switch_name' nevű rendszerváltozó serinti %1 nevű eszköz nem ismert.").arg(centralSwitchName));
+        return;
+    }
+    // Get node list
+    static const QString sqlSwitchs =
+            "SELECT DISTINCT node_id, node_name,"
+                "(SELECT ARRAY_AGG(vlan_id) FROM vlan_list_by_host AS v"
+                " WHERE v.node_id = n.node_id ORDER BY vlan_id ASC)"
+                " AS vlan_ids"
+            " FROM nodes AS n"
+            " WHERE 'switch' = ANY (node_type)"
             ;
+    if (!execSql(q, sqlSwitchs)) {
+        sendMsg(tr("Nincs mit listázni, nincsenek bejegyzett switch-ek."));
+        return;
+    }
+    QList<qlonglong> switchIds;                     // All switch node ID
+    QMap<qlonglong, QString> switchNameMap;         // Switch name MAP by ID
+    QMap<qlonglong, QVariantList> switchVlansMap;   // Switch vlans list MAP bY ID
+    do {
+        qlonglong id = q.value(0).toLongLong();
+        switchIds   << id;
+        switchNameMap[id]  = q.value(1).toString();
+        switchVlansMap[id] = sqlToIntegerList(q.value(2));
+    } while (q.next());
+    q.finish();
+    recordNumber = switchIds.size();
+    cQueueForScan queue(switchIds, centralSwitchId);
+    if (queue.isEmpty()) {
+        sendMsg(tr("A 'central_switch_name' nevű rendszerváltozó serinti %1 nevű eszköz nem szerepel a lekérdezett teljes switch listában.").arg(centralSwitchName));
+        return;
+    }
+    qlonglong actSwitchId;
+    while (NULL_ID != (actSwitchId = queue.dequeue())) {
 
+
+
+        progres((queue.handled() * 100) / recordNumber);
+    }
+
+/*
+    recordNumber = switchIds.size();
+    for (int n = 0; n < recordNumber; ++n) {
+        qlonglong nodeId = switchIds.at(n);
+        QString nodeName = switchNames.at(n);
+        eTristate nodeOk = TS_TRUE;
+        // Get ports for act. node
+        static const QString sqlPorts =
+               " SELECT"
+                " port_id,"
+                " port_name,"
+                " iftype_id,"
+                " ARRAY_AGG(vlan_id ORDER BY vlan_id ASC) AS vlan_ids,"
+                " (SELECT array_agg(port_id) FROM interfaces AS im WHERE im.port_staple_id = i.port_id) AS member_port_ids,"
+                " ll.port_id2 AS log_linked_id"
+                " ld.port_id2 AS lldp_linked_id"
+                " FROM interfaces AS i"
+                " JOIN port_vlans USING(port_id)"
+                " LEFT OUTER JOIN log_links  AS ll ON ll.port_id1 = i.port_id"
+                " LEFT OUTER JOIN lldp_links AS ld ON ld.port_id1 = i.port_id"
+                " WHERE node_id = ? AND port_staple_id IS NULL"
+                " GROUP BY port_id"
+                " ORDER BY port_index ASC, port_name ASC"
+                ;
+        execSql(q, sqlPorts, nodeId);
+        QList<qlonglong>              portIds;
+        QMap<qlonglong, QString>      portNamesMap;
+        QMap<qlonglong, qlonglong>    portIfTypesMap;
+        QMap<qlonglong, QVariantList> portVlansMap;
+        QMap<qlonglong, QVariantList> portMembersMap;
+        QMap<qlonglong, QPair<qlonglong, qlonglong> > portLinkedMap;  // first: log_linked; second: lldp linked
+        QList<QStringList>  matrix;
+        do {
+            qlonglong portId = q.value(0).toLongLong();
+            portIds << portId;
+            portNamesMap.  insert(portId, q.value(1).toString());
+            portIfTypesMap.insert(portId, q.value(2).toLongLong());
+            portVlansMap.  insert(portId, sqlToIntegerList(q.value(3)));
+            portMembersMap.insert(portId, sqlToIntegerList(q.value(4)));
+            portLinkedMap. insert(portId, QPair<qlonglong,qlonglong>(getId(q, 5), getId(q, 6)));
+        } while (q.next());
+        q.finish();
+        static const qlonglong multiplexorId = cIfType::ifTypeId(_sMultiplexor);
+        foreach (qlonglong portId, portIds) {
+            // Check VLANS
+            eTristate portOk = TS_TRUE;
+            QStringList row = emptyRow;
+            QString portName = portNamesMap[portId];
+            qlonglong ifTypeId = portIfTypesMap[portId];
+            QVariantList memberPortIds = portMembersMap[portId];
+            QVariantList vlanIds = portVlansMap[portId];
+            QString note;
+            QMap<qlonglong, QString> linkedPortsIds;  // key: linked port_id; value : type(s)
+
+            if (ifTypeId == multiplexorId) {
+                if (memberPortIds.isEmpty()) {  // Multiplexor: no any member ports
+                    if (reportLevel == cReportWidget::RL_ALL) {
+                        row[C_PORT] = htmlItalicInf(portName);
+                        row[C_VLANS]= htmlItalicInf(_QVariantListToString(vlanIds));
+                        row[C_NOTE] = htmlItalicInf(tr("Trunk port, tagok nélkül."));
+                        matrix << row;
+                    }
+                    continue;
+                }
+                else {
+                    foreach (QVariant _mpid, memberPortIds) {
+                        qlonglong mpid = _mpid.toLongLong();
+                        qlonglong logLinkedId  = cLogLink().getLinked(q, mpid);
+                        qlonglong lldpLinkedId = cLldpLink().getLinked(q, mpid);
+                        if (logLinkedId == NULL_ID && lldpLinkedId == NULL_ID) {
+                            if (portOk == TS_TRUE) portOk = TS_NULL;
+                        }
+                        // .....
+                    }
+                }
+            }
+            else {
+                qlonglong logLinkedId = portLinkedMap[portId].first;
+                qlonglong lldpLinkedId = portLinkedMap[portId].second;
+                if (logLinkedId != NULL_ID && lldpLinkedId != NULL_ID && logLinkedId == lldpLinkedId) {
+                    linkedPortsIds[logLinkedId] = sLogicalAndLldp;
+                }
+                else {
+                    if (logLinkedId != NULL_ID) {
+                        linkedPortsIds[logLinkedId] = sLogical;
+                    }
+                    if (lldpLinkedId != NULL_ID) {
+                        linkedPortsIds[lldpLinkedId] = sLldp;
+                    }
+                    if (linkedPortsIds.size() > 1) {
+                        note = sLinkCaveat;
+                        portOk = TS_FALSE;
+                    }
+                }
+            }
+
+
+        }
+
+        progres((n * 100) / recordNumber);
+    }
+    */
 }
 

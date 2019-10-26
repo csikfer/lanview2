@@ -81,7 +81,7 @@ inline QString htmlInfo(const QString& text, bool chgBreaks = false, bool esc = 
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
 /// @return Széles karakterű, és piros betű színű bekezdés, a konvertált szöveggel
 inline QString htmlError(const QString& text, bool chgBreaks = false, bool esc = true) {
-    return "<div style=\"color:red\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
+    return "<div style=\"color:red\"> <b> " + toHtml(text, chgBreaks, esc) + " </b> </div>";
 }
 /// HTML konverzió
 /// @param text A konvertálandó szöveg
@@ -90,8 +90,13 @@ inline QString htmlError(const QString& text, bool chgBreaks = false, bool esc =
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
 /// @return Széles karakterű, és zöld betü színű bekezdés, a konvertált szöveggel
 inline QString htmlGrInf(const QString& text, bool chgBreaks = false, bool esc = true) {
-    return "<div style=\"color:green\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
+    return "<div style=\"color:green\"> <b> " + toHtml(text, chgBreaks, esc) + " </b> </div>";
 }
+
+inline QString htmlItalicInf(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div> <i> " + toHtml(text, chgBreaks, esc) + " </i> </div>";
+}
+
 /// HTML konverzió
 /// @param text A konvertálandó szöveg
 /// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,

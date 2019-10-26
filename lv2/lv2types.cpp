@@ -906,10 +906,10 @@ QString QStringListToString(const QStringList& _v)
     return r + QChar('}');
 }
 
-QString QVariantListToString(const QVariantList& _v, bool *pOk)
+QString _QVariantListToString(const QVariantList& _v, bool *pOk)
 {
     if (pOk != nullptr) *pOk = true;
-    QString r = QChar('{');
+    QString r;
     if (_v.size() > 0) {
         bool ok = true;
         foreach (QVariant v, _v) {
@@ -918,6 +918,13 @@ QString QVariantListToString(const QVariantList& _v, bool *pOk)
         }
         if (r.size() > 1) r.chop(1);
     }
+    return r;
+}
+
+QString QVariantListToString(const QVariantList& _v, bool *pOk)
+{
+    QString r = QChar('{');
+    r += _QVariantListToString(_v, pOk);
     return r + QChar('}');
 }
 
