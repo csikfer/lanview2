@@ -772,11 +772,13 @@ void cReportThread::uplinkVlansReport()
     QList<qlonglong> switchIds;                     // All switch node ID
     QMap<qlonglong, QString> switchNameMap;         // Switch name MAP by ID
     QMap<qlonglong, QVariantList> switchVlansMap;   // Switch vlans list MAP bY ID
+    QMap<qlonglong, qlonglong> uplinkPortMap;       // uplink port id towards the central switch
     do {
         qlonglong id = q.value(0).toLongLong();
         switchIds   << id;
         switchNameMap[id]  = q.value(1).toString();
         switchVlansMap[id] = sqlToIntegerList(q.value(2));
+        uplinkPortMap[id]  = NULL_ID;   // yet unknown
     } while (q.next());
     q.finish();
     recordNumber = switchIds.size();
@@ -787,19 +789,9 @@ void cReportThread::uplinkVlansReport()
     }
     qlonglong actSwitchId;
     while (NULL_ID != (actSwitchId = queue.dequeue())) {
-
-
-
-        progres((queue.handled() * 100) / recordNumber);
-    }
-
-/*
-    recordNumber = switchIds.size();
-    for (int n = 0; n < recordNumber; ++n) {
-        qlonglong nodeId = switchIds.at(n);
-        QString nodeName = switchNames.at(n);
-        eTristate nodeOk = TS_TRUE;
-        // Get ports for act. node
+        QString nodeName = switchNameMap[actSwitchId];
+        eTristate swOk = TS_TRUE;   // Actual switch is OK
+        // Get ports for act. switch
         static const QString sqlPorts =
                " SELECT"
                 " port_id,"
@@ -817,7 +809,7 @@ void cReportThread::uplinkVlansReport()
                 " GROUP BY port_id"
                 " ORDER BY port_index ASC, port_name ASC"
                 ;
-        execSql(q, sqlPorts, nodeId);
+        execSql(q, sqlPorts, actSwitchId);
         QList<qlonglong>              portIds;
         QMap<qlonglong, QString>      portNamesMap;
         QMap<qlonglong, qlonglong>    portIfTypesMap;
@@ -865,6 +857,14 @@ void cReportThread::uplinkVlansReport()
                         if (logLinkedId == NULL_ID && lldpLinkedId == NULL_ID) {
                             if (portOk == TS_TRUE) portOk = TS_NULL;
                         }
+                        else if (logLinkedId == NULL_ID || lldpLinkedId == NULL_ID
+                              || (logLinkedId != NULL_ID && lldpLinkedId != NULL_ID && logLinkedId == lldpLinkedId)) {
+
+
+                        }
+                        else {
+
+                        }
                         // .....
                     }
                 }
@@ -892,8 +892,10 @@ void cReportThread::uplinkVlansReport()
 
         }
 
-        progres((n * 100) / recordNumber);
+
+
+        progres((queue.handled() * 100) / recordNumber);
     }
-    */
+
 }
 
