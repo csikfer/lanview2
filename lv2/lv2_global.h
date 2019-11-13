@@ -49,7 +49,11 @@ This file is part of LanView2.
 */
 #   else
 //#     define LV2_FALLTHROUGH [[clang::fallthrough]]
-#       define LV2_FALLTHROUGH __attribute__ ((fallthrough));
+#      if defined(__GNUC__) && __GNUC__ >= 7
+#          define LV2_FALLTHROUGH __attribute__ ((fallthrough));
+#      else
+#	   define LV2_FALLTHROUGH
+#      endif
 #   endif
 #elif  Q_CC_MSVC
 #   define LV2_ATR_NORET_ __declspec(noreturn)
@@ -62,6 +66,12 @@ This file is part of LanView2.
 #   define LV2_ATR_NORET_
 #   define LV2_FALLTHROUGH
 #endif
+
+#if defined(__cplusplus) && __cplusplus < 201703L
+    // ?!
+#   define nullptr NULL
+#endif
+
 
 /// @def NULL_ID
 /// NULL ID-t reprezentáló konstans.
