@@ -1232,21 +1232,16 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
 {
     _DBGFN() << name() << endl;
     (void)q;
-    (void)runMsg;
     if (pProcess != nullptr) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
-/*        if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
-            return munin(q, runMsg);
-        }
-        else { */
-            int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
-            if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
-            return parse(ec, *pProcess);
-/*        } */
+        int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
+        if (ec == -1) return RS_STAT_SETTED;    // Already sended: RS_CRITICAL
+        return parse(ec, *pProcess);
     }
     else {
-        PDEB(VVERBOSE) << " * NOOP *" << endl;
+        runMsg = tr("Incomplete cInspector (%1) object. No activity specified.").arg(name());
+        PDEB(VVERBOSE) << runMsg << endl;
         internalStat = isTimed() ? IS_SUSPENDED : IS_STOPPED;
     }
     return RS_UNREACHABLE;

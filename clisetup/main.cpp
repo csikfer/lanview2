@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
         eTristate f = TS_NULL;
         do {
-            stdo << QObject::tr("Kísérlet, az adatbázis megnyitására ? (I/n)");
+            stdo << QObject::tr("Kísérlet, az adatbázis megnyitására ? (I/n)") << endl;
             QString s = stdi.readLine();
             s = s.simplified();
             if (s.isEmpty() || s.compare("i", Qt::CaseInsensitive)) f = TS_TRUE;
