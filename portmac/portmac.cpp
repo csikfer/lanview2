@@ -379,30 +379,27 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
             else                  msg = tr("A port típusa csak interface lehet.\n");
         }
         else {
-            QString sMacList  = feature("MAC");
-            QString sNodeList = feature("node");
-            const QString sep = ",";
-            if (!sMacList.isEmpty()) {
-                foreach (QString sMac, sMacList.split(sep)) {
-                    cMac mac(sMac.simplified());
-                    if (mac.isValid()) rightMacs |= mac;
-                    else {
-                        msg += tr("Helytelen MAC : %1\n").arg(sMac);
-                        flag = false;
-                    }
+            // MAC list from features
+            QStringList sMacList  = features().slValue("MAC");
+            foreach (QString sMac, sMacList) {
+                cMac mac(sMac.simplified());
+                if (mac.isValid()) rightMacs |= mac;
+                else {
+                    msg += tr("Helytelen MAC : %1\n").arg(sMac);
+                    flag = false;
                 }
             }
+            // Node list from features
+            QStringList sNodeList = features().slValue("node");
             cNode node;
-            if (!sNodeList.isEmpty()) {
-                foreach (QString sNode, sNodeList.split(sep)) {
-                    if (node.fetchByName(q, sNode.simplified())) {
-                        node.fetchPorts(q, 0);  // csak a portokat olvassuk be
-                        rightMacs |= node.getMacs().toSet();
-                    }
-                    else {
-                        msg += tr("Helytelen eszköz név : %1\n").arg(sNode);
-                        flag = false;
-                    }
+            foreach (QString sNode, sNodeList) {
+                if (node.fetchByName(q, sNode.simplified())) {
+                    node.fetchPorts(q, 0);  // csak a portokat olvassuk be
+                    rightMacs |= node.getMacs().toSet();
+                }
+                else {
+                    msg += tr("Helytelen eszköz név : %1\n").arg(sNode);
+                    flag = false;
                 }
             }
             // Van logikai (end to end) link ?
@@ -446,11 +443,11 @@ void cRightMac::checkMacs(QSqlQuery& q, const QSet<cMac>& macs)
         }
         if (unauth.isEmpty()) {
             stat = _sOn;
-            msg  = tr("Nincs engedélyezetlen MAC. Talált cím lista : %1").arg(slAuth.join(sep));
+            msg  = tr("Nincs engedélyezetlen MAC. Talált cím lista : [%1]").arg(slAuth.join(sep));
         }
         else {
             stat = _sCritical;
-            msg  = tr("Engedélyezetlen MAC : %1. Talált cím lista : %2").arg(slUnauth.join(sep) ,slAuth.join(sep));
+            msg  = tr("Engedélyezetlen MAC : [%1]. Talált cím lista : [%2]").arg(slUnauth.join(sep) ,slAuth.join(sep));
         }
     }
     hostService.setState(q, stat, msg);

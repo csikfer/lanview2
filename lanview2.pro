@@ -1,7 +1,8 @@
 TEMPLATE = subdirs
 
 lv2.subdir = lv2
-SUBDIRS += lv2
+SUBDIRS += lv2 \
+    clisetup
 lv2.subdirs = lv2
 CONFIG += c++11
 
