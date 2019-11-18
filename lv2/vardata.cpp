@@ -78,7 +78,7 @@ int  cRrdBeat::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cRrdBeat::descr() const
 {
     if (initPDescr<cRrdBeat>(_sRrdBeats)) {
-        CHKENUM(_sDailyAggregates,   varAggregateType);
+        CHKENUM(_sDailyAggregates,   varAggregateType)
         // CHKENUM(_sWeeklyAggregates,  varAggregateType);
         // CHKENUM(_sMonthlyAggregates, varAggregateType);
         // CHKENUM(_sYearlyAggregates,  varAggregateType);
@@ -111,7 +111,7 @@ cServiceVarType::cServiceVarType(const cServiceVarType& __o) : cRecord()
 const cRecStaticDescr&  cServiceVarType::descr() const
 {
     if (initPDescr<cServiceVarType>(_sServiceVarTypes)) {
-        CHKENUM(_sServiceVarType, serviceVarType);
+        CHKENUM(_sServiceVarType, serviceVarType)
         STFIELDIX(cServiceVarType, Features);
         STFIELDIX(cServiceVarType, ParamTypeId);
         STFIELDIX(cServiceVarType, RawParamTypeId);
@@ -686,7 +686,7 @@ int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
         if (getBool(_sDelegateServiceState)) state = _st;
     }
     else {  // Nincs adat, türelmi idő nem járt le
-        ;
+
     }
     return _st;
 }
@@ -1073,7 +1073,7 @@ int  cGraphVar::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cGraphVar::descr() const
 {
     if (initPDescr<cGraphVar>(_sGraphVars)) {
-        CHKENUM(_sDrawType, varDrawType);
+        CHKENUM(_sDrawType, varDrawType)
     }
     return *_pRecordDescr;
 }

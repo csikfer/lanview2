@@ -169,6 +169,9 @@ public:
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
     ///         ha viszont nincs paraméternek értéke, akkor egy üres string
     QString value(const QString &_nm) const { return tStringMap::value(_nm.toLower()); }
+    /// Kiemeli a megadott nevű paraméter ártéket, és string listaként értelmezi
+    /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
+    /// @return Egy string lista, a paraméter érték, ha nincs ilyen paraméter, vagy üres, akkor üres lista.
     QStringList slValue(const QString &_nm) const { return value2list(value(_nm)); }
     /// Egy listát tartalmazó string darabolása. A lista szeparátor a vessző, ha a szeparátor elött, vagy után
     /// space karakter van, akkor azt a space karaktert eldobja a metódus.

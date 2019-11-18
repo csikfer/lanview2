@@ -151,15 +151,18 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 
 QStringList cFeatures::value2list(const QString &s)
 {
-    QStringList r = s.split(list_sep);
-    for (int i = 0; i < r.size(); ++i) {
-        while (r.at(i).endsWith(QChar('\\'))) {
-            if ((i +1) >= r.size()) EXCEPTION(EDATA, 0, s);
-            r[i].chop(1);
-            r[i] += QChar(',') + r[i +1];
-            r.removeAt(i +1);
+    QStringList r;
+    if (!s.isEmpty()) {
+        r = s.split(list_sep);
+        for (int i = 0; i < r.size(); ++i) {
+            while (r.at(i).endsWith(QChar('\\'))) {
+                if ((i +1) >= r.size()) EXCEPTION(EDATA, 0, s);
+                r[i].chop(1);
+                r[i] += QChar(',') + r[i +1];
+                r.removeAt(i +1);
+            }
+            r[i] = r[i].trimmed();
         }
-        r[i] = r[i].trimmed();
     }
     return r;
 }
