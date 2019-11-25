@@ -34,7 +34,7 @@ SERVICE "arp" "ARP tábla lekérdezése" {
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "arpd" "Arp daemon" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "arpd $S  -R $host_service_id";
     FEATURES  {
         "logrot" = "500M,8";
@@ -49,6 +49,7 @@ SERVICE "arpd" "Arp daemon" {
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "arp_proc" "ARP fájl a proc-ban, local vagy ssh-n keresztül" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":file=/proc/net/arp:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
@@ -80,7 +81,7 @@ SERVICE "check_dhcp" "DHCP monitorozás" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "check_disk" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "/usr/lib/nagios/plugins/check_disk -w $w -c $c -p $vol";
     FEATURES  {
         "c" = "4%";
@@ -98,7 +99,7 @@ SERVICE "check_disk" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "check_ide_smart" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "/usr/lib/nagios/plugins/check_ide_smart $dev";
     FEATURES  {
         "delay" = "60000";
@@ -114,7 +115,7 @@ SERVICE "check_ide_smart" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "check_md_raid" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "sudo /usr/lib/nagios/plugins/check_md_raid";
     FEATURES  {
         "delay" = "60000";
@@ -141,12 +142,14 @@ SERVICE "check_ups" "UPS check by NUT" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "dhcp_conf" "DHCP config fájl, local vagy ssh-n keresztül" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":file=/etc/dhcp/dhcpd.conf:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "dhcp_leases" "DHCP leases fájl, local vagy ssh-n keresztül" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES  {
         "file" = "/var/lib/dhcp/dhcpd.leases";
     }
@@ -155,14 +158,14 @@ SERVICE "dhcp_leases" "DHCP leases fájl, local vagy ssh-n keresztül" {
     TYPE "mode";
 }
 SERVICE "group" "Dummy service for grouping services." {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES ":superior:timing=passive:";
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "http" "Check http server" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     PORT 80;
     COMMAND "/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri";
     FEATURES  {
@@ -205,7 +208,7 @@ SERVICE "http.proxy" "Check http proxy server" {
     OFF LINE GROUPS "admin", "operator";
 }
 SERVICE "icontsrv" "icontsrv daemon" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "icontsrv $S";
     FEATURES  {
         "logrot" = "500M,4";
@@ -220,7 +223,7 @@ SERVICE "icontsrv" "icontsrv daemon" {
     FLAPPING MAX CHANGE 15;
 }
 SERVICE "import" "import daemon" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "import $S -D";
     FEATURES ":process=respawn:timing=custom:";
     NORMAL CHECK INTERVAL 300;
@@ -276,6 +279,7 @@ SERVICE "indalarmif2" "IndAlarm Contact V2" {
     ON LINE GROUPS "admin", "dispatcher";
 }
 SERVICE "local" "local service" {
+    SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "protocol";
@@ -292,26 +296,32 @@ SERVICE "lv2d" "Lanview2 super server" {
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "nil-1" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 15;
     DISABLE;
 }
 SERVICE "nil-2" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 15;
     DISABLE;
 }
 SERVICE "nil-3" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
+    SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 0;
+    FLAPPING MAX CHANGE 15;
     DISABLE;
 }
 SERVICE "nut" "Network Ups Tools" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES ":timing=passive:superior:";
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
 }
 SERVICE "parser" "Query Parser (pure)" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES  {
         "method" = "parser";
         "superior";
@@ -324,7 +334,6 @@ SERVICE "parser" "Query Parser (pure)" {
 }
 SERVICE "ping" "Ping check" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
-    PORT 80;
     COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
     FEATURES  {
         "critical" = "20,19%";
@@ -352,7 +361,7 @@ SERVICE "pmac" "Query port address table by <protocol>" {
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "portmac" "Device port address table query daemon" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portmac $S -R $host_service_id";
     FEATURES  {
         "logrot" = "500M,8";
@@ -367,7 +376,7 @@ SERVICE "portmac" "Device port address table query daemon" {
     TYPE "querying";
 }
 SERVICE "portstat" "Device port status query daemon" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES ":timing=passive:superior:";
     NORMAL CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
@@ -383,7 +392,7 @@ SERVICE "portvars" "Port változók" {
     TYPE "querying";
 }
 SERVICE "portvlan" {
-    SUPERIOR SERVICE MASK "^lv2|group$";
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portvlan $S -R $host_service_id";
     FEATURES  {
         "logrot" = "500M,8";
@@ -449,7 +458,7 @@ SERVICE "pvlan" {
 SERVICE "rightmac" "MAC cím fehér lista" {
     SUPERIOR SERVICE MASK "^pmac$";
     FEATURES ":timing=passíve:";
-    MAX CHECK ATTEMPTS 2;
+    MAX CHECK ATTEMPTS 1;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
     OFF LINE GROUPS "admin";
@@ -495,54 +504,63 @@ SERVICE "rs485" "RS485 BUS interface or gateway" {
     TYPE "life_contr";
 }
 SERVICE "sda" "Csak a diszket azonosítja (sda)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sda:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdb" "Csak a diszket azonosítja (sdb)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdb:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdc" "Csak a diszket azonosítja (sdc)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdc:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdd" "Csak a diszket azonosítja (sdd)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdd:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sde" "Csak a diszket azonosítja (sde)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sde:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdf" "Csak a diszket azonosítja (sdf)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdf:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdg" "Csak a diszket azonosítja (sdg)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdg:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "sdh" "Csak a diszket azonosítja (sdh)" {
+    SUPERIOR SERVICE MASK "~.";
     FEATURES ":dev=/dev/sdh:";
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
 SERVICE "snmp" "SNMP" {
+    SUPERIOR SERVICE MASK "~.";
     PORT 161;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
@@ -578,6 +596,7 @@ SERVICE "soniwall_arp" {
     OFF LINE GROUPS "admin";
 }
 SERVICE "ssh" "ssh" {
+    SUPERIOR SERVICE MASK "~.";
     PORT 22;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
@@ -595,6 +614,7 @@ SERVICE "syscron" "System cron" {
     FLAPPING MAX CHANGE 5;
 }
 SERVICE "tcp.rs" "TCP serial port gateway" {
+    SUPERIOR SERVICE MASK "~.";
     PORT 4001;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
@@ -681,6 +701,7 @@ PARAM "inet" TYPE "inet";
 PARAM "interval" TYPE "interval";
 PARAM "minute" TYPE "integer" "minute";
 PARAM "node_name" TYPE "text";
+PARAM "note" TYPE "text";
 PARAM "override_mac" "?" TYPE "mac";
 PARAM "packets" TYPE "integer";
 PARAM "packets_per_sec" "packets/sec" TYPE "real" "pkt/s";
@@ -701,6 +722,9 @@ SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
 SERVICE VAR TYPE "ifmtu" "MTU" {
     TYPE "bytes" "GAUGE";
     PLAUSIBILITY "interval" "48", "10240";
+}
+SERVICE VAR TYPE "ifoutoctets" "Output bytes" {
+    TYPE "bytes" "GAUGE";
 }
 SERVICE VAR TYPE "ifpacks" "Input/output packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";

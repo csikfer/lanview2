@@ -1479,7 +1479,7 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
 }
 TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     TITLE "host_service_logs",@,@;
-    TYPE "simple", "read_only";
+    TYPE "simple";
     FEATURES  {
         "alarms.owner" = "host_service_id,@";
         "bg_color" = "new_state";
@@ -1488,7 +1488,7 @@ TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
-    EDIT RIGHTS "admin";
+    EDIT RIGHTS "system";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "system";
     ADD FIELD "host_service_log_id" {
@@ -1783,6 +1783,9 @@ TABLE SHAPE "iftypes" "Port típusok" {
     ADD FIELD "if_name_prefix" "if_name_prefix" {
         TITLE "if_name_prefix",@;
     }
+    FIELD "iftype_iana_id", "preferred" ORD asc, no, desc;
+    FIELD "iftype_name" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "iftype_name", "preferred", "iftype_iana_id";
 }
 TABLE SHAPE "images" {
     TITLE "images",@,@;
@@ -1836,7 +1839,7 @@ TABLE SHAPE "ip_addresses" "IP címek" {
     INSERT RIGHTS "operator";
     ADD FIELD "ip_address_id" "ip_address_id" {
         TITLE "ip_address_id",@;
-        FLAG "table_hide", "dialog_hide", "read_only";
+        FLAG "table_hide", "read_only";
     }
     ADD FIELD "ip_address_note" "ip_address_note" {
         TITLE "Megjegyzés",@;
@@ -2490,7 +2493,7 @@ TABLE SHAPE "nodes" "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     }
     ADD FIELD "node_note" {
         TITLE "Megjegyzés",@;
-        FLAG "HTML";
+        FLAG "huge";
     }
     ADD FIELD "node_type" {
         TITLE "Típus","Az eszköz típusa";
@@ -3789,6 +3792,7 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     }
     ADD FIELD "node_note" "node_note" {
         TITLE "Megjegyzés",@;
+        FLAG "huge";
     }
     ADD FIELD "features" "features" {
         TITLE "paraméterek","Egyébb paraméterek";
@@ -4607,10 +4611,10 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'switch' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'switch' = ANY (node_type)";
-                    "shape.os_name.setofvalue" = "'switch' = ANY (node_type)";
-                    "shape.os_version.setofvalue" = "'switch' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'switch' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'switch' = ANY (node_type), nodes";
+                    "shape.os_name.setofvalue" = "'switch' = ANY (node_type), nodes";
+                    "shape.os_version.setofvalue" = "'switch' = ANY (node_type), nodes";
                     "shape.refine" = "'switch' = ANY (node_type)";
                 }
                 TITLE "Switch-ek",@;
@@ -4620,10 +4624,10 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'server' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'server' = ANY (node_type)";
-                    "shape.os_name.setofvalue" = "'server' = ANY (node_type)";
-                    "shape.os_varsion.setofvalue" = "'server' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'server' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'server' = ANY (node_type), nodes";
+                    "shape.os_name.setofvalue" = "'server' = ANY (node_type), nodes";
+                    "shape.os_varsion.setofvalue" = "'server' = ANY (node_type), nodes";
                     "shape.refine" = "'server' = ANY (node_type)";
                 }
                 TITLE "Szerverek",@;
@@ -4633,10 +4637,10 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'workstation' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'workstation' = ANY (node_type)";
-                    "shape.os_name.setofvalue" = "'workstation' = ANY (node_type)";
-                    "shape.os_version.setofvalue" = "'workstation' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'workstation' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'workstation' = ANY (node_type), nodes";
+                    "shape.os_name.setofvalue" = "'workstation' = ANY (node_type), nodes";
+                    "shape.os_version.setofvalue" = "'workstation' = ANY (node_type), nodes";
                     "shape.refine" = "'workstation' = ANY (node_type)";
                 }
                 TITLE "Munkaállomások táblázat",@;
@@ -4645,8 +4649,8 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'printer' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'printer' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'printer' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'printer' = ANY (node_type), nodes";
                     "shape.refine" = "'printer' = ANY (node_type)";
                 }
                 TITLE "Nyomtatók",@;
@@ -4655,8 +4659,8 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'ap' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'ap' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'ap' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'ap' = ANY (node_type), nodes";
                     "shape.refine" = "'ap' = ANY (node_type)";
                 }
                 TITLE "AP-k"," AP-k";
@@ -4665,11 +4669,31 @@ GUI "lv2gui" {
                 PARAM "snmpdevices";
                 FEATURES  {
                     "multi";
-                    "shape.model_name.setofvalue" = "'display' = ANY (node_type)";
-                    "shape.model_number.setofvalue" = "'display' = ANY (node_type)";
+                    "shape.model_name.setofvalue" = "'display' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'display' = ANY (node_type), nodes";
                     "shape.refine" = "'display' = ANY (node_type)";
                 }
                 TITLE "Monitorok, kijelzők",@;
+            }
+            SHAPE "ups" {
+                PARAM "snmpdevices";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'ups' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'ups' = ANY (node_type), nodes";
+                    "shape.refine" = "'ups' = ANY (node_type)";
+                }
+                TITLE "UPS-ek",@;
+            }
+            SHAPE "devices" {
+                PARAM "snmpdevices";
+                FEATURES  {
+                    "multi";
+                    "shape.model_name.setofvalue" = "'device' = ANY (node_type), nodes";
+                    "shape.model_number.setofvalue" = "'device' = ANY (node_type), nodes";
+                    "shape.refine" = "'device' = ANY (node_type)";
+                }
+                TITLE "Eszközök (devices)",@;
             }
         }
         SHAPE "places_t" {
@@ -4926,6 +4950,10 @@ GUI "lv2gui" {
         OWN "changeswitch" {
             TITLE "Switch csere",@;
             TOOL TIP "Switch csere:\nA fizikai linkek, és port paraméterek másolása";
+        }
+        OWN "reportwidget" {
+            TITLE "Riport(ok)",@;
+            TOOL TIP "Riportok készítése";
         }
     }
 }

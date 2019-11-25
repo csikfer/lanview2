@@ -148,11 +148,11 @@ int         cRecordTreeModel::columnCount(const QModelIndex & parent) const
 QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 {
     QVariant r;
-    if (!index.isValid())           return r;
+    if (!index.isValid()) return r;
     cTreeNode *node = nodeFromIndex(index);
-    if (node == nullptr)               return r;
+    if (node == nullptr) return r;
     int col = index.column();
-    if (col >= _col2field.size())   return r;
+    if (!isContIx(_col2field, col)) return r;
     int fix = _col2field[col];  // Mező index a rekordbam
     cRecord *pr = node->pData;
     cRecordTableColumn * pColumn = columns[col];
@@ -161,7 +161,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return _data(fix, *columns[col], pr, role, bTxt);
+    return _data(fix, *pColumn, pr, role, bTxt);
 }
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
