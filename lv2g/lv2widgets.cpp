@@ -4518,9 +4518,9 @@ void cSelectNode::nodeReport()
     popupReportNode(static_cast<QWidget *>(this->parent()), q, nid);
 }
 
-void cSelectNode::setCurrentNode(qlonglong _nid)
+eTristate cSelectNode::setCurrentNode(qlonglong _nid)
 {
-    if (_nid == currentNodeId()) return;
+    if (_nid == currentNodeId()) return TS_NULL;
     bbNode.begin();
     int ix = pModelNode->indexOf(_nid);
     if (ix < 0) {   // Ha nincs az aktuális listában
@@ -4530,8 +4530,11 @@ void cSelectNode::setCurrentNode(qlonglong _nid)
         refresh(false);
         ix = pModelNode->indexOf(_nid);
     }
+    eTristate r = TS_TRUE;
     if (ix >= 0) pComboBoxNode->setCurrentIndex(ix);
+    else         r = TS_FALSE;
     bbNode.end();
+    return r;
 }
 
 qlonglong cSelectNode::insertPatch(cPatch *pSample)

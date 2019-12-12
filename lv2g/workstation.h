@@ -191,6 +191,7 @@ private slots:
     void on_toolButtonEditPlace_clicked();
     void on_toolButtonInfoNode_clicked();
     void on_pushButtonFindMac_clicked();
+    void on_pushButtonLocalhost_clicked();
 };
 
 #endif // CWORKSTATION_H

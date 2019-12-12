@@ -3258,6 +3258,27 @@ int cNode::delCollisionByIp(QSqlQuery& __q)
     return n;
 }
 
+cNode * cNode::getSelfNodeObjByMac(QSqlQuery& q)
+{
+    QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    static const QString sql =
+            "SELECT DISTINCT(node_id), nodes.tableoid"
+            " FROM nodes"
+            " JOIN interfaces USING(node_id)"
+            " WHERE hwaddress = ?";
+    foreach (QNetworkInterface interface, interfaces) {
+        cMac m = interface.hardwareAddress();
+        if (!m) continue;
+        if (execSql(q, sql, m.toString())) {
+            qlonglong nid = q.value(0).toLongLong();
+            qlonglong oid = q.value(1).toLongLong();
+            PDEB(VVERBOSE) << "MAC : " << m.toString() << VDEB(nid) << VDEB(oid) << endl;
+            return getNodeObjById(q, oid, nid)->reconvert<cNode>();
+        }
+    }
+    return nullptr;
+}
+
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 

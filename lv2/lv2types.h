@@ -40,32 +40,29 @@ Név string literállá konvertálása.
  */
 #define _STR(s)     __STR(s)
 
-static inline bool setBool(bool& b, eTristate v) {
+inline bool setBool(bool& b, eTristate v) {
     switch (v) {
     case TS_TRUE:   b = true;    break;
     case TS_FALSE:  b = false;   break;
     case TS_NULL:                break;
-    default:        EXCEPTION(EPROGFAIL);
     }
     return b;
 }
 
-static inline bool toBool(eTristate v) {
+inline bool toBool(eTristate v) {
     switch (v) {
     case TS_TRUE:   return true;
     case TS_FALSE:
     case TS_NULL:   return false;
-    default:        EXCEPTION(EPROGFAIL);
     }
     return false;
 }
 
-static inline eTristate inverse(eTristate v) {
+inline eTristate inverse(eTristate v) {
     switch (v) {
     case TS_TRUE:   return TS_FALSE;
     case TS_FALSE:  return TS_TRUE;
     case TS_NULL:   return TS_NULL;
-    default:        EXCEPTION(EPROGFAIL);
     }
     return TS_NULL;
 }
@@ -575,7 +572,7 @@ public:
     /*!
       Értékadó operátor. A megfelelő set() metódust hívja.
      */
-    netAddress& operator=(const netAddress& __o)            { return set(__o); }
+    netAddress& operator=(const netAddress& __o)            { return set(__o.addr(), __o.mask()); }
     /*!
       Értékadó operátor. A megfelelő set() metódust hívja.
      */
@@ -703,15 +700,15 @@ public:
     /*!
       Könstruktor. Üres lista ill. halmaz létrehozása.
      */
-    netAddressList()                        : vec()       { ; }
+    netAddressList()                        : vec()       { }
     /*!
       Könstruktor. Egy elemű lista ill. eggy címtartományt tartalmazó halmaz létrehozása.
      */
-    netAddressList(const netAddress& __a)   : vec(__a)    { ; }
+    netAddressList(const netAddress& __a)   : vec(__a)    { }
     /*!
       Másolat konstruktor.
      */
-    netAddressList(const netAddressList& __a)   : vec(__a)    { ; }
+    netAddressList(const netAddressList& __a)   : vec(__a){ }
      /*!
       Hozzáad a listához egy címtartományt.
       @return

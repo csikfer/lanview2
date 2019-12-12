@@ -304,7 +304,7 @@ cOId& cOId::set(const char * __oid)
 //  if (!read_objid(__oid, data(), &oidSize)) {
     if (!get_node(__oid, data(), &oidSize)) {
         oidSize = 0;
-        setStat(true, __PRETTY_FUNCTION__);
+        setStat(true, QObject::tr("cOId& cOId::set(%1)").arg(QString(__oid)));
     }
     return *this;
 }

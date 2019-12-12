@@ -1,5 +1,12 @@
 #include "pickers.h"
 
+#include <QDateTimeEdit>
+#include <QCalendarWidget>
+#include <QButtonGroup>
+#include <QRadioButton>
+#include <QCheckBox>
+#include <QLabel>
+
 cDateTimeDialog::cDateTimeDialog(QWidget *p) : QDialog(p)
 {
     pUi = new Ui::DialogDateTime;
@@ -55,3 +62,54 @@ void cDateTimeDialog::on_toolButtonDef_clicked()
         pUi->timeEdit->setTime(def.time());
     }
 }
+
+
+cSelectDialog::cSelectDialog(QWidget *p) : QDialog(p)
+{
+    pLayout =        new QVBoxLayout;
+    pButtonGroup   = new QButtonGroup(this);
+    pDialogButtons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    setLayout(pLayout);
+    connect(pDialogButtons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(pDialogButtons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+void cSelectDialog::setValues(const QStringList& _vl, bool _m)
+{
+    QAbstractButton *pButton;
+    int id = 0;
+    foreach (QString val, _vl) {
+        if (_m) pButton = new QCheckBox(val);
+        else    pButton = new QRadioButton(val);
+        pButtonGroup->addButton(pButton, id);
+        pLayout->addWidget(pButton);
+        ++id;
+    }
+    pLayout->addWidget(pDialogButtons);
+    pButtonGroup->setExclusive(!_m);
+}
+int cSelectDialog::radioButtons(const QString& _t, const QStringList& _vl, const QString &_txt, QWidget * _par)
+{
+    cSelectDialog o(_par);
+    o.setWindowTitle(_t);
+    if (!_txt.isEmpty()) o.pLayout->addWidget(new QLabel(_txt));
+    o.setValues(_vl, false);
+    int r = o.exec();
+    if (r != QDialog::Accepted) return -1;
+    return  o.pButtonGroup->checkedId();
+}
+
+qlonglong cSelectDialog::checkBoxs(const QString &_t, const QStringList& _vl, const QString &_txt, QWidget *_par)
+{
+    cSelectDialog o(_par);
+    o.setWindowTitle(_t);
+    if (!_txt.isEmpty()) o.pLayout->addWidget(new QLabel(_txt));
+    o.setValues(_vl, true);
+    if (o.exec() != QDialog::Accepted) return 0;
+    int n = o.pButtonGroup->buttons().size();
+    qlonglong r = 0;
+    for (int i = 0; i < n; ++i) {
+        if (o.pButtonGroup->button(i)->isChecked()) r |= 1LL << i;
+    }
+    return  r;
+}
+

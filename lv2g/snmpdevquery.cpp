@@ -260,6 +260,12 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pTypeWidget = new cSetWidget(*pDevShape, *pFieldShape, o[_sNodeType], 0, nullptr);
 
     ui->setupUi(this);
+    ui->labelInventory->  setText(pDevShape->shapeFields.get(_sInventoryNumber)->getText(cTableShapeField::LTX_DIALOG_TITLE));
+    ui->labelSerial->     setText(pDevShape->shapeFields.get(_sSerialNumber)->   getText(cTableShapeField::LTX_DIALOG_TITLE));
+    ui->labelModelNumber->setText(pDevShape->shapeFields.get(_sModelNumber)->    getText(cTableShapeField::LTX_DIALOG_TITLE));
+    ui->labelModelName->  setText(pDevShape->shapeFields.get(_sModelName)->      getText(cTableShapeField::LTX_DIALOG_TITLE));
+    ui->labelOsName->     setText(pDevShape->shapeFields.get(_sOsName)->         getText(cTableShapeField::LTX_DIALOG_TITLE));
+    ui->labelOsVersion->  setText(pDevShape->shapeFields.get(_sOsVersion)->      getText(cTableShapeField::LTX_DIALOG_TITLE));
     pButtobGroupSnmpV = new QButtonGroup(this);
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV1);
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV2c);
@@ -292,6 +298,13 @@ cSnmpDevQuery::~cSnmpDevQuery()
 
 }
 
+inline void setTextField(cRecord *po, const QString fn, QLineEdit *pLE)
+{
+    QString txt = pLE->text();
+    if (txt.isEmpty()) po->clear(fn);
+    else               po->setName(fn, txt);
+}
+
 void cSnmpDevQuery::on_pushButtonSave_clicked()
 {
     if (pDev == nullptr) return;
@@ -315,14 +328,19 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
         pDev->setName(name);
     }
 
-    QString note = ui->lineEditNote->text();
     qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
     cError *pe = nullptr;
     ui->textEdit->append(htmlWarning(msg));
     static const QString tn = "SnmpDevQuerySave";
     try {
         ui->pushButtonSave->setDisabled(true);
-        pDev->setNote(note);
+        setTextField(pDev, _sNodeNote,        ui->lineEditNote);
+        setTextField(pDev, _sInventoryNumber, ui->lineEditInventory);
+        setTextField(pDev, _sSerialNumber,    ui->lineEditSerial);
+        setTextField(pDev, _sModelNumber,     ui->lineEditModelNumber);
+        setTextField(pDev, _sModelName,       ui->lineEditModelName);
+        setTextField(pDev, _sOsName,          ui->lineEditOsName);
+        setTextField(pDev, _sOsVersion,       ui->lineEditOsVersion);
         pDev->setId(_sNodeType, type);
         pDev->setId(_sPlaceId, pSelectNode->currentPlaceId());
         sqlBegin(*pq, tn);
@@ -338,7 +356,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
             pDev->rewriteById(*pq);
         }
         sqlCommit(*pq, tn);
-    } CATCHS(pe);
+    } CATCHS(pe)
     if (pe != nullptr) {
         ui->textEdit->append(htmlError(pe->msg(), true));
         sqlRollback(*pq, tn);
@@ -358,10 +376,9 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     bool f = false;
     cError * pe = nullptr;
     QString comm = ui->lineEditCom->text();
-    if (pDev == nullptr) {
-        pDev = new cSnmpDevice;
-        if (pHost != nullptr) pDev->set_(*pHost);
-    }
+    if (pDev  == nullptr) pDev = new cSnmpDevice;
+    if (pHost != nullptr) pDev->set_(*pHost);
+    pDev->setNote(ui->lineEditNote->text());
     pDev->setName(_sSnmpVer, ui->radioButtonSnmpV1->isChecked() ? "1" : "2c");
     qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
     pDev->setId(_sNodeType, type);
@@ -391,7 +408,7 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
                 expError(trUtf8("validPorts : %1 != ports.size() : %2").arg(validPorts).arg(pDev->ports.size()));
             }
         }
-    } CATCHS(pe);
+    } CATCHS(pe)
     if (pe != nullptr) {
         pe->mDataMsg = msg;
         expError(pe->msg(), true);
@@ -520,6 +537,13 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
         ui->radioButtonSnmpV2c->setChecked(true);
         break;
     }
+    ui->lineEditNote->       setText(pHost->getNote());
+    ui->lineEditInventory->  setText(pHost->getName(_sInventoryNumber));
+    ui->lineEditSerial->     setText(pHost->getName(_sSerialNumber));
+    ui->lineEditModelNumber->setText(pHost->getName(_sModelNumber));
+    ui->lineEditModelName->  setText(pHost->getName(_sModelName));
+    ui->lineEditOsName->     setText(pHost->getName(_sOsName));
+    ui->lineEditOsVersion->  setText(pHost->getName(_sOsVersion));
     ui->pushButtonQuery->setDisabled(a.isNull());
     ui->pushButtonSave->setDisabled(true);
 }
@@ -530,4 +554,23 @@ void cSnmpDevQuery::refreshTrunks()
     foreach (cSnmpDevQPort * pRow, portRows) {
         pRow->trunkItem();
     }
+}
+
+void cSnmpDevQuery::on_pushButtonLocalhost_clicked()
+{
+    cNode *pSelf = cNode::getSelfNodeObjByMac(*pq);
+    if (pSelf == nullptr) {
+        QString name = ui->lineEditName->text();
+        ui->comboBoxIp->clear();
+        ui->comboBoxIp->addItem("127.0.0.1");
+        if (name.isEmpty()) return;
+        ui->lineEditName->setText(name);
+        if (ui->lineEditCom->text().isEmpty()) ui->lineEditCom->setText(_sPublic);
+    }
+    else {
+        bool notSnmp = pSelf->tableoid() == cNode().tableoid();
+        ui->checkBoxToSnmp->setChecked(notSnmp);
+        pSelectNode->setCurrentNode(pSelf->getId());
+    }
+    on_pushButtonQuery_clicked();
 }

@@ -1364,9 +1364,10 @@ public:
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
-    /// Alapértelmezetten aa a port típusa cInterface, akkor az IP címeket és vlan-okat is, de a port paramétereket nem tölti be!
+    /// Alapértelmezetten ha a port típusa cInterface, akkor az IP címeket és vlan-okat is, de a port paramétereket nem tölti be!
     /// Ha megadjuk a flags paramétert, akkor a eContainerValid típusú konstans(ok)al adható meg, mely konténer adattagokat kell feltölteni.
     /// A CV_PORTS -ot nem kell megadni.
+    /// @return A betöltött portok száma
     virtual int  fetchPorts(QSqlQuery& __q, int flags = 0);
     int fetchAllChilds(QSqlQuery& __q) { return fetchParams(__q) + fetchPorts(__q, -1); }
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
@@ -1548,6 +1549,7 @@ public:
     bool bDelCollisionByIp;
     int delCollisionByMac(QSqlQuery &__q);
     int delCollisionByIp(QSqlQuery &__q);
+    static cNode * getSelfNodeObjByMac(QSqlQuery& q);
 
 };
 

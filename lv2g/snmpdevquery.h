@@ -75,6 +75,8 @@ private slots:
     void nodeNameChange(const QString &name);
     void refreshTrunks();
 
+    void on_pushButtonLocalhost_clicked();
+
 protected:
     void clearPorts();
     void setTrunkPortList();

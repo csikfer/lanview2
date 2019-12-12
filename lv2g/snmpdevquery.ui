@@ -15,76 +15,69 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,2,0">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1,0">
      <item>
       <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="labelZone">
-         <property name="text">
-          <string>Zóna :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="comboBoxZone"/>
-       </item>
-       <item row="2" column="0">
+       <item row="1" column="0">
         <widget class="QLabel" name="labelPlace">
          <property name="text">
-          <string>Hely :</string>
+          <string>Zóna / Hely :</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="1" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QComboBox" name="comboBoxPlace"/>
+          <widget class="QComboBox" name="comboBoxZone"/>
          </item>
          <item>
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>Szűrés:</string>
+            <string>Hely minta</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QLineEdit" name="lineEditPatPlace"/>
          </item>
+         <item>
+          <widget class="QComboBox" name="comboBoxPlace"/>
+         </item>
         </layout>
        </item>
-       <item row="3" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="labelPatName">
          <property name="text">
           <string>Szűrés a névre (SQL minta):</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="2" column="1">
         <widget class="QLineEdit" name="lineEditPatName"/>
        </item>
-       <item row="4" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="labelToSnmp">
          <property name="text">
           <string>Nem SNMP eszközök listázása :</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="3" column="1">
         <widget class="QCheckBox" name="checkBoxToSnmp">
          <property name="text">
           <string>Konvertálás SNMP eszközzé</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="labelNode">
          <property name="text">
           <string>Modosítandó eszköz kiválasztása :</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,0">
+       <item row="4" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,0,0">
          <item>
           <widget class="QComboBox" name="comboBoxNode"/>
          </item>
@@ -111,33 +104,47 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonLocalhost">
+           <property name="text">
+            <string>localhost</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="labelName">
          <property name="text">
           <string>Eszköz neve (új vagy modosított) :</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="lineEditName"/>
        </item>
-       <item row="7" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="labelIP">
          <property name="text">
           <string>IP cím :</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="6" column="1">
         <widget class="QComboBox" name="comboBoxIp">
          <property name="editable">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="9" column="1">
+       <item row="8" column="0">
+        <widget class="QLabel" name="labelCom">
+         <property name="text">
+          <string>Community :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QLineEdit" name="lineEditCom">
@@ -178,22 +185,15 @@
          </item>
         </layout>
        </item>
-       <item row="10" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="labelNote">
          <property name="text">
           <string>Megjegzés (az eszközhöz) :</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="1">
+       <item row="9" column="1">
         <widget class="QLineEdit" name="lineEditNote"/>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="labelCom">
-         <property name="text">
-          <string>Community :</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>
@@ -215,6 +215,76 @@
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
          </property>
         </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QFormLayout" name="formLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="lineEditInventory"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEditSerial"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="lineEditModelNumber"/>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lineEditModelName"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelModelName">
+         <property name="text">
+          <string>model_name</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelModelNumber">
+         <property name="text">
+          <string>model_number</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelSerial">
+         <property name="text">
+          <string>aerial_number</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelInventory">
+         <property name="text">
+          <string>inventory_number</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelOsName">
+         <property name="text">
+          <string>os_name</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelOsVersion">
+         <property name="text">
+          <string>os_versiaon</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="lineEditOsName"/>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="lineEditOsVersion"/>
        </item>
       </layout>
      </item>

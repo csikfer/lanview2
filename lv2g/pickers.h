@@ -2,10 +2,6 @@
 #define PICKERS_H
 
 #include "lv2g_global.h"
-#include <QObject>
-#include <QWidget>
-#include <QDateTimeEdit>
-#include <QCalendarWidget>
 #include <QDialog>
 
 
@@ -30,6 +26,20 @@ private slots:
     void on_toolButtonDef_clicked();
 };
 
+class LV2GSHARED_EXPORT cSelectDialog : public QDialog {
+    Q_OBJECT
+protected:
+    cSelectDialog(QWidget *p = nullptr);
+    void setValues(const QStringList& _vl, bool _m);
+    QStringList     values;
+    bool            multiSelect;
+    QVBoxLayout   * pLayout;
+    QDialogButtonBox *pDialogButtons;
+    QButtonGroup *  pButtonGroup;
+public:
+    static int radioButtons(const QString &_t, const QStringList& _vl, const QString& _txt = QString(), QWidget *_par = nullptr);
+    static qlonglong checkBoxs(const QString &_t, const QStringList& _vl, const QString& _txt = QString(), QWidget *_par = nullptr);
+};
 
 
 #endif // PICKERS_H

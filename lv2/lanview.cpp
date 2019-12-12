@@ -167,7 +167,7 @@ void settingIntParameter(QSqlQuery& q, const QString& pname)
     qlonglong i = cSysParam::getIntegerSysParam(q, pname);
     if (i > 0) {
         QString sql = QString("SET %1 TO %2").arg(pname).arg(i);
-        EXECSQL(q, sql);
+        EXECSQL(q, sql)
     }
 }
 
@@ -178,9 +178,9 @@ void dbOpenPost(QSqlQuery& q, const QString& _tn)
         nn += _sUnderline + _tn;
     }
     if (lanView::getInstance()->pUser != nullptr) {
-        if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
+        if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q)
     }
-    EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
+    EXECSQL(q, QString("SET application_name TO '%1'").arg(nn))
     settingIntParameter(q, "lock_timeout");
     settingIntParameter(q, "statement_timeout");
     lanView::sDateTimeForm = cSysParam::getTextSysParam(q, "date_time_form", lanView::sDateTimeForm);
@@ -220,6 +220,9 @@ lanView::lanView()
         }
         // Program settings
         pSet = new QSettings(orgName, libName);
+        if (pSet->allKeys().isEmpty()) {    // no settings yet
+            getInitialSettings();
+        }
         // Beállítjuk a DEBUG/LOG paramétereket
         debug   = pSet->value(_sDebugLevel, QVariant(debugDefault)).toLongLong();
         debFile = pSet->value(_sLogFile, QVariant(_sStdErr)).toString();
@@ -275,7 +278,7 @@ lanView::lanView()
                     cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
                     // Tábla használja, de nics objektumként ledefiniálva
                     cColEnumType::checkEnum(*pQuery, "errtype", errtype, errtype);
-                } CATCHS(nonFatal);
+                } CATCHS(nonFatal)
                 if (nonFatal != nullptr) {
                     pDelete(pQuery);
                     pDb->close();
@@ -486,7 +489,7 @@ bool lanView::openDatabase(eEx __ex)
     closeDatabase();
     PDEB(VERBOSE) << "Open database ..." << endl;
     pDb = new  QSqlDatabase(QSqlDatabase::addDatabase(_sQPSql));
-    if (!pDb->isValid()) SQLOERR(*pDb);
+    if (!pDb->isValid()) SQLOERR(*pDb)
     pDb->setHostName(pSet->value(_sSqlHost).toString());
     pDb->setPort(pSet->value(_sSqlPort).toInt());
     pDb->setUserName(scramble(pSet->value(_sSqlUser).toString()));
@@ -651,6 +654,31 @@ void lanView::instAppTransl()
     }
 }
 
+void lanView::getInitialSettings()
+{
+    QDir currentDir = QDir::current();
+    QFileInfo fi(currentDir, "LanView2First.ini");
+    if (fi.isReadable()) {
+        QFile f(fi.filePath());
+        if (f.open(QIODevice::ReadOnly)) {
+            bool fl = false;
+            QTextStream inf(&f);
+            QString s;
+            while ((s = inf.readLine()).isEmpty()) {
+                s = s.trimmed();
+                QStringList eq = s.split(QChar('='));
+                if (eq.size() == 2) {
+                    QString key = eq.first().simplified();
+                    QString val = eq.at(1).simplified();
+                    pSet->setValue(key, val);
+                    fl = true;
+                }
+            }
+            if (fl) pSet->sync();
+        }
+    }
+}
+
 #ifdef MUST_USIGNAL
 bool lanView::uSigRecv(int __i)
 {
@@ -809,7 +837,7 @@ const cUser *lanView::setUser(const QString& un, const QString& pw, eEx __ex)
         if (__ex)  EXCEPTION(EFOUND,-1,tr("Ismeretlen felhasználó, vagy nem megfelelő jelszó"));
         return nullptr;
     }
-    if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
+    if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q)
     return instance->pUser;
 }
 const cUser *lanView::setUser(const QString& un, eEx __ex)
@@ -823,7 +851,7 @@ const cUser *lanView::setUser(const QString& un, eEx __ex)
         if (__ex)  EXCEPTION(EFOUND,-1,tr("Ismeretlen felhasználó : %1").arg(un));
         return nullptr;
     }
-    if (q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
+    if (q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q)
     return instance->pUser;
 }
 
@@ -838,7 +866,7 @@ const cUser *lanView::setUser(qlonglong uid, eEx __ex)
         if (__ex)  EXCEPTION(EFOUND, uid, tr("Ismeretlen felhasználó azonosító"));
         return nullptr;
     }
-    if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q);
+    if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q)
     instance->pUser->getRights(q);
     return instance->pUser;
 }
@@ -943,7 +971,7 @@ cLv2QApp::cLv2QApp(int& argc, char ** argv) : QCoreApplication(argc, argv)
 
 cLv2QApp::~cLv2QApp()
 {
-    ;
+
 }
 
 bool cLv2QApp::notify(QObject * receiver, QEvent * event)
@@ -1040,12 +1068,12 @@ cExportQueue *cExportQueue::pInstance()
 cExportQueue::cExportQueue()
     : QObject(), QQueue<QString>(), QMutex()
 {
-    ;
+
 }
 
 cExportQueue::~cExportQueue()
 {
-    ;
+
 }
 
 /// Ha nem az iterpreterből lett hivva a metódus nem csinál semmit, lásd callFromInterpreter() -t.

@@ -1214,7 +1214,7 @@ public slots:
     /// Frissíti a listákat, az ős objektumban is (zone, place).
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
-    void setCurrentNode(qlonglong _nid);
+    eTristate setCurrentNode(qlonglong _nid);
     void setPlaceId(qlonglong pid, bool _sig = true);
     /// Az objektumhoz rendelt widgetek engedélyezése, vagy tiltása.
     void setEnabled(bool f = true);

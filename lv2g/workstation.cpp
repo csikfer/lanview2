@@ -13,6 +13,9 @@
 #include "hsoperate.h"
 #include "cerrormessagebox.h"
 #include "findbymac.h"
+#include "pickers.h"
+
+#include <QNetworkInterface>
 
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
@@ -414,7 +417,8 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
                                    pUi->lineEditFilterPlace, pUi->lineEditFilterPattern, _sNul, _sNul, this);
     cRecordListModel *pnm = new cRecordListModel(_sNodes, _sNul, this);
     pnm->nullable   = true; // van NULL
-    pnm->only       = true; // csak a nodes tábla kell, SnmpDevices nem
+    // pnm->only       = true; // csak a nodes tábla kell, SnmpDevices nem
+    pnm->only       = false; // Talán nem zavaró az SNMP
     pnm->nullIdIsAll= true; // Ha place_id = NULL ==> teljes lista
     // csak az egy portos hálózati elemek kellenek
     static const QString sNodeConstFilt = "1 = (SELECT count(*) FROM nports AS p WHERE nodes.node_id = p.node_id)";
@@ -1429,3 +1433,84 @@ void cWorkstation::on_pushButtonFindMac_clicked()
         pFBMp->setMacAnIp(mac, a);
     }
 }
+
+void cWorkstation::on_pushButtonLocalhost_clicked()
+{
+    cNode *pSelf = cNode::getSelfNodeObjByMac(*pq);
+    if (pSelf == nullptr) { // not registred
+        QList<QNetworkInterface>    interfaces = QNetworkInterface::allInterfaces();
+        QMutableListIterator<QNetworkInterface>    i(interfaces);
+        QStringList sifaces;
+        while (i.hasNext()) {
+            QNetworkInterface &interface = i.next();
+            switch (interface.type()) {
+            case QNetworkInterface::Unknown:
+            case QNetworkInterface::Loopback:
+            case QNetworkInterface::Virtual:
+            case QNetworkInterface::Ieee1394:
+            case QNetworkInterface::CanBus:
+                i.remove();
+                break;
+            case QNetworkInterface::Ethernet:
+            case QNetworkInterface::Wifi:
+            case QNetworkInterface::Fddi:
+            case QNetworkInterface::Ppp:
+            case QNetworkInterface::Slip:
+            case QNetworkInterface::Phonet:
+            case QNetworkInterface::Ieee802154:
+            case QNetworkInterface::SixLoWPAN:
+            case QNetworkInterface::Ieee80216:
+                {
+                    QNetworkInterface& iface = i.next();
+                    sifaces << iface.name();
+                    QList<QNetworkAddressEntry> ael = iface.addressEntries();
+                    QMutableListIterator<QNetworkAddressEntry> ii(ael);
+                    while (ii.hasNext()) {
+                        if (ii.peekNext().ip().isLinkLocal()) ii.remove();
+                        else                                  ii.next();
+                    }
+                    if (ael.size() > 1) {
+                        QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());
+                        pUi->textEditMsg->append(htmlError(msg));
+                        return;
+                    }
+                    if (ael.size() == 1) {
+                        sifaces.last().prepend(tr("[%1] ").arg(ael.first().ip().toString()));
+                    }
+                }
+                break;
+            }
+        }
+        if (interfaces.isEmpty()) {
+            QString msg = tr("A hálózati interfészek detektálása sikertelen.");
+            pUi->textEditMsg->append(htmlError(msg));
+            return;
+        }
+        if (interfaces.size() > 1) {
+            i.toFront();
+            while (i.hasNext()) sifaces << i.next().name();
+            int ix = cSelectDialog::radioButtons(
+                        tr("Válassza ki a megfelelő interfészt"),
+                        sifaces,
+                        tr("Ezen a formon csak egy interfésszel rendelkező eszközök kezelhetőek, ha csak egy valós interfész van, jelölje ki azt!"),
+                        this);
+            if (ix < 0) return;
+            const QNetworkInterface& iface = interfaces.at(ix);
+            pSelNode->reset();
+
+            pUi->lineEditName->setText(QHostInfo::localHostName());
+            pUi->lineEditPMAC->setText(iface.hardwareAddress());
+            pUi->lineEditPName->setText(iface.name());
+            if (!iface.addressEntries().isEmpty()) pIpEditWidget->set(iface.addressEntries().first().ip());
+        }
+    }
+    else {                  // registred
+        if (TS_FALSE == pSelNode->setCurrentNode(pSelf->getId())) {
+            QString msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy nem egy IP címe, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
+            pUi->textEditMsg->append(htmlError(msg));
+            return;
+        }
+
+    }
+}
+

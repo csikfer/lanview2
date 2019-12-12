@@ -15,7 +15,7 @@ int main (int argc, char * argv[])
 {
     cLv2QApp app(argc, argv);
 
-    SETAPP();
+    SETAPP()
     lanView::snmpNeeded = true;
     lanView::sqlNeeded  = SN_SQL_NEED;
 
@@ -124,7 +124,7 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
 
 cDevPortStat::~cDevPortStat()
 {
-    ;
+
 }
 
 #if 1
@@ -139,11 +139,12 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
     cInspector::postInit(_q);
-    if (pSubordinates != nullptr)
+    if (pSubordinates != nullptr) {
         EXCEPTION(EDATA, -1,
                   tr("Not set the 'superior=custom' (This is also the default one)? (feature = %1) :\n%2")
                   .arg(dQuoted(hostService.getName(_sFeatures)))
                   .arg(hostService.identifying())   );
+    }
     pSubordinates = new QList<cInspector *>;
     ifMap.clear();
     // Node original type
@@ -161,9 +162,9 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
         if (!(pPort->descr() >= cInterface::_descr_cInterface())) continue;
         cInterface *pInterface = dynamic_cast<cInterface *>(pPort);
         qlonglong   pid = pInterface->getId();
-        DM;
+        DM
         ifMap[pid] = new cPortStat(pInterface, this);
-        DM;
+        DM
     }
     QString msg;
     int r = queryInit(_q, msg);
@@ -265,18 +266,18 @@ bool cPortStat::postInit(QSqlQuery& q)
             pDelete(pPortVars);
         }
     }
-    DM;
+    DM
     if (pPortVars != nullptr) {
         // service variables
         pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
-        DM;
+        DM
         if (pPortVars->pVars == nullptr) {
             pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
         }
         else {
             pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
         }
-        DM;
+        DM
         bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
         n = parent->vnames.size();
         if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
@@ -343,7 +344,7 @@ bool cPortStat::postInit(QSqlQuery& q)
  // portvars end
 
  // rlinkstat *****************************************************************
-    DM;
+    DM
     if (!cIfType::ifType(pInterface->getId(cDevPortStat::ixIfTypeId)).isLinkage()) return isWanted;
     QString wMsg;   // Message if something is suspicious
     // By the time it is connected (log_links, lldp_links -> rlinkstat)
@@ -353,17 +354,17 @@ bool cPortStat::postInit(QSqlQuery& q)
         APPMEMO(q, wMsg, RS_CRITICAL);
     }
     if (lpid == NULL_ID) return isWanted;  // No likely link
-    DM;
+    DM
     // Linked object
     cNPort *p = cNPort::getPortObjById(q, lpid);      // port ID --> node
     pRlinkStat = new cInspector(parent, cNode::getNodeObjById(q, p->getId(_sNodeId))->reconvert<cNode>(), parent->pRLinkStat, p);
     cHostService& lhs = pRlinkStat->hostService;
-    DM;
+    DM
     // host_services record ?
     n = lhs.completion(q);
     // Only one record may be
     if (n  > 1) EXCEPTION(EDATA, n, parent->hostService.identifying(false));
-    DM;
+    DM
     if (n == 1) {   // Found exists record, check and repair if necessary
         QBitArray sets(lhs.cols(), false);
         if (lhs.getBool(_sDisabled) || lhs.getBool(_sDeleted)) {
@@ -581,7 +582,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             if      (_opstat == IF_UP)   state = _sOn;        // On
             else if (_adstat == IF_UP)   state = _sDown;      // Off
             else if (_adstat == IF_DOWN) state = _sWarning;   // Disabled
-            QString msg = tr("interface %1 state : op:%2/adm:%3").arg(iface.getName()).arg(opstat).arg(adstat);
+            QString msg = tr("interface %1:%2 state : op:%3/adm:%4").
+                    arg(node().getName(),iface.getName()).arg(opstat, adstat);
             eMsg = msgCat(eMsg, msg, "\n");
             insp.hostService.setState(q, state, eMsg, NULL_ID, parid);
             insp.flag = true; // State is set

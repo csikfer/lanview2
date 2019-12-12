@@ -424,6 +424,10 @@ public:
 #endif // MUST_USIGNAL
     static lanView *   instance;
     void            instAppTransl();
+    /// A metódus felolvassa a LanView2First.ini nevű fájlt az aktuális könyvtárból, ha létezik.
+    /// és a benne található beállításokat írja át a program (QSettings) beállításokba.
+    /// A konstruktor akkor hívja, ha még semmilyen paramétere nincs beállítva a programnak.
+    void getInitialSettings();
 protected slots:
     virtual void    dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);
 #ifdef MUST_USIGNAL
