@@ -285,7 +285,7 @@ cRecordTableModel::cRecordTableModel(cRecordTable& _rt)
     , cRecordViewModelBase(_rt)
     , _records()
 {
-    ;
+
 }
 
 cRecordTableModel::~cRecordTableModel()

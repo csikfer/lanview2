@@ -1442,8 +1442,8 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         QMutableListIterator<QNetworkInterface>    i(interfaces);
         QStringList sifaces;
         while (i.hasNext()) {
-            QNetworkInterface &interface = i.next();
-            switch (interface.type()) {
+            QNetworkInterface &iface = i.next();
+            switch (iface.type()) {
             case QNetworkInterface::Unknown:
             case QNetworkInterface::Loopback:
             case QNetworkInterface::Virtual:
@@ -1461,13 +1461,11 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
                 {
-                    QNetworkInterface& iface = i.next();
                     sifaces << iface.name();
                     QList<QNetworkAddressEntry> ael = iface.addressEntries();
                     QMutableListIterator<QNetworkAddressEntry> ii(ael);
                     while (ii.hasNext()) {
-                        if (ii.peekNext().ip().isLinkLocal()) ii.remove();
-                        else                                  ii.next();
+                        if (ii.next().ip().isLinkLocal()) ii.remove();
                     }
                     if (ael.size() > 1) {
                         QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());

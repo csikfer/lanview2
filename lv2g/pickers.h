@@ -4,7 +4,6 @@
 #include "lv2g_global.h"
 #include <QDialog>
 
-
 #include "ui_datetimedialog.h"
 
 
@@ -27,11 +26,9 @@ private slots:
 };
 
 class LV2GSHARED_EXPORT cSelectDialog : public QDialog {
-    Q_OBJECT
 protected:
     cSelectDialog(QWidget *p = nullptr);
-    void setValues(const QStringList& _vl, bool _m);
-    QStringList     values;
+    void setValues(const QStringList& values, bool _m);
     bool            multiSelect;
     QVBoxLayout   * pLayout;
     QDialogButtonBox *pDialogButtons;

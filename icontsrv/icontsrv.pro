@@ -24,7 +24,7 @@ HEADERS += \
     ../firmware/IndAlarmIf1/indalarmif1_gl.h
 
 INCLUDEPATH += ../../lanview2/lv2
-LIBS += -lsnmp -L../lv2 -llv2
+LIBS += -L../lv2 -llv2
 
  TRANSLATIONS    = icontsrv_hu.ts \
                    icontsrv_en.ts

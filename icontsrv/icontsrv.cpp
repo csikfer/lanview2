@@ -1,6 +1,6 @@
 #include "icontsrv.h"
 #include "time.h"
-#include <sys/ioctl.h>
+// #include <sys/ioctl.h>
 #include "lv2link.h"
 
 #define VERSION_MAJOR   0
@@ -10,7 +10,6 @@
 const QString _sIndAlarmIf1ma("indalarmif1ma");
 const QString _sIndAlarmIf1sl("indalarmif1sl");
 const QString _sIndAlarmIf2("indalarmif2");
-const QString _sTcpRs("tcp.rs");
 const QString _sAttached("attached");
 
 const QString& setAppHelp()
@@ -22,7 +21,7 @@ int main (int argc, char * argv[])
 {
     QCoreApplication app(argc, argv);
 
-    SETAPP();
+    SETAPP()
     lanView::gui        = false;
     lanView::snmpNeeded = false;
     lanView::sqlNeeded  = SN_SQL_NEED;

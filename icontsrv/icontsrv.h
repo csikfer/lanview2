@@ -12,19 +12,19 @@ typedef unsigned short  uint16_t;
 #include "../firmware/IndAlarmIf1/indalarmif1_gl.h"
 #include "../firmware/IndAlarmIf2/indalarmif2_gl.h"
 #include "QtSerialPort/QtSerialPort"
-#include <termios.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+//#include <termios.h>
+//#include <unistd.h>
+//#include <sys/ioctl.h>
 
 #define APPNAME "icontsrv"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  APP
 
 // A használlt szolgálltatás nevek
-extern const QString _sTcpRs;
 extern const QString _sIndAlarmIf1ma;
 extern const QString _sIndAlarmIf1sl;
 extern const QString _sIndAlarmIf2;
+extern const QString _sAttached;
 
 /// @class cAttached
 /// Egy védett eszköz pszeudo szolgáltatást reprezentáló objektum
@@ -149,24 +149,24 @@ public:
     static void staticInit(QSqlQuery *pq);
 };
 
-static inline char i2h(uint8_t _i)
+inline char i2h(uint8_t _i)
 {
     uint8_t i = _i & 0x0f;
-    return i < 10 ? '0' + i : 'A'+ i - 10;
+    return char(i < 10 ? '0' + i : 'A'+ i - 10);
 }
 
-static inline void i2hh(uint8_t i, char * ph)
+inline void i2hh(uint8_t i, char * ph)
 {
     ph[0] = i2h(i >> 4);
     ph[1] = i2h(i);
 }
 
-static inline void i2hhhh(uint16_t i, char * ph)
+inline void i2hhhh(uint16_t i, char * ph)
 {
-    ph[0] = i2h(i >> 12);
-    ph[1] = i2h(i >>  8);
-    ph[2] = i2h(i >>  4);
-    ph[3] = i2h(i);
+    ph[0] = i2h(uint8_t(i >> 12));
+    ph[1] = i2h(uint8_t(i >>  8));
+    ph[2] = i2h(uint8_t(i >>  4));
+    ph[3] = i2h(uint8_t(i));
 }
 
 

@@ -15,7 +15,7 @@ cDateTimeDialog::cDateTimeDialog(QWidget *p) : QDialog(p)
 
 cDateTimeDialog::~cDateTimeDialog()
 {
-    ;
+    delete pUi;
 }
 
 QDateTime cDateTimeDialog::popup(const QDateTime& _dt, const QDateTime& _def, const QDateTime& _min, const QDateTime& _max)
@@ -63,7 +63,6 @@ void cDateTimeDialog::on_toolButtonDef_clicked()
     }
 }
 
-
 cSelectDialog::cSelectDialog(QWidget *p) : QDialog(p)
 {
     pLayout =        new QVBoxLayout;
@@ -73,11 +72,12 @@ cSelectDialog::cSelectDialog(QWidget *p) : QDialog(p)
     connect(pDialogButtons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(pDialogButtons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
-void cSelectDialog::setValues(const QStringList& _vl, bool _m)
+
+void cSelectDialog::setValues(const QStringList& values, bool _m)
 {
     QAbstractButton *pButton;
     int id = 0;
-    foreach (QString val, _vl) {
+    foreach (QString val, values) {
         if (_m) pButton = new QCheckBox(val);
         else    pButton = new QRadioButton(val);
         pButtonGroup->addButton(pButton, id);
