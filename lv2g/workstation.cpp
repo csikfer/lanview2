@@ -13,7 +13,7 @@
 #include "hsoperate.h"
 #include "cerrormessagebox.h"
 #include "findbymac.h"
-#include "pickers.h"
+#include "input_dialog.h"
 
 #include <QNetworkInterface>
 

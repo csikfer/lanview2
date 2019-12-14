@@ -3,7 +3,7 @@
 
 #include "lv2g.h"
 
-EXT_ bool isRowSelected(int row, const QModelIndexList& selected, bool retIfEmpty = false);
+_GEX bool isRowSelected(int row, const QModelIndexList& selected, bool retIfEmpty = false);
 
 typedef tRecordList<cRecord>         tRecords;
 class   cRecordTableColumn;
@@ -14,7 +14,7 @@ class   cRecordTable;
 /// @class cRecordViewModelBase
 /// Rekord lista megjelenítés modell bázis objektuma
 /// Ebbül a bázis objektumból. és a megfelelő QModel objektumból származtatható a megfelelő model osztály.
-class cRecordViewModelBase {
+class LV2GSHARED_EXPORT cRecordViewModelBase {
 public:
 
     cRecordViewModelBase(cRecordsViewBase &_rt);
@@ -85,7 +85,7 @@ public:
 
 /// @class cRecordTableModel
 /// Model osztály adatatbázis tábla táblázatos megjelenítéséhez
-class cRecordTableModel : public QAbstractTableModel, public cRecordViewModelBase {
+class LV2GSHARED_EXPORT cRecordTableModel : public QAbstractTableModel, public cRecordViewModelBase {
     Q_OBJECT
 public:
     cRecordTableModel(cRecordTable &_rt);
