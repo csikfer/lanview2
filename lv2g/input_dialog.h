@@ -28,14 +28,14 @@ private slots:
 class LV2GSHARED_EXPORT cSelectDialog : public QDialog {
 protected:
     cSelectDialog(QWidget *p = nullptr);
-    void setValues(const QStringList& values, bool _m);
+    void setValues(const QStringList &values, bool _m);
     bool            multiSelect;
     QVBoxLayout   * pLayout;
     QDialogButtonBox *pDialogButtons;
     QButtonGroup *  pButtonGroup;
 public:
-    static int radioButtons(const QString &_t, const QStringList& _vl, const QString& _txt = QString(), QWidget *_par = nullptr);
-    static qlonglong checkBoxs(const QString &_t, const QStringList& _vl, const QString& _txt = QString(), QWidget *_par = nullptr);
+    static int radioButtons(const QString &_t, const QStringList &values, const QString& _txt = QString(), QWidget *_par = nullptr);
+    static qlonglong checkBoxs(const QString &_t, const QStringList& values, const QString& _txt = QString(), QWidget *_par = nullptr);
 };
 
 

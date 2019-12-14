@@ -1,6 +1,7 @@
 CONFIG -= debug_and_release
 CONFIG += C++14
 
+# A git-nek a path-on kell lennie Windows-nál is!!
 REVISION = $$system(git rev-list --count HEAD)
 DEFINES += REVISION=$$REVISION
 

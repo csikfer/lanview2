@@ -4,7 +4,7 @@
 #include "record_tree.h"
 #include "lv2user.h"
 
-#include "pickers.h"
+#include "input_dialog.h"
 
 
 const enum ePrivilegeLevel cHSOperate::rights = PL_VIEWER;

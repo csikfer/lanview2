@@ -1,5 +1,7 @@
 #include "pickers.h"
 
+#include <QList>
+#include <QStringList>
 #include <QDateTimeEdit>
 #include <QCalendarWidget>
 #include <QButtonGroup>
@@ -76,39 +78,40 @@ cSelectDialog::cSelectDialog(QWidget *p) : QDialog(p)
 void cSelectDialog::setValues(const QStringList& values, bool _m)
 {
     QAbstractButton *pButton;
-    int id = 0;
-    foreach (QString val, values) {
+    int id, n = values.size();
+    for (id = 0; id < n; ++id) {
+        const QString& val = values[id];
         if (_m) pButton = new QCheckBox(val);
         else    pButton = new QRadioButton(val);
         pButtonGroup->addButton(pButton, id);
         pLayout->addWidget(pButton);
-        ++id;
     }
     pLayout->addWidget(pDialogButtons);
     pButtonGroup->setExclusive(!_m);
 }
-int cSelectDialog::radioButtons(const QString& _t, const QStringList& _vl, const QString &_txt, QWidget * _par)
+
+int cSelectDialog::radioButtons(const QString& _t, const QStringList& values, const QString &_txt, QWidget * _par)
 {
     cSelectDialog o(_par);
     o.setWindowTitle(_t);
     if (!_txt.isEmpty()) o.pLayout->addWidget(new QLabel(_txt));
-    o.setValues(_vl, false);
+    o.setValues(values, false);
     int r = o.exec();
     if (r != QDialog::Accepted) return -1;
     return  o.pButtonGroup->checkedId();
 }
 
-qlonglong cSelectDialog::checkBoxs(const QString &_t, const QStringList& _vl, const QString &_txt, QWidget *_par)
+qlonglong cSelectDialog::checkBoxs(const QString &_t, const QStringList &values, const QString &_txt, QWidget *_par)
 {
     cSelectDialog o(_par);
     o.setWindowTitle(_t);
     if (!_txt.isEmpty()) o.pLayout->addWidget(new QLabel(_txt));
-    o.setValues(_vl, true);
+    o.setValues(values, true);
     if (o.exec() != QDialog::Accepted) return 0;
     int n = o.pButtonGroup->buttons().size();
     qlonglong r = 0;
     for (int i = 0; i < n; ++i) {
-        if (o.pButtonGroup->button(i)->isChecked()) r |= 1LL << i;
+        if (o.pButtonGroup->button(i)->isChecked()) r |= qlonglong(1) << i;
     }
     return  r;
 }

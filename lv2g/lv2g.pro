@@ -9,9 +9,11 @@ QT       += network sql gui xml widgets multimedia printsupport
 TARGET = lv2g
 TEMPLATE = lib
 CONFIG -= debug_and_release
+CONFIG += C++14
 DEFINES += LV2G_LIBRARY
 
 SOURCES += \
+    input_dialog.cpp \
     lv2g.cpp \
     record_dialog.cpp \
     lv2widgets.cpp \
@@ -45,11 +47,11 @@ SOURCES += \
     snmpdevquery.cpp \
     popupreport.cpp \
     gexports.cpp \
-    pickers.cpp \
     translator.cpp \
     changeswitch.cpp
 
 HEADERS +=\
+    input_dialog.h \
     lv2g_global.h \
     lv2g.h \
     record_table_model.h \
@@ -85,7 +87,6 @@ HEADERS +=\
     snmpdevquery.h \
     popupreport.h \
     gexports.h \
-    pickers.h \
     translator.h \
     changeswitch.h
 
