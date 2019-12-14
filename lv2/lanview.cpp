@@ -6,11 +6,12 @@
 #include "lv2service.h"
 #include "guidata.h"
 
+#if   (0-REVISION-1)==1
+# define REVISION X
+#endif
+
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   98
-#ifndef REVISION
-# define REVISION x
-#endif
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
@@ -89,7 +90,7 @@ const short lanView::libVersionMajor = VERSION_MAJOR;
 const short lanView::libVersionMinor = VERSION_MINOR;
 const QString lanView::libVersion(VERSION_STR);
 #ifdef Q_OS_WIN
-const QString lanView::homeDefault(".");
+const QString lanView::homeDefault("C:\\lanview2");
 #else
 const QString lanView::homeDefault("/var/local/lanview2");
 #endif

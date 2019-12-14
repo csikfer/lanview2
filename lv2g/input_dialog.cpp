@@ -1,4 +1,4 @@
-#include "pickers.h"
+#include "input_dialog.h"
 
 #include <QList>
 #include <QStringList>
