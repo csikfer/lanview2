@@ -983,7 +983,7 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
     try {
         return QCoreApplication::notify(receiver, event);
     }
-    catch(no_init_&) { // Már letiltottuk a cError dobálást
+    catch(no_init_ *) { // Már letiltottuk a cError dobálást
         PDEB(VERBOSE) << "Dropped cError..." << endl;
         return false;
     }
@@ -999,7 +999,7 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
     PDEB(DERROR) << "Event : "
                  << typeid(*event).name()
                  << endl; Ettől kiakad :-O ! */
-    cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ -el
+    cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ *-el
     lanView::getInstance()->lastError = lastError;
     DERR() << lastError->msg() << endl;
     QCoreApplication::exit(lastError->mErrorCode);  // kilépünk.

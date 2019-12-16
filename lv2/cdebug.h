@@ -258,7 +258,7 @@ protected:
     /// A fő szálhoz tartozó debugStream objektum pointere.
     static debugStream *mainInstance;
     /// A legutobbi maszk
-    qlonglong   lastMask;
+    qlonglong   lastMask{};
 signals:
     /// Ha GUI módban vagyunk, akkor itt jelezzük, hogy kész egy debug üzenet sor.
     void readyDebugLine();
@@ -500,8 +500,8 @@ class LV2SHARED_EXPORT cDebug {
     ~cDebug();
     QString                 mFName; ///< A kimeneti fájl neve
     QFile                  *mFile;  ///< A kimeneti fájl objektum pointere
-    qlonglong               mMaxLogSize;
-    int                     mArcNum;
+    qlonglong               mMaxLogSize{};
+    int                     mArcNum{};
     qlonglong               mMask;  ///< Aktuális debug maszk.
     static cDebug          *instance;   ///< a cDebug példány pointere, vagy NULL.
     static bool             disabled;   ///< Ha értéke true, akkor a debug tiltva.

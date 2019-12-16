@@ -23,7 +23,6 @@ This file is part of LanView2.
 
 #define LV2_THROW 1
 
-
 #if defined(LV2_LIBRARY)
 #  define LV2SHARED_EXPORT Q_DECL_EXPORT
 // #  warning "LIB..."

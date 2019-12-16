@@ -230,13 +230,13 @@ Az adattagok inicializálása után hívja a circulation() metódust
     int     mDataPos;
     QString mDataMsg;               ///< Source file name
     QString mDataName;              ///< Source file name
-    QThread *pThread;               ///< A hibaobjektumot létrehozó szál
+    QThread *pThread{};               ///< A hibaobjektumot létrehozó szál
     QStringList slBackTrace;
 
     static int errCount() { return errorList.size(); }
     static bool errStat();
     static int      mMaxErrCount;   ///< A maximálisan létrehozhatü cError objektumok széma
-    static bool     mDropAll;       ///< Ha értéke true, akkor nem hoz létre hiba objektumokat, a továbbiakban no_init_ objektummal dobja a hibát
+    static bool     mDropAll;       ///< Ha értéke true, akkor nem hoz létre hiba objektumokat, a továbbiakban no_init_ objektum pointerrel dobja a hibát
 protected:
     static QList<cError *> errorList;
     static QMap<int, QString>      mErrorStringMap;///< Hiba string konténer

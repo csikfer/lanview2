@@ -29,25 +29,25 @@
 #include <DbgHelp.h>
 #endif
 
-cBackTrace::cBackTrace(size_t _size) : QStringList()
+cBackTrace::cBackTrace(size_t _size)
 {
     void ** buffer;
 #if defined(Q_CC_GNU)
     int     size;
     char ** symbols;
-    buffer = static_cast<void **>(malloc(sizeof(void *) * _size));
+    buffer = new void *[_size];
     size   = backtrace(buffer, int(_size));
     symbols= backtrace_symbols(buffer, size);
     for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
         *this << QString(symbols[i]);
     }
-    free(buffer);
+    delete buffer;
     free(symbols);
 #elif 0 && defined(Q_CC_MSVC)
     unsigned short frames;
     SYMBOL_INFO    symbol;
     HANDLE         process;
-    buffer = (void **)malloc(sizeof(void *) * _size);
+    buffer = new void *[_size];
     process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE );
     frames = CaptureStackBackTrace( 0, (DWORD)_size, buffer, NULL );
@@ -56,7 +56,7 @@ cBackTrace::cBackTrace(size_t _size) : QStringList()
         *this << QString(symbol.Name);
     }
     SymCleanup(process);
-    free(buffer);
+    delet buffer;
 #else
     (void)buffer;
     (void)_size;
@@ -91,7 +91,7 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
 {
     if (mDropAll) {
 //      delete this;
-        throw _no_init_;
+        throw &_no_init_;
     }
     mFuncName     = QString::fromUtf8(_mFuncName);
     mSrcName      = QString::fromUtf8(_mSrcName);
@@ -115,7 +115,7 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
 {
     if (mDropAll) {
 //      delete this;
-        throw _no_init_;
+        throw &_no_init_;
     }
     mErrorSysCode = errno;
     mSrcLine      = _mSrcLine;
@@ -162,11 +162,11 @@ void cError::circulation()
     }
 }
 
-void cError::exception(void)
+void cError::exception()
 {
     if (mDropAll) {
 //      delete this;
-        throw _no_init_;
+        throw &_no_init_;
     }
     QString m = QObject::tr("throw this : %1").arg(msg());
     if (cDebug::getInstance() != nullptr) {
@@ -218,7 +218,7 @@ cError& cError::nested(const char * _mSrcName, int _mSrcLine, const char * _mFun
     return *this;
 }
 
-QString cError::msg(void) const
+QString cError::msg() const
 {
     QString r;
     if (!mThreadName.isEmpty()) r = QChar('{') + mThreadName + QChar('}');
@@ -289,7 +289,7 @@ bool cError::errStat()
 
 void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode, qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
 {
-    cError *pe = new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
+    auto *pe = new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
     pe->exception();
 }
 

@@ -17,9 +17,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include <stdarg.h>
+#include <cstdarg>
 #include <sys/types.h>
-#include <stdio.h>
+#include <cstdio>
 
 
 #include <QtCore>
@@ -52,7 +52,10 @@ QString quotedString(const QString& __s, const QChar& __q)
             case '\\':  r += "\\\\"; break;
             default:
                 if (isprint(cc)) r += cc;
-                else r += "\\" + QString::number(int(cc), 8);
+                else {
+                    constexpr int octal = 8;
+                    r += "\\" + QString::number(int(cc), octal);
+                }
             }
         }
     }
@@ -107,6 +110,8 @@ cDebug::cDebug() : mFName(fNameCnv(QString()))
     if (QTextStream::Ok != mCout->stream.status()) EXCEPTION(EFOPEN, -1, _sStdErr);
     disabled = false;
 }
+
+
 cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
 {
     mCout                = nullptr;
@@ -138,10 +143,12 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
         if (! mFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             delete mFile;
             mFile = nullptr;
-            EXCEPTION(EFOPEN, -1, _fn);
+            EXCEPTION(EFOPEN, 0, _fn);
         }
-        mMaxLogSize = 1024 * 1024 * 128;
-        mArcNum     = 8;
+        constexpr qlonglong defaultMaxLogSize = 1024 * 1024 * 128;  // 128 MiByte
+        constexpr int       defaultArcLogNumb = 8;
+        mMaxLogSize = defaultMaxLogSize;
+        mArcNum     = defaultArcLogNumb;
         mCout = new debugStream(mFile);
     }
     if (QTextStream::Ok != mCout->stream.status()) EXCEPTION(EFOPEN, -1, mFName);
@@ -152,8 +159,9 @@ cDebug::~cDebug()
 {
     flushAll();
     disabled = true;
+    constexpr int oneSecTO = 1000;
     if (mThreadMsgQueueMutex != nullptr) {
-        mThreadMsgQueueMutex->tryLock(1000);
+        mThreadMsgQueueMutex->tryLock(oneSecTO);
         delete mThreadMsgQueueMutex;
         mThreadMsgQueueMutex = nullptr;
     }
@@ -161,7 +169,7 @@ cDebug::~cDebug()
         delete mThreadMsgQueue;
     }
     if (mThreadStreamsMapMutex != nullptr) {
-        mThreadStreamsMapMutex->tryLock(1000);
+        mThreadStreamsMapMutex->tryLock(oneSecTO);
         delete mThreadStreamsMapMutex;
         mThreadStreamsMapMutex = nullptr;
     }
@@ -214,14 +222,14 @@ bool cDebug::__pDeb(qlonglong mask)
 }
 
 
-debugStream *cDebug::pCout(void)
+debugStream *cDebug::pCout()
 {
     // printf("cDebug::cout(void)\n");
     if (nullptr == instance || nullptr == instance->mCout) EXCEPTION(EPROGFAIL);
     return instance->mCout;
 }
 
-debugStream& cDebug::cout(void)
+debugStream& cDebug::cout()
 {
     debugStream *pS;
     if (nullptr == instance || nullptr == instance->mCout) EXCEPTION(EPROGFAIL);
@@ -308,12 +316,10 @@ QString cDebug::fNameCnv(const QString& _fn)
     if   (_fn == QChar('-') || _fn.toLower() == _sStdOut) {
         return _sStdOut;
     }
-    else if (_fn.isEmpty()  || _fn.toLower() == _sStdErr) {
+    if (_fn.isEmpty()  || _fn.toLower() == _sStdErr) {
         return _sStdErr;
     }
-    else {
-        return _fn;
-    }
+    return _fn;
 }
 
 void cDebug::flushAll()

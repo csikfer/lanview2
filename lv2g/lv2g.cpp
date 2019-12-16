@@ -221,7 +221,7 @@ bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
     try {
         return QApplication::notify(receiver, event);
     }
-    catch(no_init_&) { // Már letiltottuk a cError dobálást
+    catch(no_init_ *) { // Már letiltottuk a cError dobálást
         PDEB(VERBOSE) << "Dropped cError..." << endl;
         return false;
     }

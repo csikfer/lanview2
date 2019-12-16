@@ -158,14 +158,14 @@ bool myApp::notify(QObject * receiver, QEvent * event)
     try {
         return QApplication::notify(receiver, event);
     }
-    catch(no_init_&) { // Már letiltottuk a cError dobálást, hibakezelés közben újabb hiba
+    catch(no_init_ *) { // Már letiltottuk a cError dobálást, hibakezelés közben újabb hiba
         PDEB(VERBOSE) << "Dropped cError..." << endl;
         return false;
     }
     CATCHS(lastError)
     DERR(DERROR) <<  PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl
                  << "Event : " << typeid(*event).name() << endl;
-    cError::mDropAll = true;    // A további hiba dobálások nem kellenek (dobja, de ezentul egy no_init_ objektummal)
+    cError::mDropAll = true;    // A további hiba dobálások nem kellenek (dobja, de ezentul egy no_init_ pointerrel)
     cErrorMessageBox::messageBox(lastError);    // Kiteszünk egy hiba ablakot
     QApplication::exit(lastError->mErrorCode);  // kilépünk,
     return false;
