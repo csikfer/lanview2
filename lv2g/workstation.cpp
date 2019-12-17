@@ -1441,7 +1441,9 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         QList<QNetworkInterface>    interfaces = QNetworkInterface::allInterfaces();
         QMutableListIterator<QNetworkInterface>    i(interfaces);
         QStringList sifaces;
+        QList<QHostAddress> ifaddrs;
         while (i.hasNext()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
             QNetworkInterface &iface = i.next();
             switch (iface.type()) {
             case QNetworkInterface::Unknown:
@@ -1460,24 +1462,32 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::Ieee802154:
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
+#endif
                 {
                     sifaces << iface.name();
-                    QList<QNetworkAddressEntry> ael = iface.addressEntries();
-                    QMutableListIterator<QNetworkAddressEntry> ii(ael);
+                    QList<QHostAddress> al = iface.allAddresses();
+                    QMutableListIterator<QHostAddress> ii(al);
                     while (ii.hasNext()) {
-                        if (ii.next().ip().isLinkLocal()) ii.remove();
+                        QHostAddress& a = ii.next();
+                        if (a.protocol() != QAbstractSocket::IPv4Protocol || a.isLinkLocal())
+                            ii.remove();
                     }
-                    if (ael.size() > 1) {
+                    if (al.size() > 1) {
                         QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());
                         pUi->textEditMsg->append(htmlError(msg));
                         return;
                     }
-                    if (ael.size() == 1) {
-                        sifaces.last().prepend(tr("[%1] ").arg(ael.first().ip().toString()));
+                    QHostAddress a;
+                    if (al.size() == 1) {
+                        a = al.first();
+                        sifaces.last().prepend(tr("[%1] ").arg(a.toString()));
                     }
+                    ifaddrs << a;
                 }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
                 break;
             }
+#endif
         }
         if (interfaces.isEmpty()) {
             QString msg = tr("A hálózati interfészek detektálása sikertelen.");
@@ -1491,22 +1501,24 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
                         tr("Ezen a formon csak egy interfésszel rendelkező eszközök kezelhetőek, ha csak egy valós interfész van, jelölje ki azt!"),
                         this);
             if (ix < 0) return;
-            const QNetworkInterface& iface = interfaces.at(ix);
-            pSelNode->reset();
-
-            pUi->lineEditName->setText(QHostInfo::localHostName());
-            pUi->lineEditPMAC->setText(iface.hardwareAddress());
-            pUi->lineEditPName->setText(iface.name());
-            if (!iface.addressEntries().isEmpty()) pIpEditWidget->set(iface.addressEntries().first().ip());
+            interfaces = interfaces.mid(ix, 1);
+            ifaddrs    = ifaddrs.mid(ix, 1);
         }
+        const QNetworkInterface& iface = interfaces.first();
+        const QHostAddress       addr  = ifaddrs.first();
+        QString name = QHostInfo::localHostName();
+        pSelNode->reset();
+        pUi->lineEditName->setText(name);
+        pUi->lineEditPMAC->setText(iface.hardwareAddress());
+        pUi->lineEditPName->setText(iface.name());
+        if (!addr.isNull()) pIpEditWidget->set(addr);
     }
     else {                  // registred
         if (TS_FALSE == pSelNode->setCurrentNode(pSelf->getId())) {
             QString msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy nem egy IP címe, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
             pUi->textEditMsg->append(htmlError(msg));
-            return;
         }
-
+        delete pSelf;
     }
 }
 
