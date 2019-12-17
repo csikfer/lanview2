@@ -1485,8 +1485,6 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             return;
         }
         if (interfaces.size() > 1) {
-            i.toFront();
-            while (i.hasNext()) sifaces << i.next().name();
             int ix = cSelectDialog::radioButtons(
                         tr("Válassza ki a megfelelő interfészt"),
                         sifaces,
