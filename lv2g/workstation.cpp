@@ -1434,17 +1434,22 @@ void cWorkstation::on_pushButtonFindMac_clicked()
     }
 }
 
+#define IFTYPE_FILTER QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+
 void cWorkstation::on_pushButtonLocalhost_clicked()
 {
     cNode *pSelf = cNode::getSelfNodeObjByMac(*pq);
     if (pSelf == nullptr) { // not registred
         QList<QNetworkInterface>    interfaces = QNetworkInterface::allInterfaces();
         QMutableListIterator<QNetworkInterface>    i(interfaces);
-        QStringList sifaces;
+        QStringList sifaces;        // Interface name list
         QList<QHostAddress> ifaddrs;
+        QHostAddress a;
+        QList<QHostAddress> al;
         while (i.hasNext()) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
             QNetworkInterface &iface = i.next();
+            al = iface.allAddresses();
+#if IFTYPE_FILTER
             switch (iface.type()) {
             case QNetworkInterface::Unknown:
             case QNetworkInterface::Loopback:
@@ -1462,29 +1467,34 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::Ieee802154:
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
+#else
+            if (!al.isEmpty() && al.first().isLinkLocal()) {
+                i.remove();
+                continue;
+            }
 #endif
-                {
-                    sifaces << iface.name();
-                    QList<QHostAddress> al = iface.allAddresses();
-                    QMutableListIterator<QHostAddress> ii(al);
-                    while (ii.hasNext()) {
-                        QHostAddress& a = ii.next();
-                        if (a.protocol() != QAbstractSocket::IPv4Protocol || a.isLinkLocal())
-                            ii.remove();
-                    }
-                    if (al.size() > 1) {
-                        QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());
-                        pUi->textEditMsg->append(htmlError(msg));
-                        return;
-                    }
-                    QHostAddress a;
-                    if (al.size() == 1) {
-                        a = al.first();
-                        sifaces.last().prepend(tr("[%1] ").arg(a.toString()));
-                    }
-                    ifaddrs << a;
+                sifaces << iface.name();
+                QMutableListIterator<QHostAddress> ii(al);  // All IP by interface
+                while (ii.hasNext()) {
+                    a = ii.next();
+                    if (a.protocol() != QAbstractSocket::IPv4Protocol)  // IPV4 only !!
+                        ii.remove();
                 }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                switch (al.size()) {
+                case 0:
+                    a.clear();
+                    break;
+                case 1:
+                    a = al.first();
+                    sifaces.last().prepend(tr("[%1] ").arg(a.toString()));
+                    break;
+                default:    // > 1
+                    QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());
+                    pUi->textEditMsg->append(htmlError(msg));
+                    return;
+                }
+                ifaddrs << a;
+#if IFTYPE_FILTER
                 break;
             }
 #endif
@@ -1494,18 +1504,23 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             pUi->textEditMsg->append(htmlError(msg));
             return;
         }
+        QNetworkInterface iface;
+        QHostAddress      addr;
         if (interfaces.size() > 1) {
             int ix = cSelectDialog::radioButtons(
                         tr("Válassza ki a megfelelő interfészt"),
                         sifaces,
                         tr("Ezen a formon csak egy interfésszel rendelkező eszközök kezelhetőek, ha csak egy valós interfész van, jelölje ki azt!"),
                         this);
+            PDEB(VVERBOSE) << tr("Selected interface index = %1").arg(ix);
             if (ix < 0) return;
-            interfaces = interfaces.mid(ix, 1);
-            ifaddrs    = ifaddrs.mid(ix, 1);
+            iface = interfaces.at(ix);
+            addr  = ifaddrs.at(ix);
         }
-        const QNetworkInterface& iface = interfaces.first();
-        const QHostAddress       addr  = ifaddrs.first();
+        else {
+            iface = interfaces.first();
+            addr  = ifaddrs.first();
+        }
         QString name = QHostInfo::localHostName();
         pSelNode->reset();
         pUi->lineEditName->setText(name);
