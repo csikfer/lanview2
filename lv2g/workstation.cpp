@@ -1434,7 +1434,7 @@ void cWorkstation::on_pushButtonFindMac_clicked()
     }
 }
 
-#define IFTYPE_FILTER QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+#define IFTYPE_FILTER  QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
 
 void cWorkstation::on_pushButtonLocalhost_clicked()
 {
@@ -1468,9 +1468,12 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
 #else
-            if (!al.isEmpty() && al.first().isLinkLocal()) {
-                i.remove();
-                continue;
+            if (!al.isEmpty()) {
+                a = al.first();
+                if (a.isLoopback()) {
+                    i.remove();
+                    continue;
+                }
             }
 #endif
                 sifaces << iface.name();
