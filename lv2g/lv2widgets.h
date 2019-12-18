@@ -1212,7 +1212,7 @@ protected:
 public slots:
     qlonglong insertPatch(cPatch *pSample = nullptr);
     /// Frissíti a listákat, az ős objektumban is (zone, place).
-    /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
+    /// hely azonosító place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
     eTristate setCurrentNode(qlonglong _nid);
     void setPlaceId(qlonglong pid, bool _sig = true);

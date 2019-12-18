@@ -1445,10 +1445,10 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         QStringList sifaces;        // Interface name list
         QList<QHostAddress> ifaddrs;
         QHostAddress a;
-        QList<QHostAddress> al;
+        QList<QNetworkAddressEntry> ael;
         while (i.hasNext()) {
             QNetworkInterface &iface = i.next();
-            al = iface.allAddresses();
+            ael = iface.addressEntries();
 #if IFTYPE_FILTER
             switch (iface.type()) {
             case QNetworkInterface::Unknown:
@@ -1468,8 +1468,8 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
 #else
-            if (!al.isEmpty()) {
-                a = al.first();
+            if (!ael.isEmpty()) {
+                a = ael.first().ip();
                 if (a.isLoopback()) {
                     i.remove();
                     continue;
@@ -1477,22 +1477,25 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             }
 #endif
                 sifaces << iface.name();
-                QMutableListIterator<QHostAddress> ii(al);  // All IP by interface
+                QMutableListIterator<QNetworkAddressEntry> ii(ael);  // All IP by interface
                 while (ii.hasNext()) {
-                    a = ii.next();
+                    a = ii.next().ip();
                     if (a.protocol() != QAbstractSocket::IPv4Protocol)  // IPV4 only !!
                         ii.remove();
                 }
-                switch (al.size()) {
+                switch (ael.size()) {
                 case 0:
                     a.clear();
                     break;
                 case 1:
-                    a = al.first();
+                    a = ael.first().ip();
                     sifaces.last().prepend(tr("[%1] ").arg(a.toString()));
                     break;
                 default:    // > 1
-                    QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van. Igy itt nem kezelhető.").arg(pSelf->getName());
+                    QString aa;
+                    foreach (QNetworkAddressEntry ae, ael) aa += ae.ip().toString() + ", ";
+                    aa.chop(2);
+                    QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van : [%2]. Igy itt nem kezelhető.").arg(iface.name(), aa);
                     pUi->textEditMsg->append(htmlError(msg));
                     return;
                 }

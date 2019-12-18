@@ -734,6 +734,9 @@
            </property>
            <item row="0" column="1">
             <widget class="QPushButton" name="pushButtonFindMac">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A cím szerinti keresés form megnyitása, az aktuális MAC és IP címmel.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Switch port keresés</string>
              </property>
@@ -741,6 +744,9 @@
            </item>
            <item row="1" column="1">
             <widget class="QPushButton" name="pushButtonLocalhost">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A saját gép ismert adatainak a lekérdezése.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Localhost</string>
              </property>

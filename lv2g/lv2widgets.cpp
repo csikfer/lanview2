@@ -4672,7 +4672,12 @@ void cSelectLinkedPort::setNodeId(qlonglong _nid)
     if (!nodeIsNull) {
         cPatch p;
         p.setId(_nid);
-        qlonglong toid = p.fetchTableOId(*pq);  // Type?
+        qlonglong toid = p.fetchTableOId(*pq, EX_IGNORE);  // Type?
+        if (toid == NULL_ID) {  // Deleted ?!
+            lockSlots--;
+            refresh();
+            return;
+        }
         _isPatch = toid == p.tableoid();
         if (_isPatch) {
             if (lastLinkType == LT_TERM) {
