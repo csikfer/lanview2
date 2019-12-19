@@ -5,6 +5,7 @@
 #include "lv2user.h"
 #include "lv2service.h"
 #include "guidata.h"
+#include <QCoreApplication>
 
 #if   (0-REVISION-1)==1
 # define REVISION X
@@ -90,7 +91,7 @@ const short lanView::libVersionMajor = VERSION_MAJOR;
 const short lanView::libVersionMinor = VERSION_MINOR;
 const QString lanView::libVersion(VERSION_STR);
 #ifdef Q_OS_WIN
-const QString lanView::homeDefault("C:\\lanview2");
+const QString lanView::homeDefault(".");
 #else
 const QString lanView::homeDefault("/var/local/lanview2");
 #endif
@@ -657,28 +658,52 @@ void lanView::instAppTransl()
     }
 }
 
+// Az sqlPass így nem OK, javítani!!!
+
 void lanView::getInitialSettings()
 {
-    QDir currentDir = QDir::current();
-    QFileInfo fi(currentDir, "LanView2First.ini");
-    if (fi.isReadable()) {
-        QFile f(fi.filePath());
-        if (f.open(QIODevice::ReadOnly)) {
-            bool fl = false;
-            QTextStream inf(&f);
-            QString s;
-            while ((s = inf.readLine()).isEmpty()) {
-                s = s.trimmed();
-                QStringList eq = s.split(QChar('='));
-                if (eq.size() == 2) {
-                    QString key = eq.first().simplified();
-                    QString val = eq.at(1).simplified();
-                    pSet->setValue(key, val);
-                    fl = true;
-                }
-            }
-            if (fl) pSet->sync();
+    QDir dir = QDir::current();
+    QFileInfo fi(dir, "LanView2First.ini");
+    if (!fi.isReadable()) {
+        PDEB(INFO) << tr("First ini file ") << fi.filePath() << tr(" is not found, or not readable (current dir)") << endl;
+        dir.setPath(QCoreApplication::applicationDirPath());
+        fi = QFileInfo(dir, "LanView2First.ini");
+        if (!fi.isReadable()) {
+            PDEB(INFO) << tr("First ini file ") << fi.filePath() << tr(" is not found, or not readable (app. dir)") << endl;
+            return;
         }
+    }
+    PDEB(INFO) << tr("Read first ini file ") << fi.filePath() << endl;
+    QFile f(fi.filePath());
+    if (f.open(QIODevice::ReadOnly)) {
+        bool fl = false;
+        QTextStream inf(&f);
+        QString s;
+        QStringList scrambled = { "sqlUser", "sqlPass" };
+        while (!(s = inf.readLine()).isEmpty()) {
+            s = s.trimmed();
+            QStringList eq = s.split(QChar('='));
+            if (eq.size() == 2) {
+                QString key = eq.first().simplified();
+                QString val = eq.at(1).simplified();
+                bool ok;
+                qlonglong num = val.toLongLong(&ok);
+                if (ok) {
+                    pSet->setValue(key, num);
+                }
+                else {
+                    if (scrambled.contains(key)){
+                        val = scramble(val);
+                    }
+                    pSet->setValue(key, val);
+                }
+                fl = true;
+            }
+        }
+        if (fl) pSet->sync();
+    }
+    else {
+        PDEB(INFO) << tr("Open errorfirst ini file ") << fi.filePath() << endl;
     }
 }
 

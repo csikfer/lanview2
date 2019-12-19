@@ -153,7 +153,7 @@ int indexOfResourceIcon(const QString& _s)
 
 /* ******** */
 
-int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
+int defaultDataCharacter(const cRecStaticDescr& __d, int __ix)
 {
     __d.chkIndex(__ix);
     if (__ix == __d.idIndex(EX_IGNORE))      return DC_ID;

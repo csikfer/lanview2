@@ -207,7 +207,7 @@ inline QVariant string2variant(const QString& s)  { return s.isEmpty() ? QVarian
 /// A mező típusához (ID, név, távoli kulcs, stb. ) rendelhető datacharacter értéket adja meg
 /// @param __d A rekord leíró objektum
 /// @param __ix A mező indexe
-_GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
+_GEX int defaultDataCharacter(const cRecStaticDescr& __d, int __ix);
 
 
 inline QWidget *newFrame(int _st, QWidget * p = nullptr)

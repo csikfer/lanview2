@@ -1302,7 +1302,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     }
     else {
         pColDescr = &recDescr.colDescr(fieldIndex);
-        dataCharacter = defaultDataCharter(recDescr, fieldIndex);
+        dataCharacter = defaultDataCharacter(recDescr, fieldIndex);
         if (pColDescr->eColType == cColStaticDescr::FT_INTEGER && pColDescr->fKeyType == cColStaticDescr::FT_NONE) {
             dataAlign |= Qt::AlignRight;
         }

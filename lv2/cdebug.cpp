@@ -105,7 +105,7 @@ cDebug::cDebug() : mFName(fNameCnv(QString()))
     mThreadMsgQueue      = nullptr;
     mThreadMsgQueueMutex = nullptr;
 
-    mMask = DERROR | WARNING | MODMASK;
+    mMask = INFO | DERROR | WARNING | MODMASK;
     mCout = new debugStream(stderr);
     if (QTextStream::Ok != mCout->stream.status()) EXCEPTION(EFOPEN, -1, _sStdErr);
     disabled = false;
