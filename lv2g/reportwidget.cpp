@@ -121,6 +121,7 @@ void cReportWidget::on_comboBoxType_currentIndexChanged(int index)
 void cReportWidget::on_pushButtonClear_clicked()
 {
     ui->textEditRiport->clear();
+    ui->pushButtonStart->setEnabled(true);
 }
 
 void cReportWidget::msgReady()
@@ -390,16 +391,18 @@ void cReportThread::trunkReport()
     QString s;
     int n = 0;
     qlonglong lastTrunkNodeId = NULL_ID;
+    QString   lastTrunkNodeName;
     while (true) {    // for each trunk ports
         QList<QStringList> matrix;      // members table for trunk port
         eTristate trunkOk = TS_TRUE;    // trunk port state
         if (lastTrunkNodeId != pTrunk->trunkNodeId) {   // Next or first node
             if (lastTrunkNodeId != NULL_ID && !html.isEmpty()) { // Next node, and not empty report
-                nodeHead(nodeOk, pTrunk->trunkNodeName, html);
+                nodeHead(nodeOk, lastTrunkNodeName, html);
             }
             html.clear();
             nodeOk = TS_TRUE;
             lastTrunkNodeId = pTrunk->trunkNodeId;
+            lastTrunkNodeName = pTrunk->trunkNodeName;
         }
         qlonglong linkedTrunkId  = NULL_ID;
         foreach (cTrunk::cMember m, pTrunk->members) {  // for each members

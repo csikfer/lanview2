@@ -1434,6 +1434,7 @@ void cWorkstation::on_pushButtonFindMac_clicked()
     }
 }
 
+// Lekérdezhető az interfész típusa? Ha igen szűrúnk a típusra, ha nem akkor csak a loopback-et dobjuk ki.
 #define IFTYPE_FILTER  QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
 
 void cWorkstation::on_pushButtonLocalhost_clicked()
