@@ -1323,7 +1323,8 @@ void cWorkstation::on_pushButtonSave_clicked()
             case 1:     break;
             default:    EXCEPTION(ESTAT, n, tr("Több port modosítása ID alapján nem lehetséges."));
             }
-            pip->setId(_sPortId, pnp->getId()).remove(*pq, false, pip->mask(_sPortId), EX_ERROR);
+            pip->setId(_sPortId, pnp->getId());
+            pip->remove(*pq, false, pip->mask(_sPortId), EX_ERROR); // Delete all port IP
             pip->insert(*pq);
             ok = true;
         } CATCHS(pe)
