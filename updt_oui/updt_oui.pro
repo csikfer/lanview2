@@ -14,6 +14,7 @@ QT       -= gui
 TARGET = updt_oui
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG -= debug_and_release
 
 TEMPLATE = app
 

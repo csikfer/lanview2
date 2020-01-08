@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
 CONFIG += c++14
+CONFIG -= debug_and_release
 
 lv2.subdir = lv2
 SUBDIRS += lv2 \

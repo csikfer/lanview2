@@ -8,7 +8,7 @@ QT       += core gui sql network xml widgets multimedia
 
 TARGET = lv2gui
 CONFIG -= app_bundle
-CONFIG += console
+#CONFIG += console
 
 CONFIG -= debug_and_release
 
@@ -27,6 +27,6 @@ TRANSLATIONS    = lv2gui_hu.ts \
                   lv2gui_en.ts
 
 CODECFORSRC     = UTF-8
-#RC_ICONS = :/icons/LanView2.ico
+msvc:RC_ICONS = ../lv2g/icons/LanView2.ico
 
 

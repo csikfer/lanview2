@@ -10,7 +10,7 @@ QT       += core sql xml network serialport
 TARGET = icontsrv
 CONFIG   += console
 CONFIG   -= app_bundle
-CONFIG   += debug
+CONFIG -= debug_and_release
 
 TEMPLATE = app
 
