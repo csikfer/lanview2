@@ -2769,7 +2769,7 @@ void cRecordTable::putIn()
 
 void cRecordTable::takeOut()
 {
-    if ((flags & (RTF_NGROUP | RTF_NMEMBER)) == 0) {
+    if ((flags & (RTF_IGROUP | RTF_IMEMBER)) == 0) {
         groupDialog(false);
         return;
     }
@@ -2821,18 +2821,19 @@ void cRecordTable::takeOut()
 
 void cRecordTable::groupDialog(bool __add)
 {
-    if (pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
+    if (pRightTables == nullptr || pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
     QModelIndexList mil = selectedRows();   // Selected records to be managed
     if (mil.isEmpty()) return;  // We have nothing to do
     cTableShape *pDialogTableShape = new cTableShape(pRightTables->first()->tableShape());
-    pDialogTableShape->setId(_sTableShapeType, ENUM2SET(TS_BARE));    // Simple table
+    pDialogTableShape->setId(_sTableShapeType, ENUM2SET2(TS_BARE , TS_READ_ONLY));    // Simple read only table
     QDialog *pDialog = new QDialog;
     cRecordTable * pRecordTable = dynamic_cast<cRecordTable *>(cRecordsViewBase::newRecordView(pDialogTableShape));
     if (pRecordTable == nullptr) EXCEPTION(EDATA);
     QVBoxLayout *pLayout = new QVBoxLayout;
     pDialog->setLayout(pLayout);
     pLayout->addWidget(pRecordTable->pWidget());
-    cDialogButtons * pButtons = new cDialogButtons(iTab(DBT_SPACER, DBT_PUT_IN, DBT_CANCEL));
+    tIntVector ibs = iTab(DBT_SPACER, __add ? DBT_PUT_IN : DBT_TAKE_OUT, DBT_CANCEL);
+    cDialogButtons * pButtons = new cDialogButtons(ibs);
     pLayout->addWidget(pButtons->pWidget());
     connect(pButtons, SIGNAL(buttonClicked(int)), pDialog, SLOT(done(int)));
     QString title;
@@ -2850,7 +2851,7 @@ void cRecordTable::groupDialog(bool __add)
     }
     pDialog->setWindowTitle(title);
     int r = pDialog->exec();
-    if (r == DBT_PUT_IN) {
+    if (r != DBT_CANCEL) {
         QModelIndexList dmil = pRecordTable->selectedRows();    // Selected records in the dialog
         if (!dmil.isEmpty()) {
             QBitArray memberMap, groupMap;
@@ -2881,7 +2882,7 @@ void cRecordTable::groupDialog(bool __add)
                                 cGroupAny(*pG, *pM).insert(*pq, EX_ERROR);
                             }
                             else {
-                                cGroupAny(*pG, *pM).remove(*pq, EX_ERROR);
+                                cGroupAny(*pG, *pM).remove(*pq, NULL_ID, EX_ERROR);
                             }
                         }
                     }
