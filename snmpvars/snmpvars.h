@@ -37,6 +37,7 @@ public:
     bool            first;
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
+    eTristate       next;
     ///
     QStringList     varNames;
     cOIdVector      oidVector;
