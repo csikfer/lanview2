@@ -1543,5 +1543,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         }
         delete pSelf;
     }
+    if (pEditOsName->   isNull()) pEditOsName->   set(QSysInfo::productType());
+    if (pEditOsVersion->isNull()) pEditOsVersion->set(QSysInfo::productVersion());
 }
 
