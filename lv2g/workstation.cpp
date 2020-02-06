@@ -800,7 +800,9 @@ void cWorkstation::node2gui(bool setModOn)
     pEditModelNumber->set(node.get(_sModelNumber));
     pEditOsName->set(node.get(_sOsName));
     pEditOsVersion->set(node.get(_sOsVersion));
-    pUi->lineEditNodeType->setText(node.getName(_sNodeType));
+    nodeType = node.getId(_sNodeType);
+    pSetDialogType->set(nodeType);
+    pUi->lineEditNodeType->setText(pSetDialogType->toString());
     // Display ports
     if (node.ports.isEmpty()) node.addPort(_sEthernet, _sEthernet, _sNul, NULL_IX);
     pnp = node.ports.first();
@@ -1543,7 +1545,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         }
         delete pSelf;
     }
-    /* if (pEditOsName->   isNull()) */ pEditOsName->   set(QSysInfo::productType());
-    /* if (pEditOsVersion->isNull()) */ pEditOsVersion->set(QSysInfo::productVersion());
+    pEditOsName->   set(QSysInfo::productType());
+    pEditOsVersion->set(QSysInfo::productVersion());
 }
 
