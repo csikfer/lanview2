@@ -298,6 +298,14 @@ EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swa
 
 EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
 
+/// Végigmegy a linkek láncán, és készít egy táblázatot a talált rekordokból.
+/// Ha talál végpontokat, akkor azok ID-jét az endMap-ba helyezi, ahol a kulcs az eredő megosztás.
+/// @param q Az adatbázis műveletek query pbjektuma.
+/// @param _pid A készülő, vagy létező link rekord egyik csomóponti elemének ID-je
+/// @param _type A _pid ID-jű elem típusa.
+/// @param _sh A készülő, vagy létező link megosztás típusa
+/// @param endMap talált végpontok és az eredő megosztások
+/// @param _exid Ha az ellenörzendő link létezik, akkor annak az ID-je, vagy NULL_ID ha még nem létezik
 EXT_ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortShare _sh, QMap<ePortShare, qlonglong>& endMap);
 EXT_ QString linkEndEndLogReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, bool saved = false, const QString& msgPref = QString());
 EXT_ QString linkEndEndMACReport(QSqlQuery& q, qlonglong _pid1, qlonglong _pid2, const QString& msgPref = QString());

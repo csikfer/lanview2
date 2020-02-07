@@ -801,86 +801,82 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
 {
     QString msg;
     endMap.clear();
-    if (_type == LT_TERM || _pid == NULL_ID) {
-        endMap[_sh] = _pid;
-        return msg;
+    if (_type == LT_TERM || _pid == NULL_ID) {      // Endpoint or null
+        if (_pid != NULL_ID) endMap[_sh] = _pid;    // End point
+        return msg; // Null message (empty list)
     }
-    cPhsLink link;
+    cPhsLink link;  // Working record
     tRecordList<cPhsLink> list;
     QList<ePortShare>   shares;
-    QList<int>          indexes;
-    QMap<int, QString>  branchMap;
+    QPair<int, ePortShare>  branch;
+    QList<QPair<int, ePortShare> >  branchLst;
     qlonglong pid = _pid;
     ePhsLinkType type;
     ePortShare  sh;
-    int         index;
+    int         index = 0;
     bool        isBranch = false;
 
-    QString ssh = portShare(_sh);
-    link.setId(_sPortId2, _pid);
-    link.setId(_sPhsLinkType2, _type);
+    cPPort pport;
+    pport.setById(q, _pid);
+    sh = shareResultant(_sh, (ePortShare)pport.getId(_sSharedCable));
+    link.setId(_sPortId1, _pid);
+    link.setId(_sPhsLinkType1, _type);
     list    << link;   // Starting point is not part of the list to be written.
-    indexes << 0;
-    shares  << _sh;
-    branchMap[0] = ssh; // [list/index] <= share
+    shares  << sh;
+    branch.first = 0;
+    branch.second = sh;
+    branchLst << branch;
 
-    while (!branchMap.isEmpty()) {
-        QMap<int, QString>  bm = branchMap;
-        branchMap.clear();
-        QList<int> bi = bm.keys();
-        std::sort(bi.begin(), bi.end());
-        PDEB(INFO) << "**** branchMap : " << numListToString(bi) << endl;
-        foreach (index, bi) {
-            ssh = bm[index];
-            PDEB(INFO) << QString("*** %1").arg(ssh) << endl;
-            QStringList sshl = ssh.split(QChar(','));
-            foreach (ssh, sshl) {
-                PDEB(INFO) << QString("** #%1 / '%2'").arg(index).arg(ssh) << endl;
-                link.copy(*list.at(index));
-                sh = ePortShare(portShare(ssh));
-                type = ePhsLinkType(link.getId(_sPhsLinkType2));
-                while (true) {
-                    PDEB(INFO) << QString("* (%1) %2/%3 -> %4/%5  #%6 -> #%7")
-                                      .arg(portShare(sh))
-                                      .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
-                                      .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
-                                      .arg(link.getName(_sPortId1), link.getName(_sPortId2))
-                                   << endl;
-                    pid  = link.getId(_sPortId2);
-                    if (!link.nextLink(q, pid, type, sh)) break;
-                    ++index;
-                    PDEB(INFO) << QString(" NEXT#%9 (%1) %2/%3 -> %4/%5  #%6 -> #%7  '%8'")
-                                      .arg(link.getName(_sPortShared))
-                                      .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
-                                      .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
-                                      .arg(link.getName(_sPortId1), link.getName(_sPortId2))
-                                      .arg(link.getNote()).arg(index)
-                                   << endl;
-                    QString bs = link.getNote();                // branch
-                    sh = ePortShare(link.getId(_sPortShared));  // result share
-                    cPhsLink *po = new cPhsLink;
-                    po->setById(q, link.getId()); // Get original record
-                    list    << po;
-                    shares  << sh;
-                    indexes << index;
-                    type = ePhsLinkType(link.getId(_sPhsLinkType2));
-                    if (!bs.isEmpty()) {
-                        PDEB(INFO) << "Branch ..." << endl;
-                        branchMap[list.size() -2] = bs; // Branching to the previous item
-                        isBranch = true;
-                    }
-                    if (type == LT_TERM) {
-                        PDEB(INFO) << "Term ..." << endl;
-                        endMap[sh] = link.getId(_sPortId2);
-                        break;
-                    }
+    while (!branchLst.isEmpty()) {      // There is still a branch
+        branch = branchLst.takeFirst();
+        index  = branch.first;
+        sh     = branch.second;
+        PDEB(INFO) << QString("*** #%1 '%2'").arg(index).arg(portShare(sh)) << endl;
+        while (true) {
+            link.copy(*list.at(index));
+            link.swap();
+            type = ePhsLinkType(link.getId(_sPhsLinkType2));
+            PDEB(INFO) << QString("* (%1) %2/%3 -> %4/%5  #%6 -> #%7")
+                              .arg(portShare(sh))
+                              .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
+                              .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
+                              .arg(link.getName(_sPortId1), link.getName(_sPortId2))
+                           << endl;
+            pid  = link.getId(_sPortId2);
+            if (!link.nextLink(q, pid, type, sh)) break;    // Get next link: There is no such
+//            if (_exid == link.getId()) break;               // This is the verified link if we were to bounce back.
+            PDEB(INFO) << QString(" NEXT#%9 (%1) %2/%3 -> %4/%5  #%6 -> #%7  '%8'")
+                              .arg(link.getName(_sPortShared))
+                              .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
+                              .arg(link.view(q, _sPortId2), link.getName(_sPhsLinkType2))
+                              .arg(link.getName(_sPortId1), link.getName(_sPortId2))
+                              .arg(link.getNote()).arg(index)
+                           << endl;
+            QString bs = link.getNote();    // branch, share types list (see: cPhsLink::nextLink() and next_patch() plpgsql func.)
+            sh = ePortShare(link.getId(_sPortShared));          // result share
+            type = ePhsLinkType(link.getId(_sPhsLinkType2));    // next node link type
+            cPhsLink *po = new cPhsLink;
+            po->setById(q, link.getId());   // Get original record
+            list   << po;                   // Push record to list
+            shares << sh;                   // Push share to list
+            if (!bs.isEmpty()) {
+                isBranch = true;
+                foreach (QString ssh, bs.split(QChar(','))) {
+                    branch.first  = index;
+                    branch.second = ePortShare(portShare(ssh));;
+                    branchLst << branch;
                 }
             }
+            if (type == LT_TERM) {
+                PDEB(INFO) << "Term ..." << endl;
+                endMap[sh] = link.getId(_sPortId2);
+                break;
+            }
+            index = list.size() -1;
         }
     }
     if (list.size() > 1) {
         delete list.pop_front();    // Drop first row
-        indexes.pop_front();
         shares.pop_front();
         int terminalCount = endMap.size();
         switch(terminalCount) {
@@ -898,16 +894,15 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
             break;
         }
         QStringList verticalHeader;
-        if (indexes.size() != shares.size() || indexes.size() != list.size()) EXCEPTION(EPROGFAIL);
-        for (int i = 0; i < indexes.size(); ++i) {
+        if (shares.size() != list.size()) EXCEPTION(EPROGFAIL);
+        for (int i = 0; i < shares.size(); ++i) {
             sh = shares[i];
-            QString vh = "#" + QString::number(indexes[i]);
+            QString vh = "#" + QString::number(i);
             if (sh != ES_) vh += "/" + portShare(sh);
             verticalHeader << vh;
         }
         msg += linksHtmlTable(q, list, false, verticalHeader);
     }
-    if (pid != NULL_ID) _sh = ePortShare(portShare(ssh));
     return msg;
 }
 

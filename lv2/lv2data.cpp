@@ -1510,6 +1510,26 @@ ePortShare shareResultant(ePortShare _sh1, ePortShare _sh2)
     return m[_sh1][_sh2];
 }
 
+ePortShare shareConnect(ePortShare _sh1, ePortShare _sh2)
+{
+    static ePortShare m[ES_COUNT][ES_COUNT] = {
+      // ES_,  ES_A, ES_AA,ES_AB,ES_B, ES_BA,ES_BB,ES_C, ES_D, ES_NC
+        {ES_,  ES_A, ES_AA,ES_AB,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC}, // ES_
+        {ES_A, ES_A, ES_AA,ES_AB,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC}, // ES_A
+        {ES_AA,ES_AA,ES_AA,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC}, // ES_AA
+        {ES_AB,ES_NC,ES_NC,ES_AB,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC}, // ES_AB
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_B, ES_BA,ES_BB,ES_NC,ES_NC,ES_NC}, // ES_B
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_BA,ES_BA,ES_NC,ES_NC,ES_NC,ES_NC}, // ES_BA
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_BB,ES_NC,ES_BB,ES_NC,ES_NC,ES_NC}, // ES_BB
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_C ,ES_NC,ES_NC}, // ES_C
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_D ,ES_NC,ES_NC}, // ES_D
+        {ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC,ES_NC}  // ES_NC
+    };
+    if (_sh1 < 0 || _sh2 < 0 || _sh1 >= ES_COUNT || _sh2 >= ES_COUNT) EXCEPTION(EDATA);
+    return m[_sh1][_sh2];
+}
+
+
 cPPort::cPPort() : cNPort(_no_init_)
 {
     //_DBGFN() << VDEBPTR(this) << endl;

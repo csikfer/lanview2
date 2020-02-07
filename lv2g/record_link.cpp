@@ -513,15 +513,17 @@ void cLinkDialog::changed()
     if (pid1 != NULL_ID) {
         m = linkChainReport(*pq, pid1, lt1, ps, endMap1);
         if (!m.isEmpty()) msg += htmlInfo("Link lánc az 1. port irányában : ") + htmlIndent(16, m, false, false) + sHtmlLine;
+        else msg += htmlInfo("Az első port egy végpont.");
     }
     if (pid2 != NULL_ID) {
         m = linkChainReport(*pq, pid2, lt2, ps, endMap2);
         if (!m.isEmpty()) msg += htmlInfo("Link lánc az 2. port irányában : ") + htmlIndent(16, m, false, false) + sHtmlLine;
+        else msg += htmlInfo("Az második port egy végpont.");
     }
     cNPort p;
     foreach (ps1, endMap1.keys()) {
         foreach (ps2, endMap2.keys()) {
-            if (shareResultant(ps1, ps2) == ES_NC) continue;
+            if (shareConnect(ps1, ps2) == ES_NC) continue;
             qlonglong endPid1 = endMap1[ps1];
             qlonglong endPid2 = endMap2[ps2];
             QString msgPref = QString("%1 <==> %2 : ").arg(p.getFullNameById(*pq, endPid1), p.getFullNameById(*pq, endPid2));

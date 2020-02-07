@@ -951,6 +951,8 @@ EXT_ int portShare(const QString& _n, enum eEx __ex = EX_ERROR);
 EXT_ const QString& portShare(int _i, enum eEx __ex = EX_ERROR);
 
 EXT_ ePortShare shareResultant(ePortShare _sh1, ePortShare _sh2);
+EXT_ ePortShare shareConnect(ePortShare _sh1, ePortShare _sh2);
+
 
 /*!
 @class cPPort
