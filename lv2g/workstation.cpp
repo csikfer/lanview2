@@ -16,6 +16,9 @@
 #include "input_dialog.h"
 
 #include <QNetworkInterface>
+#if defined(Q_OS_WINDOWS)
+#  include <wtsapi32.h>
+#endif  // defined(Q_OS_WINDOWS)
 
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
@@ -455,6 +458,36 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     connect(pIpEditWidget, SIGNAL(info_clicked()),                 this, SLOT(ip_info()));
     connect(pIpEditWidget, SIGNAL(query_clicked()),                this, SLOT(ip_query()));
     connect(pIpEditWidget, SIGNAL(go_clicked()),                   this, SLOT(ip_go()));
+
+    // RDP Windows-on, ha ez egy RDP kliens
+#if defined(Q_OS_WINDOWS)
+    rdpClientAddr.clear();
+    LPSTR  pBuffer = nullptr;
+    DWORD  bytesReturned;
+    BOOL isRDPClient = WTSQuerySessionInformationA(
+                WTS_CURRENT_SERVER_HANDLE,
+                WTS_CURRENT_SESSION,
+                WTSClientAddress,
+                &pBuffer,
+                &bytesReturned);
+    if (isRDPClient && pBuffer != nullptr && bytesReturned == sizeof (WTS_CLIENT_ADDRESS)) {
+        WTS_CLIENT_ADDRESS& car = *(WTS_CLIENT_ADDRESS *)pBuffer;
+        if (car.AddressFamily == AF_INET) {
+            // QString sa = (char *)car.Address;    // A leírás szerint ennek a kliens címnek kellene lennie
+            // de nem stringként hanem binárisan van benne a cím: 3-6 byte, és fordítva, mint ahogy a setAddress() várja.
+            quint32 a = qFromBigEndian(*(quint32 *)(car.Address +2));
+            rdpClientAddr.setAddress(a);
+        }
+    }
+    if (isRDPClient && pBuffer != nullptr) {
+        WTSFreeMemory(pBuffer);
+    }
+    if (rdpClientAddr.isNull()) {
+        pUi->pushButtonRDP->hide();
+    }
+#else   // not defined(Q_OS_WINDOWS)
+    pUi->pushButtonRDP->hide();
+#endif  // defined(Q_OS_WINDOWS)
 }
 
 cWorkstation::~cWorkstation()
@@ -1554,3 +1587,11 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
     pEditOsVersion->set(QSysInfo::productVersion());
 }
 
+
+void cWorkstation::on_pushButtonRDP_clicked()
+{
+#if defined(Q_OS_WINDOWS)
+    pIpEditWidget->set(rdpClientAddr);
+    ip_go();
+#endif  // defined(Q_OS_WINDOWS)
+}

@@ -157,6 +157,9 @@ private:
     cIpAddress *pip;    ///< Ha a munkaállomás portja egy interface, akkor az ip cím objektumra pointer
     bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag) csatlakoztatható
     cPhsLink    pl;     ///< A fizikai link
+#if defined(Q_OS_WINDOWS)
+    QHostAddress rdpClientAddr;
+#endif
 private slots:
     void selectedNode(qlonglong id);
     void linkChanged(qlonglong _pid, int _lt, int _sh);
@@ -192,6 +195,7 @@ private slots:
     void on_toolButtonInfoNode_clicked();
     void on_pushButtonFindMac_clicked();
     void on_pushButtonLocalhost_clicked();
+    void on_pushButtonRDP_clicked();
 };
 
 #endif // CWORKSTATION_H

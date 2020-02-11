@@ -125,7 +125,7 @@ FORMS += \
     changeswitch.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
-msvc:LIBS += -lSecur32
+msvc:LIBS += -lSecur32 -lWtsapi32
 LIBS += -L../lv2 -llv2
 
 #exists(../../zodiacgraph) {
