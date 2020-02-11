@@ -844,7 +844,7 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
                            << endl;
             pid  = link.getId(_sPortId2);
             if (!link.nextLink(q, pid, type, sh)) break;    // Get next link: There is no such
-//            if (_exid == link.getId()) break;               // This is the verified link if we were to bounce back.
+            // Link data is not original record !! Modifyed port_shared and phs_link_note field.
             PDEB(INFO) << QString(" NEXT#%9 (%1) %2/%3 -> %4/%5  #%6 -> #%7  '%8'")
                               .arg(link.getName(_sPortShared))
                               .arg(link.view(q, _sPortId1), link.getName(_sPhsLinkType1))
@@ -856,7 +856,9 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
             sh = ePortShare(link.getId(_sPortShared));          // result share
             type = ePhsLinkType(link.getId(_sPhsLinkType2));    // next node link type
             cPhsLink *po = new cPhsLink;
-            po->setById(q, link.getId());   // Get original record
+            po->setId(link.getId());                    // Two view record !!
+            po->set(_sPortId2, link.get(_sPortId1));    // Determine orientation (and swap)
+            po->completion(q);              // Get original record
             list   << po;                   // Push record to list
             shares << sh;                   // Push share to list
             if (!bs.isEmpty()) {
@@ -902,6 +904,9 @@ QString linkChainReport(QSqlQuery& q, qlonglong _pid, ePhsLinkType _type, ePortS
             verticalHeader << vh;
         }
         msg += linksHtmlTable(q, list, false, verticalHeader);
+    }
+    else {
+        msg = htmlInfo(QObject::tr("Nincs további link, vége a láncnak."));
     }
     return msg;
 }

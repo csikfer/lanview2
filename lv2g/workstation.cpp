@@ -645,44 +645,58 @@ void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs
     if (!a.isNull() && pIpEditWidget->state() & cIpEditWidget::IES_ADDRESS_IS_NULL) pIpEditWidget->set(a);
 }
 
-
+/// A megadott linkkel kapcsolatos adminisztráció, és riportok
+/// @param f Ha értéke hamis, akkor nem csinál semmit.
+/// @param sErrs Hiba riport sorok kimenet.
+/// @param sInfs Info riport sorok kimenet
+/// @param isOk Ha nincs hiba, akkor értéke true lessz, egyébként false.
 void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
     if (!f) return;
-    qlonglong lpid = pSelLinked->currentPortId();
-    qlonglong lnid = pSelLinked->currentNodeId();
-    pl.clear();
-    bool exist = lnid != NULL_ID;
-    pUi->lineEditLinkNodeType->setEnabled(exist);
-    QString lnt;
-    if (exist) {
+    qlonglong lpid = pSelLinked->currentPortId();   // Aktuális linkelt port ID
+    qlonglong lnid = pSelLinked->currentNodeId();   // Aktuális linkelt node ID
+    pl.clear();     // Fizikai link munka objektum/rekord
+    bool nodeIsSpecified = lnid != NULL_ID;   // Meg van adva lagalább a linkelt node ?
+    pUi->lineEditLinkNodeType->setEnabled(nodeIsSpecified);
+    QString lnt;    // Linked Node Type
+    if (nodeIsSpecified) {
         cPatch n;
         n.setById(*pq, lnid);
         lnt = n.getName(_sNodeType);
     }
     pUi->lineEditLinkNodeType->setText(lnt);
-    exist = lpid != NULL_ID;
-    pUi->lineEditLinkNote->setEnabled(exist);
-    if (!exist) {      // nincs cél port
-        if (lnid == NULL_ID) {   // cél eszköz se
+    bool portIsSpecified = lpid != NULL_ID;        // Meg van adva a linkelt port
+    pUi->lineEditLinkNote->setEnabled(portIsSpecified);
+    // Meg van adva link ?
+    if (!portIsSpecified) {      // Ha nincs cél port
+        if (!nodeIsSpecified) {  // cél eszköz se
             sErrs << htmlWarning(tr("Nincs megadva link."));
-            return;
+            isOk = true;
         }
-        cPatch *pn = cPatch::getNodeObjById(*pq, lnid);
-        sErrs << htmlError(tr("Nincs megadva a linkelt eszköz portja."));
-        QString t = tr("A következő eszköz egy portjára csatlakozna : %2 ");
-        sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t));
-        delete pn;
-        isOk = false;
+        else {                  // A cél eszköz már megadva
+            if (lnid == node.getId()) {
+                sErrs << htmlError(tr("Önmagával akarja linkelni a munkaállomást."));
+            }
+            else {
+                cPatch *pn = cPatch::getNodeObjById(*pq, lnid);
+                sErrs << htmlError(tr("Nincs megadva a linkelt eszköz portja."));
+                QString t = tr("A következő eszköz egy portjára csatlakozna : %2 ");
+                sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t));
+                delete pn;
+            }
+            isOk = false;
+        }
         return;
     }
-    cPhsLink link;
     tRecordList<cPhsLink> list;
     ePhsLinkType type = ePhsLinkType(pSelLinked->currentType());
     ePortShare   sh   = ePortShare(pSelLinked->currentShare());
     pl.setId(_sPortId2, lpid);
     pl.setId(_sPhsLinkType2, type);
     pl.setId(_sPortShared, sh);
+    // Riport a megadott linkről:
+    cPhsLink link;
+    // ütközö rekordok listája
     if (link.collisions(*pq, list, lpid, type, sh)) {
         if (isModify) {   // Modosítás esetén saját magunkkal nem ütközünk
             int ix = -1;
@@ -698,41 +712,32 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
                + linksHtmlTable(*pq, list);
     }
     link.clear();
-    link.setId(_sPortId2,      lpid);   // vissza tesszük, ha végpont, akkor kell
-    if (type != LT_TERM) {  // További linkek (lánc)
-        static const QString sql = "SELECT * FROM next_patch(?,?,?)";
-        link.setId(_sPhsLinkType2, type);
-        list.clear();
-        QString ssh = portShare(sh);
-        QString msg;
-        while (execSql(*pq, sql, link.get(_sPortId2), link.get(_sPhsLinkType2), ssh)) {
-            if (pq->value(0).isNull()) break; // vége (beolvassa a NULL rekordot is, mert függvényt hívunk)
-            link.set(*pq);
-            list << link;
-            type = ePhsLinkType(link.getId(_sPhsLinkType2));
-            ssh = link.getName(_sPortShared);
-            if (list.size() > 10) break;
-            if (type == LT_TERM) break;
-        }
-        if (list.size() > 0) {
-            if (link.getId(_sPhsLinkType2) == LT_TERM) {
-                msg += htmlInfo(QObject::tr("A linkel lánca, végponttól - végpontig:"));
-            }
-            else {
-                msg += htmlInfo(QObject::tr("A linkek lánca, csonka, nem ér el a másik végpontig :"));
-            }
-            msg += linksHtmlTable(*pq, list);
-            if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
-        }
-        if (!msg.isEmpty()) sInfs << msg;
+    QMap<ePortShare, qlonglong> endMap;
+    QString m = linkChainReport(*pq, lpid, type, sh, endMap);
+    if (m.isEmpty()) {
+        sInfs << htmlInfo(tr("A megadott link egy végpont,"));
     }
-    if (type == LT_TERM) {  // Van végpont ?
+    else {
+        sInfs << htmlInfo("Link lánc : ") + htmlIndent(16, m, false, false);
+    }
+    lpid = NULL_ID;    // A lánc másik végpontja
+    foreach (sh, endMap.keys()) {
+        if (shareConnect(sh, ES_) == ES_NC) continue;
+        if (lpid != NULL_ID) {
+            sErrs << htmlError(tr("A láncnak több végpontja is van !? %1 és %2")
+                               .arg(cNPort().getFullNameById(*pq, lpid))
+                               .arg(cNPort().getFullNameById(*pq, endMap.value(sh)))  );
+            isOk = false;
+            return;
+        }
+        lpid = endMap.value(sh);
+    }
+    if (lpid != NULL_ID) {  // Van végpont ?
         qlonglong ppid  = pnp->getId();     // Saját port ID
-        lpid = link.getId(_sPortId2);       // Másik végponti port ID
         qlonglong epid;
         if (ppid != NULL_ID) {
             cLogLink  llnk;
-            PDEB(VERBOSE) << "New LogLink : " << cNPort::getFullNameById(*pq, ppid) << " <==> " << cNPort::getFullNameById(*pq, lpid) << endl;
+            sInfs << htmlInfo(tr("LogLink : %1 <==> %2").arg(cNPort::getFullNameById(*pq, ppid), cNPort::getFullNameById(*pq, lpid)));
             llnk.setId(_sPortId2, lpid);
             if (llnk.completion(*pq)) {
                 epid = llnk.getId(_sPortId1);
