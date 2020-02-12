@@ -595,18 +595,28 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             int sstate = RS_ON;         // delegated state to service state
             int pstate = RS_INVALID;    // delegated state to port state
             int rs;
-            if (iface.getBool(_sDelegateOperStat)  && _opstat != IF_UP) sstate = RS_CRITICAL;
-            if (iface.getBool(_sDelegateAdminStat) && _adstat != IF_UP) sstate = RS_CRITICAL;
+            QString vMsg, msg;
+            if (iface.getBool(_sDelegateOperStat)  && _opstat != IF_UP) {
+                msg = tr("Port operate status is not 'UP'.");
+                vMsg = msgCat(vMsg, msg, "\n");
+                sstate = RS_CRITICAL;
+            }
+            if (iface.getBool(_sDelegateAdminStat) && _adstat != IF_UP) {
+                msg = tr("Port admin status is not 'UP'.");
+                vMsg = msgCat(vMsg, msg, "\n");
+                sstate = RS_CRITICAL;
+            }
             qlonglong raw;
-            QString stMsg;
             foreach (QString vname, vnames) {   // foreach variable names
                 cServiceVar *psv = insp.getServiceVar(vname);   // Get variable obj.
                 if (psv == nullptr) continue;                   // not found, next
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
+                msg = tr("Var '%1' is %2 [%3]").arg(vname, notifSwitch(rs), psv->getName(_sStateMsg));
+                vMsg = msgCat(vMsg, msg, "\n");
             }
-            insp.hostService.setState(q, notifSwitch(sstate), stMsg, NULL_ID, parid);
+            insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);
             insp.flag = true; // State is set
             if (pstate != RS_INVALID && changeStringField(notifSwitch(pstate), ixPortStat, iface, bitsSet)) {
                 iface.set(ixLastChanged, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
