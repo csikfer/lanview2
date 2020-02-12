@@ -595,6 +595,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             int sstate = RS_ON;         // delegated state to service state
             int pstate = RS_INVALID;    // delegated state to port state
             int rs;
+            if (iface.getBool(_sDelegateOperStat)  && _opstat != IF_UP) sstate = RS_CRITICAL;
+            if (iface.getBool(_sDelegateAdminStat) && _adstat != IF_UP) sstate = RS_CRITICAL;
             qlonglong raw;
             QString stMsg;
             foreach (QString vname, vnames) {   // foreach variable names

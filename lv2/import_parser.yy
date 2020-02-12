@@ -1450,11 +1450,12 @@ static void yySqlExec(const QString& _cmd, QVariantList *pvl = nullptr, QVariant
     }
     if (_ret != nullptr) {
         _ret->clear();
-        if (!q.first()) return;
-        int n = q.record().count();
-        for (int i = 0; i < n; ++i) {
-            *_ret << q.value(i);
-        }
+        if (q.first()) do {
+            int n = q.record().count();
+            for (int i = 0; i < n; ++i) {
+                *_ret << q.value(i);
+            }
+        } while (q.next());
     }
 }
 

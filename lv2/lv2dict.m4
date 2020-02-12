@@ -446,7 +446,9 @@ STRDEF(Interfaces,"interfaces")
  dnl --- states --- !!!! lower/upper !!!!
  STRDEF(PortStat, "port_stat")
  dnl last_changed, last_touched
- 
+ STRDEF(DelegateOperStat, "delegate_oper_stat");
+ STRDEF(DelegateAdminStat, "delegate_admin_stat");
+
 STRDEF(IpAddresses, "ip_addresses")
  STRDEF(IpAddressId, "ip_address_ip")
  STRDEF(IpAddressNote, "ip_address_note")
