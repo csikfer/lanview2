@@ -613,7 +613,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
-                msg = tr("Var '%1' is %2 [%3]").arg(vname, notifSwitch(rs), psv->getName(_sStateMsg));
+                msg = tr("Var '%1' is '%2' : '%3'").arg(vname, notifSwitch(rs, EX_IGNORE), psv->getName(_sStateMsg));
                 vMsg = msgCat(vMsg, msg, "\n");
             }
             insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);
