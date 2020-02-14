@@ -46,6 +46,4 @@ INSERT INTO public.unusual_fkeys VALUES (62, 'public', 'phs_links_shape', 'modif
 INSERT INTO public.unusual_fkeys VALUES (63, 'public', 'alarm_service_vars', 'service_var_id', 'property', 'public', 'service_vars', 'service_var_id', '{service_vars,service_rrd_vars}');
 SELECT pg_catalog.setval('public.unusual_fkeys_unusual_fkey_id_seq', 63, true);
 
-
-
 SELECT set_db_version(1, 26);

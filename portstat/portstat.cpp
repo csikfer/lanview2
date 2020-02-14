@@ -614,13 +614,15 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
                 msg = psv->getName(_sStateMsg);
+                QString val = psv->getName(_sServiceVarValue);
                 QString srs = notifSwitch(rs, EX_IGNORE);
+                QString vst = psv->getName(_sVarState);
                 if (msg.isEmpty() && srs.isEmpty()) {   // skipping (rarefaction)
-                    msg = tr("Var %1 is skipped.");
+                    msg = tr("Var %1 ( = '%2'/'%3') is skipped.").arg(vname, val, vst);
                 }
                 else {
                     if (srs.isEmpty()) srs = _sUnKnown;
-                    msg = tr("Var '%1' is '%2' : '%3'").arg(vname, srs, msg);
+                    msg = tr("Var '%1' = '%2'/'%3' >> '%4' : '%5'").arg(vname, val, vst, srs, msg);
                 }
                 vMsg = msgCat(vMsg, msg, "\n");
             }
