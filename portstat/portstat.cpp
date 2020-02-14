@@ -578,7 +578,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         // rlinkstat if exists
         if (portstat.pRlinkStat != nullptr) {
             cInspector& insp = *portstat.pRlinkStat;
-            QString state = _sUnKnown;
+            QString state = _sUnknown;
             if      (_opstat == IF_UP)   state = _sOn;        // On
             else if (_adstat == IF_UP)   state = _sDown;      // Off
             else if (_adstat == IF_DOWN) state = _sWarning;   // Disabled
