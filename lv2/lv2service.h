@@ -179,11 +179,11 @@ public:
     /// @param sn A szolgáltatás neve
     cInspector(QSqlQuery &q, const QString& sn);
     /// Az objektumot a megadott ID-k alapján tölti fel
-    /// Ha a megadott host_servce_id értéke NULL (NULL_ID), akkor a szükséges mezők már le lettek kérdezve (first() metódust is meg lett hívva),
+    /// Ha a megadott host_servce_id értéke NULL (NULL_ID), akkor a szükséges mezők már le lettek kérdezve (first() metódus is meg lett hívva),
     /// azokat a __q objektumból kell kinyerni, a rekord sorrend : host_services, nodes (ill. a tableoid-vel definiállt leszármazott).
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája, ill. a szükséges adatokat beolvasó lekérdezés eredménye.
-    /// @param __host_service_id host_services rekord ID, vagy NULL, ha a szükséges mezőket már lekérdeztők a __q -val.
-    /// @param __tableoid A node rekord tábla OID-je (node  tényleges típusát azonosítja), alapértelmezett (NULL_ID esetén) a nodes tábla.
+    /// @param __host_service_id host_services rekord ID, vagy NULL, ha a szükséges mezőket már lekérdeztük a __q -val.
+    /// @param __tableoid A node rekord tábla OID-je (node tényleges típusát azonosítja), alapértelmezett (NULL_ID esetén) a nodes tábla.
     /// @param __par A parent, vagy NULL
     cInspector(QSqlQuery& q, qlonglong __host_service_id = NULL_ID, qlonglong __tableoid = NULL_ID, cInspector * __par = nullptr);
     /// Destruktor
@@ -193,7 +193,9 @@ public:
     /// Ha az internalStat értéke nem IS_SUSPENDED vagy IS_STOPPED, akkor csak letesz egy app_memos rekordot..
     /// Ha a szolgáltatás nem időzített, ill. az állapota alapján nem kéne óra eseménynek bekövetkeznie, akkor kizárást dob.
     /// Időzített szolgáltatás esetén meghívja a doRun() virtuális metódust.
-    /// A doRum metódus által visszaadott állpot érték alapján állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
+    /// A doRun() metódus által visszaadott állpot érték alapján állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
+    /// Ha van időintervallumok hivatkozás a szervíz példány objektumban, akkor ha a megadott időintervallumokon kívül vagyunk,
+    /// akkor nincs tevékenység, és a követkető időzített időpont a legközelebbi időintervallum kezdete.
     virtual void timerEvent(QTimerEvent * );
     /// Végrehajtja a run() virtuális metódust. A visszatérési érték és futási idő alapján állítja a szolgáltatás
     /// példány állpotát. A run() metüdust egy try blokba, és SQL tranzakció blokkban hívja.

@@ -860,7 +860,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
     inspectorType = 0;
     if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
     if (isFeature(_sSuperior))         inspectorType |= IT_SUPERIOR;
-    if (pParent == nullptr)               inspectorType |= IT_MAIN;
+    if (pParent == nullptr)            inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
@@ -1093,12 +1093,14 @@ int cInspector::getCheckCmd(QSqlQuery& q)
 
 void cInspector::timerEvent(QTimerEvent *)
 {
+    // Check state
     if (internalStat != IS_SUSPENDED && internalStat != IS_STOPPED && internalStat != IS_OMITTED) {
         QString msg = tr("%1  skip %2, internalStat = %3").arg( __PRETTY_FUNCTION__, name(), internalStatName());
         PDEB(WARNING) << msg << endl;
         APPMEMO(*pq, msg, RS_WARNING);
         return;
     }
+    // timeperiods ?
     if (!timeperiod._isEmpty()) {
         if (!timeperiod.isOnTime(*pq)) {
             QDateTime now = QDateTime::currentDateTime();
@@ -1125,44 +1127,51 @@ void cInspector::timerEvent(QTimerEvent *)
              << service()->getName()<< QChar('(') << service()->getId() << QChar(')') << _sCommaSp
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
     if (inspectorType & IT_TIMING_PASSIVE) {
-        if (pSubordinates == nullptr) EXCEPTION(EPROGFAIL);    //?!
-        int n = 0;  // Hány alárendelt fut még?
-        int maxState = RS_UNKNOWN;
-        int minState = RS_ON;
-        foreach (cInspector * pSub, *pSubordinates) {
-            if (pSub != nullptr
-             && (pSub->internalStat == IS_RUN           // Éppen fut
-              || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
-              || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
-                ++n;
-                int state = int(pSub->hostService.getId(_sHostServiceState));
-                if (minState < state) minState = state;
-                if (maxState > state) maxState = state;
+        if (pSubordinates != nullptr) {
+            int n = 0;  // Hány alárendelt fut még?
+            int maxState = RS_UNKNOWN;
+            int minState = RS_ON;
+            foreach (cInspector * pSub, *pSubordinates) {
+                if (pSub != nullptr
+                 && (pSub->internalStat == IS_RUN           // Éppen fut
+                  || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
+                  || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
+                    ++n;
+                    int state = int(pSub->hostService.getId(_sHostServiceState));
+                    if (minState < state) minState = state;
+                    if (maxState > state) maxState = state;
+                }
             }
+            if (!n) EXCEPTION(NOTODO, 1, tr("No runing any (%1) sub services. Abort.").arg(n));
+            QString msg = tr("Runing sub services : %1/%2; states : %3 - %4")
+                    .arg(n).arg(pSubordinates->size())
+                    .arg(notifSwitch(maxState), notifSwitch(minState));
+            hostService.setState(*pq, _sOn, msg);
         }
-        if (!n) EXCEPTION(NOTODO, 1, tr("No runing any (%1) sub services. Abort.").arg(n));
-        QString msg = tr("Runing sub services : %1/%2; states : %3 - %4")
-                .arg(n).arg(pSubordinates->size())
-                .arg(notifSwitch(maxState), notifSwitch(minState));
-        hostService.setState(*pq, _sOn, msg);
         internalStat = IS_SUSPENDED;
         return;
     }
     if (!isTimed()) EXCEPTION(EPROGFAIL, inspectorType, name());
     if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, inspectorType, name());
     bool statSetRetry = doRun(true);
-    if (timerStat == TS_FIRST) toNormalInterval();  // Ha az első esetleg túl rövid, ne legyen felesleges event.
     // normal/retry intervallum kezelése
     if (interval != retryInt) { // csak akkor ha különböző
         int hard = notifSwitch(hostService.getName(_sHardState));
         int soft = notifSwitch(hostService.getName(_sSoftState));
-        // Ha a soft status rosszabb mint a hard status, és nem csak warning, akkor retry interval
-        if (statSetRetry || (soft > RS_WARNING && hard < soft)) {
-            if (timerStat == TS_NORMAL) toRetryInterval();
+        // Ha a soft status rosszabb mint a hard status, és nem RS_ON vagy RS_RECOVERED, akkor retry interval
+        if (statSetRetry || (soft >= RS_WARNING && hard < soft)) {
+            if (timerStat != TS_RETRY) {
+                toRetryInterval();
+            }
         }
         else {
-            if (timerStat == TS_RETRY) toNormalInterval();
+            if (timerStat != TS_NORMAL) {
+                toNormalInterval();
+            }
         }
+    }
+    else if (timerStat == TS_FIRST) {
+        toNormalInterval();  // Ha az első esetleg túl rövid, ne legyen felesleges event.
     }
     if (internalStat == IS_RUN) internalStat = IS_SUSPENDED;
     DBGFNL();
@@ -1173,7 +1182,7 @@ bool cInspector::doRun(bool __timed)
     _DBGFN() << name() << (__timed ? _sTimed : _sNul) << endl;
     int  retStat = RS_UNREACHABLE;  // A lekérdezés alapértelmezett státusza
     bool statIsSet    = false;  // A statusz beállítva
-    bool statSetRetry = false;  // Időzítés modosítása
+    bool statSetRetry = false;  // Időzítés modosítása retry-re
     cError * lastError = nullptr;  // Hiba leíró
     if (lastRun.isValid()) {
         lastElapsedTime = lastRun.restart();

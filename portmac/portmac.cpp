@@ -263,7 +263,7 @@ cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglon
      cRightMac *p = new cRightMac(_q, _hsid, _toid, _par);
      if (p->flag) return p; // Ha nem volt hiba
      delete p;              // Ha valami nem OK, töröljük, a statust a konstruktor beállította.
-     return nullptr;           // Ez az elem nem kerül a listába
+     return nullptr;        // Ez az elem nem kerül a listába
 }
 
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
@@ -370,7 +370,7 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     QString msg;
     if (rightMacId != serviceId()) {
         flag = false;   // Nem lehet más szolgáltatás, hibás konfig !
-        msg = tr("Nem támogatott szervíz : %1. Itt csak a 'rightmac' szervíz támogatott.").arg(service()->getName());
+        msg = tr("Nem támogatott szervíz : %1. Itt (pmac alatt) csak a 'rightmac' szervíz támogatott.").arg(service()->getName());
     }
     else {
         if (pPort == nullptr || 0 != pPort->chkObjType<cInterface>(EX_IGNORE)) {
@@ -412,6 +412,7 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
             }
             if (flag && rightMacs.isEmpty()) {
                 msg += ("A MAC fehér lista üres.");
+                flag = false;
             }
         }
     }

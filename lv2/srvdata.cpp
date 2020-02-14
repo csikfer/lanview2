@@ -256,11 +256,15 @@ int cHostService::setStateMaxTry = NULL_IX;
 
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong elapsed, qlonglong __did, bool _resetIfDeleted)
 {
-    tIntVector readBackFieldIxs;
+    tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
     QString readBackFields;
     if (setStateMaxTry < 0) {
         setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
-        readBackFieldIxs << toIndex(_sDisabled) << toIndex(_sHostServiceState) << toIndex(_sHardState);
+        // Visszaolvasandó mezők indexek feltöltése:
+        readBackFieldIxs
+                << toIndex(_sDisabled)  // Ha esetleg letiltották
+                << toIndex(_sHostServiceState) << toIndex(_sHardState)  // Új statusok (soft_state = __st)
+                << toIndex(_sCheckAttempts) << toIndex(_sLastChanged) << toIndex(_sLastTouched); // Csak a log. miatt
         foreach (int ix, readBackFieldIxs) {
             readBackFields += columnNameQ(ix) + _sCommaSp;
         }
@@ -322,6 +326,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             LV2_SQLERR(le, EQUERY);    // no return
         }
         else if (r == 1) {
+            setName(_sSoftState, __st); // Ennyinek kell lennie
             for (int i = 0; i < readBackFieldIxs.size(); ++i) {
                 setq(readBackFieldIxs.at(i), __q, i);
             }

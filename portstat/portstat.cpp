@@ -613,7 +613,15 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
                 if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
-                msg = tr("Var '%1' is '%2' : '%3'").arg(vname, notifSwitch(rs, EX_IGNORE), psv->getName(_sStateMsg));
+                msg = psv->getName(_sStateMsg);
+                QString srs = notifSwitch(rs, EX_IGNORE);
+                if (msg.isEmpty() && srs.isEmpty()) {   // skipping (rarefaction)
+                    msg = tr("Var %1 is skipped.");
+                }
+                else {
+                    if (srs.isEmpty()) srs = _sUnKnown;
+                    msg = tr("Var '%1' is '%2' : '%3'").arg(vname, srs, msg);
+                }
                 vMsg = msgCat(vMsg, msg, "\n");
             }
             insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);

@@ -153,7 +153,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
             r = pe == nullptr ? REASON_OK : R_ERROR;
         }
         else {
-            pe = importGetLastError();                      // Időtullépés
+            pe = importGetLastError();                      // Időtúllépés
             if (nullptr == pe) pe = NEWCERROR(ETO);
             r = R_TIMEOUT;
         }

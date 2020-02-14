@@ -373,6 +373,29 @@ ENUM "iftypes.preferred" {
         FONT ATTR "underline";
     }
 }
+ENUM "interfaces.delegate_admin_stat" {
+    VIEW NULL;
+    TOOL TIP "false";
+     "false" {
+        VIEW "false",@;
+        ICON "dialog-no-2.ico";
+    }
+     "true" {
+        VIEW "true",@;
+        ICON "dialog-ok-2.ico";
+    }
+}
+ENUM "interfaces.delegate_oper_stat" {
+    VIEW NULL;
+     "false" {
+        VIEW "nem",@;
+        ICON "dialog-no-2.ico";
+    }
+     "true" {
+        VIEW "igen",@;
+        ICON "dialog-ok-2.ico";
+    }
+}
 ENUM "noalarmtype" {
     VIEW "noalarmtype",@;
     ICON "bell.ico";
@@ -1378,8 +1401,9 @@ TABLE SHAPE "groups" "felhasználói csoportok" {
     ADD FIELD "features" "features" {
         TITLE "features",@;
     }
+    FIELD "group_name" ORD asc, no, desc;
     FIELD "group_rights" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "group_rights";
+    FIELD ORD SEQUENCE "group_name", "group_rights";
 }
 TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
     TITLE "Hálózati interfészek és portok","Hálózati interfész vagy passzív port","Aktív port vagy interfész";
@@ -1419,6 +1443,10 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
     }
+    ADD FIELD "delegate_oper_stat" {
+        TITLE NULL,"A port oper. státuszának a továbbítása";
+        FLAG "image", "notext";
+    }
     ADD FIELD "port_astat" {
         TITLE "*Adm.St.","Port adminisztrativ állapot";
         TOOL TIP "Port adminisztrativ állapot";
@@ -1426,6 +1454,10 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         FLAG "batch_edit", "bg_color", "HTML", "image";
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
+    }
+    ADD FIELD "delegate_admin_stat" {
+        TITLE NULL,"A port admin státuszának a továbbítása";
+        FLAG "image", "notext";
     }
     ADD FIELD "iftype_id" "iftype_id" {
         TITLE "Típus","A port típus";
@@ -1474,8 +1506,8 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
     }
     FIELD "port_index" ORD asc, no, desc;
     FIELD "port_stat" ORD no, asc;
-    FIELD "port_name", "port_note", "port_tag", "iftype_id", "ifdescr", "last_changed", "last_touched" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "port_index", "port_name", "port_tag", "port_note", "iftype_id", "last_changed", "last_touched", "ifdescr", "port_stat";
+    FIELD "port_name", "port_note", "port_tag", "delegate_oper_stat", "delegate_admin_stat", "iftype_id", "ifdescr", "last_changed", "last_touched" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "port_index", "port_name", "port_tag", "port_note", "iftype_id", "last_changed", "last_touched", "ifdescr", "delegate_oper_stat", "port_stat", "delegate_admin_stat";
 }
 TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     TITLE "host_service_logs",@,@;
@@ -1484,7 +1516,6 @@ TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
         "alarms.owner" = "host_service_id,@";
         "bg_color" = "new_state";
         "button.copy";
-        "snmpdevices.owner" = "node_id";
     }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";

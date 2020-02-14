@@ -32,6 +32,7 @@ SERVICE "arp" "ARP tábla lekérdezése" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "arpd" "Arp daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -47,6 +48,7 @@ SERVICE "arpd" "Arp daemon" {
     HEARTBEAT TIME 1800;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "arp_proc" "ARP fájl a proc-ban, local vagy ssh-n keresztül" {
     SUPERIOR SERVICE MASK "~.";
@@ -65,7 +67,6 @@ SERVICE "attached" "IndAlarm Contact védett eszköz" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "life_sign";
-    ON LINE GROUPS "dispatcher", "admin";
 }
 SERVICE "check_dhcp" "DHCP monitorozás" {
     COMMAND "dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw";
@@ -77,8 +78,6 @@ SERVICE "check_dhcp" "DHCP monitorozás" {
     FLAPPING INTERVAL 14400;
     FLAPPING MAX CHANGE 8;
     TYPE "check_service";
-    ON LINE GROUPS "admin";
-    OFF LINE GROUPS "admin";
 }
 SERVICE "check_disk" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -96,7 +95,7 @@ SERVICE "check_disk" {
     FLAPPING INTERVAL 7200;
     FLAPPING MAX CHANGE 8;
     TYPE "querying";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "check_ide_smart" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -112,7 +111,7 @@ SERVICE "check_ide_smart" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "check_service";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "check_md_raid" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -128,7 +127,7 @@ SERVICE "check_md_raid" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "check_service";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "check_ups" "UPS check by NUT" {
     SUPERIOR SERVICE MASK "^nut$";
@@ -138,8 +137,7 @@ SERVICE "check_ups" "UPS check by NUT" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
-    ON LINE GROUPS "admin";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "dhcp_conf" "DHCP config fájl, local vagy ssh-n keresztül" {
     SUPERIOR SERVICE MASK "~.";
@@ -181,8 +179,6 @@ SERVICE "http" "Check http server" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 4;
     TYPE "check_service";
-    ON LINE GROUPS "operator", "admin";
-    OFF LINE GROUPS "admin", "operator";
 }
 SERVICE "http.proxy" "Check http proxy server" {
     SUPERIOR SERVICE MASK "^http$";
@@ -204,8 +200,6 @@ SERVICE "http.proxy" "Check http proxy server" {
     FLAPPING INTERVAL 120;
     FLAPPING MAX CHANGE 4;
     TYPE "check_service";
-    ON LINE GROUPS "admin", "operator";
-    OFF LINE GROUPS "admin", "operator";
 }
 SERVICE "icontsrv" "icontsrv daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -221,6 +215,7 @@ SERVICE "icontsrv" "icontsrv daemon" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "import" "import daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -229,6 +224,7 @@ SERVICE "import" "import daemon" {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "indalarmif1ma" "IndAlarm Contact V1 Master" {
     SUPERIOR SERVICE MASK "^rs485$";
@@ -243,8 +239,7 @@ SERVICE "indalarmif1ma" "IndAlarm Contact V1 Master" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "life_contr";
-    ON LINE GROUPS "admin", "dispatcher";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "indalarmif1sl" "IndAlarm Contact V1 Slave" {
     SUPERIOR SERVICE MASK "^indalarmif1ma$";
@@ -260,8 +255,7 @@ SERVICE "indalarmif1sl" "IndAlarm Contact V1 Slave" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "life_contr";
-    ON LINE GROUPS "dispatcher", "admin";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "indalarmif2" "IndAlarm Contact V2" {
     SUPERIOR SERVICE MASK "^rs485$";
@@ -276,7 +270,7 @@ SERVICE "indalarmif2" "IndAlarm Contact V2" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "life_contr";
-    ON LINE GROUPS "admin", "dispatcher";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "local" "local service" {
     SUPERIOR SERVICE MASK "~.";
@@ -294,6 +288,7 @@ SERVICE "lv2d" "Lanview2 super server" {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 2700;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "nil-1" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     SUPERIOR SERVICE MASK "~.";
@@ -319,6 +314,7 @@ SERVICE "nut" "Network Ups Tools" {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "parser" "Query Parser (pure)" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -330,7 +326,7 @@ SERVICE "parser" "Query Parser (pure)" {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "ping" "Ping check" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
@@ -348,8 +344,6 @@ SERVICE "ping" "Ping check" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
     TYPE "check_service";
-    ON LINE GROUPS "admin", "operator";
-    OFF LINE GROUPS "operator", "admin";
 }
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
@@ -359,6 +353,7 @@ SERVICE "pmac" "Query port address table by <protocol>" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "portmac" "Device port address table query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -374,6 +369,7 @@ SERVICE "portmac" "Device port address table query daemon" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
     TYPE "querying";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "portstat" "Device port status query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -381,6 +377,7 @@ SERVICE "portstat" "Device port status query daemon" {
     NORMAL CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "portvars" "Port változók" {
     SUPERIOR SERVICE MASK "^pstat$";
@@ -390,6 +387,7 @@ SERVICE "portvars" "Port változók" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "querying";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "portvlan" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -405,6 +403,7 @@ SERVICE "portvlan" {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "PowerNet-MIB" "SNMP query old MIB " {
     SUPERIOR SERVICE MASK "^snmpvars$";
@@ -426,7 +425,7 @@ SERVICE "PowerNet-MIB" "SNMP query old MIB " {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
     TYPE "querying";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
@@ -443,8 +442,7 @@ SERVICE "pstat" "Query port status by <protocol>" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 10;
     TYPE "querying";
-    ON LINE GROUPS "admin";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "pvlan" {
     SUPERIOR SERVICE MASK "^portvlan$";
@@ -454,14 +452,15 @@ SERVICE "pvlan" {
     RETRY CHECK INTERVAL 300;
     FLAPPING INTERVAL 10800;
     FLAPPING MAX CHANGE 4;
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "rightmac" "MAC cím fehér lista" {
     SUPERIOR SERVICE MASK "^pmac$";
-    FEATURES ":timing=passíve:";
+    FEATURES ":timing=passive:";
     MAX CHECK ATTEMPTS 1;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "rlinkstat" "Jelenlét, a switch port állapota alapján" {
     SUPERIOR SERVICE MASK "^pstat$";
@@ -474,7 +473,6 @@ SERVICE "rlinkstat" "Jelenlét, a switch port állapota alapján" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 10;
     TYPE "life_sign";
-    ON LINE GROUPS "dispatcher", "admin";
 }
 SERVICE "rrdhelper" "RRD Helper" {
     SUPERIOR SERVICE MASK "^lv2|group$";
@@ -488,6 +486,7 @@ SERVICE "rrdhelper" "RRD Helper" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "daemon";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "rs485" "RS485 BUS interface or gateway" {
     SUPERIOR SERVICE MASK "^icontsrv$";
@@ -502,6 +501,7 @@ SERVICE "rs485" "RS485 BUS interface or gateway" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "life_contr";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "sda" "Csak a diszket azonosítja (sda)" {
     SUPERIOR SERVICE MASK "~.";
@@ -568,7 +568,7 @@ SERVICE "snmp" "SNMP" {
 }
 SERVICE "snmpvars" {
     SUPERIOR SERVICE MASK "^lv2|group$";
-    COMMAND "snmpvars $S -R $host_service_id";
+    COMMAND "snmpvars $S -R $host_service_id -d -1";
     FEATURES  {
         "logrot" = "500M,8";
         "method" = "inspector";
@@ -581,6 +581,7 @@ SERVICE "snmpvars" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
     TYPE "querying";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "soniwall_arp" {
     SUPERIOR SERVICE MASK "parser";
@@ -592,8 +593,7 @@ SERVICE "soniwall_arp" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     TYPE "querying";
-    ON LINE GROUPS "admin";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "ssh" "ssh" {
     SUPERIOR SERVICE MASK "~.";
@@ -612,6 +612,22 @@ SERVICE "syscron" "System cron" {
     RETRY CHECK INTERVAL 600;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
+    OFF LINE GROUPS "admin_net";
+}
+SERVICE "sysUpTime.snmp" {
+    SUPERIOR SERVICE MASK "^snmpvars$";
+    FEATURES  {
+        "timing" = "timed";
+        "variables" =  {
+            "sysUpTimeInstance" = "DISMAN-EVENT-MIB::sysUpTimeInstance.,sysUpTimeInstance";
+        }
+    }
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "link";
 }
 SERVICE "tcp.rs" "TCP serial port gateway" {
     SUPERIOR SERVICE MASK "~.";
@@ -632,7 +648,7 @@ SERVICE "temp.owget" "Temp by OWFS" {
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 7200;
     FLAPPING MAX CHANGE 15;
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "temp.raspb" "Temp by raspbian" {
     SUPERIOR SERVICE MASK "^parser$";
@@ -647,7 +663,7 @@ SERVICE "temp.raspb" "Temp by raspbian" {
     RETRY CHECK INTERVAL 30;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "updt_oui" "Update OUI" {
     SUPERIOR SERVICE MASK "~.";
@@ -675,11 +691,11 @@ SERVICE "UPS-MIB" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
     TYPE "link";
-    OFF LINE GROUPS "admin";
+    OFF LINE GROUPS "admin_net";
 }
 SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     SUPERIOR SERVICE MASK "parser";
-    COMMAND "netsh dhcp server \\\\$node dump all";
+    COMMAND "netsh dhcp server \\\\\\\\$node dump all";
     FEATURES  {
         "comment" = "#";
         "method" = "qparse";
@@ -687,6 +703,7 @@ SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     }
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
+    OFF LINE GROUPS "admin_net";
 }
 PARAM "bigint" TYPE "integer";
 PARAM "boolean" TYPE "boolean";
@@ -773,6 +790,14 @@ SERVICE VAR TYPE "runtime_slow" "Egy lassú lekérdezést futásának az ideje" 
     WARNING "big" "00:00:30";
     NO RAW TO RRD;
 }
+SERVICE VAR TYPE "sysUpTimeInstance" {
+    TYPE "interval", "bigint" "GAUGE";
+    PLAUSIBILITY INVERSE "litle" "0";
+    CRITICAL "litle" "00:10:00";
+    WARNING "litle" "00:15:00";
+    NO RAW TO RRD;
+    FEATURES ":rpn=10 *:";
+}
 SERVICE VAR TYPE "temp_core" "CPU/SOC core temp." {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "5", "110";
@@ -791,7 +816,7 @@ SERVICE VAR TYPE "temp_indoor_clim" "Beltéri hőmérséklet klimatizált" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
     CRITICAL INVERSE "interval" "10", "30";
-    WARNING INVERSE "interval" "15", "25";
+    WARNING INVERSE "interval" "13", "25";
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_outdoor" "Kültéri hőmérséklet" {

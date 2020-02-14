@@ -655,11 +655,11 @@ int cGateway::com_err(QString &msg, const QString& data, const QString&  dropped
 {
     int st;
     if (data.isEmpty() && dropped.isEmpty()) {
-        msg = tr("Időtullépés, nem jött semmilyen adat az interfésztől. ");
+        msg = tr("Időtúllépés, nem jött semmilyen adat az interfésztől. ");
         st = RS_UNREACHABLE;
     }
     else {
-        msg = tr("Idő tullépés, ill. adat hiba : eldobva : %1, Feldolgozva : %2. ")
+        msg = tr("Időtúllépés, ill. adat hiba : eldobva : %1, Feldolgozva : %2. ")
                 .arg(dQuoted(data), dQuoted(dropped));
         st = RS_CRITICAL;
     }
