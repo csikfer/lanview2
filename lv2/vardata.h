@@ -81,6 +81,16 @@ public:
 //    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
     QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
 //    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
+    /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
+    /// @param q
+    /// @param val A nyers érték
+    /// @param state Továbbítandó állapot
+    /// @param rawChg Közvetlen, feltétel nélküli beállítás
+    /// @return A vátozó állapota.
+    /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
+    /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
+    /// Ha val értéke NULL/invalid, akkor hívja a noValue() metódust, NULL értéket nem állítbe mint valós értéket.
+    ///
     int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
     /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
@@ -89,6 +99,8 @@ public:
     /// @param state Továbbítandó állapot
     /// @param rawChg Közvetlen, feltétel nélküli beállítás
     /// @return A vátozó állapota.
+    /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
+    /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
     int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
     int setUnreachable(QSqlQuery q, const QString &msg = QString());
     const QStringList * enumVals();
@@ -112,6 +124,9 @@ protected:
     int updateVar(QSqlQuery& q, qlonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
     int updateEnumVar(QSqlQuery& q, qlonglong i, int& state);
+    /// Nincs érték. Ha a tulajdonos szolgáltatás heartbeat értéke szorozva a rarefaction értékével,
+    /// kevesebb mint az utolsó érték megadása óta eltelt idő, akkor nem csinál semmit. Ha több idő telt el, akkor
+    /// ismeretlenre (NULL/RS_UNREACHABLE) állítja az objktumot, és state értéke RS_UNREACHABLE lesz.
     int noValue(QSqlQuery& q, int& state, int _st = RS_UNREACHABLE);
     /// Egy egész típusú értékre a megadott feltétel alkalmazása
     /// @param val A viszgálandó érték

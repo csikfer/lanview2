@@ -256,10 +256,6 @@ const cFeatures& cServiceVar::mergedFeatures()
 int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
-    if (_rawVal.isNull()) {
-        addMsg(sRawIsNull);
-        return noValue(q, state);
-    }
     eParamType ptRaw = eParamType(rawDataType(q).getId(cParamType::ixParamTypeType()));
     eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
     if (rawChanged == TS_NULL) return RS_UNREACHABLE;
@@ -306,6 +302,7 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
 {
+    if (skeep()) return ENUM_INVALID;
     int rpt = int(rawDataType(q).getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_INTEGER || rpt == PT_INTERVAL) {
@@ -319,7 +316,6 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
     eTristate changed = TS_NULL;
     switch (rawChg) {
     case TS_NULL:
-        if (skeep()) return ENUM_INVALID;
         changed = preSetValue(q, rpt, QVariant(val), state);
         if (changed == TS_NULL) return RS_UNREACHABLE;
         break;
@@ -385,6 +381,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
 
 int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
 {
+    if (skeep()) return ENUM_INVALID;
     int rpt = int(rawDataType(q).getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_REAL) {
@@ -398,7 +395,6 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
     eTristate changed;
     switch (rawChg) {
     case TS_NULL:
-        if (skeep()) return ENUM_INVALID;
         changed = preSetValue(q, rpt, QVariant(val), state);
         if (changed == TS_NULL) return RS_UNREACHABLE;
         break;
@@ -678,16 +674,20 @@ int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
 int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
     qlonglong hbt = heartbeat(q, EX_ERROR);
-    if (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime())) {
-        _st = RS_UNREACHABLE;
-        setId(_ixVarState, _st);
-        clear(_ixServiceVarValue);
-        update(q, false, updateMask);
-        if (getBool(_sDelegateServiceState)) state = _st;
+    if (hbt != NULL_ID && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
+        qlonglong dt  = lastLast.msecsTo(QDateTime::currentDateTime());
+        if (hbt < dt) {
+            _st = RS_UNREACHABLE;
+            setId(_ixVarState, _st);
+            clear(_ixServiceVarValue);
+            QString msg = getName(_ixStateMsg);
+            msgAppend(&msg, getName(_ixStateMsg) + tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(hbt)));
+            setName(_ixStateMsg, msg);
+            update(q, false, updateMask);
+            if (getBool(_sDelegateServiceState)) state = _st;
+        }
     }
-    else {  // Nincs adat, türelmi idő nem járt le
-
-    }
+    // Ha nincs adat, és türelmi idő nem járt le (nincs türelmi idő, első alkalom) akkor nem csinálunk semmit
     return _st;
 }
 
