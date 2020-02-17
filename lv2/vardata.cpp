@@ -674,7 +674,7 @@ int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
 int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
     qlonglong hbt = heartbeat(q, EX_ERROR);
-    if (hbt != NULL_ID && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
+    if (hbt > 0 && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
         qlonglong dt  = lastLast.msecsTo(QDateTime::currentDateTime());
         if (hbt < dt) {
             _st = RS_UNREACHABLE;
@@ -981,48 +981,59 @@ cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex)
 
 qlonglong cServiceVar::heartbeat(QSqlQuery&__q, eEx __ex)
 {
-    qlonglong id = getId();
-    if (NULL_ID == id) {
+    static int ixHostServiceId  = toIndex(_sHostServiceId);
+    static int ixSHeartbeatTime  = cService().toIndex(_sHeartbeatTime);
+    static int ixHSHeartbeatTime = cHostService().toIndex(_sHeartbeatTime);
+    static int ixServiceId       = cHostService().toIndex(_sServiceId);
+    static int ixPrimeServiceId  = cHostService().toIndex(_sPrimeServiceId);
+    static int ixProtoServiceId  = cHostService().toIndex(_sProtoServiceId);
+    qlonglong svid = getId();
+    if (NULL_ID == svid) {
         if (__ex != EX_IGNORE) EXCEPTION(EOID, 0, identifying(false));
         return NULL_ID;
     }
     qlonglong hbt;
-    if (heartbeats.contains(id)) {
-        hbt = heartbeats[id];
+    if (heartbeats.contains(svid)) {
+        hbt = heartbeats[svid];
     }
     else {
-        id = getId(_sHostServiceId);
+        qlonglong hsid = getId(ixHostServiceId);
         cHostService hs;
-        if (id == NULL_ID || !hs.fetchById(__q, id)) {
-            if (__ex != EX_IGNORE) EXCEPTION(EOID, id, identifying(false));
+        if (hsid == NULL_ID || !hs.fetchById(__q, hsid)) {
+            if (__ex != EX_IGNORE) EXCEPTION(EOID, hsid, identifying(false));
             return NULL_ID;
         }
-        hbt = hs.getId(_sHeartbeatTime);
-        if (hbt <=  0) {
-            id = hs.getId(_sServiceId);
-            cService s;
-            if (id == NULL_ID || !s.fetchById(__q, id)) {
-                if (__ex != EX_IGNORE) EXCEPTION(EOID, id, hs.identifying(false));
+        hbt = hs.getId(ixHSHeartbeatTime);
+        if (hbt <= 0) {
+            qlonglong sid = hs.getId(ixServiceId);
+            const cService *ps;
+            if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
+                if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
                 return NULL_ID;
             }
-            qlonglong hbt = s.getId(_sHeartbeatTime);
+            hbt = ps->getId(ixSHeartbeatTime);
             if (hbt <= 0) {
-                bool f;
-                f = (id = hs.getId(_sPrimeServiceId)) != NULL_ID
-                  && s.fetchById(__q, id)
-                  && (hbt = s.getId(_sHeartbeatTime)) > 0;
-                f = f || (
-                    (id = hs.getId(_sProtoServiceId)) != NULL_ID
-                  && s.fetchById(__q, id)
-                  && (hbt = s.getId(_sHeartbeatTime)) > 0
-                  );
-                if (!f) {
-                    if (__ex >= EX_WARNING) EXCEPTION(EDATA, hbt, identifying(false));
+                sid = hs.getId(ixPrimeServiceId);
+                const cService *ps;
+                if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
+                    if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
+                    return NULL_ID;
+                }
+                hbt = ps->getId(ixSHeartbeatTime);
+                if (hbt <= 0) {
+                    sid = hs.getId(ixProtoServiceId);
+                    const cService *ps;
+                    if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
+                        if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
+                        return NULL_ID;
+                    }
+                    hbt = ps->getId(ixSHeartbeatTime);
                 }
             }
         }
-        heartbeats[getId()] = hbt;
+        heartbeats[svid] = hbt;
     }
+    if (hbt <= 0) return NULL_ID;
     int rarefaction = int(getId(_ixRarefaction));
     if (rarefaction > 1) hbt *= rarefaction;
     return hbt;

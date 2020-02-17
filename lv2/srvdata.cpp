@@ -111,40 +111,6 @@ void cService::clearToEnd()
 CRECDEF(cService)
 RECACHEDEF(cService, service)
 
-/*
-tRecordList<cService> cService::services;
-const cService * cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex)
-{
-    int i = services.indexOf(_descr_cService().nameIndex(), QVariant(__nm));
-    if (i < 0) {
-        cService *p = new cService();
-        if (!p->fetchByName(__q, __nm)) {
-            if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::tr("Ismeretlen szolgáltatás név : %1")).arg(__nm));
-            delete p;
-            return NULL;
-        }
-        services << p;
-        return p;
-    }
-    return services.at(i);
-}
-
-const cService *cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
-{
-    int i = services.indexOf(_descr_cService().idIndex(), QVariant(__id));
-    if (i < 0) {
-        cService *p = new cService();
-        if (!p->fetchById(__q, __id)) {
-            if (__ex) EXCEPTION(EFOUND, __id, QObject::tr("Ismeretlen szolgáltatás azonosító."));
-            delete p;
-            return NULL;
-        }
-        services << p;
-        return p;
-    }
-    return services.at(i);
-}
-*/
 /* ----------------------------------------------------------------- */
 
 int noalarmtype(const QString& _n, enum eEx __ex)

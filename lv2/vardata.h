@@ -197,8 +197,13 @@ public:
     static void resetCacheData() { serviceVars.clear(); heartbeats.clear(); }
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex = EX_ERROR);
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex = EX_ERROR);
-    /// A heartbeat értéket olvassa ki a host_services vagy services rekordból, az értéket csak az első alkalommal
-    /// olvassa ki az adatbázisból, és letárolja a heartbeats konténerbe. ...
+    /// A heartbeat értéket [msec] olvassa ki a host_services vagy services rekordokból, az értéket csak az első alkalommal
+    /// olvassa ki az adatbázisból, és letárolja a heartbeats konténerbe. A kiolvasott értéket (ha nem NULL, vagy nulla)
+    /// szorozza a rarefaction értékével, ha az nagyobb mint 1. Ha a heartbeat érték nulla vagy negatív,
+    /// akkor NULL_ID-vel térvissza.
+    /// A heartbeat_time mezőt elöszőr a host_services rekordból olvassa ki, majd ha az NULL, nulla, vagy negatív, akkor
+    /// a host_services.services_id mező által hivatkozott rekordból, majd a host_services.prme_services_id végül
+    /// host_services.proto_services_id vel hivatkozott services rekordból.
     qlonglong heartbeat(QSqlQuery&__q, eEx __ex = EX_ERROR);
     bool initSkeepCnt(int& delayCnt);
 };
