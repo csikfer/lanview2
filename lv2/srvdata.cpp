@@ -746,14 +746,17 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     cHostService hs; hs.   setById(q, pTargetRec->getId(_sHostServiceId));
     cNode  node;     node. setById(q, hs.         getId(_sNodeId));
     cPlace place;    place.setById(q, node.       getId(_sPlaceId));
+    QString m;
     const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
-    QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
     text += _sBr + tr("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
     text += _sBr + tr("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
     text += _sBr + tr("A hállózati elem neve")    + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
     text += _sBr + tr("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
-    text += _sBr + tr("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
-    text += _sBr + tr("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    m = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
+    text += _sBr + tr("Riasztás oka")          + " : <b><i>" + m + "</i></b>";
+    m = pTargetRec->getName(_sEventNote);
+    text += _sBr + tr("Csatolt üzenet")        + " : <b><i>" + _sBr
+            + toHtml(m, true) + "</i></b>";
     static const QString sql =
             "SELECT s.service_var_id, s.service_var_name, s.service_var_note, s.service_var_type_id, s.host_service_id,"
                     " a.service_var_value, a.var_state, NULL AS last_time, s.features, s.deleted, a.raw_value,"

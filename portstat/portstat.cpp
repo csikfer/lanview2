@@ -598,12 +598,12 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             QString vMsg, msg;
             if (iface.getBool(_sDelegateOperStat)  && _opstat != IF_UP) {
                 msg = tr("Port operate status is not 'UP'.");
-                vMsg = msgCat(vMsg, msg, "\n");
+                msgAppend(&vMsg, msg);
                 sstate = RS_CRITICAL;
             }
             if (iface.getBool(_sDelegateAdminStat) && _adstat != IF_UP) {
                 msg = tr("Port admin status is not 'UP'.");
-                vMsg = msgCat(vMsg, msg, "\n");
+                msgAppend(&vMsg, msg);
                 sstate = RS_CRITICAL;
             }
             qlonglong raw;
@@ -624,7 +624,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                     if (srs.isEmpty()) srs = _sUnKnown;
                     msg = tr("Var '%1' = '%2'/'%3' >> '%4' : '%5'").arg(vname, val, vst, srs, msg);
                 }
-                vMsg = msgCat(vMsg, msg, "\n");
+                msgAppend(&vMsg, msg);
             }
             insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);
             insp.flag = true; // State is set

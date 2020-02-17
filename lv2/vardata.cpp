@@ -392,7 +392,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
         noValue(q, state);
         return RS_UNREACHABLE;
     }
-    eTristate changed;
+    eTristate changed = TS_NULL;
     switch (rawChg) {
     case TS_NULL:
         changed = preSetValue(q, rpt, QVariant(val), state);
