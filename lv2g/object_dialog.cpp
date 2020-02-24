@@ -23,11 +23,12 @@ cObjectDialog~cObjectDialog()
 
 /* ************************************************************************* */
 
-cPPortTableLine::cPPortTableLine(int r, cPatchDialog *par)
+cPPortTableLine::cPPortTableLine(int r, cPatchDialog *par, qlonglong _pid)
 {
     parent = par;
     tableWidget = par->pUi->tableWidgetPorts;
     row    = r;
+    pid = _pid;
     sharedPortRow = -1;
     comboBoxShare  = new QComboBox();
     for (int i = ES_; i <= ES_NC; ++i) comboBoxShare->addItem(portShare(i));
@@ -113,6 +114,7 @@ cPatch * cPatchDialog::getPatch()
         pp->setName(_sPortIndex, getTableItemText(pUi->tableWidgetPorts, i, CPP_INDEX));
         int sh = getTableItemComboBoxCurrentIndex(pUi->tableWidgetPorts, i, CPP_SH_TYPE);
         pp->setId(_sSharedCable, sh);
+        pp->setId(rowsData.at(i)->pid);
         p->ports << pp;
     }
     for (i = 0; i < n && p != nullptr; i++) {
@@ -173,7 +175,7 @@ void cPatchDialog::setPatch(const cPatch *pSample)
     int n = pSample->ports.size();
     if (n > 0) {
         int i;
-        setRows(n);
+        setRows(n, &pSample->ports.list());
         for (i = 0; i < n; i++) {
             const cPPort *pp = pSample->ports.at(i)->reconvert<cPPort>();
             setTableItemText(pp->getName(),              pUi->tableWidgetPorts, i, CPP_NAME);
@@ -227,7 +229,7 @@ void cPatchDialog::clearRows()
     */
 }
 
-void cPatchDialog::setRows(int rows)
+void cPatchDialog::setRows(int rows, const QList<cNPort *> *pports)
 {
     int i = pUi->tableWidgetPorts->rowCount();
     if (i != rowsData.size()) EXCEPTION(EDATA);
@@ -235,7 +237,9 @@ void cPatchDialog::setRows(int rows)
     if (i < rows) {
         pUi->tableWidgetPorts->setRowCount(rows);
         for (; i < rows; ++i) {
-            rowsData << new cPPortTableLine(i, this);
+            qlonglong pid = NULL_ID;
+            if (pports != nullptr && isContIx(*pports, i)) pid = pports->at(i)->getId();
+            rowsData << new cPPortTableLine(i, this, pid);
         }
     }
     else {
@@ -639,7 +643,8 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
         p = dialog.getPatch();
         if (p == nullptr) continue;
         p->setContainerValid(CV_PORTS | CV_PATCH_BACK_SHARE);
-        if (!cErrorMessageBox::condMsgBox(p->setId(id).tryRewriteById(q))) {
+        p->ports.setsOwnerId(id);
+        if (!cErrorMessageBox::condMsgBox(p->tryRewriteById(q))) {
             pDelete(p);
             continue;
         }

@@ -1965,7 +1965,7 @@ bool cPatch::rewriteById(QSqlQuery &__q, eEx __ex)
     bool r = cRecord::rewriteById(__q, __ex);
     if (isContainerValid(CV_PORTS)) {
         ports.setsOwnerId();
-        r = ports.replace(__q, __ex);
+        r = ports.replaceById(__q, __ex);
         if (!r) return false;
         if (isContainerValid(CV_PATCH_BACK_SHARE)) {
             r = updateShares(__q, true, __ex);

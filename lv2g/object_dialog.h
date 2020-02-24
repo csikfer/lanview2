@@ -24,6 +24,7 @@ protected:
     QSqlQuery * pq;
 };
 */
+
 namespace Ui {
     class patchSimpleDialog;
 }
@@ -37,9 +38,11 @@ class cPPortTableLine;
         friend class cPatchDialog;
         Q_OBJECT
     public:
-        cPPortTableLine(int r, cPatchDialog *par);
+        cPPortTableLine(int r, cPatchDialog *par, qlonglong _pid = NULL_ID);
         /// A táblázatban a sor száma (0,1, ...)
         int                 row;
+        /// Port ID, ha létezik a port rekord
+        qlonglong           pid;
         /// Másodlagos megosztott port esetén az elsődleges port sorszáma a táblázatban.
         /// Ha nincs megadva akkor -1.
         int                 sharedPortRow;
@@ -85,7 +88,7 @@ protected:
     bool                    pIxOk;
     static QString          sPortRefForm;
     void clearRows();
-    void setRows(int rows);
+    void setRows(int rows, const QList<cNPort *> *pports = nullptr);
     void setPortShare(int row, int sh);
     void updateSharedIndexs();
     void updatePNameIxOk();

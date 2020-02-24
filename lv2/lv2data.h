@@ -1158,6 +1158,11 @@ public:
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    /// Egy létező az ID-vel azonosított patch objektum újra írása.
+    /// A portok újra írása (ha isContainerValid(CV_PORTS) hívás értéke true) szintén az ID szerint történik.
+    /// A metódus bármilyen módosítást nem tud kiírni az adatbázisba, az egymást követő írási műveletekben
+    /// nem lehet név ütközés, pl. ez fog történni port nevek felcserélése esetén.
+    /// @note A portok kiírásának a módja különbözik a cNode típusú objektumokhoz képest!
     virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);

@@ -743,6 +743,11 @@ public:
         tRecordList<C>::setsId(ixOwnerId, pOwner->getId());
         return *this;
     }
+    tOwnRecords&  setsOwnerId(qlonglong _oid) {
+        tRecordList<C>::setsId(ixOwnerId, _oid);
+        pOwner->setId(_oid);
+        return *this;
+    }
     int fetch(QSqlQuery &__q, bool __only = false) {
         int r = tRecordList<C>::fetch(__q, __only, ixOwnerId, pOwner->getId());
         if (r > 0) setOwner();
