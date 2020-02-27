@@ -162,6 +162,7 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
                         continue;
                     }
                     mIndexXref[portIndex] = bitIndex;
+                    if (!mIndexXref.contains(bitIndex)) mIndexXref[bitIndex] = -1;  // Kettős hivatkozás lenne!
                 }
             }
         }
