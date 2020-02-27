@@ -72,7 +72,7 @@ private:
     void linksReport();
     void mactabReport();
     void uplinkVlansReport();
-    void nodeHead(eTristate ok, const QString& nodeName, const QStringList &tableHead, const QList<QStringList>& matrix);
+    void nodeHead(eTristate ok, const QString& title, const QStringList &tableHead, const QList<QStringList>& matrix);
     void nodeHead(eTristate ok, const QString &nodeName, const QString &html);
     void sendMsg(const QString& msg) {
         queue.enqueue(msg);
@@ -84,6 +84,7 @@ private:
     static QString sLldp;
     static QString sLogicalAndLldp;
     static QString sLinkCaveat;
+    static QString sTrunkCaveat;
 
 signals:
     void msgQueued();

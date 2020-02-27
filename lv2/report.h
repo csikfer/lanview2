@@ -7,6 +7,8 @@
 #include "lv2link.h"
 #include "lv2user.h"
 
+// HTML dekoráció
+
 EXT_ const QString sHtmlHead;
 EXT_ const QString sHtmlTail;
 EXT_ const QString sHtmlLine;
@@ -142,6 +144,20 @@ inline QString toRed(const QString& text, bool chgBreaks = false, bool esc = tru
     return "<span style=\"color:red\">" + toHtml(text, chgBreaks, esc) + "</span>";
 }
 
+// dekoráció enumerációk alapján
+
+enum eEnumDecorationMask {
+    EDM_FONT_ATTR           =  1,
+    EDM_FONT_FAMILY         =  2,
+    EDM_FONT_COLOR          =  4,
+    EDM_BACKGROUND_COLOR    =  8,
+    EDM_ALL                 = 15
+};
+
+EXT_ QString htmlEnumDecoration(const QString text, const cEnumVal& eval, int m = EDM_ALL, bool chgBreaks = false, bool esc = true);
+
+
+// HTML táblázat
 
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = QString(), bool esc = true);
 EXT_ QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc = true, int padding_pix = 0);
@@ -183,6 +199,8 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     }
     return htmlTable(head, data);
 }
+
+// riportok generálása
 
 /// Egy rekord ill. objektum HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
 /// @param q Az adatbázis műveletekhez használható query objektum.

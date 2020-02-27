@@ -34,6 +34,7 @@ public:
     cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cDevicePV();
+    virtual void postInit(QSqlQuery& q, const QString& qs = QString());
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);
@@ -41,6 +42,11 @@ public:
     cSnmp           snmp;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
+    /// port index bitmap kereszt referencia táblázat, ha korrigálni kellett a bitmap indexeket,
+    /// mert nem azonosak a port indexel.
+    /// Ha azonosak az indexek, akkor a konténer üres.
+    QMap<int, int>  mIndexXref;
+    int getBitIndex(int pix) { return mIndexXref.contains(pix) ? mIndexXref[pix] : pix; }
 };
 
 

@@ -1359,8 +1359,12 @@ protected:
 public:
     cNode(const QString& __name, const QString& __note);
 //  cNode& operator=(const cNode& __o);
+    /// Törli a child objektumokat tartalmazó konténereket, és a containerValid értékét nullára állítja.
     virtual void clearToEnd();
     // virtual void toEnd();
+    /// Ha i az ID indexe, akkor megvizsgálja a child objektumok konténerét (csak az első elemet!)
+    /// és, ha chiuld objektumban a port_id értéke nem azonos a node objektum aktuális ID-jével,
+    /// akkor törli a konténert, és a megfelelő containerValid bit(ek)et.
     virtual bool toEnd(int i);
     /// A cPatch::insert(QSqlQuery &__q, eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
@@ -1369,6 +1373,9 @@ public:
     /// paraméter ás port konténerre is.
     /// Az újra írandó objektum azonosítása név szerint történik, az objektum ID mezője figyelmenkívül lasz hagyva.
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    /// Az objektum frissítése után hívja a rewrite() metódust a
+    /// paraméter ás port konténerre is.
+    /// Az újra írandó objektum azonosítása ID szerint történik.
     virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Alapértelmezetten ha a port típusa cInterface, akkor az IP címeket és vlan-okat is, de a port paramétereket nem tölti be!
@@ -1397,10 +1404,21 @@ public:
     virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
-
+    /// A megadott eszköz szériaszámának a megadása.
+    /// @param q Az adatbázisműveletekhez használt objektum
+    /// @param name Az eszköz neve
+    /// @param sn Széria szém
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob. EX_NOOP esetén (ez az alapértelmezés)
+    ///         hibát dob, ha nincs ilyen nevű objektum.
     static bool setSeralNumber(QSqlQuery& q, const QString& name, const QString& sn, eEx __ex = EX_NOOP) {
         return cNode().updateFieldByName(q, name, _sSerialNumber, sn, __ex);
     }
+    /// A megadott eszköz leltári számának a megadása.
+    /// @param q Az adatbázisműveletekhez használt objektum
+    /// @param name Az eszköz neve
+    /// @param in Leltári szém
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob. EX_NOOP esetén (ez az alapértelmezés)
+    ///         hibát dob, ha nincs ilyen nevű objektum.
     static bool setInventoryNumber(QSqlQuery& q, const QString& name, const QString& in, eEx __ex = EX_NOOP) {
         return cNode().updateFieldByName(q, name, _sInventoryNumber, in, __ex);
     }
@@ -1408,7 +1426,7 @@ public:
     /// Kiírja a ports konténer tartalmát is
     virtual QString toString() const;
 
-    /// portok lista bővítése egy elemmel.
+    /// A portok lista kontáner bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param n Ha több objektum típust definiál a __t, akkor a típus indexe (0,1), illetve érdektelen
     /// @param __name port_name
@@ -1462,7 +1480,7 @@ public:
     /// és a beolvasandó rekord csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett IP cím
-    /// @param __ex Ha több host-nak van azonos címem akkor ha értéke true, kizárást dob, egyébként false -val tér vissza.
+    /// @param __ex Ha több host-nak van azonos címem akkor ha értéke nem EX_IGNORE, kizárást dob, egyébként false -val tér vissza.
     /// @return Ha van egy és csakis egy találat, ill. beolvasott rekord, akkor true, egyébként false
     int fetchByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
     /// Törli a ports konténert.
@@ -1482,7 +1500,7 @@ public:
     /// és a címek alapján próbál keresni egy host rekordot.
     /// Lásd még a lanView::testSelfName változót.
     /// @param q Az SQL müveletekhez használt query objektum.
-    /// @param __ex Ha értéke true, és nem sikerült beolvasni ill. megtalálni a rekordot, akkor dob egy kizárást.
+    /// @param __ex Ha értéke nem EX_IGNORE, és nem sikerült beolvasni ill. megtalálni a rekordot, akkor dob egy kizárást.
     /// @return Ha nem találja a saját host rekordot, akkor ha __ex értéke hamis, akkor false-val tér vissza,
     ///         ha __ex értéke Hosttrue, akkor dob egy kizárást. Ha beolvasta a keresett rekordot, akkor true-val tér vissza
     bool fetchSelf(QSqlQuery& q, enum eEx __ex = EX_ERROR);
@@ -1549,7 +1567,7 @@ public:
     ///            a névből kell meghatározni.A második elem az ip cím típus neve.
     /// @param __sMac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
     /// @param __note node secriptorra/megjegyzés
-    /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
+    /// @param __ex Ha értéke nwm EX_IGNORE, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
     cNode& asmbNode(QSqlQuery& q, const QString& __name, const tStringPair* __port, const tStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
     ///
     bool bDelCollisionByMac;
@@ -1610,12 +1628,14 @@ EXT_ int nodeObjectType(QSqlQuery& q, const cRecord& o, eEx __ex = EX_ERROR);
 EXT_ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt = nullptr);
 
 /* ---------------------------------------------------------------- */
+/// @class cImportTemplate
+/// Template vagy maktó objektum (import_template rekord).
 class LV2SHARED_EXPORT cImportTemplate : public cRecord {
     CRECORD(cImportTemplate);
 };
 
 /// @class cTemplateMap
-/// import_template record cache
+/// Import_template record cache
 class LV2SHARED_EXPORT cTemplateMap : public tStringMap {
 public:
     /// Konstruktor
@@ -1625,7 +1645,8 @@ public:
     cTemplateMap(const QString& __type);
     /// Copy konstruktor
     cTemplateMap(const cTemplateMap& __o);
-    /// copy operator, csak akkor másol, ha a type adattag azonos
+    /// copy operator, csak akkor másol, ha a type adattag azonos.
+    /// Különböző type értékek esetén (EPROGFAIL) hibát dob
     cTemplateMap& operator=(const cTemplateMap& __o) {
         if (__o.type != type) EXCEPTION(EPROGFAIL);
         *static_cast<tStringMap *>(this) = static_cast<tStringMap>(__o);
@@ -1694,7 +1715,7 @@ public:
     }
 
 /// @macro HEREINWE(o, m, i)
-/// Ugyan az, mint a HEREINW(o,m,i) makró, de még az export queue-be is elküldi az üzenetet,
+/// Ugyan az, mint a HEREIN(o,m,i) makró, de az export queue-be is elküldi az üzenetet,
 /// log viszont nincs.
 #define HEREINWE(o, m, i)  { \
         QString message = m; \

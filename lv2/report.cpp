@@ -65,6 +65,38 @@ QString toHtml(const QString& text, bool chgBreaks, bool esc, int indent)
     return r;
 }
 
+/* ****************************************************************************************************************** */
+
+QString htmlEnumDecoration(const QString text, const cEnumVal& eval, int m, bool chgBreaks, bool esc)
+{
+    QString r = toHtml(text, chgBreaks, esc);
+    qlonglong fa = eval.getId(cEnumVal::ixFontAttr());
+    if (m & EDM_FONT_ATTR && fa != NULL_ID) {
+        if (fa & ENUM2SET(FA_BOOLD))     r = toHtmlBold(         r, false, false);
+        if (fa & ENUM2SET(FA_ITALIC))    r = toHtmlItalic(       r, false, false);
+        if (fa & ENUM2SET(FA_STRIKEOUT)) r = toHtmlStrikethrough(r, false, false);
+        if (fa & ENUM2SET(FA_UNDERLINE)) r = toHtmlUnderline(    r, false, false);
+    }
+    QString s, style;
+    s = eval.getName(cEnumVal::ixFgColor());
+    if (m & EDM_FONT_COLOR && !s.isEmpty()) {
+        style  = " \"color:%1\" ";
+    }
+    s = eval.getName(cEnumVal::ixBgColor());
+    if (m & EDM_BACKGROUND_COLOR && !s.isEmpty()) {
+        style += " \"background-color:%1\" ";
+    }
+    s = eval.getName(cEnumVal::ixFontFamily());
+    if (m & EDM_FONT_FAMILY && !s.isEmpty()) {
+        style += " \"font-family:%1\" ";
+    }
+    if (!style.isEmpty()) {
+        r = "<span style=" + style + ">" + r + "</span>";
+    }
+    return r;
+}
+
+/* ****************************************************************************************************************** */
 
 QString htmlTableLine(const QStringList& fl, const QString& ft, bool esc)
 {

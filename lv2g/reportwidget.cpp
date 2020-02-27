@@ -12,6 +12,15 @@ QStringList cReportWidget::reportLevels;
 QStringList cReportWidget::reportLinkSubType;
 
 
+static QString toHtml(const QString& text, eTristate st)
+{
+    switch (st) {
+    case TS_TRUE:  return toGreen(text);
+    case TS_FALSE: return toHtmlItalic(text);
+    case TS_NULL:  return toRed(text);
+    }
+}
+
 
 cReportWidget::cReportWidget(QMdiArea *parent) :
     cIntSubObj(parent),
@@ -110,6 +119,14 @@ void cReportWidget::on_comboBoxType_currentIndexChanged(int index)
         ui->comboBoxSubType->show();
         ui->pushButtonStart->setEnabled(true);
         break;
+    case RT_UPLINK_VLANS:
+        ui->comboBoxLevel->addItems(reportLevels);
+        ui->comboBoxLevel->setCurrentIndex(RL_WARNING);
+        ui->comboBoxLevel->setEnabled(true);
+        ui->comboBoxLevel->show();
+        ui->comboBoxSubType->hide();
+        ui->pushButtonStart->setEnabled(true);
+        break;
     default:
         ui->pushButtonStart->setDisabled(true);
         ui->comboBoxLevel->hide();
@@ -154,6 +171,7 @@ QString cReportThread::sLogical;
 QString cReportThread::sLldp;
 QString cReportThread::sLogicalAndLldp;
 QString cReportThread::sLinkCaveat;
+QString cReportThread::sTrunkCaveat;
 
 
 cReportThread::cReportThread(int _rt, int _l, int _st)
@@ -167,6 +185,7 @@ cReportThread::cReportThread(int _rt, int _l, int _st)
         sLldp    = tr("LLDP");
         sLogicalAndLldp = tr("Logikai és LLDP");
         sLinkCaveat = tr("Ellentmondó linkek!");
+        sTrunkCaveat = tr("Ellentmondásos trunk adatok!");
     }
 }
 
@@ -182,25 +201,27 @@ void cReportThread::run()
     } CATCHS(pLastError)
 }
 
-void cReportThread::nodeHead(eTristate ok, const QString& nodeName, const QStringList& tableHead, const QList<QStringList>& matrix)
+void cReportThread::nodeHead(eTristate ok, const QString& title, const QStringList& tableHead, const QList<QStringList>& matrix)
 {
-    QString s = sNodeHead.arg(nodeName);
+    QString s = sNodeHead.arg(title);
     switch (ok) {
     case TS_TRUE:
         if (reportLevel != cReportWidget::RL_ALL) return;   // Skeep
-        s = htmlGrInf(s);
+        s = sHtmlLine + htmlGrInf(s);
         break;
     case TS_NULL:
         if (reportLevel == cReportWidget::RL_ERROR) return; // Skeep
-        s = htmlWarning(s);
+        s = sHtmlLine + htmlWarning(s);
         break;
     case TS_FALSE:
-        s = htmlError(s);
+        s = sHtmlLine + htmlError(s);
         break;
     }
     sendMsg(s);
-    s = htmlTable(tableHead, matrix, false, tableCellPaddingPix);
-    sendMsg(s);
+    if (!matrix.isEmpty()) {
+        s = htmlTable(tableHead, matrix, false, tableCellPaddingPix);
+        sendMsg(s);
+    }
 }
 
 void cReportThread::nodeHead(eTristate ok, const QString &nodeName, const QString &html)
@@ -209,14 +230,14 @@ void cReportThread::nodeHead(eTristate ok, const QString &nodeName, const QStrin
     switch (ok) {
     case TS_TRUE:
         if (reportLevel != cReportWidget::RL_ALL) return;   // Skeep
-        s = htmlGrInf(s);
+        s = sHtmlLine + htmlGrInf(s);
         break;
     case TS_NULL:
         if (reportLevel == cReportWidget::RL_ERROR) return; // Skeep
-        s = htmlWarning(s);
+        s = sHtmlLine + htmlWarning(s);
         break;
     case TS_FALSE:
-        s = htmlError(s);
+        s = sHtmlLine + htmlError(s);
         break;
     }
     sendMsg(s);
@@ -407,7 +428,6 @@ void cReportThread::trunkReport()
         qlonglong linkedTrunkId  = NULL_ID;
         foreach (cTrunk::cMember m, pTrunk->members) {  // for each members
             static const QString psep = ":";
-            static const QString msep = "\n";
             QStringList row(emptyRow);  // Empty row
             eTristate rowOk = TS_TRUE;  // Row status
             row[C_MEMBER_PORT] = toHtml(m.memberPortName);
@@ -417,7 +437,7 @@ void cReportThread::trunkReport()
                 row[C_LOG_LINK_PORT] = m.memberPortLogLinkedNodeName + psep + m.memberPortLogLinkedPortName;
                 if (m.memberPortLogLinkedTrunkId == NULL_ID) {
                     s = tr("A logikai link szerinti port nem egy trunk tagja.");
-                    row[C_NOTE] = msgCat(row[C_NOTE], s, msep);
+                    msgAppend(&row[C_NOTE], s);
                     rowOk = TS_FALSE;
                 }
                 else {
@@ -428,7 +448,7 @@ void cReportThread::trunkReport()
                     else {
                         if (linkedTrunkId != m.memberPortLogLinkedTrunkId) {
                             s = tr("A logikai link szerinti porthoz tartozó trunk nem egyezik az előzővel.");
-                            row[C_NOTE] = msgCat(row[C_NOTE], s, msep);
+                            msgAppend(&row[C_NOTE], s);
                             rowOk = TS_FALSE;
                         }
                     }
@@ -443,7 +463,7 @@ void cReportThread::trunkReport()
                 row[C_LLDP_LINK_PORT] = m.memberPortLldpLinkedNodeName + psep + m.memberPortLldpLinkedPortName;
                 if (m.memberPortLldpLinkedTrunkId == NULL_ID) {
                     s = tr("Az LLDP link szerinti port nem egy trunk tagja.");
-                    row[C_NOTE] = msgCat(row[C_NOTE], s, msep);
+                    msgAppend(&row[C_NOTE], s);
                     rowOk = TS_FALSE;
                 }
                 else {
@@ -454,7 +474,7 @@ void cReportThread::trunkReport()
                     else {
                         if (linkedTrunkId != m.memberPortLldpLinkedTrunkId) {
                             s = tr("Az LLDP link szerinti porthoz tartozó trunk nem egyezik az előzővel.");
-                            row[C_NOTE] = msgCat(row[C_NOTE], s, msep);
+                            msgAppend(&row[C_NOTE], s);
                             rowOk = TS_FALSE;
                         }
                     }
@@ -462,7 +482,7 @@ void cReportThread::trunkReport()
                 if (m.memberPortLogLinkedPortId != NULL_ID) {
                     if (m.memberPortLogLinkedPortId != m.memberPortLldpLinkedPortId) {
                         s = tr("Az LLDP és logikai linkelt port nem azonos.");
-                        row[C_NOTE] = msgCat(row[C_NOTE], s, msep);
+                        msgAppend(&row[C_NOTE], s);
                         rowOk = TS_FALSE;
                     }
                 }
@@ -472,7 +492,7 @@ void cReportThread::trunkReport()
             }
             switch (rowOk) {
             case TS_NULL:
-                trunkOk = trunkOk == TS_FALSE ? TS_FALSE : TS_NULL;
+                trunkOk = tsMin(trunkOk, TS_NULL);
                 for (int i = 0; i < C_COLUMNS; ++i) {
                     row[i] = htmlInfo(row[i], true);
                 }
@@ -485,6 +505,7 @@ void cReportThread::trunkReport()
                 break;
             case TS_TRUE:
                 for (int i = 0; i < C_COLUMNS; ++i) {
+                    if (row[C_NOTE].isEmpty()) row[C_NOTE] = _sOk;
                     row[i] = htmlGrInf(row[i], true);
                 }
                 break;
@@ -711,194 +732,314 @@ void cReportThread::mactabReport()
 
 /* ------------------------------------------ VLAN ------------------------------------------- */
 
-class cQueueForScan {
-public:
-    cQueueForScan(QList<qlonglong> _stock, qlonglong first) : stock(_stock), queue() { enqueue(first); }
-    int size()    const { return queue.size(); }
-    int isEmpty() const { return queue.isEmpty(); }
-    int handled() const { return handleds.size(); }
-    eTristate enqueue(qlonglong id) {
-        if (!stock.contains(id)) return TS_NULL;
-        if (handleds.contains(id)) return TS_FALSE;
-        handleds << id;
-        queue.enqueue(id);
-        return TS_TRUE;
+static QString vlanList(const QStringList& vnames, const QStringList& vtypes)
+{
+    QString r;
+    int i, n = vnames.size();
+    if (n != vtypes.size()) EXCEPTION(EPROGFAIL);
+    for (i = 0; i < n; ++i) {
+        eVlanType vt  = eVlanType(vlanType(vtypes.at(i)));
+        const QString& vname = vnames.at(i);
+        r += htmlEnumDecoration(vname, cEnumVal::enumVal(_sVlanType, vt)) + _sCommaSp;
     }
-    qlonglong dequeue() {
-        if (isEmpty()) return NULL_ID;
-        return queue.dequeue();
+    r.chop(_sCommaSp.size());
+    return r;
+}
+
+static QString trunkMembers(QSqlQuery& q, qlonglong pid)
+{
+    static const QString sql = "SELECT port_name FROM interfaces WHERE port_staple_id = ?";
+    QString r;
+    if (execSql(q, sql, pid)) {
+        do {
+            r += q.value(0).toString() + _sCommaSp;
+        } while (q.next());
+        r.chop(_sCommaSp.size());
     }
-private:
-    QList<qlonglong>    stock;
-    QQueue<qlonglong>   queue;
-    QList<qlonglong>    handleds;
-};
+    return r;
+}
+
+bool checkVlans(QSqlQuery& q, qlonglong linkedId, const QVariantList& vlanIds, QString& sLinkedVlanList)
+{
+    QVariantList linkVlanIds;
+    QStringList  linkVlanNames;
+    QStringList  linkVlanTypes;
+    // Check uplink vlans
+    static const QString sqlVlan =
+            "SELECT vlan_id, vlan_name, vlan_type"
+            " FROM port_vlans"
+            " JOIN vlans using(vlan_id)"
+            " WHERE port_id = ?"
+            " ORDER BY vlan_id ASC";
+    if (execSql(q, sqlVlan, linkedId)) do {
+        linkVlanIds   << q.value(0);
+        linkVlanNames << q.value(1).toString();
+        linkVlanTypes << q.value(2).toString();
+    } while (q.next());
+    bool vlanOk = vlanIds.size() == linkVlanIds.size();
+    if (vlanOk) {
+        int i, n = vlanIds.size();
+        for (i = 0; i < n; ++i) {
+            if (vlanIds.at(i).toLongLong() != linkVlanIds.at(i)) {
+                vlanOk = false;
+                break;
+            }
+        }
+    }
+    sLinkedVlanList = vlanList(linkVlanNames, linkVlanTypes);
+    return vlanOk;
+}
 
 void cReportThread::uplinkVlansReport()
 {
-    enum eColumns { C_PORT, C_VLANS, C_LINKED, C_LINK_TYPE, C_VLANS_LINKED, C_NOTE, C_COLUMNS };
+    // Táblázat oszlopai sorszámok
+    enum eColumns { C_PORT, C_PTAGS, C_VLANS, C_LINKED, C_PLTAGS, C_LINK_TYPE, C_VLANS_LINKED, C_NOTE, C_COLUMNS };
+    // Táblázat fejléce (oszlop nevek)
     static QStringList header;
+    // Egy üres sor
     static QStringList emptyRow;
+    // A táblázat fejlécének és az üres sornak a(z ellenörzött) kitöltése
     if (header.isEmpty()) {
         appendCont(header, tr("Port"),        emptyRow, _sNul, C_PORT);
+        appendCont(header, tr("Trunk"),       emptyRow, _sNul, C_PTAGS);
         appendCont(header, tr("VLAN-ok"),     emptyRow, _sNul, C_VLANS);
         appendCont(header, tr("Linked port"), emptyRow, _sNul, C_LINKED);
+        appendCont(header, tr("Trunk"),       emptyRow, _sNul, C_PLTAGS);
         appendCont(header, tr("Link típusa"), emptyRow, _sNul, C_LINK_TYPE);
         appendCont(header, tr("VLAN-ok"),     emptyRow, _sNul, C_VLANS_LINKED);
-        appendCont(header, tr("Megjegyzés"),  emptyRow, _sNul, C_VLANS_LINKED);
+        appendCont(header, tr("Megjegyzés"),  emptyRow, _sNul, C_NOTE);
     }
-    QSqlQuery q = getQuery();
-    // Central switch
-    QString   centralSwitchName = cSysParam::getTextSysParam(q, "central_switch_name");
-    if (centralSwitchName.isEmpty()) {
-        sendMsg(tr("Nincs 'central_switch_name' nevű rendszerváltozó, nem ismert a kiindulási switch neve."));
-        return;
-    }
-    qlonglong centralSwitchId = cNode().getIdByName(q, centralSwitchName, EX_IGNORE);
-    if (centralSwitchId == NULL_ID) {
-        sendMsg(tr("A 'central_switch_name' nevű rendszerváltozó serinti %1 nevű eszköz nem ismert.").arg(centralSwitchName));
-        return;
-    }
-    // Get node list
+    QSqlQuery q1 = getQuery();
+    QSqlQuery q2 =  getQuery();
+    // Get switch type node list
     static const QString sqlSwitchs =
             "SELECT DISTINCT node_id, node_name,"
-                "(SELECT ARRAY_AGG(vlan_id) FROM vlan_list_by_host AS v"
-                " WHERE v.node_id = n.node_id ORDER BY vlan_id ASC)"
+                "ARRAY(SELECT vlan_name FROM vlan_list_by_host AS v"
+                    " WHERE v.node_id = n.node_id ORDER BY vlan_id ASC)"
                 " AS vlan_ids"
             " FROM nodes AS n"
             " WHERE 'switch' = ANY (node_type)"
+            " ORDER BY node_name ASC"
             ;
-    if (!execSql(q, sqlSwitchs)) {
+    if (!execSql(q1, sqlSwitchs)) {
         sendMsg(tr("Nincs mit listázni, nincsenek bejegyzett switch-ek."));
         return;
     }
-    QList<qlonglong> switchIds;                     // All switch node ID
-    QMap<qlonglong, QString> switchNameMap;         // Switch name MAP by ID
-    QMap<qlonglong, QVariantList> switchVlansMap;   // Switch vlans list MAP bY ID
-    QMap<qlonglong, qlonglong> uplinkPortMap;       // uplink port id towards the central switch
+    QList<qlonglong> switchIds;
+    QMap<qlonglong, QString> switchNameMap;
+    QMap<qlonglong, QString> switchVLanMap;
     do {
-        qlonglong id = q.value(0).toLongLong();
-        switchIds   << id;
-        switchNameMap[id]  = q.value(1).toString();
-        switchVlansMap[id] = sqlToIntegerList(q.value(2));
-        uplinkPortMap[id]  = NULL_ID;   // yet unknown
-    } while (q.next());
-    q.finish();
-    recordNumber = switchIds.size();
-    cQueueForScan queue(switchIds, centralSwitchId);
-    if (queue.isEmpty()) {
-        sendMsg(tr("A 'central_switch_name' nevű rendszerváltozó serinti %1 nevű eszköz nem szerepel a lekérdezett teljes switch listában.").arg(centralSwitchName));
-        return;
-    }
-    qlonglong actSwitchId;
-    while (NULL_ID != (actSwitchId = queue.dequeue())) {
-        QString nodeName = switchNameMap[actSwitchId];
+        qlonglong id = q1.value(0).toLongLong();    // node_id
+        switchIds << id;                            // ID-k név szerint névsornan
+        switchNameMap[id] = q1.value(1).toString(); // node_name
+        switchVLanMap[id] = sqlToStringList(q1.value(2)).join(_sCommaSp);   // VLan list
+    } while (q1.next());
+    q1.finish();
+    recordNumber = switchNameMap.size();
+    int progresCnt = 0;
+    foreach (qlonglong actSwitchId, switchIds) {
+        qlonglong portId, lldpLinkedId, logLinkedId, linkedId;
+        QString nodeName, portName, note, linkType;
+        QVariantList vlanIds, linkedVlanIds;
+        QStringList vlanNames, vlanTypes, linkedVlanNames, linkedVlanTypes;
+        nodeName = switchNameMap.take(actSwitchId);
         eTristate swOk = TS_TRUE;   // Actual switch is OK
-        // Get ports for act. switch
-        static const QString sqlPorts =
-               " SELECT"
-                " port_id,"
-                " port_name,"
-                " iftype_id,"
-                " ARRAY_AGG(vlan_id ORDER BY vlan_id ASC) AS vlan_ids,"
-                " (SELECT array_agg(port_id) FROM interfaces AS im WHERE im.port_staple_id = i.port_id) AS member_port_ids,"
-                " ll.port_id2 AS log_linked_id"
-                " ld.port_id2 AS lldp_linked_id"
-                " FROM interfaces AS i"
-                " JOIN port_vlans USING(port_id)"
-                " LEFT OUTER JOIN log_links  AS ll ON ll.port_id1 = i.port_id"
-                " LEFT OUTER JOIN lldp_links AS ld ON ld.port_id1 = i.port_id"
-                " WHERE node_id = ? AND port_staple_id IS NULL"
-                " GROUP BY port_id"
-                " ORDER BY port_index ASC, port_name ASC"
-                ;
-        execSql(q, sqlPorts, actSwitchId);
-        QList<qlonglong>              portIds;
-        QMap<qlonglong, QString>      portNamesMap;
-        QMap<qlonglong, qlonglong>    portIfTypesMap;
-        QMap<qlonglong, QVariantList> portVlansMap;
-        QMap<qlonglong, QVariantList> portMembersMap;
-        QMap<qlonglong, QPair<qlonglong, qlonglong> > portLinkedMap;  // first: log_linked; second: lldp linked
+        eTristate portOk, linkOk, trunkOk;
+        bool vlanOk;
+        QStringList row = emptyRow;
         QList<QStringList>  matrix;
-        do {
-            qlonglong portId = q.value(0).toLongLong();
-            portIds << portId;
-            portNamesMap.  insert(portId, q.value(1).toString());
-            portIfTypesMap.insert(portId, q.value(2).toLongLong());
-            portVlansMap.  insert(portId, sqlToIntegerList(q.value(3)));
-            portMembersMap.insert(portId, sqlToIntegerList(q.value(4)));
-            portLinkedMap. insert(portId, QPair<qlonglong,qlonglong>(getId(q, 5), getId(q, 6)));
-        } while (q.next());
-        q.finish();
-        static const qlonglong multiplexorId = cIfType::ifTypeId(_sMultiplexor);
-        foreach (qlonglong portId, portIds) {
-            // Check VLANS
-            eTristate portOk = TS_TRUE;
-            QStringList row = emptyRow;
-            QString portName = portNamesMap[portId];
-            qlonglong ifTypeId = portIfTypesMap[portId];
-            QVariantList memberPortIds = portMembersMap[portId];
-            QVariantList vlanIds = portVlansMap[portId];
-            QString note;
-            QMap<qlonglong, QString> linkedPortsIds;  // key: linked port_id; value : type(s)
+        // Get non trunk ports
+        static const QString sqlNonTrunk =
+                "WITH ports AS ("
+                   " SELECT"
+                       " i.port_id AS port_id,"
+                       " i.port_name AS port_name,"
+                       " (   SELECT port_id2 AS dpid"
+                           " FROM lldp_links AS dl"
+                           " JOIN interfaces AS di ON dl.port_id2 = di.port_id"
+                           " JOIN nodes      AS dn ON di.node_id  = dn.node_id"
+                           " WHERE dl.port_id1 = i.port_id AND 'switch' = ANY (dn.node_type)"
+                       " ) AS lldp_linked_id,"
+                       " (   SELECT port_id2 AS lpid"
+                           " FROM log_links AS ll"
+                           " JOIN interfaces AS li ON ll.port_id2 = li.port_id"
+                           " JOIN nodes      AS ln ON li.node_id  = ln.node_id"
+                           " WHERE ll.port_id1 = i.port_id AND 'switch' = ANY (ln.node_type)"
+                       " ) AS log_linked_id"
+                   " FROM interfaces AS i"
+                   " WHERE node_id = ? AND i.port_staple_id IS NULL"
+                   " ORDER BY port_index ASC, port_name ASC"
+               " )"
+               " SELECT"
+                   " port_id, port_name, lldp_linked_id, log_linked_id,"
+                   " ARRAY_AGG(vlan_id   ORDER BY vlan_id ASC) AS vlan_ids,"
+                   " ARRAY_AGG(vlan_name ORDER BY vlan_id ASC) AS vlan_types,"
+                   " ARRAY_AGG(vlan_type ORDER BY vlan_id ASC) AS vlan_names"
+               " FROM ports"
+               " JOIN port_vlans USING(port_id)"
+               " JOIN vlans USING(vlan_id)"
+               " WHERE log_linked_id IS NOT NULL OR lldp_linked_id IS NOT NULL"
+               " GROUP BY port_id, port_name, lldp_linked_id, log_linked_id";
+        if (execSql(q1, sqlNonTrunk, actSwitchId)) do {
+            portId          = q1.value(0).toLongLong();
+            portName        = q1.value(1).toString();
+            lldpLinkedId    = ::getId(q1, 2);
+            logLinkedId     = ::getId(q1, 3);
+            vlanIds         = sqlToIntegerList(q1.value(4));
+            vlanNames       = sqlToStringList( q1.value(5));
+            vlanTypes       = sqlToStringList( q1.value(6));
 
-            if (ifTypeId == multiplexorId) {
-                if (memberPortIds.isEmpty()) {  // Multiplexor: no any member ports
-                    if (reportLevel == cReportWidget::RL_ALL) {
-                        row[C_PORT] = htmlItalicInf(portName);
-                        row[C_VLANS]= htmlItalicInf(_QVariantListToString(vlanIds));
-                        row[C_NOTE] = htmlItalicInf(tr("Trunk port, tagok nélkül."));
-                        matrix << row;
-                    }
-                    continue;
+            portOk = linkOk = TS_TRUE;
+            note.clear();
+            row = emptyRow;
+
+            // Check link(s)
+            if (logLinkedId == NULL_ID && lldpLinkedId == NULL_ID) {
+                EXCEPTION(EPROGFAIL);
+            }
+            else if (logLinkedId == NULL_ID || lldpLinkedId == NULL_ID) {
+                if (lldpLinkedId != NULL_ID) {
+                    linkedId = lldpLinkedId;
+                    linkType = sLldp;
                 }
                 else {
-                    foreach (QVariant _mpid, memberPortIds) {
-                        qlonglong mpid = _mpid.toLongLong();
-                        qlonglong logLinkedId  = cLogLink().getLinked(q, mpid);
-                        qlonglong lldpLinkedId = cLldpLink().getLinked(q, mpid);
-                        if (logLinkedId == NULL_ID && lldpLinkedId == NULL_ID) {
-                            if (portOk == TS_TRUE) portOk = TS_NULL;
-                        }
-                        else if (logLinkedId == NULL_ID || lldpLinkedId == NULL_ID
-                              || (logLinkedId != NULL_ID && lldpLinkedId != NULL_ID && logLinkedId == lldpLinkedId)) {
-
-
-                        }
-                        else {
-
-                        }
-                        // .....
-                    }
+                    linkedId = logLinkedId;
+                    linkType = sLogical;
                 }
+                linkOk = TS_NULL;
+            }
+            else if (logLinkedId != lldpLinkedId) {
+                note = sLinkCaveat;
+                row[C_PORT]   = htmlItalicInf(portName);
+                row[C_VLANS]  = vlanList(vlanNames, vlanTypes);
+                row[C_NOTE]   = htmlItalicInf(note);
+                matrix << row;
+                swOk = tsMin(swOk, portOk = tsMin(portOk, TS_NULL));
+                continue;
             }
             else {
-                qlonglong logLinkedId = portLinkedMap[portId].first;
-                qlonglong lldpLinkedId = portLinkedMap[portId].second;
-                if (logLinkedId != NULL_ID && lldpLinkedId != NULL_ID && logLinkedId == lldpLinkedId) {
-                    linkedPortsIds[logLinkedId] = sLogicalAndLldp;
+                linkedId = lldpLinkedId;
+                linkType = sLogicalAndLldp;
+                linkOk = TS_TRUE;
+            }
+            // Check VLANS
+            vlanOk = checkVlans(q2, linkedId, vlanIds, row[C_VLANS_LINKED]);
+            if (!vlanOk) msgAppend(&note, tr("Nem egyező vlan kiosztás!"));
+            portOk = tsMin(portOk, bool2ts(vlanOk));
+            swOk   = tsMin(swOk,   portOk);
+            if ((portOk == TS_FALSE)
+             || (portOk == TS_NULL  && reportLevel <= cReportWidget::RL_WARNING)
+             || (portOk == TS_TRUE  && reportLevel == cReportWidget::RL_ALL)) {
+                if (note.isNull() && portOk == TS_TRUE) note = _sOk;
+                row[C_PORT]         = toHtml(portName, portOk);
+                row[C_PTAGS]        = trunkMembers(q1, portId);
+                row[C_VLANS]        = vlanList(vlanNames, vlanTypes);
+                row[C_LINKED]       = toHtml(cNPort().getFullNameById(q1, linkedId), linkOk);
+                // C_VLANS_LINKED
+                row[C_LINK_TYPE]    = toHtml(linkType, linkOk);
+                row[C_NOTE]         = toHtml(note, portOk);
+                matrix << row;
+            }
+        } while (q1.next());
+        // Get trunk ports
+        static const QString sqlTrunk =
+                "SELECT"
+                   " tr.port_name AS trunk_port_name,"
+                   " ARRAY("
+                       " SELECT mp.port_id"
+                       " FROM interfaces AS mp"
+                       " WHERE mp.port_staple_id = tr.port_id"
+                       " ORDER BY mp.port_index ASC, mp.port_name ASC"
+                       " ) AS member_port_ids,"
+                  " ARRAY("
+                      " SELECT mp.port_name"
+                      " FROM interfaces AS mp"
+                      " WHERE mp.port_staple_id = tr.port_id"
+                      " ORDER BY mp.port_index ASC, mp.port_name ASC"
+                      " ) AS member_port_names,"
+                   " ARRAY_AGG(vlan_id   ORDER BY vlan_id ASC) AS vlan_ids,"
+                   " ARRAY_AGG(vlan_name ORDER BY vlan_id ASC) AS vlan_types,"
+                   " ARRAY_AGG(vlan_type ORDER BY vlan_id ASC) AS vlan_names"
+                " FROM interfaces AS tr"
+                " JOIN iftypes    AS it USING(iftype_id)"
+                " JOIN port_vlans USING(port_id)"
+                " JOIN vlans      USING(vlan_id)"
+                " WHERE tr.node_id = ? AND iftype_name = 'multiplexor'"
+                " GROUP BY tr.port_index, trunk_port_name, member_port_ids, member_port_names"
+                " ORDER BY tr.port_index ASC, trunk_port_name ASC";
+        if (execSql(q1, sqlTrunk, actSwitchId)) do {
+            QString trunkName = q1.value(0).toString();
+            QVariantList memberPortIds = sqlToIntegerList(q1.value(1));
+            if (memberPortIds.isEmpty()) continue;  // Nincsenek tag portok, nincs link sem
+            QStringList memberPortNames = sqlToStringList( q1.value(2));
+            vlanIds   = sqlToIntegerList(q1.value(3));
+            vlanNames = sqlToStringList( q1.value(4));
+            vlanTypes = sqlToStringList( q1.value(5));
+            linkedId  = NULL_ID;
+
+            portOk = linkOk = trunkOk = TS_TRUE;
+            note.clear();
+            row = emptyRow;
+
+            foreach (QVariant vPortId, memberPortIds) {
+                portId = vPortId.toLongLong();
+                logLinkedId  = cLogLink(). getLinked(q2, portId);
+                lldpLinkedId = cLldpLink().getLinked(q2, portId);
+                if (logLinkedId == NULL_ID && lldpLinkedId == NULL_ID) {
+                    linkOk = tsMin(linkOk, TS_NULL);
+                }
+                else if (logLinkedId != NULL_ID && lldpLinkedId != NULL_ID && logLinkedId != lldpLinkedId) {
+                    linkOk = TS_FALSE;
+                    break;
                 }
                 else {
-                    if (logLinkedId != NULL_ID) {
-                        linkedPortsIds[logLinkedId] = sLogical;
+                    qlonglong linkedMemberId = logLinkedId != NULL_ID ? logLinkedId : lldpLinkedId;
+                    qlonglong _linkedId = cInterface().setById(q2, linkedMemberId).getId(_sPortStapleId);
+                    if (_linkedId == NULL_ID) {
+                        trunkOk = TS_FALSE;
+                        break;
                     }
-                    if (lldpLinkedId != NULL_ID) {
-                        linkedPortsIds[lldpLinkedId] = sLldp;
-                    }
-                    if (linkedPortsIds.size() > 1) {
-                        note = sLinkCaveat;
-                        portOk = TS_FALSE;
+                    if (linkedId == NULL_ID) linkedId = _linkedId;
+                    else if (linkedId != _linkedId) {
+                        trunkOk = TS_FALSE;
+                        break;
                     }
                 }
             }
+            if (tsMin(linkOk, trunkOk) == TS_FALSE) {
+                note = sLinkCaveat;
+                row[C_PORT]   = toHtml(trunkName, TS_FALSE);
+                row[C_PTAGS]  = toHtml(memberPortNames.join(_sCommaSp), tsMin(trunkOk, TS_NULL));
+                row[C_VLANS]  = vlanList(vlanNames, vlanTypes);
+                row[C_NOTE]   = toHtml(note, TS_FALSE);
+                matrix << row;
+                swOk = tsMin(swOk, portOk = tsMin(portOk, TS_FALSE));
+                continue;
 
+            }
+            if (linkedId == NULL_ID) continue;
+            // Check VLANS
+            vlanOk = checkVlans(q2, linkedId, vlanIds, row[C_VLANS_LINKED]);
+            if (!vlanOk) msgAppend(&note, tr("Nem egyező vlan kiosztás!"));
+            portOk = tsMin(portOk, bool2ts(vlanOk));
+            swOk   = tsMin(swOk,   portOk);
+            if ((portOk == TS_FALSE)
+             || (portOk == TS_NULL  && reportLevel <= cReportWidget::RL_WARNING)
+             || (portOk == TS_TRUE  && reportLevel == cReportWidget::RL_ALL)) {
+                if (note.isNull() && portOk == TS_TRUE) note = _sOk;
+                row[C_PORT]         = toHtml(trunkName, portOk);
+                row[C_PTAGS]        = toHtml(memberPortNames.join(_sCommaSp), trunkOk);
+                row[C_VLANS]        = vlanList(vlanNames, vlanTypes);
+                row[C_LINKED]       = toHtml(cNPort().getFullNameById(q1, linkedId), linkOk);
+                row[C_PLTAGS]       = trunkMembers(q1, linkedId);
+                // C_VLANS_LINKED
+                row[C_NOTE]         = toHtml(note, portOk);
+                matrix << row;
+            }
+        } while (q1.next());
 
-        }
-
-
-
-        progres((queue.handled() * 100) / recordNumber);
+        nodeHead(swOk, nodeName + "; (" + switchVLanMap[actSwitchId] + ")", header, matrix);
+        progres((progresCnt++ + 100) / recordNumber);
     }
-
 }
 

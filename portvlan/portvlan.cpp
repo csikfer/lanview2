@@ -132,6 +132,45 @@ cDevicePV::~cDevicePV()
     ;
 }
 
+void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
+{
+    cInspector::postInit(q, qs);
+    node().fetchPorts(q);
+    // Kereszt index a VLAN bitmap-ekben, ha a bit index nem azonos a port indexével
+    // pl.: HPE 1920 A NULL0 és a Vlan-interface<vlanid> interfészek kimaradnak a bitmap-ból.
+    static const QString key = "bitmap_xrefs";
+    QString xref = features().value(key);
+    if (!xref.isEmpty()) {
+        tStringMap smap = cFeatures::value2map(xref);
+        QString m;
+        if (smap.isEmpty()) {
+            m = tr("Az '%1' feature változó értéke ('%2') nem értelmezhető, mint kereszt index tábla.").arg(key, xref);
+        }
+        else {
+            foreach (QString spix, smap.keys()) {
+                QString sbix = smap[spix];
+                bool pok, bok;
+                qlonglong portIndex = spix.toInt(&pok);
+                int       bitIndex  = sbix.toInt(&bok);
+                if (!pok || !bok) {
+                    msgAppend(&m, tr("Az '%1' feature változó ban definiált index pár nem numerikus : %2 - %3 .").arg(key, spix, sbix));
+                }
+                else {
+                    cNPort *p = node().ports.get(_sPortIndex, portIndex, EX_IGNORE);
+                    if (p == nullptr) {
+                        msgAppend(&m, tr("Az '%1' feature változó ban definiált indexű port nem létezik : %2.").arg(key, spix));
+                        continue;
+                    }
+                    mIndexXref[portIndex] = bitIndex;
+                }
+            }
+        }
+        if (!m.isEmpty()) {
+            msgAppend(&m, tr("Szolgáltatás példány : %1 .").arg(name()));
+            APPMEMO(q, m, RS_WARNING);
+        }
+    }
+}
 #define _DM PDEB(VVERBOSE)
 #define DM  _DM << endl;
 
@@ -179,15 +218,15 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
             if (currentMaps.contains(vid) || staticMaps.contains(vid)) {    // Van ilyen VLAN ?
                 ++ctVlan;   // Számláló. Talált VLAN-ok száma
-                if (node().ports.isEmpty()) node().fetchPorts(q);
                 tRecordList<cNPort>::iterator i, n = node().ports.end();
                 QString vstat;
                 for (i = node().ports.begin(); i != n; ++i) {
-                    int pix = (*i)->getId(_sPortIndex);
+                    int pix = (*i)->getId(_sPortIndex);     // port index
+                    int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
                     if      (pvidMap.contains(pix) && pvidMap[pix] == vid)  vstat = _sUntagged;
-                    else if (maps2bool(staticMaps,  vid, pix))              vstat = _sTagged;
-                    else if (maps2bool(currentMaps, vid, pix))              vstat = _sTagged;
-                    else if (maps2bool(forbidMaps,  vid, pix))              vstat = _sForbidden;
+                    else if (maps2bool(staticMaps,  vid, bix))              vstat = _sTagged;
+                    else if (maps2bool(currentMaps, vid, bix))              vstat = _sTagged;
+                    else if (maps2bool(forbidMaps,  vid, bix))              vstat = _sForbidden;
                     else    continue;
                     QString r = execSqlTextFunction(q, "update_port_vlan", (*i)->getId(), vid, vstat);
                     switch (reasons(r, EX_IGNORE)) {

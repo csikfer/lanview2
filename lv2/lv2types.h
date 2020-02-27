@@ -67,30 +67,30 @@ inline eTristate inverse(eTristate v) {
     return TS_NULL;
 }
 
-static inline eTristate bool2ts(bool f) { return f ? TS_TRUE : TS_FALSE; }
+inline eTristate bool2ts(bool f) { return f ? TS_TRUE : TS_FALSE; }
 
 /// Igazság tábla:
-/// |  b \\ a  | TS_TRUE | TS_FALSE | TS_NULL |
+/// |  b \\ a | TS_TRUE | TS_FALSE | TS_NULL |
 /// | TS_TRUE | TS_TRUE | TS_TRUE  | TS_TRUE |
 /// | TS_FALSE| TS_TRUE | TS_NULL  | TS_NULL |
 /// | TS_NULL | TS_TRUE | TS_NULL  | TS_NULL |
 /// @return TS_TRUE, ha Bármelyik paraméter igaz, egyébként TS_NULL
-static inline eTristate anyTrue(eTristate a, eTristate b)  { return (a == TS_TRUE  || b == TS_TRUE)  ? TS_TRUE  : TS_NULL; }
+inline eTristate anyTrue(eTristate a, eTristate b)  { return (a == TS_TRUE  || b == TS_TRUE)  ? TS_TRUE  : TS_NULL; }
 /// Igazság tábla:
-/// |  b \\ a  | TS_TRUE  | TS_FALSE | TS_NULL  |
+/// |  b \\ a | TS_TRUE  | TS_FALSE | TS_NULL  |
 /// | TS_TRUE | TS_NULL  | TS_FALSE | TS_NULL  |
 /// | TS_FALSE| TS_FALSE | TS_FALSE | TS_FALSE |
 /// | TS_NULL | TS_NULL  | TS_FALSE | TS_NULL  |
 /// @return TS_FALSE, ha Bármelyik paraméter hamis, egyébként TS_NULL
-static inline eTristate anyFalse(eTristate a, eTristate b) { return (a == TS_FALSE || b == TS_FALSE) ? TS_FALSE : TS_NULL; }
+inline eTristate anyFalse(eTristate a, eTristate b) { return (a == TS_FALSE || b == TS_FALSE) ? TS_FALSE : TS_NULL; }
 /// Logikai és, nem az SQL értelmezés.
 /// Igazság tábla:
-/// |  b \\ a  | TS_TRUE  | TS_FALSE | TS_NULL  |
+/// |  b \\ a | TS_TRUE  | TS_FALSE | TS_NULL  |
 /// | TS_TRUE | TS_TRUE  | TS_FALSE | TS_TRUE  |
 /// | TS_FALSE| TS_FALSE | TS_FALSE | TS_FALSE |
 /// | TS_NULL | TS_TRUE  | TS_FALSE | TS_NULL  |
 /// @return És művelet, csak akkor TS_NULL, ha mindkét paraméter TS_NULL
-static inline eTristate tsAnd(eTristate a, eTristate b) {
+inline eTristate tsAnd(eTristate a, eTristate b) {
     switch (a) {
     case TS_NULL:   return b;
     case TS_FALSE:  return TS_FALSE;
@@ -100,18 +100,31 @@ static inline eTristate tsAnd(eTristate a, eTristate b) {
 }
 /// Logikai vagy, nem az SQL értelmezés.
 /// Igazság tábla:
-/// |  b \\ a  | TS_TRUE  | TS_FALSE | TS_NULL  |
+/// |  b \\ a | TS_TRUE  | TS_FALSE | TS_NULL  |
 /// | TS_TRUE | TS_TRUE  | TS_TRUE  | TS_TRUE  |
 /// | TS_FALSE| TS_TRUE  | TS_FALSE | TS_FALSE |
 /// | TS_NULL | TS_TRUE  | TS_FALSE | TS_NULL  |
 /// @return Vagy művelet, csak akkor TS_NULL, ha mindkét paraméter TS_NULL
-static inline eTristate tsOr(eTristate a, eTristate b) {
+inline eTristate tsOr(eTristate a, eTristate b) {
     switch (a) {
     case TS_NULL:   return b;
     case TS_TRUE:   return TS_TRUE;
     case TS_FALSE:  return b == TS_NULL ? TS_FALSE : b;
     }
     return TS_NULL;
+}
+
+/// Igazság tábla:
+/// |  b \\ a | TS_TRUE  | TS_FALSE | TS_NULL  |
+/// | TS_TRUE | TS_TRUE  | TS_FALSE | TS_NULL  |
+/// | TS_FALSE| TS_FALSE | TS_FALSE | TS_FALSE |
+/// | TS_NULL | TS_NULL  | TS_FALSE | TS_NULL  |
+/// @return Ha az értékeket státuszként értelmezzeük (TS_TRUE : OK > TS_NULL : WARNING/Unknown > TS_FALSE : ERROR),
+/// akkor a minimális értékkel tér vissza.
+inline eTristate tsMin(eTristate a, eTristate b) {
+    if (a == TS_FALSE || b == TS_FALSE) return TS_FALSE;
+    if (a == TS_NULL  || b == TS_NULL)  return TS_NULL;
+    return TS_TRUE;
 }
 
 EXT_ QString tristate2string(int e, eEx __ex = EX_ERROR);
