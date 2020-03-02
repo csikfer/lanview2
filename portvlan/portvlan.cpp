@@ -297,14 +297,14 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
                 int pix = (*i)->getId(_sPortIndex);     // port index
+                if (!pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                bool isPVID = pvidMap.contains(pix) && pvidMap[pix] == vid;
+                bool isPVID = pvidMap[pix] == vid;
                 bool isUntagged = maps2bool(staticUntagged, vid, bix);
                 if (isPVID != isUntagged) {
-                    runMsg = tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; %3")
-                            .arg((*i)->getName())
-                            .arg(pvidMap.contains(pix) ? QString::number(pvidMap[pix]) : "?")
-                            .arg(langBool(isUntagged));
+                    msgAppend(&runMsg,
+                              tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; untagged : %3")
+                                .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
                     rs = RS_WARNING;
                     ctErr++;
                 }
@@ -326,10 +326,11 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
     // törlendő jelöletlen rekordok
     bool ok;
     ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-    runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
-            .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
-            .arg(ok ? QString::number(ctRm) : "?")
-            .arg(ctUnkn).arg(ctErr);
+    msgAppend(&runMsg,
+              tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+                .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
+                .arg(ok ? QString::number(ctRm) : "?")
+                .arg(ctUnkn).arg(ctErr));
     return rs;
 
 }
@@ -365,14 +366,14 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
                 int pix = (*i)->getId(_sPortIndex);     // port index
+                if (!pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                bool isPVID = pvidMap.contains(pix) && pvidMap[pix] == vid;
+                bool isPVID = pvidMap[pix] == vid;
                 bool isUntagged = maps2bool(staticUntagged, vid, bix) || maps2bool(currentUntagged, vid, bix);
                 if (isPVID != isUntagged) {
-                    runMsg = tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; %3")
-                            .arg((*i)->getName())
-                            .arg(pvidMap.contains(pix) ? QString::number(pvidMap[pix]) : "?")
-                            .arg(langBool(isUntagged));
+                    msgAppend(&runMsg,
+                              tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; untagged : %3")
+                                .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
                     rs = RS_WARNING;
                     ctErr++;
                 }
@@ -394,10 +395,11 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
     // törlendő jelöletlen rekordok
     bool ok;
     ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-    runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
-            .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
-            .arg(ok ? QString::number(ctRm) : "?")
-            .arg(ctUnkn).arg(ctErr);
+    msgAppend(&runMsg,
+              tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+                .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
+                .arg(ok ? QString::number(ctRm) : "?")
+                .arg(ctUnkn).arg(ctErr));
     return rs;
 }
 
