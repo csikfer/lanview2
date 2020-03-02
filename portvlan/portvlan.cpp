@@ -167,7 +167,8 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
     cInspector::postInit(q, qs);
     node().fetchPorts(q);
 
-    static const QString key = "bitmap_xrefs";
+    QString key;
+    key = "bitmap_xrefs";
     QString xref = features().value(key);
     if (!xref.isEmpty()) {
         tStringMap smap = cFeatures::value2map(xref);
@@ -198,6 +199,20 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
         if (!m.isEmpty()) {
             msgAppend(&m, tr("Szolgáltatás példány : %1 .").arg(name()));
             APPMEMO(q, m, RS_WARNING);
+        }
+    }
+    key = "no_pvid";
+    mNoPVID = features().contains(key);
+    qlonglong typeId = cParamType::paramType(_sBoolean).getId();
+    int ixParamValue = cPortParam().toIndex(_sParamValue);
+    if (!mNoPVID) {
+        foreach (cNPort *p, node().ports.list()) {
+            cPortParam pp;
+            pp.setName(key);
+            pp.setId(pp.ixPortId(), p->getId());
+            pp.setType(typeId);
+            bool f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
+            if (f) mNoPvidPorts << int(p->getId(p->ixPortIndex()));
         }
     }
 }
@@ -278,7 +293,8 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticEgres))
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, staticForbid))
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticUntaggedPorts,        staticUntagged))
-     || 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap))) {
+     || (mNoPVID == false
+      && 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap)))) {
         runMsg = tr("SNMP '%1' error (query, dynamic): #%2/%3, '%4'.")
                 .arg(snmp.name().toString())
                 .arg(snmp.status).arg(r)
@@ -289,6 +305,7 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(q, sql, nodeId());
     //
+    QMap<int, int>  untaggedSettedMap;
     int rs = RS_ON;
     for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
         if (staticEgres.contains(vid) || staticForbid.contains(vid)) {    // Van ilyen VLAN ?
@@ -297,18 +314,33 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
                 int pix = (*i)->getId(_sPortIndex);     // port index
-                if (!pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
+                bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
+                if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                bool isPVID = pvidMap[pix] == vid;
                 bool isUntagged = maps2bool(staticUntagged, vid, bix);
-                if (isPVID != isUntagged) {
-                    msgAppend(&runMsg,
-                              tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; untagged : %3")
-                                .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
-                    rs = RS_WARNING;
-                    ctErr++;
+                if (!noPvid) {
+                    bool isPVID = pvidMap[pix] == vid;
+                    if (isPVID != isUntagged) {
+                        msgAppend(&runMsg,
+                                  tr("A PVID és az Untagged port ellentmondása  (static)! Port : %1; PVID = %2; untagged : %3")
+                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
+                        rs = RS_WARNING;
+                        ctErr++;
+                    }
                 }
-                if (isUntagged)                              vstat = _sUntagged;
+                if (isUntagged) {
+                    if (untaggedSettedMap.contains(pix)) {
+                        msgAppend(&runMsg,
+                                  tr("A %1 porthoz több untagged VLAN van kiosztva : %2 és %3 is")
+                                    .arg((*i)->getName()).arg(vid).arg(untaggedSettedMap[pix]));
+                        rs = RS_WARNING;
+                        ctErr++;
+                    }
+                    else {
+                        untaggedSettedMap[pix] = vid;
+                    }
+                    vstat = _sUntagged;
+                }
                 else if (maps2bool(staticForbid,  vid, bix)) vstat = _sForbidden;
                 else if (maps2bool(staticEgres,   vid, bix)) vstat = _sTagged;
                 else    continue;
@@ -327,7 +359,7 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
     bool ok;
     ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
     msgAppend(&runMsg,
-              tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+              tr("%1 VLAN (static), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
                 .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
                 .arg(ok ? QString::number(ctRm) : "?")
                 .arg(ctUnkn).arg(ctErr));
@@ -358,6 +390,7 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(q, sql, nodeId());
     //
+    QMap<int, int>  untaggedSettedMap;
     int rs = RS_ON;
     for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
         if (currentEgres.contains(vid) || staticEgres.contains(vid) || staticForbid.contains(vid)) {    // Van ilyen VLAN ?
@@ -366,18 +399,33 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
                 int pix = (*i)->getId(_sPortIndex);     // port index
-                if (!pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
+                bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
+                if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                bool isPVID = pvidMap[pix] == vid;
                 bool isUntagged = maps2bool(staticUntagged, vid, bix) || maps2bool(currentUntagged, vid, bix);
-                if (isPVID != isUntagged) {
-                    msgAppend(&runMsg,
-                              tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; untagged : %3")
-                                .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
-                    rs = RS_WARNING;
-                    ctErr++;
+                if (!noPvid) {
+                    bool isPVID = pvidMap[pix] == vid;
+                    if (isPVID != isUntagged) {
+                        msgAppend(&runMsg,
+                                  tr("A PVID és az Untagged port ellentmondása (dynamic)! Port : %1; PVID = %2; untagged : %3")
+                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
+                        rs = RS_WARNING;
+                        ctErr++;
+                    }
                 }
-                if (isUntagged)                              vstat = _sUntagged;
+                if (isUntagged) {
+                    if (untaggedSettedMap.contains(pix)) {
+                        msgAppend(&runMsg,
+                                  tr("A %1 porthoz több untagged VLAN van kiosztva : %2 és %3 is")
+                                    .arg((*i)->getName()).arg(vid).arg(untaggedSettedMap[pix]));
+                        rs = RS_WARNING;
+                        ctErr++;
+                    }
+                    else {
+                        untaggedSettedMap[pix] = vid;
+                    }
+                    vstat = _sUntagged;
+                }
                 else if (maps2bool(staticForbid,  vid, bix)) vstat = _sForbidden;
                 else if (maps2bool(currentEgres, vid, bix))  vstat = _sAutoTagged;
                 else    continue;
@@ -396,7 +444,7 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
     bool ok;
     ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
     msgAppend(&runMsg,
-              tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+              tr("%1 VLAN (dynamic), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
                 .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
                 .arg(ok ? QString::number(ctRm) : "?")
                 .arg(ctUnkn).arg(ctErr));

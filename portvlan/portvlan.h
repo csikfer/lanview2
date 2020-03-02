@@ -48,6 +48,10 @@ public:
     cSnmp           snmp;
     /// Ha csak statikus VLAN kiosztás van, akkor értéke TS_TRUE.
     eTristate   staticOnly;
+    /// A PVID értékek ignorálása az eszközre
+    bool        mNoPVID;
+    /// A PVID érték ignorálása a portra port index lista
+    QList<int>  mNoPvidPorts;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     /// port index bitmap kereszt referencia táblázat, ha korrigálni kellett a bitmap indexeket,
