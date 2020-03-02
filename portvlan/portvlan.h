@@ -21,8 +21,10 @@ public:
     ~cPortVLans();
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
     cOId dot1qVlanCurrentEgressPorts;
+    cOId dot1qVlanCurrentUntaggedPorts;
     cOId dot1qVlanStaticEgressPorts;
     cOId dot1qVlanStaticForbiddenEgressPorts;
+    cOId dot1qVlanStaticUntaggedPorts;
     cOId dot1qPvid;
 };
 
@@ -36,10 +38,16 @@ public:
     ~cDevicePV();
     virtual void postInit(QSqlQuery& q, const QString& qs = QString());
     /// A lekérdezést végző virtuális metódus.
-    /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
+    /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
+    /// @param runMsg A lekérdezés szöveges eredménye
+    /// @return A lekérdezés eredménye, állapot.
     virtual int run(QSqlQuery& q, QString& runMsg);
+    int runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& par);
+    int runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& par);
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
+    /// Ha csak statikus VLAN kiosztás van, akkor értéke TS_TRUE.
+    eTristate   staticOnly;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     /// port index bitmap kereszt referencia táblázat, ha korrigálni kellett a bitmap indexeket,
@@ -47,6 +55,14 @@ public:
     /// Ha azonosak az indexek, akkor a konténer üres.
     QMap<int, int>  mIndexXref;
     int getBitIndex(int pix) { return mIndexXref.contains(pix) ? mIndexXref[pix] : pix; }
+
+    QMap<int, QBitArray>    currentEgres;
+    QMap<int, QBitArray>    currentUntagged;
+    QMap<int, QBitArray>    staticEgres;
+    QMap<int, QBitArray>    staticUntagged;
+    QMap<int, QBitArray>    staticForbid;
+    QMap<int, int>          pvidMap;
+    int ctVlan, ctUnchg, ctMod, ctNew, ctIns, ctUnkn, ctRm, ctErr;
 };
 
 

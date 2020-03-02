@@ -61,37 +61,66 @@ void lv2portVLan::setup(eTristate _tr)
 
 /******************************************************************************/
 
+/// Az SNMP-n keresztül lekérdezi a VLAN beállításokat OID objektumok:
+/// @code
+/// dot1qVlan                           1.3.6.1.2.1.17.7.1.4
+///
+///   dot1qVlanCurrentTable             1.3.6.1.2.1.17.7.1.4.2
+///     dot1qVlanCurrentEgressPorts     1.3.6.1.2.1.17.7.1.4.2.1.4  bitmap : assigned (tagged or untagged)
+///     dot1qVlanCurrentUntaggedPorts   1.3.6.1.2.1.17.7.1.4.2.1.5  bitmap : untagged
+///
+///   dot1qVlanStaticTable              1.3.6.1.2.1.17.7.1.4.3
+///     dot1qVlanStaticEgressPorts      1.3.6.1.2.1.17.7.1.4.3.1.2  bitmap : assigned
+///     dot1qVlanForbiddenEgressPorts   1.3.6.1.2.1.17.7.1.4.3.1.3  bitmap : forbidden
+///     dot1qVlanStaticUntaggedPorts    1.3.6.1.2.1.17.7.1.4.3.1.4  bitmap : untagged
+///
+///   dot1qPortVlanTable                1.3.6.1.2.1.17.7.1.4.5
+///     dot1qPvid                       1.3.6.1.2.1.17.7.1.4.5.1.1  port PVID
+///
+/// dot1qVlanCurrentEgressPorts.0.<vlan id> = Port map (hex string)
+/// example:
+/// get mib-2.17.7.1.4.2.1.4.0.101
+/// SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0.101 = Hex-STRING: 00 00 C0 00 00 00 40 00
+///   vlan id = 101
+///            0           1            2             3            4              5            6
+///   port ix: 1234 5678  9012 3456  7890 1234  5678 9012  3456 7890  1234 5678  9012 3456  7890 1234
+///   bitmap:  0000 0000  0000 0000  1100 0000  0000 0000  0000 0000  0000 0000  0100 0000  0000 0000
+///      hex:     0    0     0    0     C    0     0    0     0    0     0    0     4    0     0    0
+///
+///   id=101 vlan is current eggres to 17,18 and 50 port.
+/// @endcode
+/// Feaures:
+///
+/// - bitmap-xrefs
+///   Kereszt index a VLAN bitmap-ekben, ha a bit index nem azonos a port indexével
+///   pl.: HPE 1920 A NULL0 és a Vlan-interface<vlanid> interfészek kimaradnak a bitmap-ból.
+///   Ezért a trunk portok indexei csúsznak minimum 2-vel.
+/// - static_vlans
+///   A cDevicePV::run() metódus az első hívásakor ( ha staticOnly == TS_NULL) teszteli,
+///   hogy a dinamikus VLAN kiosztás (dot1qVlanCurrent... OID objektumok) lekérdezhetőek-e.
+///   Ha nem lekérdezhetőek akkor a továbbiakban ezt nem kérdezi le (staticOnly = TS_TRUE).
+///   Ha megadtuk a static_vlans-t és értéke true, akkor a teszt elmarad, és csak a statikus állapotot kérdezi le,
+///   ha viszont static_vlans értéke false, akkor a teszt szintén elmerad, és a dinamikusakat is lekérdezi.
+///   Más értékeket esetén a static_vlans -t figyelmen kívül hagyja.
+///   Lásd még a eTristate str2tristate(const QString& _b, enum eEx __ex) függvényt.
 cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
-    /// $oid_dot1qVlanCurrentEgressPorts   numeric object id: dot1qVlanCurrentEgressPorts
-    /// dot1qVlanCurrentEgressPorts.0.<vlan id> = Port map (hex string)
-    /// example:
-    /// get mib-2.17.7.1.4.2.1.4.0.101
-    /// SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0.101 = Hex-STRING: 00 00 C0 00 00 00 40 00
-    ///   vlan id = 101
-    ///            0           1            2             3            4              5            6
-    ///   port ix: 1234 5678  9012 3456  7890 1234  5678 9012  3456 7890  1234 5678  9012 3456  7890 1234
-    ///   bitmap:  0000 0000  0000 0000  1100 0000  0000 0000  0000 0000  0000 0000  0100 0000  0000 0000
-    ///      hex:  00         00         C0         00         00         00         40         00
-    ///
-    ///   id=101 vlan is current eggres to 17,18 and 50 port.
-    dot1qVlanCurrentEgressPorts = cOId("SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
-    if (!dot1qVlanCurrentEgressPorts) EXCEPTION(ESNMP, dot1qVlanCurrentEgressPorts.status, dot1qVlanCurrentEgressPorts.emsg);
-    /// $oid_dot1qVlanStaticEgressPorts   numeric object id: dot1qVlanStaticEgressPorts
-    /// dot1qVlanStaticEgressPorts.0.<vlan id> = Port map (hex string)
-    /// example: eg.: dot1qVlanCurrentEgressPorts
-    dot1qVlanStaticEgressPorts = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.2");
-    if (!dot1qVlanStaticEgressPorts) EXCEPTION(ESNMP, dot1qVlanStaticEgressPorts.status, dot1qVlanStaticEgressPorts.emsg);
-    /// $oid_dot1qVlanStaticForbiddenEgressPorts   numeric object id: dot1qVlanStaticForbiddenEgressPorts
-    /// dot1qVlanStaticForbiddenEgressPorts.0.<vlan id> = Port map (hex string)
-    /// example: eg.: dot1qVlanCurrentEgressPorts
-    dot1qVlanStaticForbiddenEgressPorts = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.3");
+    // Current VLAN settings (dynamic)
+    dot1qVlanCurrentEgressPorts             = cOId("SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
+    if (!dot1qVlanCurrentEgressPorts)       EXCEPTION(ESNMP, dot1qVlanCurrentEgressPorts.status, dot1qVlanCurrentEgressPorts.emsg);
+    dot1qVlanCurrentUntaggedPorts           = cOId("SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
+    if (!dot1qVlanCurrentUntaggedPorts)     EXCEPTION(ESNMP, dot1qVlanCurrentUntaggedPorts.status, dot1qVlanCurrentUntaggedPorts.emsg);
+
+    dot1qVlanStaticEgressPorts              = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.2");
+    if (!dot1qVlanStaticEgressPorts)        EXCEPTION(ESNMP, dot1qVlanStaticEgressPorts.status, dot1qVlanStaticEgressPorts.emsg);
+    dot1qVlanStaticForbiddenEgressPorts     = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.3");
     if (!dot1qVlanStaticForbiddenEgressPorts) EXCEPTION(ESNMP, dot1qVlanStaticForbiddenEgressPorts.status, dot1qVlanStaticForbiddenEgressPorts.emsg);
-    /// $oid_dot1qPvid   numeric object id: dot1qPvid
-    /// dot1qPvid.<port id> = <vlan id>
-    dot1qPvid = cOId("SNMPv2-SMI::mib-2.17.7.1.4.5.1.1");
-    if (!dot1qPvid) EXCEPTION(ESNMP, dot1qPvid.status, dot1qPvid.emsg);
+    dot1qVlanStaticUntaggedPorts            = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.4");
+    if (!dot1qVlanStaticUntaggedPorts)      EXCEPTION(ESNMP, dot1qVlanStaticUntaggedPorts.status, dot1qVlanStaticUntaggedPorts.emsg);
+
+    dot1qPvid                               = cOId("SNMPv2-SMI::mib-2.17.7.1.4.5.1.1");
+    if (!dot1qPvid)                         EXCEPTION(ESNMP, dot1qPvid.status, dot1qPvid.emsg);
 }
 
 cPortVLans::~cPortVLans()
@@ -125,6 +154,7 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     else {  // Csak az SNMP lekérdezés támogatott (egyenlőre)
         EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
+    staticOnly = str2tristate(features().value("static_vlans"), EX_IGNORE);
 }
 
 cDevicePV::~cDevicePV()
@@ -136,8 +166,7 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
 {
     cInspector::postInit(q, qs);
     node().fetchPorts(q);
-    // Kereszt index a VLAN bitmap-ekben, ha a bit index nem azonos a port indexével
-    // pl.: HPE 1920 A NULL0 és a Vlan-interface<vlanid> interfészek kimaradnak a bitmap-ból.
+
     static const QString key = "bitmap_xrefs";
     QString xref = features().value(key);
     if (!xref.isEmpty()) {
@@ -188,65 +217,187 @@ inline static bool maps2bool(const QMap<int, QBitArray>& maps, int mapix, int bi
 
 int cDevicePV::run(QSqlQuery& q, QString &runMsg)
 {
-    enum eNotifSwitch rs = RS_ON;
-    _DBGFN() << QChar(' ') << name() << endl;
-    // qlonglong parid = parentId(EX_IGNORE);
+    int rs = RS_ON;
+    int r;
+    const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());
+    ctVlan = ctUnchg = ctMod = ctNew = ctIns = ctUnkn = ctRm = ctErr = 0;
+    currentEgres.clear();
+    currentUntagged.clear();
+    staticEgres.clear();
+    staticUntagged.clear();
+    staticForbid.clear();
+    pvidMap.clear();
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
-    {   // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
-        static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
-        execSql(q, sql, nodeId());
+    switch (staticOnly) {
+    case TS_NULL:   // Test
+        if (0 != (r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,   currentEgres))
+         || 0 != (r = snmp.getBitMaps(par.dot1qVlanCurrentUntaggedPorts, currentUntagged))) {
+            runMsg = tr("SNMP '%1' error (test) : #%2/%3, '%4'.")
+                    .arg(snmp.name().toString())
+                    .arg(snmp.status).arg(r)
+                    .arg(snmp.emsg);
+            rs = RS_UNREACHABLE;
+        }
+        else {
+            bool ze = currentEgres.isEmpty();
+            bool zu = currentUntagged.isEmpty();
+            if (ze != zu) {
+                static const QString nz = tr("elérhető"), z = tr("nem elérhető");
+                runMsg = tr("Teszt : Nem értelmezhető SNMP válasz : dot1qVlanCurrentEgressPorts %1; dot1qVlanCurrentUntaggedPorts %2.")
+                        .arg(ze ? z : nz, zu ? z :nz);
+                rs = RS_UNREACHABLE;
+            }
+            else if (ze) {
+                staticOnly = TS_TRUE;
+                rs = runSnmpStatic(q, runMsg, par);
+            }
+            else {
+                staticOnly = TS_FALSE;
+                rs = runSnmpDynamic(q, runMsg, par);
+            }
+        }
+        break;
+    case TS_TRUE:   // Static only
+        rs = runSnmpStatic(q, runMsg, par);
+        break;
+    case TS_FALSE:  // Dinamic
+        rs = runSnmpDynamic(q, runMsg, par);
+        break;
     }
-    QMap<int, QBitArray>    currentMaps;
-    QMap<int, QBitArray>    staticMaps;
-    QMap<int, QBitArray>    forbidMaps;
-    QMap<int, int>          pvidMap;
-    const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());
-    int r;
-    if (0 != (r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,         currentMaps))
-     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticMaps))
-     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, forbidMaps))
+    DBGFNL();
+    return rs;
+}
+
+int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& par)
+{
+    // SNMP query
+    int r = 0;
+    if (r != 0
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticEgres))
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, staticForbid))
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticUntaggedPorts,        staticUntagged))
      || 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap))) {
-        runMsg = tr("SNMP '%1' error : #%2/%3, '%4'.")
+        runMsg = tr("SNMP '%1' error (query, dynamic): #%2/%3, '%4'.")
                 .arg(snmp.name().toString())
                 .arg(snmp.status).arg(r)
                 .arg(snmp.emsg);
-        rs = RS_UNREACHABLE;
+        return RS_UNREACHABLE;
     }
-    else {
-        int ctVlan = 0, ctUnchg = 0, ctMod = 0, ctNew = 0, ctIns = 0, ctUnkn = 0, ctRm = 0;
-        for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
-            if (currentMaps.contains(vid) || staticMaps.contains(vid)) {    // Van ilyen VLAN ?
-                ++ctVlan;   // Számláló. Talált VLAN-ok száma
-                tRecordList<cNPort>::iterator i, n = node().ports.end();
-                QString vstat;
-                for (i = node().ports.begin(); i != n; ++i) {
-                    int pix = (*i)->getId(_sPortIndex);     // port index
-                    int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                    if      (pvidMap.contains(pix) && pvidMap[pix] == vid)  vstat = _sUntagged;
-                    else if (maps2bool(staticMaps,  vid, bix))              vstat = _sTagged;
-                    else if (maps2bool(currentMaps, vid, bix))              vstat = _sTagged;
-                    else if (maps2bool(forbidMaps,  vid, bix))              vstat = _sForbidden;
-                    else    continue;
-                    QString r = execSqlTextFunction(q, "update_port_vlan", (*i)->getId(), vid, vstat);
-                    switch (reasons(r, EX_IGNORE)) {
-                    case R_UNCHANGE:    ++ctUnchg;  break;  // Nem volt változás
-                    case R_NEW:         ++ctNew;    break;  // Új rekord
-                    case R_INSERT:      ++ctIns;    break;  // Új rekord, és uj VLAN rekord is fel lett véve
-                    case R_MODIFY:      ++ctMod;    break;  // Modosítva
-                    default:            ++ctUnkn;   break;  // ??
-                    }
+    // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
+    static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
+    execSql(q, sql, nodeId());
+    //
+    int rs = RS_ON;
+    for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
+        if (staticEgres.contains(vid) || staticForbid.contains(vid)) {    // Van ilyen VLAN ?
+            ++ctVlan;   // Számláló. Talált VLAN-ok száma
+            tRecordList<cNPort>::iterator i, n = node().ports.end();
+            QString vstat;
+            for (i = node().ports.begin(); i != n; ++i) {
+                int pix = (*i)->getId(_sPortIndex);     // port index
+                int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
+                bool isPVID = pvidMap.contains(pix) && pvidMap[pix] == vid;
+                bool isUntagged = maps2bool(staticUntagged, vid, bix);
+                if (isPVID != isUntagged) {
+                    runMsg = tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; %3")
+                            .arg((*i)->getName())
+                            .arg(pvidMap.contains(pix) ? QString::number(pvidMap[pix]) : "?")
+                            .arg(langBool(isUntagged));
+                    rs = RS_WARNING;
+                    ctErr++;
+                }
+                if (isUntagged)                              vstat = _sUntagged;
+                else if (maps2bool(staticForbid,  vid, bix)) vstat = _sForbidden;
+                else if (maps2bool(staticEgres,   vid, bix)) vstat = _sTagged;
+                else    continue;
+                QString r = execSqlTextFunction(q, "update_port_vlan", (*i)->getId(), vid, vstat);
+                switch (reasons(r, EX_IGNORE)) {
+                case R_UNCHANGE:    ++ctUnchg;  break;  // Nem volt változás
+                case R_NEW:         ++ctNew;    break;  // Új rekord
+                case R_INSERT:      ++ctIns;    break;  // Új rekord, és uj VLAN rekord is fel lett véve
+                case R_MODIFY:      ++ctMod;    break;  // Modosítva
+                default:            ++ctUnkn;   break;  // ??
                 }
             }
         }
-        bool ok;
-        // törlendő jelöletlen rekordok
-        ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-        runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen/hiba.")
-                 .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod).arg(ctRm).arg(ctUnkn);
     }
-    DBGFNL();
+    // törlendő jelöletlen rekordok
+    bool ok;
+    ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
+    runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+            .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
+            .arg(ok ? QString::number(ctRm) : "?")
+            .arg(ctUnkn).arg(ctErr);
+    return rs;
+
+}
+
+int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& par)
+{
+    // SNMP query
+    int r = 0;
+    if (currentEgres.isEmpty() || currentUntagged.isEmpty()) {
+        r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,   currentEgres);
+        if (r == 0) r = snmp.getBitMaps(par.dot1qVlanCurrentUntaggedPorts, currentUntagged);
+    }
+    if (r != 0
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticEgres))
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, staticForbid))
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticUntaggedPorts,        staticUntagged))
+     || 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap))) {
+        runMsg = tr("SNMP '%1' error (query, dynamic): #%2/%3, '%4'.")
+                .arg(snmp.name().toString())
+                .arg(snmp.status).arg(r)
+                .arg(snmp.emsg);
+        return RS_UNREACHABLE;
+    }
+    // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
+    static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
+    execSql(q, sql, nodeId());
+    //
+    int rs = RS_ON;
+    for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
+        if (currentEgres.contains(vid) || staticEgres.contains(vid) || staticForbid.contains(vid)) {    // Van ilyen VLAN ?
+            ++ctVlan;   // Számláló. Talált VLAN-ok száma
+            tRecordList<cNPort>::iterator i, n = node().ports.end();
+            QString vstat;
+            for (i = node().ports.begin(); i != n; ++i) {
+                int pix = (*i)->getId(_sPortIndex);     // port index
+                int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
+                bool isPVID = pvidMap.contains(pix) && pvidMap[pix] == vid;
+                bool isUntagged = maps2bool(staticUntagged, vid, bix) || maps2bool(currentUntagged, vid, bix);
+                if (isPVID != isUntagged) {
+                    runMsg = tr("A PVID és az Untagged port ellentmondása! Port : %1; PVID = %2; %3")
+                            .arg((*i)->getName())
+                            .arg(pvidMap.contains(pix) ? QString::number(pvidMap[pix]) : "?")
+                            .arg(langBool(isUntagged));
+                    rs = RS_WARNING;
+                    ctErr++;
+                }
+                if (isUntagged)                              vstat = _sUntagged;
+                else if (maps2bool(staticForbid,  vid, bix)) vstat = _sForbidden;
+                else if (maps2bool(currentEgres, vid, bix))  vstat = _sAutoTagged;
+                else    continue;
+                QString r = execSqlTextFunction(q, "update_port_vlan", (*i)->getId(), vid, vstat);
+                switch (reasons(r, EX_IGNORE)) {
+                case R_UNCHANGE:    ++ctUnchg;  break;  // Nem volt változás
+                case R_NEW:         ++ctNew;    break;  // Új rekord
+                case R_INSERT:      ++ctIns;    break;  // Új rekord, és uj VLAN rekord is fel lett véve
+                case R_MODIFY:      ++ctMod;    break;  // Modosítva
+                default:            ++ctUnkn;   break;  // ??
+                }
+            }
+        }
+    }
+    // törlendő jelöletlen rekordok
+    bool ok;
+    ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
+    runMsg = tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+            .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
+            .arg(ok ? QString::number(ctRm) : "?")
+            .arg(ctUnkn).arg(ctErr);
     return rs;
 }
 
