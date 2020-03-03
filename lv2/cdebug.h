@@ -520,11 +520,11 @@ class LV2SHARED_EXPORT cDebug {
 static inline QString p2string(void * __p) { return QString().sprintf("%p", __p); }
 /// Egy QVariantList típusú árték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString list2string(const QVariantList& __vl);
-/// Egy QBitArra típusú árték stringgé konvertálása egy debug vagy hiba üzenetben.
+/// Egy QBitArray típusú érték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString list2string(const QBitArray& __vl);
-/// Egy QStringList típusú árték stringgé konvertálása egy debug vagy hiba üzenetben.
+/// Egy QStringList típusú érték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString list2string(const QStringList& __vl);
-
+/// Egy QVariant típusú érték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString debVariantToString(const QVariant& v);
 
 

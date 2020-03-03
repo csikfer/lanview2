@@ -215,12 +215,51 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
             if (f) mNoPvidPorts << int(p->getId(p->ixPortIndex()));
         }
     }
+    key = "dump";
+    dumpBitMaps = features().contains(key);
 }
 #define _DM PDEB(VVERBOSE)
 #define DM  _DM << endl;
 
 #define MIN_VLAN_ID 1
 #define MAX_VLAN_ID 4097
+
+static QString dumpMaps(const QString& head, const QMap<int, QBitArray>& maps)
+{
+    QString dump = head + "\n";
+    QList<int> vlans = maps.keys();
+    std::sort(vlans.begin(), vlans.end());
+    foreach (int vlan, vlans) {
+        QString s = QString::number(vlan).rightJustified(4) + " :";
+        const QBitArray& ba = maps[vlan];
+        int i, n = ba.size();
+        for (i = 0; i < n; ++i) {
+            if (i % 8 == 0) s += _sSpace;
+            if (i % 4 == 0) s += _sSpace;
+            s += QChar(ba.at(i) ? '1' : '0');
+        }
+        dump += s +"\n";
+    }
+    dump.chop(1);   // Az utolsó '\n'
+    return dump;
+}
+
+static QString dumpPVID(const QString& head, const QMap<int, int>& map)
+{
+    QString dump = head + "\n";
+    QList<int> pixs = map.keys();
+    std::sort(pixs.begin(), pixs.end());
+    dump += "Port : ";
+    foreach (int pix, pixs) {
+        dump += QString::number(pix).rightJustified(4);
+    }
+    dump += "\n";
+    dump += "VLan : ";
+    foreach (int pix, pixs) {
+        dump += QString::number(map[pix]).rightJustified(4);
+    }
+    return dump;
+}
 
 inline static bool maps2bool(const QMap<int, QBitArray>& maps, int mapix, int bitix) {
     if (bitix <= 0) return false;   // A valós index: 1,2...
@@ -300,6 +339,12 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
                 .arg(snmp.status).arg(r)
                 .arg(snmp.emsg);
         return RS_UNREACHABLE;
+    }
+    if (dumpBitMaps) {
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticEgressPorts",           staticEgres));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticForbiddenEgressPorts",  staticForbid));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticUntaggedPorts",         staticUntagged));
+        msgAppend(&runMsg, dumpPVID("dot1qPvid",                            pvidMap));
     }
     // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
@@ -385,6 +430,14 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
                 .arg(snmp.status).arg(r)
                 .arg(snmp.emsg);
         return RS_UNREACHABLE;
+    }
+    if (dumpBitMaps) {
+        msgAppend(&runMsg, dumpMaps("dot1qVlanCurrentEgressPorts",          currentEgres));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanCurrentUntaggedPorts",        currentUntagged));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticEgressPorts",           staticEgres));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticForbiddenEgressPorts",  staticForbid));
+        msgAppend(&runMsg, dumpMaps("dot1qVlanStaticUntaggedPorts",         staticUntagged));
+        msgAppend(&runMsg, dumpPVID("dot1qPvid",                            pvidMap));
     }
     // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
