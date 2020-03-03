@@ -322,8 +322,8 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
                     bool isPVID = pvidMap[pix] == vid;
                     if (isPVID != isUntagged) {
                         msgAppend(&runMsg,
-                                  tr("A PVID és az Untagged port ellentmondása  (static)! Port : %1; PVID = %2; untagged : %3")
-                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
+                                  tr("A PVID és az Untagged port ellentmondása  (static)! Port : %1; PVID = %2; %3 untagged : %4")
+                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(vid).arg(langBool(isUntagged)));
                         rs = RS_WARNING;
                         ctErr++;
                     }
@@ -407,8 +407,8 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
                     bool isPVID = pvidMap[pix] == vid;
                     if (isPVID != isUntagged) {
                         msgAppend(&runMsg,
-                                  tr("A PVID és az Untagged port ellentmondása (dynamic)! Port : %1; PVID = %2; untagged : %3")
-                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(langBool(isUntagged)));
+                                  tr("A PVID és az Untagged port ellentmondása (dynamic)! Port : %1; PVID = %2; %3 untagged : %4")
+                                    .arg((*i)->getName()).arg(pvidMap[pix]).arg(vid).arg(langBool(isUntagged)));
                         rs = RS_WARNING;
                         ctErr++;
                     }
