@@ -772,6 +772,7 @@ int cInspector::getInspectorProcess(const QString &value)
         // ezeknél nem is kell (lehet) időzítés
         case IT_METHOD_NAGIOS:
         case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
+        case IT_METHOD_SAVE_TEXT:
 //      case IT_METHOD_MUNIN:
         case IT_METHOD_QPARSE:
         case IT_METHOD_QPARSE | IT_METHOD_PARSER:
@@ -801,6 +802,7 @@ int cInspector::getInspectorMethod(const QString &value)
     int r = 0;  // IT_METHOD_CUSTOM
     QStringList vl = value.split(QRegExp("\\s*,\\s*"));
     if (vl.contains(_sNagios,   Qt::CaseInsensitive)) r |= IT_METHOD_NAGIOS;
+    if (vl.contains(_sText,     Qt::CaseInsensitive)) r |= IT_METHOD_SAVE_TEXT;
 //  if (vl.contains(_sMunin,    Qt::CaseInsensitive)) r |= IT_METHOD_MUNIN;
     if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_METHOD_CARRIED;
     if (vl.contains(_sQparse,   Qt::CaseInsensitive)) r |= IT_METHOD_QPARSE;
@@ -810,6 +812,7 @@ int cInspector::getInspectorMethod(const QString &value)
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
     case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
+    case IT_METHOD_SAVE_TEXT:
 //  case IT_METHOD_MUNIN:
     case IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
@@ -867,7 +870,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         PDEB(VERBOSE) << tr("Nincs program hívás") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
-        if ((method() & (/* IT_METHOD_MUNIN | */ IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR)) != 0) {
+        if ((method() & (/* IT_METHOD_MUNIN | */ IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR | IT_METHOD_SAVE_TEXT)) != 0) {
             EXCEPTION(EDATA, inspectorType, tr("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
         }
         break;
@@ -877,7 +880,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
             int timing = getInspectorTiming(feature(_sTiming));
-            if (!timing && inspectorType & (IT_METHOD_NAGIOS /*| IT_METHOD_MUNIN */)) timing = IT_PROCESS_TIMED;
+            if (!timing && inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_SAVE_TEXT /*| IT_METHOD_MUNIN */))
+                timing = IT_PROCESS_TIMED;
             inspectorType |= timing;
             break;
         }
@@ -1268,6 +1272,7 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text)
 //  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
     case IT_METHOD_NAGIOS:
     case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
+    case IT_METHOD_SAVE_TEXT:
     case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
         break;
@@ -1280,6 +1285,9 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text)
     case IT_METHOD_NAGIOS:
     case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
         r = parse_nagios(_ec, text);
+        break;
+    case IT_METHOD_SAVE_TEXT:
+        r = save_text(_ec, text);
         break;
     case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
@@ -1311,6 +1319,28 @@ enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text)
     }
     hostService.setState(*pq, notifSwitch(r), note, lastRun.elapsed());
     return RS_STAT_SETTED;
+}
+
+enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
+{
+    cRecord *pParam;
+    if (pPort != nullptr) {
+        pParam = new cPortParam;
+        pParam->setId(_sPortId, portId());
+    }
+    else {
+        pParam = new cNodeParam;
+        pParam->setId(_sNodeId, nodeId());
+    }
+    QString n = feature(_sName);
+    if (n.isEmpty()) n = service()->getName();
+    pParam->setName(n);
+    pParam->setId(_sParamTypeId, cParamType::paramType(_sText).getId());
+    pParam->setName(_sParamValue, text);
+    pParam->setNote(tr("Service %1, command (%2) return code #%3")
+                    .arg(name(), (QStringList(checkCmd) += checkCmdArgs).join(_sSpace)).arg(_ec));
+    pParam->replace(*pq);
+    return _ec == 0 ? RS_ON : RS_WARNING;
 }
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)

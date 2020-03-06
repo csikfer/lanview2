@@ -50,17 +50,29 @@ public:
     eTristate   staticOnly;
     /// A PVID értékek ignorálása az eszközre
     bool        mNoPVID;
+    ///
+    bool        mNoUntaggedBitmap;
     /// A PVID érték ignorálása a portra port index lista
     QList<int>  mNoPvidPorts;
     /// A bitmap-ek ki-dump-olása
-    bool dumpBitMaps;
+    bool mDumpBitMaps;
+    /// A trunk portokról nincs infó, azonos a member portok kiosztásával
+    bool        mTrunkByMembers;
+    /// A trunkökhöz tartozü member portok kiosztása
+    /// trunkMembersVlanTypes[<trunk id>][<trunk member index>][<vlan id>] = <vlan type>
+    QMap<qlonglong, QMap<int, QMap<int, QString> > >  trunkMembersVlanTypes;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     /// port index bitmap kereszt referencia táblázat, ha korrigálni kellett a bitmap indexeket,
     /// mert nem azonosak a port indexel.
     /// Ha azonosak az indexek, akkor a konténer üres.
     QMap<int, int>  mIndexXref;
+    /// A lekérdzés tiltása a portra port index lista
+    QList<int>  mNoVlanPorts;
     int getBitIndex(int pix) { return mIndexXref.contains(pix) ? mIndexXref[pix] : pix; }
+    void trunkMap(const cNPort * p, int vlanId, const QString& vlanType);
+    int setTrunks(QSqlQuery &q, QString &runMsg);
+    void updatePortVlan(QSqlQuery &q, qlonglong portId, int vlanId, const QString& vlanType);
 
     QMap<int, QBitArray>    currentEgres;
     QMap<int, QBitArray>    currentUntagged;

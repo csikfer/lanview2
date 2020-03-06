@@ -55,7 +55,8 @@ enum eInspectorType {
     IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
     IT_METHOD_CARRIED       = 0x0800,   ///<
     IT_METHOD_INSPECTOR     = 0x1000,   ///< Egy LanView2 service (cInspector) APP
-//  IT_METHOD_MUNIN         = 0x2000,   ///< Munin plugin
+    IT_METHOD_SAVE_TEXT     = 0x2000,   ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
+    // IT_METHOD_MUNIN      = 0x4000,   ///< Munin plugin
     IT_METHOD_MASK          = 0xFF00L,
 
     IT_SUPERIOR             =0x10000L,   ///< Alárendelt funkciók vannak
@@ -350,6 +351,7 @@ protected:
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
     enum eNotifSwitch parse_nagios(int _ec, const QString &text);
+    enum eNotifSwitch save_text(int _ec, const QString &text);
     enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:
