@@ -154,7 +154,6 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     else {  // Csak az SNMP lekérdezés támogatott (egyenlőre)
         EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
-    staticOnly = str2tristate(features().value("static_vlans"), EX_IGNORE);
 }
 
 cDevicePV::~cDevicePV()
@@ -167,8 +166,15 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
     cInspector::postInit(q, qs);
     node().fetchPorts(q);
 
-    QString key;
+    /* Features */
+    QString key, key2;
+    /* ******************************************* */
+    key = "static_vlans";
+    /* ******************************************* */
+    staticOnly = str2tristate(features().value(key), EX_IGNORE);
+    /* ******************************************* */
     key = "bitmap_xrefs";
+    /* ******************************************* */
     QString xref = features().value(key);
     if (!xref.isEmpty()) {
         tStringMap smap = cFeatures::value2map(xref);
@@ -204,8 +210,9 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
     qlonglong typeId = cParamType::paramType(_sBoolean).getId();
     cPortParam pp;
     int ixParamValue = pp.toIndex(_sParamValue);
-
+    /* ******************************************* */
     key = "no_pvid";
+    /* ******************************************* */
     mNoPVID = features().contains(key);
     QBitArray clrMask = ~ pp.mask(pp.ixPortId(), pp.ixParamTypeId());
     if (!mNoPVID) {
@@ -218,13 +225,23 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
             if (f) mNoPvidPorts << int(p->getId(p->ixPortIndex()));
         }
     }
+    /* ******************************************* */
     key = "no_untagged_bitmap";
+    /* ******************************************* */
     mNoUntaggedBitmap = features().contains(key);
+    /* ******************************************* */
     key = "trunk_by_members";
+    /* ******************************************* */
     mTrunkByMembers = features().contains(key);
-
-    key          = "802.1x";
-    QString key2 = "no_vlan";
+    /* ******************************************* */
+    key = "dump";
+    /* ******************************************* */
+    mDumpBitMaps = features().contains(key);
+    /* Port parameters */
+    /* ******************************************* */
+    key  = "802.1x";
+    key2 = "no_vlan";
+    /* ******************************************* */
     foreach (cNPort *p, node().ports.list()) {
         pp.clear();
         pp.setName(key);
@@ -241,9 +258,6 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
             if (f) mNoVlanPorts << int(p->getId(p->ixPortIndex()));
         }
     }
-
-    key = "dump";
-    mDumpBitMaps = features().contains(key);
 }
 #define _DM PDEB(VVERBOSE)
 #define DM  _DM << endl;
@@ -353,17 +367,12 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     return rs;
 }
 
-void cDevicePV::trunkMap(const cNPort * p, int vlanId, const QString& vlanType)
+void cDevicePV::trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const QString& vlanType)
 {
-    if (mTrunkByMembers) {
         static int ixPortIndex = p->toIndex(_sPortIndex);
-        qlonglong trunkId = p->getId(_sPortStapleId);
-        if (trunkId != NULL_ID) {
-            int memberIndex = int(p->getId(ixPortIndex));
-            int trunkIndex  = int(node().ports.get(trunkId)->getId(ixPortIndex));
-            trunkMembersVlanTypes[trunkIndex][memberIndex][vlanId] = vlanType;
-        }
-    }
+        int memberIndex = int(p->getId(ixPortIndex));
+        int trunkIndex  = int(node().ports.get(trunkId)->getId(ixPortIndex));
+        trunkMembersVlanTypes[trunkIndex][memberIndex][vlanId] = vlanType;
 }
 
 static QString dumpVlanTypes(QMap<int, QString> vlanTypes)
@@ -453,6 +462,9 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
+                static const qlonglong ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                qlonglong trunkId = (*i)->getId(ixPortStapleId);
+                if (!mTrunkByMembers && trunkId != NULL_ID) continue;   // Skeep Trunk member ?
                 int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
                 if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
@@ -495,7 +507,7 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
                 case R_MODIFY:      ++ctMod;    break;  // Modosítva
                 default:            ++ctUnkn;   break;  // ??
                 }
-                trunkMap(*i, vid, vstat);
+                if (trunkId != NULL_ID) trunkMap(*i, trunkId, vid, vstat);
             }
         }
     }
@@ -548,6 +560,9 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
+                static const qlonglong ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                qlonglong trunkId = (*i)->getId(ixPortStapleId);
+                if (!mTrunkByMembers && trunkId != NULL_ID) continue;   // Skeep Trunk member ?
                 int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);    // Ignore PVID ?
                 if (!noPvid && !pvidMap.contains(pix)) continue;        // Ha nincs PVID, akkor ez nem VLAN-t támogató port
@@ -591,7 +606,7 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
                 case R_MODIFY:      ++ctMod;    break;  // Modosítva
                 default:            ++ctUnkn;   break;  // ??
                 }
-                trunkMap(*i, vid, vstat);
+                if (trunkId != NULL_ID) trunkMap(*i, trunkId, vid, vstat);
             }
         }
     }

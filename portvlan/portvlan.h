@@ -70,7 +70,7 @@ public:
     /// A lekérdzés tiltása a portra port index lista
     QList<int>  mNoVlanPorts;
     int getBitIndex(int pix) { return mIndexXref.contains(pix) ? mIndexXref[pix] : pix; }
-    void trunkMap(const cNPort * p, int vlanId, const QString& vlanType);
+    void trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const QString& vlanType);
     int setTrunks(QSqlQuery &q, QString &runMsg);
     void updatePortVlan(QSqlQuery &q, qlonglong portId, int vlanId, const QString& vlanType);
 
