@@ -549,10 +549,10 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
                 int pix = (*i)->getId(_sPortIndex);     // port index
-                bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
-                if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
-                int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
-                bool isUntagged = maps2bool(staticUntagged, vid, bix);;
+                bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);    // Ignore PVID ?
+                if (!noPvid && !pvidMap.contains(pix)) continue;        // Ha nincs PVID, akkor ez nem VLAN-t támogató port
+                int bix = getBitIndex(pix);  // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg (bitmap_xrefs)
+                bool isUntagged = maps2bool(currentUntagged, vid, bix);;
                 bool isPVID     = isContIx(pvidMap, pix) && pvidMap[pix] == vid;
                 if (mNoUntaggedBitmap) {
                     isUntagged = isPVID;
