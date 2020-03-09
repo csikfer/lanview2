@@ -73,6 +73,13 @@ public:
     void trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const QString& vlanType);
     int setTrunks(QSqlQuery &q, QString &runMsg);
     void updatePortVlan(QSqlQuery &q, qlonglong portId, int vlanId, const QString& vlanType);
+    int pvid(int pix) {
+        int r = -1;     // Invalid VLAN ID
+        if (pvidMap.contains(pix)) {
+            r = pvidMap[pix];
+        }
+        return r;
+    }
 
     QMap<int, QBitArray>    currentEgres;
     QMap<int, QBitArray>    currentUntagged;
