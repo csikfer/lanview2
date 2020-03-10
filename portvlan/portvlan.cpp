@@ -371,8 +371,7 @@ void cDevicePV::trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const 
 {
         static int ixPortIndex = p->toIndex(_sPortIndex);
         int memberIndex = int(p->getId(ixPortIndex));
-        int trunkIndex  = int(node().ports.get(trunkId)->getId(ixPortIndex));
-        trunkMembersVlanTypes[trunkIndex][memberIndex][vlanId] = vlanType;
+        trunkMembersVlanTypes[trunkId][memberIndex][vlanId] = vlanType;
 }
 
 static QString dumpVlanTypes(QMap<int, QString> vlanTypes)
