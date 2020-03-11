@@ -461,9 +461,22 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
-                static const qlonglong ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                static const int ixPortStapleId = (*i)->toIndex(_sPortStapleId);
                 qlonglong trunkId = (*i)->getId(ixPortStapleId);
-                if (!mTrunkByMembers && trunkId != NULL_ID) continue;   // Skeep Trunk member ?
+                if (mTrunkByMembers) {
+                    static const qlonglong multiplexorTypeId = cIfType::ifType(_sMultiplexor).getId();
+                    if ((*i)->getId((*i)->ixIfTypeId()) == multiplexorTypeId) {
+                        if (trunkId != NULL_ID) {
+                            QString m = tr("Trunk-ölt trunk port ? %1 < %2")
+                                    .arg((*i)->getName(), (*i)->getNameById(q, trunkId));
+                            APPMEMO(q, m, RS_CRITICAL);
+                        }
+                        continue;                       // Skeep trunk port
+                    }
+                }
+                else {
+                    if (trunkId != NULL_ID) continue;   // Skeep Trunk member ?
+                }
                 int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
                 if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
@@ -559,9 +572,22 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
-                static const qlonglong ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                static const int ixPortStapleId = (*i)->toIndex(_sPortStapleId);
                 qlonglong trunkId = (*i)->getId(ixPortStapleId);
-                if (!mTrunkByMembers && trunkId != NULL_ID) continue;   // Skeep Trunk member ?
+                if (mTrunkByMembers) {
+                    static const qlonglong multiplexorTypeId = cIfType::ifType(_sMultiplexor).getId();
+                    if ((*i)->getId((*i)->ixIfTypeId()) == multiplexorTypeId) {
+                        if (trunkId != NULL_ID) {
+                            QString m = tr("Trunk-ölt trunk port ? %1 < %2")
+                                    .arg((*i)->getName(), (*i)->getNameById(q, trunkId));
+                            APPMEMO(q, m, RS_CRITICAL);
+                        }
+                        continue;                       // Skeep trunk port
+                    }
+                }
+                else {
+                    if (trunkId != NULL_ID) continue;   // Skeep Trunk member ?
+                }
                 int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);    // Ignore PVID ?
                 if (!noPvid && !pvidMap.contains(pix)) continue;        // Ha nincs PVID, akkor ez nem VLAN-t támogató port
