@@ -26,6 +26,19 @@ public:
     cOId dot1qVlanStaticForbiddenEgressPorts;
     cOId dot1qVlanStaticUntaggedPorts;
     cOId dot1qPvid;
+    cOId hpicfDot1xAuthenticator;
+    cOId hpicfDot1xAuthAuthVid;
+    cOId hpicfDot1xAuthUnauthVid;
+    cOId hpicfDot1xAuthUnauthPeriod;
+    cOId hpicfDot1xAuthClientLimit;
+    cOId hpicfDot1xAuthLogoffPeriod;
+    cOId hpicfDot1xAuthClientLimit2;
+    cOIdVector hpicfDot1xAuthConfigTable;
+    static const QString sUnauthPeriod;
+    static const QString sClientLimit;
+    static const QString sLogoffPeriod;
+    static const QString sClientLimit2;
+    QStringList headerAuthConfigTable;
 };
 
 /// @class cDevicePSt
@@ -58,6 +71,7 @@ public:
     bool mDumpBitMaps;
     /// A trunk portokról nincs infó, azonos a member portok kiosztásával
     bool        mTrunkByMembers;
+    bool        hpicfDot1xAuthenticator;
     /// A trunkökhöz tartozü member portok kiosztása
     /// trunkMembersVlanTypes[<trunk id>][<trunk member index>][<vlan id>] = <vlan type>
     QMap<qlonglong, QMap<int, QMap<int, QString> > >  trunkMembersVlanTypes;
@@ -69,6 +83,7 @@ public:
     QMap<int, int>  mIndexXref;
     /// A lekérdzés tiltása a portra port index lista
     QList<int>  mNoVlanPorts;
+    QList<int>  mNoVlanPortsByPar;
     int getBitIndex(int pix) { return mIndexXref.contains(pix) ? mIndexXref[pix] : pix; }
     void trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const QString& vlanType);
     int setTrunks(QSqlQuery &q, QString &runMsg);

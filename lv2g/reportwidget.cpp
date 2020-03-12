@@ -14,11 +14,13 @@ QStringList cReportWidget::reportLinkSubType;
 
 static QString toHtml(const QString& text, eTristate st)
 {
+    QString r;
     switch (st) {
-    case TS_TRUE:  return toGreen(text);
-    case TS_FALSE: return toHtmlItalic(text);
-    case TS_NULL:  return toRed(text);
+    case TS_TRUE:  r = toGreen(text);       break;
+    case TS_FALSE: r = toHtmlItalic(text);  break;
+    case TS_NULL:  r = toRed(text);         break;
     }
+    return r;
 }
 
 

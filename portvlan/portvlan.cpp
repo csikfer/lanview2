@@ -61,6 +61,17 @@ void lv2portVLan::setup(eTristate _tr)
 
 /******************************************************************************/
 
+const QString cPortVLans::sUnauthPeriod = "UnauthPeriod";
+const QString cPortVLans::sClientLimit  = "ClientLimit";
+const QString cPortVLans::sLogoffPeriod = "LogoffPeriod";
+const QString cPortVLans::sClientLimit2 = "ClientLimit2";
+
+static inline void setOid(cOId& o, const QString& s)
+{
+    o = cOId(s);
+    if (!o) EXCEPTION(ESNMP, o.status, o.emsg);
+}
+
 /// Az SNMP-n keresztül lekérdezi a VLAN beállításokat OID objektumok:
 /// @code
 /// dot1qVlan                           1.3.6.1.2.1.17.7.1.4
@@ -89,6 +100,18 @@ void lv2portVLan::setup(eTristate _tr)
 ///
 ///   id=101 vlan is current eggres to 17,18 and 50 port.
 /// @endcode
+///
+/// 802.1x
+///
+/// hpicfDot1xAuthenticator                 .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2      (HP-ICF-OID::hpicfDot1xMIB.1.2)
+///   hpicfDot1xAuthConfigTable             .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1
+///     hpicfDot1xAuthAuthVid               .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.1    VLAN ID authorized
+///     hpicfDot1xAuthUnauthVid             .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.2    VLAN ID unauthorized
+///     hpicfDot1xAuthUnauthPeriod          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.3
+///     hpicfDot1xAuthClientLimit           .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.4
+///     hpicfDot1xAuthLogoffPeriod          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.5
+///     hpicfDot1xAuthClientLimit2          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.6
+///
 /// Feaures:
 ///
 /// - bitmap-xrefs
@@ -107,20 +130,25 @@ cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
     // Current VLAN settings (dynamic)
-    dot1qVlanCurrentEgressPorts             = cOId("SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
-    if (!dot1qVlanCurrentEgressPorts)       EXCEPTION(ESNMP, dot1qVlanCurrentEgressPorts.status, dot1qVlanCurrentEgressPorts.emsg);
-    dot1qVlanCurrentUntaggedPorts           = cOId("SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
-    if (!dot1qVlanCurrentUntaggedPorts)     EXCEPTION(ESNMP, dot1qVlanCurrentUntaggedPorts.status, dot1qVlanCurrentUntaggedPorts.emsg);
+    setOid(dot1qVlanCurrentEgressPorts,             "SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
+    setOid(dot1qVlanCurrentUntaggedPorts,           "SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
 
-    dot1qVlanStaticEgressPorts              = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.2");
-    if (!dot1qVlanStaticEgressPorts)        EXCEPTION(ESNMP, dot1qVlanStaticEgressPorts.status, dot1qVlanStaticEgressPorts.emsg);
-    dot1qVlanStaticForbiddenEgressPorts     = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.3");
-    if (!dot1qVlanStaticForbiddenEgressPorts) EXCEPTION(ESNMP, dot1qVlanStaticForbiddenEgressPorts.status, dot1qVlanStaticForbiddenEgressPorts.emsg);
-    dot1qVlanStaticUntaggedPorts            = cOId("SNMPv2-SMI::mib-2.17.7.1.4.3.1.4");
-    if (!dot1qVlanStaticUntaggedPorts)      EXCEPTION(ESNMP, dot1qVlanStaticUntaggedPorts.status, dot1qVlanStaticUntaggedPorts.emsg);
+    setOid(dot1qVlanStaticEgressPorts,              "SNMPv2-SMI::mib-2.17.7.1.4.3.1.2");
+    setOid(dot1qVlanStaticForbiddenEgressPorts,     "SNMPv2-SMI::mib-2.17.7.1.4.3.1.3");
+    setOid(dot1qVlanStaticUntaggedPorts,            "SNMPv2-SMI::mib-2.17.7.1.4.3.1.4");
 
-    dot1qPvid                               = cOId("SNMPv2-SMI::mib-2.17.7.1.4.5.1.1");
-    if (!dot1qPvid)                         EXCEPTION(ESNMP, dot1qPvid.status, dot1qPvid.emsg);
+    setOid(dot1qPvid,                               "SNMPv2-SMI::mib-2.17.7.1.4.5.1.1");
+
+    setOid(hpicfDot1xAuthenticator,                 ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2");
+    setOid(hpicfDot1xAuthAuthVid,                   ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.1");
+    setOid(hpicfDot1xAuthUnauthVid,                 ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.2");
+    setOid(hpicfDot1xAuthUnauthPeriod,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.3");
+    setOid(hpicfDot1xAuthClientLimit,               ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.4");
+    setOid(hpicfDot1xAuthLogoffPeriod,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.5");
+    setOid(hpicfDot1xAuthClientLimit2,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.6");
+    hpicfDot1xAuthConfigTable << hpicfDot1xAuthAuthVid << hpicfDot1xAuthUnauthVid << hpicfDot1xAuthUnauthPeriod
+                              << hpicfDot1xAuthClientLimit << hpicfDot1xAuthLogoffPeriod << hpicfDot1xAuthClientLimit2;
+    headerAuthConfigTable << _sAuth << _sUnauth << sUnauthPeriod << sClientLimit << sLogoffPeriod << sClientLimit2;
 }
 
 cPortVLans::~cPortVLans()
@@ -239,23 +267,32 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
     mDumpBitMaps = features().contains(key);
     /* Port parameters */
     /* ******************************************* */
-    key  = "802.1x";
-    key2 = "no_vlan";
+    key  = "no_vlan";
+    key2 = "802.1x";
     /* ******************************************* */
+    const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());
+    int r, probe = 0, maxProbe = 4;
+    do {
+        r = snmp.getNext(par.hpicfDot1xAuthenticator);
+    } while (r != 0 && probe++ < maxProbe);
+    if (r == 0) {
+        snmp.first();
+        hpicfDot1xAuthenticator = snmp.name() > par.hpicfDot1xAuthenticator;
+    }
     foreach (cNPort *p, node().ports.list()) {
         pp.clear();
         pp.setName(key);
         pp.setType(typeId);
         pp.setId(pp.ixPortId(), p->getId());
         bool f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
-        if (f) mNoVlanPorts << int(p->getId(p->ixPortIndex()));
-        else {
+        if (f) mNoVlanPortsByPar << int(p->getId(p->ixPortIndex()));
+        else if (!hpicfDot1xAuthenticator) {    // Ha lekérdezzük a 802.1x, akkor nincs statikus tiltás a 802.1x paraméterrel.
             pp.clear();
             pp.setName(key2);
             pp.setType(typeId);
             pp.setId(pp.ixPortId(), p->getId());
             f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
-            if (f) mNoVlanPorts << int(p->getId(p->ixPortIndex()));
+            if (f) mNoVlanPortsByPar << int(p->getId(p->ixPortIndex()));
         }
     }
 }
@@ -323,8 +360,34 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     staticForbid.clear();
     pvidMap.clear();
     trunkMembersVlanTypes.clear();
+    mNoVlanPorts = mNoVlanPortsByPar;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
+    }
+    if (hpicfDot1xAuthenticator) {
+        cTable table;
+        r = snmp.getTable(par.hpicfDot1xAuthConfigTable, par.headerAuthConfigTable, table);
+        if (0 != r) {
+            runMsg = tr("SNMP '%1' error (auth) : #%2/%3, '%4'.")
+                    .arg(snmp.name().toString())
+                    .arg(snmp.status).arg(r)
+                    .arg(snmp.emsg);
+            rs = RS_UNREACHABLE;
+            DBGFNL();
+            return rs;
+        }
+        int rows = table.rows();
+        for (int row = 0; row < rows; ++row) {
+            int portIndex = row +1;
+            int authVId   = table[_sAuth]  [row].toInt();
+            if (authVId <= 0) continue;
+            int unauthVId = table[_sUnauth][row].toInt();
+            qlonglong pid = host().ports.get(_sPortIndex, portIndex)->getId();
+            updatePortVlan(q, pid, authVId,   _sAuth);
+            updatePortVlan(q, pid, unauthVId, _sUnauth);
+            mNoVlanPorts[portIndex] = true;
+            // ...
+        }
     }
     switch (staticOnly) {
     case TS_NULL:   // Test

@@ -737,6 +737,8 @@ STRDEF(PortVlans, "port_vlans")
   STRDEF(Untagged, "untagged")
   dnl virtual
   STRDEF(Hard, "hard")
+  STRDEF(Auth, "auth")
+  STRDEF(Unauth, "unauth")
  STRDEF(SetType, "set_type")
   dnl auto
   STRDEF(Query, "query")

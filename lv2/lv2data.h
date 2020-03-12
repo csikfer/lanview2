@@ -93,7 +93,9 @@ enum eVlanType {
     VT_TAGGED,          ///< Tagged (802.1q)
     VT_UNTAGGED,        ///< Untagged
     VT_VIRTUAL,         ///< Virtuális interfész a VLAN-hoz létrehozva
-    VT_HARD             ///< Az eszköz által nem kezelt összeremdelés
+    VT_HARD,            ///< Az eszköz által nem kezelt összeremdelés
+    VT_AUTH,            ///< 802.1x auth. vlan
+    VT_UNAUTH           ///< 802.1x un-auth. vlan
 };
 
 /// VLAN típus névvel tér vissza, a megadott konstans alapján.

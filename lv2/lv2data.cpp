@@ -3673,6 +3673,8 @@ int vlanType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sUntagged,  Qt::CaseInsensitive)) return VT_UNTAGGED;
     if (0 == __n.compare(_sVirtual,   Qt::CaseInsensitive)) return VT_VIRTUAL;
     if (0 == __n.compare(_sHard,      Qt::CaseInsensitive)) return VT_HARD;
+    if (0 == __n.compare(_sAuth,      Qt::CaseInsensitive)) return VT_AUTH;
+    if (0 == __n.compare(_sUnauth,    Qt::CaseInsensitive)) return VT_UNAUTH;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -3689,6 +3691,8 @@ const QString& vlanType(int __e, eEx __ex)
     case VT_UNTAGGED:   return _sUntagged;
     case VT_VIRTUAL:    return _sVirtual;
     case VT_HARD:       return _sHard;
+    case VT_AUTH:       return _sAuth;
+    case VT_UNAUTH:     return _sUnauth;
     default:            if (__ex) EXCEPTION(EDATA, (qlonglong)__e);
                         return _sNul;
     }
