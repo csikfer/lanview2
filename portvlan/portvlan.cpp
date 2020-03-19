@@ -50,6 +50,10 @@ lv2portVLan::~lv2portVLan()
 void lv2portVLan::staticInit(QSqlQuery *pq)
 {
     cDevicePV::pSrvSnmp   = cService::service(*pq, _sSnmp);
+    cInterface i;
+    cDevicePV::ixPortIndex    = i.ixPortIndex();
+    cDevicePV::ixPortStapleId = i.toIndex(_sPortStapleId);
+    cDevicePV::multiplexorTypeId = cIfType::ifType(_sMultiplexor).getId();
 }
 
 void lv2portVLan::setup(eTristate _tr)
@@ -101,16 +105,16 @@ static inline void setOid(cOId& o, const QString& s)
 ///   id=101 vlan is current eggres to 17,18 and 50 port.
 /// @endcode
 ///
-/// 802.1x
+/// 802.1x (MIB file : hpicfOid.mib)
 ///
-/// hpicfDot1xAuthenticator                 .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2      (HP-ICF-OID::hpicfDot1xMIB.1.2)
-///   hpicfDot1xAuthConfigTable             .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1
-///     hpicfDot1xAuthAuthVid               .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.1    VLAN ID authorized
-///     hpicfDot1xAuthUnauthVid             .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.2    VLAN ID unauthorized
-///     hpicfDot1xAuthUnauthPeriod          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.3
-///     hpicfDot1xAuthClientLimit           .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.4
-///     hpicfDot1xAuthLogoffPeriod          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.5
-///     hpicfDot1xAuthClientLimit2          .1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.6
+/// hpicfDot1xAuthenticator                 HP-ICF-OID::hpicfDot1xMIB.1.2
+///   hpicfDot1xAuthConfigTable             HP-ICF-OID::hpicfDot1xMIB.1.2.1
+///     hpicfDot1xAuthAuthVid               HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.1    VLAN ID authorized
+///     hpicfDot1xAuthUnauthVid             HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.2    VLAN ID unauthorized
+///     hpicfDot1xAuthUnauthPeriod          HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.3
+///     hpicfDot1xAuthClientLimit           HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.4
+///     hpicfDot1xAuthLogoffPeriod          HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.5
+///     hpicfDot1xAuthClientLimit2          HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.6
 ///
 /// Feaures:
 ///
@@ -126,6 +130,7 @@ static inline void setOid(cOId& o, const QString& s)
 ///   ha viszont static_vlans értéke false, akkor a teszt szintén elmerad, és a dinamikusakat is lekérdezi.
 ///   Más értékeket esetén a static_vlans -t figyelmen kívül hagyja.
 ///   Lásd még a eTristate str2tristate(const QString& _b, enum eEx __ex) függvényt.
+///   ...
 cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
@@ -139,13 +144,13 @@ cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
 
     setOid(dot1qPvid,                               "SNMPv2-SMI::mib-2.17.7.1.4.5.1.1");
 
-    setOid(hpicfDot1xAuthenticator,                 ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2");
-    setOid(hpicfDot1xAuthAuthVid,                   ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.1");
-    setOid(hpicfDot1xAuthUnauthVid,                 ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.2");
-    setOid(hpicfDot1xAuthUnauthPeriod,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.3");
-    setOid(hpicfDot1xAuthClientLimit,               ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.4");
-    setOid(hpicfDot1xAuthLogoffPeriod,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.5");
-    setOid(hpicfDot1xAuthClientLimit2,              ".1.3.6.1.4.1.11.2.14.11.5.1.25.1.2.1.1.6");
+    setOid(hpicfDot1xAuthenticator,                 "HP-ICF-OID::hpicfDot1xMIB.1.2");
+    setOid(hpicfDot1xAuthAuthVid,                   "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.1");
+    setOid(hpicfDot1xAuthUnauthVid,                 "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.2");
+    setOid(hpicfDot1xAuthUnauthPeriod,              "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.3");
+    setOid(hpicfDot1xAuthClientLimit,               "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.4");
+    setOid(hpicfDot1xAuthLogoffPeriod,              "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.5");
+    setOid(hpicfDot1xAuthClientLimit2,              "HP-ICF-OID::hpicfDot1xMIB.1.2.1.1.6");
     hpicfDot1xAuthConfigTable << hpicfDot1xAuthAuthVid << hpicfDot1xAuthUnauthVid << hpicfDot1xAuthUnauthPeriod
                               << hpicfDot1xAuthClientLimit << hpicfDot1xAuthLogoffPeriod << hpicfDot1xAuthClientLimit2;
     headerAuthConfigTable << _sAuth << _sUnauth << sUnauthPeriod << sClientLimit << sLogoffPeriod << sClientLimit2;
@@ -164,6 +169,9 @@ cInspector * cPortVLans::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong 
 /******************************************************************************/
 
 const cService *cDevicePV::pSrvSnmp   = nullptr;
+int cDevicePV::ixPortIndex = NULL_IX;
+qlonglong cDevicePV::multiplexorTypeId;
+int cDevicePV::ixPortStapleId;
 
 cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
@@ -220,7 +228,7 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
                     msgAppend(&m, tr("Az '%1' feature változó ban definiált index pár nem numerikus : %2 - %3 .").arg(key, spix, sbix));
                 }
                 else {
-                    cNPort *p = node().ports.get(_sPortIndex, portIndex, EX_IGNORE);
+                    cNPort *p = node().ports.get(ixPortIndex, portIndex, EX_IGNORE);
                     if (p == nullptr) {
                         msgAppend(&m, tr("Az '%1' feature változó ban definiált indexű port nem létezik : %2.").arg(key, spix));
                         continue;
@@ -250,7 +258,7 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
             pp.setType(typeId);
             pp.setId(pp.ixPortId(), p->getId());
             bool f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
-            if (f) mNoPvidPorts << int(p->getId(p->ixPortIndex()));
+            if (f) mNoPvidPorts << int(p->getId(ixPortIndex));
         }
     }
     /* ******************************************* */
@@ -278,6 +286,33 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
     if (r == 0) {
         snmp.first();
         hpicfDot1xAuthenticator = snmp.name() > par.hpicfDot1xAuthenticator;
+        if (hpicfDot1xAuthenticator) {  // Van tábla. Mindegyik oszlop létezik?
+            hpicfDot1xAuthConfigTable = par.hpicfDot1xAuthConfigTable;
+            headerAuthConfigTable     = par.headerAuthConfigTable;
+            probe = 0;
+            do {
+                r = snmp.getNext(hpicfDot1xAuthConfigTable);
+            } while (r != 0 && probe++ < maxProbe);
+            if (r == 0) {
+                snmp.first();
+                int i, n = headerAuthConfigTable.size();
+                for (i = 0; i < n; ++i) {
+                    const cOId&     oib = hpicfDot1xAuthConfigTable[i]; // Column base OID
+                    const cOId      oia = snmp.name();                  // Cell OID
+                    if (!(oib < oia)) {
+                        // missing column
+                        hpicfDot1xAuthConfigTable.remove(i);
+                        headerAuthConfigTable.removeAt(i);
+                        --i; --n;
+                    }
+                    snmp.next();
+                }
+                hpicfDot1xAuthenticator = headerAuthConfigTable.contains(_sAuth) && headerAuthConfigTable.contains(_sUnauth);
+            }
+            else {
+                hpicfDot1xAuthenticator = false;
+            }
+        }
     }
     foreach (cNPort *p, node().ports.list()) {
         pp.clear();
@@ -285,14 +320,14 @@ void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
         pp.setType(typeId);
         pp.setId(pp.ixPortId(), p->getId());
         bool f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
-        if (f) mNoVlanPortsByPar << int(p->getId(p->ixPortIndex()));
+        if (f) mNoVlanPortsByPar << int(p->getId(ixPortIndex));
         else if (!hpicfDot1xAuthenticator) {    // Ha lekérdezzük a 802.1x, akkor nincs statikus tiltás a 802.1x paraméterrel.
             pp.clear();
             pp.setName(key2);
             pp.setType(typeId);
             pp.setId(pp.ixPortId(), p->getId());
             f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
-            if (f) mNoVlanPortsByPar << int(p->getId(p->ixPortIndex()));
+            if (f) mNoVlanPortsByPar << int(p->getId(ixPortIndex));
         }
     }
 }
@@ -339,6 +374,20 @@ static QString dumpPVID(const QString& head, const QMap<int, int>& map)
     return dump;
 }
 
+static QString dumpTable(const cTable& t)
+{
+    QString dump;
+    foreach (QString colName, t.keys()) {
+        dump += colName + " :\t";
+        foreach (QVariant v, t[colName]) {
+            dump += debVariantToString(v) + _sCommaSp;
+        }
+        dump.chop(_sCommaSp.size());
+        dump += "\n";
+    }
+    return dump;
+}
+
 inline static bool maps2bool(const QMap<int, QBitArray>& maps, int mapix, int bitix) {
     if (bitix <= 0) return false;   // A valós index: 1,2...
     if (!maps.contains(mapix)) return false;
@@ -364,9 +413,12 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
+    // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
+    static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
+    execSql(q, sql, nodeId());
     if (hpicfDot1xAuthenticator) {
         cTable table;
-        r = snmp.getTable(par.hpicfDot1xAuthConfigTable, par.headerAuthConfigTable, table);
+        r = snmp.getTable(hpicfDot1xAuthConfigTable, headerAuthConfigTable, table);
         if (0 != r) {
             runMsg = tr("SNMP '%1' error (auth) : #%2/%3, '%4'.")
                     .arg(snmp.name().toString())
@@ -376,18 +428,27 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
             DBGFNL();
             return rs;
         }
+        if (mDumpBitMaps) {
+            msgAppend(&runMsg, dumpTable(table));
+        }
         int rows = table.rows();
         for (int row = 0; row < rows; ++row) {
-            int portIndex = row +1;
+            int portIndex = table[cSnmp::sSnmpTableIndex][row].toInt();
             int authVId   = table[_sAuth]  [row].toInt();
             if (authVId <= 0) continue;
             int unauthVId = table[_sUnauth][row].toInt();
-            qlonglong pid = host().ports.get(_sPortIndex, portIndex)->getId();
+            qlonglong pid = host().ports.get(ixPortIndex, portIndex)->getId();
             updatePortVlan(q, pid, authVId,   _sAuth);
             updatePortVlan(q, pid, unauthVId, _sUnauth);
-            mNoVlanPorts[portIndex] = true;
+            mNoVlanPorts << portIndex;
             // ...
         }
+    }
+    if (mDumpBitMaps) {
+        QString s = "mNoVlanPorts : ";
+        foreach (int ix, mNoVlanPorts) s += QString::number(ix) + _sCommaSp;
+        s += "\n";
+        msgAppend(&runMsg, s);
     }
     switch (staticOnly) {
     case TS_NULL:   // Test
@@ -426,13 +487,22 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         rs = runSnmpDynamic(q, runMsg, par);
         break;
     }
+    if (rs < RS_UNREACHABLE) {
+        // törlendő jelöletlen rekordok
+        bool ok;
+        ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
+        msgAppend(&runMsg,
+                  tr("%1 VLAN (dynamic), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+                    .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
+                    .arg(ok ? QString::number(ctRm) : "?")
+                    .arg(ctUnkn).arg(ctErr));
+    }
     DBGFNL();
     return rs;
 }
 
 void cDevicePV::trunkMap(const cNPort * p, qlonglong trunkId, int vlanId, const QString& vlanType)
 {
-        static int ixPortIndex = p->toIndex(_sPortIndex);
         int memberIndex = int(p->getId(ixPortIndex));
         trunkMembersVlanTypes[trunkId][memberIndex][vlanId] = vlanType;
 }
@@ -462,8 +532,8 @@ int cDevicePV::setTrunks(QSqlQuery& q, QString& runMsg)
                 msgAppend(&runMsg,
                           tr("A %1 trunk port %2 és %3 tag portjának a VLAN kiosztása nem azonos %4 <> %5")
                             .arg(node().ports.get(trunkId)->getName())
-                            .arg(node().ports.get(_sPortIndex, firstMemberIndex)->getName())
-                            .arg(node().ports.get(_sPortIndex, memberIndex)->getName())
+                            .arg(node().ports.get(ixPortIndex, firstMemberIndex)->getName())
+                            .arg(node().ports.get(ixPortIndex, memberIndex)->getName())
                             .arg(dumpVlanTypes(vlanTypesMap))
                             .arg(dumpVlanTypes(membersMap[memberIndex])));
                 rs = RS_WARNING;
@@ -512,9 +582,6 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
         if (!mNoUntaggedBitmap) msgAppend(&runMsg, dumpMaps("dot1qVlanStaticUntaggedPorts", staticUntagged));
         if (!mNoPVID)           msgAppend(&runMsg, dumpPVID("dot1qPvid",                    pvidMap));
     }
-    // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
-    static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
-    execSql(q, sql, nodeId());
     //
     QMap<int, int>  untaggedSettedMap;
     int rs = RS_ON;
@@ -524,10 +591,10 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
-                static const int ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                int pix = (*i)->getId(ixPortIndex);     // port index
+                if (mNoVlanPorts.contains(pix)) continue;
                 qlonglong trunkId = (*i)->getId(ixPortStapleId);
                 if (mTrunkByMembers) {
-                    static const qlonglong multiplexorTypeId = cIfType::ifType(_sMultiplexor).getId();
                     if ((*i)->getId((*i)->ixIfTypeId()) == multiplexorTypeId) {
                         if (trunkId != NULL_ID) {
                             QString m = tr("Trunk-ölt trunk port ? %1 < %2")
@@ -540,7 +607,6 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
                 else {
                     if (trunkId != NULL_ID) continue;   // Skeep Trunk member ?
                 }
-                int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);
                 if (!noPvid && !pvidMap.contains(pix)) continue;   // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);             // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg
@@ -588,16 +654,7 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
     }
     int _rs = setTrunks(q, runMsg);
     rs = std::max(rs, _rs);
-    // törlendő jelöletlen rekordok
-    bool ok;
-    ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-    msgAppend(&runMsg,
-              tr("%1 VLAN (static), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
-                .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
-                .arg(ok ? QString::number(ctRm) : "?")
-                .arg(ctUnkn).arg(ctErr));
     return rs;
-
 }
 
 int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& par)
@@ -623,9 +680,6 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
         if (!mNoUntaggedBitmap) msgAppend(&runMsg, dumpMaps("dot1qVlanCurrentUntaggedPorts", currentUntagged));
         if (!mNoPVID)           msgAppend(&runMsg, dumpPVID("dot1qPvid",                     pvidMap));
     }
-    // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
-    static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
-    execSql(q, sql, nodeId());
     //
     QMap<int, int>  untaggedSettedMap;
     int rs = RS_ON;
@@ -635,10 +689,10 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
             tRecordList<cNPort>::iterator i, n = node().ports.end();
             QString vstat;
             for (i = node().ports.begin(); i != n; ++i) {
-                static const int ixPortStapleId = (*i)->toIndex(_sPortStapleId);
+                int pix = (*i)->getId(ixPortIndex);     // port index
+                if (mNoVlanPorts.contains(pix)) continue;
                 qlonglong trunkId = (*i)->getId(ixPortStapleId);
                 if (mTrunkByMembers) {
-                    static const qlonglong multiplexorTypeId = cIfType::ifType(_sMultiplexor).getId();
                     if ((*i)->getId((*i)->ixIfTypeId()) == multiplexorTypeId) {
                         if (trunkId != NULL_ID) {
                             QString m = tr("Trunk-ölt trunk port ? %1 < %2")
@@ -651,7 +705,6 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
                 else {
                     if (trunkId != NULL_ID) continue;   // Skeep Trunk member ?
                 }
-                int pix = (*i)->getId(_sPortIndex);     // port index
                 bool noPvid = mNoPVID || mNoPvidPorts.contains(pix);    // Ignore PVID ?
                 if (!noPvid && !pvidMap.contains(pix)) continue;        // Ha nincs PVID, akkor ez nem VLAN-t támogató port
                 int bix = getBitIndex(pix);  // index a bitmap-ban / elvileg azonos, gyakorlatilag meg nem mindíg (bitmap_xrefs)
@@ -699,14 +752,6 @@ int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& p
     }
     int _rs = setTrunks(q, runMsg);
     rs = std::max(rs, _rs);
-    // törlendő jelöletlen rekordok
-    bool ok;
-    ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
-    msgAppend(&runMsg,
-              tr("%1 VLAN (dynamic), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
-                .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
-                .arg(ok ? QString::number(ctRm) : "?")
-                .arg(ctUnkn).arg(ctErr));
     return rs;
 }
 

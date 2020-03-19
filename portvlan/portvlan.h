@@ -77,6 +77,9 @@ public:
     QMap<qlonglong, QMap<int, QMap<int, QString> > >  trunkMembersVlanTypes;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
+    static int ixPortIndex;
+    static int ixPortStapleId;
+    static qlonglong multiplexorTypeId;
     /// port index bitmap kereszt referencia táblázat, ha korrigálni kellett a bitmap indexeket,
     /// mert nem azonosak a port indexel.
     /// Ha azonosak az indexek, akkor a konténer üres.
@@ -103,6 +106,9 @@ public:
     QMap<int, QBitArray>    staticForbid;
     QMap<int, int>          pvidMap;
     int ctVlan, ctUnchg, ctMod, ctNew, ctIns, ctUnkn, ctRm, ctErr;
+    cOIdVector hpicfDot1xAuthConfigTable;
+    QStringList headerAuthConfigTable;
+
 };
 
 

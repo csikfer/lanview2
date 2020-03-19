@@ -338,8 +338,16 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
     ///         Hiba esetén az első hibás lejérdezés státusa.
     int getTable(const QString& baseId, const QStringList& columns, cTable& result);
+    /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról.
+    /// @param ids Az oszlopokat azonosító OId-k
+    /// @param columns Az oszlopok nevei.
+    /// @param result Cél objektum.
+    /// @param _maxRowIndex Ha megadjuk, akkor csak addig kérdezi le a sorokat, amig el nem érjük a meximális megadott indexet
+    /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
+    ///         Hiba esetén az első hibás lejérdezés státusa.
     int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result, oid _maxRowIndex = INT_MAX);
     /// Egy kereszt index tábla lekérdezése
+    /// A visszaadott táblázatban lessz egy plussz oszlop, ami az indexeket tartalmazza, neve az sSnmpTableIndex adattagban.
     /// @param xoid Az OID, ami a keresztindexet tartalmazza: <xoid>.<új index>: <eredeti index>
     /// @param xix Kereszt indexek, ahhol a kulcs az új index, érték az eredeti.
     /// @param reverse Opcionális, ha megadjuk és true, akkor az eredmény QMap-ben felcseréli az érték kulcs párokat. Fordított konverzióhoz.
@@ -365,6 +373,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     bool operator!() const                      { return status != 0; }
     cSnmp& operator=(const cSnmp& __o) { EXCEPTION(ENOTSUPP); __o.type(); return *this; }
     static const char *defComunity;
+    static const QString sSnmpTableIndex;
    private:
 /**
  *  Elvégzi az adattagok inicalzálását, pointerek nullázása. stb. snmpObjCnt értékét növeli eggyel, ha értéke

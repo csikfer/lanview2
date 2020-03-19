@@ -458,6 +458,7 @@ QString cOIdVector::toString()
 /* *********************************************************************************************** */
 
 const char *cSnmp::defComunity = __sPublic;
+const QString cSnmp::sSnmpTableIndex = "snmp_table_index";
 
 cSnmp::cSnmp() : netSnmp()
 {
@@ -815,6 +816,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
     int over = 0;               // Overruns counter
     oid row = 0;                // Row SNMP index
     result.clear();
+    tVariantVector& ix  = result[sSnmpTableIndex];
     first();
     while (true) {                          // ROWS
         for (int i = 0; i < ncol; ++i) {    // Columns
@@ -828,6 +830,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
                 if (i == 0) {                   // First column
                     row = oia.last();           // Row SNMP index
                     if (row > _maxRowIndex) return 0;
+                    ix << QVariant((int)row);
                 }
                 else if (row != oia.last()) {   // Check SNMP index
                     emsg = "Confused indexes : " + oia.toNumString() + " / " + QString::number(row);
