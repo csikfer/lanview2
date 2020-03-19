@@ -164,15 +164,13 @@ void    netSnmp::implicitInit(void)
     SOCK_STARTUP;
     QStringList pl = lanView::getInstance()->pSet->value(_sMibPath).toString().split(QChar(','));
     QString dir;
-    bool first = true;
     foreach (dir, pl) {
-        if (first) first = false;
-        else dir.prepend(QChar('+'));
-        netsnmp_set_mib_directory(dir.toStdString().c_str());
-        PDEB(SNMP) << "set_mib_directory(" << dir << ") ..." << endl;
+        add_mibdir(dir.toStdString().c_str());
+        PDEB(SNMP) << "add_mib_dir(" << dir << ") ..." << endl;
     }
     inited = true;
 }
+
 void    netSnmp::implicitDown(void)
 {
     if (!inited) return;    // Ha nem volt init, akkor nem kell
@@ -301,8 +299,12 @@ cOId& cOId::set(const char * __oid)
     clrStat();
     fill(zero, MAX_OID_LEN);
     oidSize = MAX_OID_LEN;
-//  if (!read_objid(__oid, data(), &oidSize)) {
-    if (!get_node(__oid, data(), &oidSize)) {
+#if 0
+    // return size, if error, return 0
+    if (0 == get_node(__oid, data(), &oidSize)) {
+#else
+    if ( nullptr == snmp_parse_oid(__oid, data(), &oidSize)) {
+#endif
         oidSize = 0;
         setStat(true, QObject::tr("cOId& cOId::set(%1)").arg(QString(__oid)));
     }

@@ -204,9 +204,11 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
             }
         }
         QString fileName = lanView::getInstance()->homeDir + "/log/";
+        fileName += inspector.node().getName() + '.';
         fileName += inspector.service()->getName();
         if (inspector.pPrimeService != nullptr) fileName += '.' + inspector.pPrimeService->getName();
         if (inspector.pProtoService != nullptr) fileName += '.' + inspector.pProtoService->getName();
+        fileName += "_" + QString::number(inspector.hostServiceId());
         fileName += ".log";
         actLogFile.setFileName(fileName);
         if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
