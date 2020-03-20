@@ -111,10 +111,10 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
             EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list : '%1'").arg(sVars));
         }
         QString soid = sl.first();
-        bool _next = soid.endsWith(QChar('.'));
-        if (_next) soid.chop(1);
-        if (next == TS_NULL)  next = bool2ts(_next);
-        else if (toBool(next) != _next) {
+        bool get = soid.endsWith(QChar('.'));
+        if (get) soid.chop(1);
+        if (next == TS_NULL)  next = bool2ts(!get);
+        else if (toBool(next) == get) {
             EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list (query methode) : '%1'").arg(sVars));
         }
         cOId oid = cOId(soid);
