@@ -134,7 +134,7 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
         }
         cOId oid = cOId(soid);
         if (oid.isEmpty()) {
-            EXCEPTION(EDATA, 0, QObject::tr("Invalid OId : '%1'").arg(sl.first()));
+            EXCEPTION(EDATA, 0, QObject::tr("Error OId : '%1'; %2").arg(soid, oid.emsg));
         }
 
         oidVector << oid;
