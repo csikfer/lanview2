@@ -154,7 +154,9 @@ void cParseWidget::remoteParse(const QString &src)
     imp.setName(_sImportText, src);
     imp.setName(_sAppName, lanView::appName);
     imp.setId(_sUserId, lanView::user().getId());
-    imp.setId(_sNodeId, lanView::selfNode().getId());
+    cNode *pSelfNode = lanView::getInstance()->pSelfNode;
+    qlonglong selfNodeId = pSelfNode == nullptr ? NIL_NODE_ID : pSelfNode->getId();
+    imp.setId(_sNodeId, selfNodeId);
 
     imp.insert(*pq);
     QString msg = tr("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());

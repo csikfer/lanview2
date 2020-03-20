@@ -1342,7 +1342,7 @@ template<class P> inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, enum eEx
 }
 
 /* ------------------------------------------------------------------------------------------------- */
-
+#define NIL_NODE_ID 0
 
 /*!
 @class cNode

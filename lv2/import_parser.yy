@@ -787,6 +787,7 @@ void cLink::replace(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong _
     delete __hn2;
 }
 
+/* --------------------------------------------------------------------------------------------------- */
 
 static QString e1 = "Redefined port name or index.";
 static QString e2 = "There is insufficient data.";
@@ -847,6 +848,8 @@ static void changeIfType(const QString& ifn)
     }
     pp->setId(_sIfTypeId, ift.getId());
 }
+
+/* --------------------------------------------------------------------------------------------------- */
 
 static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
 {
@@ -956,6 +959,88 @@ static void newMenuItem(const QString& _n, const QString *_pd, int _t)
     p->setName(cMenuItem::LTX_TAB_TITLE, _n);
     menuItems << p;
 }
+
+/* --------------------------------------------------------------------------------------------------- */
+#if       SNMP_IS_EXISTS
+static cOId * newOId(QString * ps)
+{
+    cOId *r = ps == nullptr ? new cOId() : new cOId(*ps);
+    delete ps;
+    return r;
+}
+static cOId * addOId(cOId * po, qlonglong i)
+{
+    *po << int(i);
+    return po;
+}
+static void printOId(cOId * po)
+{
+    cExportQueue::push(po->toString());
+    delete po;
+}
+static void snmpGet(cSnmpDevice * pn, cOId *po)
+{
+    cSnmp snmp;
+    pn->open(qq(), snmp);
+    int r = snmp.get(*po);
+    QString msg;
+    if (r) {
+        msg = QObject::tr("Error #%1; %2").arg(r).arg(snmp.emsg);
+    }
+    else {
+        snmp.first();
+        msg = po->toString() + " = " + debVariantToString(snmp.value());
+    }
+    cExportQueue::push(msg);
+    delete po;
+    delete pn;
+}
+static void snmpNext(cSnmpDevice * pn, cOId *po)
+{
+    cSnmp snmp;
+    pn->open(qq(), snmp);
+    int r = snmp.getNext(*po);
+    QString msg;
+    if (r) {
+        msg = QObject::tr("Error #%1; %2").arg(r).arg(snmp.emsg);
+    }
+    else {
+        snmp.first();
+        msg = po->toString() + " = " + debVariantToString(snmp.value());
+    }
+    cExportQueue::push(msg);
+    delete po;
+    delete pn;
+}
+static void snmpWalk(cSnmpDevice * pn, cOId *po)
+{
+    cSnmp snmp;
+    pn->open(qq(), snmp);
+    int r = snmp.getNext(*po);
+    while (r == 0) {
+        snmp.first();
+        cOId o = snmp.name();
+        if (!(*po < o)) break;  // END
+        cExportQueue::push(o.toString() + " = " + debVariantToString(snmp.value()));
+        r = snmp.getNext();
+    }
+    if (r) {
+        cExportQueue::push(QObject::tr("Error #%1; %2").arg(r).arg(snmp.emsg));
+    }
+    delete po;
+    delete pn;
+
+}
+#else  // SNMP_IS_EXISTS
+static cOid * newOId(QString *)         { EXCEPTION(ENOTSUPP); }
+static cOId * addOId(cOId *, qlonglong) { EXCEPTION(ENOTSUPP); }
+static void printOId(cOId *)            { EXCEPTION(ENOTSUPP); }
+static void snmpGet(cSnmpDevice *, cOId *) { EXCEPTION(ENOTSUPP); }
+static void snmpNext(cSnmpDevice *, cOId *){ EXCEPTION(ENOTSUPP); }
+static void snmpWalk(cSnmpDevice *, cOId *){ EXCEPTION(ENOTSUPP); }
+#endif // SNMP_IS_EXISTS
+/* --------------------------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------------------------- */
 
 static void insertCode(const QString& __txt)
 {
@@ -1623,6 +1708,7 @@ static inline cEnumVal& actEnum()
     cSnmpDevice *       sh;
     cHostServices *     hss;
     tStringMap *        sm;
+    cOId *              coid;
 }
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
@@ -1654,7 +1740,7 @@ static inline cEnumVal& actEnum()
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T RAW_T  RRD_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
-%token      OS_T VERSION_T INDEX_T
+%token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1685,6 +1771,7 @@ static inline cEnumVal& actEnum()
 %type  <sh>  snmph
 %type  <hss> hss hsss
 %type  <sm>  feature_s maps
+%type  <coid> coid
 
 %destructor { pDelete($$); } <sm>
 
@@ -1727,6 +1814,7 @@ command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | if
         | replaces
         | exports
+        | snmp
         | ';'
         ;
 // Makró vagy makró jellegű definíciók
@@ -3052,6 +3140,16 @@ lang    : LANG_T replfl str str str image_idz lnx ';'  { if ($2) cLanguage::repL
         ;
 lnx     : NEXT_T str                    { $$ = cLanguage().getIdByName(qq(), sp2s($2)); }
         |                               { $$ = NULL_ID; }
+        ;
+snmp    : SNMP_T snmph GET_T  coid ';'  { snmpGet($2, $4); }
+        | SNMP_T snmph NEXT_T coid ';'  { snmpNext($2, $4); }
+        | SNMP_T snmph WALK_T coid ';'  { snmpWalk($2, $4); }
+        | OID_T PRINT_T coid ';'        { printOId($3); }
+        ;
+coid    : str                           { $$ = newOId($1); }
+        | int                           { $$ = addOId(newOId(nullptr), $1); }
+        | coid '.' int                  { $$ = addOId($1, $3); }
+        ;
 %%
 
 static inline bool isXDigit(QChar __c) {
@@ -3234,7 +3332,7 @@ static const struct token {
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED) TOK(RAW)  TOK(RRD)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
-    TOK(OS) TOK(VERSION) TOK(INDEX)
+    TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },

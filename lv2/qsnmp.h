@@ -152,7 +152,7 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     cOId(const char *__oid);
     cOId(const QString& __oid);
     cOId(const cOId& __oid);
-    ~cOId();
+    virtual ~cOId();
     /// Az objektum méretét (integer értékek száma) adja vissza
     size_t  size() const    { return oidSize; }
     /// Ha az objektum üres (hossza nulla) akkor true-val tér vissza.
@@ -185,7 +185,7 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     bool  operator ==(const cOId& __o) const;
     bool  operator <=(const cOId& __o) const{ return *this == __o ||  *this < __o; }
     bool  operator >=(const cOId& __o) const{ return *this == __o ||  *this > __o; }
-    oid last() const { return at(oidSize -1); }
+    oid last() const { return at(int(oidSize -1)); }
     /// Összehasonlít lét objektumot. Ha a kettő azonos, akkor hamis tér vissza.
     bool  operator !=(const cOId& __o) const{ return !(*this == __o); }
     /// Ha a jobb érték kisebb (lsd < operator), akkor a jobb érték balértékkel azonos eleje törlődik.
@@ -207,8 +207,8 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     oid pop_back() {
         if (oidSize <= 0) EXCEPTION(EPROGFAIL, oidSize);
         oidSize--;
-        oid r = at(oidSize);
-        (*this)[oidSize] = zero;
+        oid r = at(int(oidSize));
+        (*this)[int(oidSize)] = zero;
         return r;
     }
     cOId mid(int _first, int _size);
@@ -229,8 +229,8 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
 
 class LV2SHARED_EXPORT cOIdVector : public QVector<cOId> {
    public:
-    cOIdVector() : QVector<cOId>() { ; }
-    cOIdVector(int n) : QVector<cOId>(n) { ; }
+    cOIdVector() : QVector<cOId>() {  }
+    cOIdVector(int n) : QVector<cOId>(n) {  }
     cOIdVector(const QStringList& __sl);
     QString toString();
 };
@@ -402,6 +402,11 @@ class LV2SHARED_EXPORT cSnmp {
 public:
     cSnmp() { EXCEPTION(ENOTSUPP); }
     cSnmp(const QString&, const QString& = _sNul, int = 0) { EXCEPTION(ENOTSUPP); }
+};
+
+class LV2SHARED_EXPORT cOId {
+public:
+    cOId() { EXCEPTION(ENOTSUPP); }
 };
 
 #endif // SNMP_IS_EXISTS
