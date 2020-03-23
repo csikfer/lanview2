@@ -1106,6 +1106,11 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
         char c = token[0].toLatin1();
         bool ok;
         if (token.size() == 1) {    // Character token
+            _v = token.toInt(&ok);  // Szám?
+            if (ok) {
+                stack.push(_v);
+                continue;
+            }
             static const char * ctokens = "+-*/";   // all
             static const char * binToks = "+-*/";   // binary
             if (nullptr == strchr(ctokens, c)) {
