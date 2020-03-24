@@ -505,7 +505,13 @@ int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pM
     QProcess p;
     int r = startProcessAndWait(p, cmd, args, pMsg, start_to, stop_to);
     if (r >= 0) {
-        msgAppend(pMsg, QString::fromUtf8(p.readAll()));
+        QString s;
+        msgAppend(pMsg, QObject::tr("Parancs : \"%1\"").arg(joinCmd(cmd, args)));
+        msgAppend(pMsg, QObject::tr("Visszatérési érték : %1").arg(r));
+        s = p.readAllStandardError();
+        if (!s.isEmpty()) msgAppend(pMsg, QObject::tr("Hiba csatorna : \"%1\"").arg(s));
+        s = p.readAllStandardOutput();
+        if (!s.isEmpty()) msgAppend(pMsg, QObject::tr("Standard csatorna : \"%1\"").arg(s));
     }
     return r;
 }
