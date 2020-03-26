@@ -304,7 +304,7 @@ inline int bool2boolVal(bool b) { return b ? BE_TRUE : BE_FALSE; }
 /// @class cEnumVal
 /// @brief Enumerációs értékekhez opcionálisan tartozó beszédesebb szövegeket,
 /// valamint a dekorációs lehetőségeket tartalmazó táblát (enum_vals) reprezentáló osztály.
-/// A legtőbb művelethet az előre beolvasott teljes táblát használja, így csökkentbóve az adatbázis műveletek számát,
+/// A legtőbb művelethet az előre beolvasott teljes táblát használja, így csökkentve az adatbázis műveletek számát,
 /// ezért a legtöbb esetben az enum_vals táblában eszközölt változtatások csak a program újraindításakor jutnak érvényre.
 /// @sa
 /// - const QColor& bgColorByEnum(const QString& __t, int e)
@@ -380,7 +380,7 @@ public:
     /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
     static void fetchEnumVals();
     /// Egy cEnumVal objektumot ad vissza a típus és érték alapján.
-    /// Az enumVals adattagban keres, ha enumVals még nincs feltöltve, akkor feltülti.
+    /// Az enumVals adattagban keres, ha enumVals még nincs betöltve, akkor betölti.
     /// Ha __ex értéke EX_WARNING-nál kisebb, akkor kizárás helyett, egy üres objektummal tér vissza
     ///  (amire a pNull adattag mutat)
     /// @param _tn Az enumerációs típus neve

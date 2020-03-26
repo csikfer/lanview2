@@ -18,7 +18,7 @@ enum eFieldIx {
     RX_ID,
     RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
     RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
-    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_NSUB,
+    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_SOFT_STATE, RX_NSUB,
     RX_SUPERIOR_ID, RX_SUPERIOR_NAME,
     RX_LAST_TOUCHED
 };
@@ -46,6 +46,7 @@ const QString cHSOperate::_sql =
             " hs.disabled, "                // RX_DISABLED
             " s.disabled AS sd,"            // RX_SRV_DISABLED
             " hs.host_service_state, "      // RX_STATE
+            " hs.soft_state, "              // RX_SOFT_STATE
             " (SELECT COUNT(*) FROM host_services AS shs WHERE shs.superior_host_service_id = hs.host_service_id), "    // RX_NSUB
             " hs.superior_host_service_id, "// RX_SUPERIOR_ID
             " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
@@ -139,7 +140,7 @@ QWidget* cHSORow::getButtonCmd()
     pComboBoxCmd->addItems(inspectorCommands);
     pComboBoxCmd->addItems(appCommands);
     pComboBoxCmd->setCurrentIndex(0);
-    pToolButtonCmd->setIcon(QIcon("://icons/run.ico"));
+    pToolButtonCmd->setIcon(QIcon("://icons/control.png"));
     pLayout->setMargin(0);
     pLayout->addWidget(pComboBoxCmd);
     pLayout->addWidget(pToolButtonCmd);
@@ -161,8 +162,16 @@ QTableWidgetItem * cHSORow::item(int vix)
 QTableWidgetItem * cHSORow::item(int ix, const cColEnumType *pType)
 {
     QString s = rec.value(ix).toString();
-    QTableWidgetItem *pi = new QTableWidgetItem(s);
-    pi->setBackground(bgColorByEnum(*pType, pType->str2enum(s)));
+    const cEnumVal& ev = cEnumVal::enumVal(*pType, pType->str2enum(s), EX_IGNORE);
+    QString sIcon = ev.getName(_sIcon);
+    QTableWidgetItem *pi;
+    if (sIcon.isEmpty()) {
+        pi = new QTableWidgetItem(s);
+        pi->setBackground(bgColorByEnum(*pType, pType->str2enum(s)));
+    }
+    else {
+        pi = new QTableWidgetItem(resourceIcon(sIcon), _sNul);
+    }
     return pi;
 }
 
@@ -186,9 +195,17 @@ QTableWidgetItem * cHSORow::item(int ix, const cColStaticDescr &cd)
 QTableWidgetItem * cHSORow::boolItem(int ix, const QString& tn, const QString& fn)
 {
     bool     b = rec.value(ix).toBool();
-    QString  s = langBool(b);
-    QTableWidgetItem *pi = new QTableWidgetItem(s);
-    pi->setBackground(bgColorByBool(tn, fn, b));
+    const cEnumVal& ev = cEnumVal::enumVal(mCat(tn, fn), bool2boolVal(b), EX_IGNORE);
+    QString sIcon = ev.getName(_sIcon);
+    QTableWidgetItem *pi;
+    if (sIcon.isEmpty()) {
+        QString  s = langBool(b);
+        pi = new QTableWidgetItem(s);
+        pi->setBackground(bgColorByBool(tn, fn, b));
+    }
+    else {
+        pi = new QTableWidgetItem(resourceIcon(sIcon), _sNul);
+    }
     return pi;
 
 }
@@ -322,6 +339,7 @@ enum eTableColumnIx {
     TC_DISABLED,
     TC_DISABLED_SRV,
     TC_STATE,
+    TC_SOFT_STATE,
     TC_LAST_TM,
     TC_CBOX_SEL,
     TC_NSUB,
@@ -555,6 +573,7 @@ void cHSOperate::refreshTable()
         setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, _sHostServices, _sDisabled));
         setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
         setCell(row, TC_STATE,   pRow->item(RX_STATE, cHSORow::pNotifSwitch));
+        setCell(row, TC_SOFT_STATE,pRow->item(RX_SOFT_STATE, cHSORow::pNotifSwitch));
         setCell(row, TC_LAST_TM, pRow->item(RX_LAST_TOUCHED));
         setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));

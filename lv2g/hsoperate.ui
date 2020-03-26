@@ -231,6 +231,9 @@
          <attribute name="horizontalHeaderCascadingSectionResizes">
           <bool>false</bool>
          </attribute>
+         <attribute name="horizontalHeaderMinimumSectionSize">
+          <number>32</number>
+         </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>false</bool>
          </attribute>
@@ -273,47 +276,83 @@
          </column>
          <column>
           <property name="text">
-           <string>Riasztás tiltás</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A riasztás tiltása, ill. annak müdja:&lt;/p&gt;&lt;p&gt;'off'	Nincs tiltás&lt;/p&gt;&lt;p&gt;'on'	Permanens tiltás&lt;/p&gt;&lt;p&gt;'from'	Tiltás a megadott időponttól.&lt;/p&gt;&lt;p&gt;'to'	Tiltás a megadott időpontig.&lt;/p&gt;&lt;p&gt;'from-to'	Tiltás a megadott időpontok között.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/bell.ico</normaloff>:/icons/bell.ico</iconset>
+          </property>
          </column>
          <column>
           <property name="text">
-           <string>-tól</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ha a riasztás tiltásának van kezdeti időpontja.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>-ig</string>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/red-from.png</normaloff>:/icons/red-from.png</iconset>
           </property>
          </column>
          <column>
           <property name="text">
-           <string>Tilt.</string>
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/red-to.png</normaloff>:/icons/red-to.png</iconset>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás példány le van tiltva, a példány rekordon keresztül.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/disable.ico</normaloff>:/icons/disable.ico</iconset>
+          </property>
          </column>
          <column>
           <property name="text">
-           <string>Tilt.</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás le van tiltva. A szolgáltatás rekordon keresztül, a szolgáltatás összes példánya le ven tiltva.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/disable.ico</normaloff>:/icons/disable.ico</iconset>
+          </property>
          </column>
          <column>
           <property name="text">
-           <string>Állapot</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>A szolgáltatás állpota.</string>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/status.png</normaloff>:/icons/status.png</iconset>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="toolTip">
+           <string>Szolgáltatás &quot;lágy&quot; állapot. A legutobbi lekérdezés szűretlen állapota.</string>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/status.png</normaloff>:/icons/status.png</iconset>
           </property>
          </column>
          <column>
@@ -331,23 +370,35 @@
          </column>
          <column>
           <property name="text">
-           <string>Al példány</string>
+           <string>#</string>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás al példányainak a száma.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
+          </property>
          </column>
          <column>
           <property name="text">
-           <string>Al</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás kiválasztása az al példányok megjelenítésére.&lt;/p&gt;&lt;p&gt;Kettös klikk (a cellán) esetén a szolgáltatás példány al al példányainak a megjelenítése.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
+          </property>
          </column>
          <column>
           <property name="text">
-           <string>Superior</string>
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/up.ico</normaloff>:/icons/up.ico</iconset>
           </property>
          </column>
          <column>

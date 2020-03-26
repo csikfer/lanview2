@@ -97,5 +97,7 @@
         <file>icons/go-home-2.ico</file>
         <file>icons/go-home-2-no.ico</file>
         <file>icons/runit.ico</file>
+        <file>icons/measure.png</file>
+        <file>icons/control.png</file>
     </qresource>
 </RCC>
