@@ -643,6 +643,11 @@ ENUM "tablefortext" {
 }
 ENUM "vlantype" {
     VIEW "vlantype",@;
+     "auth" {
+        VIEW "auth",@;
+        BACKGROUND COLOR "#aa00ff";
+        FONT ATTR "italic";
+    }
      "auto" {
         VIEW "auto",@;
         BACKGROUND COLOR "#91e3d1";
@@ -668,6 +673,11 @@ ENUM "vlantype" {
      "tagged" {
         VIEW "tagged",@;
         BACKGROUND COLOR "yellow";
+    }
+     "unauth" {
+        VIEW "unauth",@;
+        BACKGROUND COLOR "#4e9a06";
+        FONT ATTR "bold";
     }
      "unknown" {
         VIEW "unknown",@;
@@ -1439,7 +1449,7 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         TITLE "*Op.St.","Port operativ állapota";
         TOOL TIP "Port operativ állapota (link)";
         FEATURES ":color:";
-        FLAG "batch_edit", "bg_color", "HTML", "image";
+        FLAG "batch_edit", "bg_color", "HTML", "image", "notext";
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
     }
@@ -1451,7 +1461,7 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         TITLE "*Adm.St.","Port adminisztrativ állapot";
         TOOL TIP "Port adminisztrativ állapot";
         FEATURES ":color:";
-        FLAG "batch_edit", "bg_color", "HTML", "image";
+        FLAG "batch_edit", "bg_color", "HTML", "image", "notext";
         DEFAULT VALUE "unknown";
         EDIT RIGHTS "admin";
     }
@@ -1472,7 +1482,7 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
     ADD FIELD "port_stat" {
         TITLE "*Port állapot","Port örökölt állapota";
         TOOL TIP "Port örökölt állapota";
-        FLAG "batch_edit", "HTML", "image";
+        FLAG "batch_edit", "HTML", "image", "notext";
         EDIT RIGHTS "admin";
     }
     ADD FIELD "last_changed" {
@@ -1505,9 +1515,8 @@ TABLE "interfaces" SHAPE "hostports" "Hálózati interfészek, portok (fa)" {
         FLAG "table_hide", "dialog_hide", "read_only";
     }
     FIELD "port_index" ORD asc, no, desc;
-    FIELD "port_stat" ORD no, asc;
-    FIELD "port_name", "port_note", "port_tag", "delegate_oper_stat", "delegate_admin_stat", "iftype_id", "ifdescr", "last_changed", "last_touched" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "port_index", "port_name", "port_tag", "port_note", "iftype_id", "last_changed", "last_touched", "ifdescr", "delegate_oper_stat", "port_stat", "delegate_admin_stat";
+    FIELD "port_name", "port_note", "port_tag", "port_ostat", "delegate_oper_stat", "port_astat", "delegate_admin_stat", "iftype_id", "ifdescr", "port_stat", "last_changed", "last_touched" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "port_index", "port_name", "port_tag", "port_ostat", "port_astat", "port_note", "iftype_id", "last_changed", "last_touched", "ifdescr", "delegate_oper_stat", "port_stat", "delegate_admin_stat";
 }
 TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     TITLE "host_service_logs",@,@;
@@ -2441,6 +2450,7 @@ TABLE SHAPE "node_params" "Eszköz paraméterek" {
     }
     ADD FIELD "node_param_name" {
         TITLE "Név","Paraméter neve";
+        FLAG "HTML";
     }
     ADD FIELD "node_id" {
         TITLE "Node","Hálózati eszköz";
@@ -2448,9 +2458,11 @@ TABLE SHAPE "node_params" "Eszköz paraméterek" {
     }
     ADD FIELD "param_type_id" {
         TITLE "Típus",@;
+        FLAG "HTML";
     }
     ADD FIELD "param_value" {
         TITLE "Érték",@;
+        FLAG "huge", "HTML";
     }
     ADD FIELD "node_param_note" {
         TITLE "Megj.","Megjegyzés";
@@ -2733,6 +2745,10 @@ TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
+    ADD FIELD "port_id1" {
+        TITLE "port_id1",@;
+        FLAG "table_hide", "read_only";
+    }
     ADD FIELD "node_name1" {
         TITLE "Linked","Linked elem";
     }
@@ -2750,6 +2766,10 @@ TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     }
     ADD FIELD "port_shared1" {
         TITLE "Megosztás",@;
+    }
+    ADD FIELD "port_id2" {
+        TITLE "port_id2",@;
+        FLAG "table_hide", "read_only";
     }
     ADD FIELD "node_name2" {
         TITLE "Linked","Linked elem";
@@ -2775,9 +2795,25 @@ TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     ADD FIELD "phs_link_note" {
         TITLE "Megjegyzés",@;
     }
+    ADD FIELD "create_time" {
+        TITLE "Létrehozva","A rekord létrehozva";
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "create_user_id" {
+        TITLE "Létrehozó","A rekordot létrehozta";
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "modify_time" {
+        TITLE "Modosítva","Utolsó modosítás";
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "modify_user_id" {
+        TITLE "Modosította","A rekordot modosította";
+        FLAG "table_hide", "read_only";
+    }
     FIELD "port_name1", "port_index1", "phs_link_type1" ORD asc, no, desc;
-    FIELD "node_name1", "port_tag1", "node_name2", "port_name2", "port_index2", "port_tag2", "phs_link_type2" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "node_name1", "port_index1", "port_name1", "phs_link_type1", "node_name2", "port_name2", "port_index2", "phs_link_type2", "port_tag1", "port_tag2";
+    FIELD "port_id1", "node_name1", "port_tag1", "port_id2", "node_name2", "port_name2", "port_index2", "port_tag2", "phs_link_type2" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "node_name1", "port_index1", "port_name1", "phs_link_type1", "node_name2", "port_name2", "port_index2", "phs_link_type2", "port_tag1", "port_id1", "port_tag2", "port_id2";
 }
 TABLE "patchs" SHAPE "phsnodes" "Hálózati elem (aktív, passzív és csatlakozók)" {
     TITLE "phsnodes",@,@;
@@ -3478,13 +3514,14 @@ TABLE SHAPE "service_rrd_vars" {
 }
 TABLE SHAPE "services" {
     TITLE "Szolgáltatások","Szolgáltatás";
-    TYPE "bare";
+    TYPE "owner";
     FEATURES ":button.copy:bg_color=disabled:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "admin";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "admin";
+    RIGHT SHAPE "host_services";
     ADD FIELD "service_id" {
         TITLE "ID","Egyedi azonosító (ID)";
         FLAG "table_hide", "read_only";

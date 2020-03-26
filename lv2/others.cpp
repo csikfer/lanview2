@@ -77,6 +77,17 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
     return sl;
 }
 
+int removeAll(QStringList& sl, const QString& s)
+{
+    int r = 0;
+    QStringList::iterator i = sl.begin();
+    QStringList::iterator e = sl.end();
+    while (i < e) {
+        if (0 == i->compare(s, Qt::CaseInsensitive)) { i = sl.erase(i); ++r; }
+        else                                         { i++; }
+    }
+    return r;
+}
 /******************************************************************************/
 
 const QString cFeatures::list_sep = ",";

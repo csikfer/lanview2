@@ -99,34 +99,29 @@ cDeviceSV::~cDeviceSV()
 void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
 {
     cInspector::postInit(q, qs);
-    QString sVars = feature("variables");
-    QMap<QString, QStringList> listmap = cFeatures::value2listMap(sVars);
-    varNames = listmap.keys();
-    if (varNames.isEmpty()) {
+    snmpDev().open(q, snmp);
+}
+
+void cDeviceSV::variablesPostInit(QSqlQuery &q)
+{
+    if (!variablesPostInitFeature(q, _sVariables)) {
         EXCEPTION(EDATA, 0, QObject::tr("Missing or empty variable list."));
     }
+    varNames = varsFeatureMap.keys();
     foreach (QString vname, varNames) {
-        QStringList sl = listmap[vname];
-        if (sl.size() != 2) {   /// OId, varTypeName
-            EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list : '%1'").arg(sVars));
-        }
-        QString soid = sl.first();
+        QString soid = varsFeatureMap[vname];
         bool get = soid.endsWith(QChar('.'));
         if (get) soid.chop(1);
         if (next == TS_NULL)  next = bool2ts(!get);
         else if (toBool(next) == get) {
-            EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list (query methode) : '%1'").arg(sVars));
+            EXCEPTION(EDATA, 0, QObject::tr("Invalid variable list (query methode) : '%1'").arg(feature(_sVariables)));
         }
         cOId oid = cOId(soid);
         if (oid.isEmpty()) {
             EXCEPTION(EDATA, 0, QObject::tr("Error OId : '%1'; %2").arg(soid, oid.emsg));
         }
-
         oidVector << oid;
-        QString typeName = sl.at(1);
-        varTypes << cServiceVarType::srvartype(q, typeName);
     }
-    snmpDev().open(q, snmp);
 }
 
 int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
@@ -148,7 +143,6 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
                 if (bits[i] == false) {     // Drop, if missing
                     varNames.removeAt(i);
                     oidVector.removeAt(i);
-                    varTypes.removeAt(i);
                 }
             }
         }
@@ -158,31 +152,12 @@ int cDeviceSV::queryInit(QSqlQuery &_q, QString& msg)
             return RS_UNREACHABLE;
         }
     }
-    if (n != oidVector.size() || n != varTypes.size() || !serviceVars.isEmpty()) {
+    if (n != oidVector.size()) {
         EXCEPTION(EPROGFAIL);
     }
     for (i = 0; i < n; ++i) {
-        qlonglong varTypeId = varTypes.at(i)->getId();
-        // read or create variable
-        cServiceVar *psv = new cServiceVar;
-        psv->setId(_sHostServiceId, hostServiceId());
-        psv->setName(_sServiceVarName, varNames.at(i));
-        switch (psv->completion(_q)) {
-        case 0:     // Not found, create (psv cleared)
-            psv->setId(_sHostServiceId, hostServiceId());
-            psv->setName(_sServiceVarName, varNames.at(i));
-            psv->setId(_sServiceVarTypeId, varTypeId);
-            psv->insert(_q);
-            break;
-        case 1:     // Found, check type
-            if (psv->getId(_sServiceVarTypeId) != varTypeId) {  // if modifyed type
-                varTypes[i] = cServiceVarType::srvartype(_q, psv->getId(_sServiceVarTypeId));
-            }
-            break;
-        default:
-            EXCEPTION(EDATA, _q.size());
-        }
-        serviceVars << psv;
+        const QString& vName = varNames.at(i);
+        variablePostInitCreateOrCheck(_q, vName);
     }
     return RS_ON;
 }
@@ -213,19 +188,20 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
         return RS_UNREACHABLE;
     }
     int i, n = varNames.size();
-    if (n != oidVector.size() || n != varTypes.size() || n != serviceVars.size()) {
+    if (n != oidVector.size()) {
         EXCEPTION(EPROGFAIL);
     }
     snmp.first();
     if (next == TS_TRUE) {
         for (i = 0; i < n; ++i) {
+            const QString& vName = varNames.at(i);
+            cServiceVar& svar = *getServiceVar(vName, EX_ERROR);
             if (oidVector.at(i) < snmp.name()) {
-                cServiceVar& svar = *serviceVars.at(i);
                 QVariant value = snmp.value();
                 svar.setValue(q, value, rs);
             }
             else {
-                serviceVars.at(i)->setUnreachable(q, tr("There is no such data in the SNMP query result."));
+                svar.setUnreachable(q, tr("There is no such data in the SNMP query result."));
                 rs = RS_UNREACHABLE;
             }
             snmp.next();
@@ -233,7 +209,8 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
     }
     else {
         for (i = 0; i < n; ++i) {
-            cServiceVar& svar = *serviceVars.at(i);
+            const QString& vName = varNames.at(i);
+            cServiceVar& svar = *getServiceVar(vName, EX_ERROR);
             QVariant value = snmp.value();
             svar.setValue(q, value, rs);
             snmp.next();

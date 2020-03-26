@@ -29,11 +29,12 @@ public:
     cDeviceSV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cDeviceSV();
-    virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    virtual void postInit(QSqlQuery &q, const QString &qs = QString()) override;
+    virtual void variablesPostInit(QSqlQuery &q) override;
     int queryInit(QSqlQuery &_q, QString& msg);
     /// A lekérdezést végző virtuális metódus.
     /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
-    virtual int run(QSqlQuery& q, QString& runMsg);
+    virtual int run(QSqlQuery& q, QString& runMsg) override;
     bool            first;
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
@@ -41,8 +42,8 @@ public:
     ///
     QStringList     varNames;
     cOIdVector      oidVector;
-    QList<const cServiceVarType *> varTypes;
-    tRecordList<cServiceVar> serviceVars;
+//    QList<const cServiceVarType *> varTypes;
+//    tRecordList<cServiceVar> serviceVars;
 };
 
 

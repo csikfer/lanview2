@@ -616,7 +616,73 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
             setSubs(q, qs);
         }
     }
+    // "variables" feature
+    variablesPostInit(q);
+
 }
+
+void cInspector::variablesPostInit(QSqlQuery& q)
+{
+    if (variablesPostInitFeature(q, _sVariables)) {
+        variablesPostInitCreateOrCheck(q);
+    }
+}
+
+bool cInspector::variablesPostInitFeature(QSqlQuery &q, const QString& _name)
+{
+    (void)q;
+    QString sVars = feature(_name);
+    QStringList varNames;
+    QString   tName, vName;
+    if (!sVars.isEmpty()) {
+        varsListMap = cFeatures::value2listMap(sVars);
+        varNames = varsListMap.keys();
+        foreach (vName, varNames) {
+            QStringList& sl = varsListMap[vName];
+            if (sl.size() != 2) {
+                EXCEPTION(EDATA, 0, QObject::tr("Invalid '%1' : '%2'").arg(_name, sVars));
+            }
+            varsFeatureMap[vName] = sl.at(0);
+            tName = sl.at(1);
+            if (nullptr == cServiceVarType::srvartype(q, tName, EX_IGNORE)) {
+                EXCEPTION(EDATA, 0, QObject::tr("Invalid '%1' : '%2'; Missing '%3' type.").arg(_name, sVars, tName));
+            }
+        }
+    }
+    return !varNames.isEmpty();
+}
+
+void cInspector::variablesPostInitCreateOrCheck(QSqlQuery &q)
+{
+    QString vName;
+    foreach (vName, varsListMap.keys()) {
+        variablePostInitCreateOrCheck(q, vName);
+    }
+}
+
+void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name)
+{
+    const QString& tName = varsListMap[_name].at(1);
+    const cServiceVarType *pType = cServiceVarType::srvartype(q, tName);
+    cServiceVar *pVar = getServiceVar(_name);
+    if (pVar == nullptr) {  // If missing, then create
+        pVar = new cServiceVar;
+        pVar->setId(_sHostServiceId, hostServiceId());
+        pVar->setName(_sServiceVarName, _name);
+        pVar->setId(_sServiceVarTypeId, pType->getId());
+        pVar->insert(q);
+        if (pVars == nullptr) {
+            pVars = new tOwnRecords<cServiceVar, cHostService>(&hostService);
+        }
+        (*pVars) << pVar;
+    }
+    else if (pVar->getId(_sServiceVarTypeId) != pType->getId()) {
+            EXCEPTION(EDATA, 0, QObject::tr("Invalid '%1' variable type, not '%2' but '%3'.")
+                      .arg(_name, tName, cServiceVarType::srvartype(q, pVar->getId(_sServiceVarTypeId))->getName()));
+    }
+
+}
+
 
 void cInspector::threadPreInit()
 {
@@ -717,120 +783,113 @@ cFeatures& cInspector::splitFeature(eEx __ex)
     return *_pFeatures;
 }
 
+#define CONT_ONE(e, c)  \
+    n = ::removeAll(vl, e);                \
+    if (n  > 1 ) goto getFunc_error_label; \
+    if (n == 1)  { r |= c; on = true; }
+
+#define CONT_ONE_COL(e, c, col)  \
+    n = ::removeAll(vl, e);                                  \
+    if (n > 1 || (n == 1 && col)) goto getFunc_error_label;  \
+    if (n == 1) { r |= c;     on = true; }
+
+#define CONT_ONE_ONE(e, c)  CONT_ONE_COL(e, c, on)
+
+#define getFunc_error_label getInspectorTiming_error
+
 int cInspector::getInspectorTiming(const QString& value)
 {
-    if (value.isEmpty()) return 0;
     int r = 0; // IT_TIMING_CUSTOM
+    if (value.isEmpty()) return 0;
     QStringList vl = value.split(QRegExp("\\s*,\\s*"));
-    if (vl.contains(_sTimed,   Qt::CaseInsensitive)) r |= IT_TIMING_TIMED;
-    if (vl.contains(_sThread,  Qt::CaseInsensitive)) r |= IT_TIMING_THREAD;
-    if (vl.contains(_sPassive, Qt::CaseInsensitive)) r |= IT_TIMING_PASSIVE;
-    if (vl.contains(_sPolling, Qt::CaseInsensitive)) r |= IT_TIMING_POLLING;
-    switch (r) {
-    case IT_TIMING_CUSTOM:
-    case IT_TIMING_TIMED:
-    case IT_TIMING_THREAD:
-    case IT_TIMING_TIMED | IT_TIMING_THREAD:
-    case IT_TIMING_PASSIVE:
-    case IT_TIMING_PASSIVE | IT_TIMING_THREAD:
-    case IT_TIMING_POLLING:
-        break;  // O.K.
-    default: {
-        QSqlQuery q = getQuery();
-        EXCEPTION(EDATA, r, tr("Invalid 'timing'\n") + typeErrMsg(q));
-      }
+    bool on = false;
+    int n;
+    if (vl.contains(_sCustom,   Qt::CaseInsensitive)) {
+        if (vl.size() == 1) return r;
+        goto getFunc_error_label;
     }
-    PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
-    return r;
+    CONT_ONE_ONE(_sTimed,   IT_TIMING_TIMED);
+    CONT_ONE_ONE(_sPassive, IT_TIMING_PASSIVE);
+    CONT_ONE_ONE(_sPolling, IT_TIMING_POLLING);
+    if (!on) goto getFunc_error_label;
+    CONT_ONE(_sThread,  IT_TIMING_THREAD);
+    if (vl.isEmpty()) {
+        PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
+        return r;
+    }
+getFunc_error_label:
+    QString msg;
+    msg = tr("Hibás %1 paraméter a feature mezőben : %2").arg(_sTiming, value);
+    EXCEPTION(EDATA,0,msg);
 }
+
+#undef getFunc_error_label
+#define getFunc_error_label getInspectorProcess_error
 
 int cInspector::getInspectorProcess(const QString &value)
 {
-    int r = 0;
+    int r = IT_NO_PROCESS;
+    int n;
+    bool on = false;
+    QStringList vl;
     if (!value.isEmpty()) {
-        QStringList vl = value.split(QRegExp("\\s*,\\s*"));
-        if (vl.contains(_sRespawn,  Qt::CaseInsensitive)) r |= IT_PROCESS_RESPAWN;
-        if (vl.contains(_sContinue, Qt::CaseInsensitive)) r |= IT_PROCESS_CONTINUE;
-        if (vl.contains(_sPolling,  Qt::CaseInsensitive)) r |= IT_PROCESS_POLLING;
-        if (vl.contains(_sTimed,    Qt::CaseInsensitive)) r |= IT_PROCESS_TIMED;
-        if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_PROCESS_CARRIED;
+        vl = value.split(QRegExp("\\s*,\\s*"));
+        CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING);
+        CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED);
+        CONT_ONE(    _sCarried,  IT_PROCESS_CARRIED);   // ????
+        CONT_ONE_ONE(_sRespawn,  IT_PROCESS_RESPAWN);
+        CONT_ONE_ONE(_sContinue, IT_PROCESS_CONTINUE);
     }
-    switch (r) {
-    case IT_PROCESS_RESPAWN:
-    case IT_PROCESS_CONTINUE:
-    case IT_PROCESS_POLLING:
-    case IT_PROCESS_TIMED:
-    case IT_PROCESS_CARRIED:
-    case IT_PROCESS_POLLING | IT_PROCESS_CARRIED:
-    case IT_PROCESS_TIMED   | IT_PROCESS_CARRIED:
-        r |= getInspectorMethod(feature(_sMethod));
-        break;  // O.K.
-    case IT_NO_PROCESS:
-        // Van megadva parancs, de nincs megadva process időzítés
-        // A metódustol függően még jó lehet
-    {
-        int met = getInspectorMethod(feature(_sMethod));
-        switch (met) {
-        // ezeknél nem is kell (lehet) időzítés
-        case IT_METHOD_NAGIOS:
-        case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
-        case IT_METHOD_SAVE_TEXT:
-//      case IT_METHOD_MUNIN:
-        case IT_METHOD_QPARSE:
-        case IT_METHOD_QPARSE | IT_METHOD_PARSER:
-        case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
-        case IT_METHOD_QPARSE | IT_METHOD_PARSER | IT_METHOD_CARRIED:
-            return r | met;
-        default: {
-            // Nem OK
-            QSqlQuery q = getQuery();
-            EXCEPTION(EDATA, met, tr("Invalid 'process', 'method'\n") + typeErrMsg(q));
-          }
+    if (!on) {
+        n = getInspectorTiming(feature(_sTiming));
+        switch (n) {
+        case IT_TIMING_TIMED:   r |= IT_PROCESS_TIMED;      on = true;  break;
+        case IT_TIMING_POLLING: r |= IT_PROCESS_POLLING;    on = true;  break;
         }
     }
-    default: {
-        // Nem OK
-        QSqlQuery q = getQuery();
-        EXCEPTION(EDATA, r, tr("Invalid 'process''\n") + typeErrMsg(q));
-      }
+    if (on == false || !vl.isEmpty()) goto getFunc_error_label;
+    r |= getInspectorMethod(feature(_sMethod));
+    if (vl.isEmpty()) {
+        PDEB(VVERBOSE) << name() << VDEB(value) << " process = " << r << endl;
+        return r;
     }
-    PDEB(VVERBOSE) << name() << VDEB(value) << " process = " << r << endl;
-    return r;
+getFunc_error_label:
+    QString msg;
+    msg = tr("Hibás %1 paraméter a feature mezőben : %2").arg(_sProcess, value);
+    EXCEPTION(EDATA,0,msg);
 }
+
+#undef getFunc_error_label
+#define getFunc_error_label getInspectorMethod_error
 
 int cInspector::getInspectorMethod(const QString &value)
 {
-    if (value.isEmpty()) return 0;
     int r = 0;  // IT_METHOD_CUSTOM
+    if (value.isEmpty()) return r;
     QStringList vl = value.split(QRegExp("\\s*,\\s*"));
-    if (vl.contains(_sNagios,   Qt::CaseInsensitive)) r |= IT_METHOD_NAGIOS;
-    if (vl.contains(_sText,     Qt::CaseInsensitive)) r |= IT_METHOD_SAVE_TEXT;
-//  if (vl.contains(_sMunin,    Qt::CaseInsensitive)) r |= IT_METHOD_MUNIN;
-    if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_METHOD_CARRIED;
-    if (vl.contains(_sQparse,   Qt::CaseInsensitive)) r |= IT_METHOD_QPARSE;
-    if (vl.contains(_sParser,   Qt::CaseInsensitive)) r |= IT_METHOD_PARSER;
-    if (vl.contains(_sInspector,Qt::CaseInsensitive)) r |= IT_METHOD_INSPECTOR;
-    switch (r) {
-    case IT_METHOD_CUSTOM:
-    case IT_METHOD_NAGIOS:
-    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
-    case IT_METHOD_SAVE_TEXT:
-//  case IT_METHOD_MUNIN:
-    case IT_METHOD_CARRIED:
-    case IT_METHOD_QPARSE:
-    case IT_METHOD_PARSER:
-    case IT_METHOD_QPARSE | IT_METHOD_PARSER:
-    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
-    case IT_METHOD_QPARSE | IT_METHOD_PARSER | IT_METHOD_CARRIED:
-    case IT_METHOD_INSPECTOR:
-        break;    // O.K.
-    default: {
-        QSqlQuery q = getQuery();
-        EXCEPTION(EDATA, r, tr("Invalid 'method'") + typeErrMsg(q));
-      }
+    bool on = false;
+    int n;
+    if (vl.contains(_sCustom,   Qt::CaseInsensitive)) {
+        if (vl.size() == 1) return r;
+        goto getFunc_error_label;
     }
-    PDEB(VVERBOSE) << name() << VDEB(value) << " method = " << r << endl;
-    return r;
+    CONT_ONE(_sQparse,   IT_METHOD_QPARSE);
+    CONT_ONE(_sParser,   IT_METHOD_PARSER);
+    on = false;
+    CONT_ONE_ONE(_sInspector,IT_METHOD_INSPECTOR);
+    CONT_ONE(_sText,     IT_METHOD_SAVE_TEXT);
+    CONT_ONE(_sCarried,  IT_METHOD_CARRIED);
+    CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED));
+    CONT_ONE_ONE(_sJson,     IT_METHOD_JSON);
+    CONT_ONE_ONE(_sXml,      IT_METHOD_XML);
+    if (vl.isEmpty()) {
+        PDEB(VERBOSE) << name() << VDEB(value) << " method = " << r << endl;
+        return r;
+    }
+getFunc_error_label:
+    QString msg;
+    msg = tr("Hibás %1 paraméter a feature mezőben : %2").arg(_sMethod, value);
+    EXCEPTION(EDATA,0,msg);
 }
 
 int cInspector::getInspectorType(QSqlQuery& q)
@@ -872,12 +931,12 @@ int cInspector::getInspectorType(QSqlQuery& q)
         PDEB(VERBOSE) << tr("Nincs program hívás") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
-        if ((method() & (/* IT_METHOD_MUNIN | */ IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR | IT_METHOD_SAVE_TEXT)) != 0) {
+        if ((inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR | IT_METHODE_TEXT_DATA | IT_METHOD_QPARSE)) != 0) {
             EXCEPTION(EDATA, inspectorType, tr("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
         }
         break;
     case  1:        // Program hívása, a hívó applikációban
-    PDEB(VERBOSE) << tr("A '%1' program hívása").arg(checkCmd + " " + checkCmdArgs.join(" ")) << endl;
+        PDEB(VERBOSE) << tr("A '%1' program hívása").arg(checkCmd + " " + checkCmdArgs.join(" ")) << endl;
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
@@ -890,11 +949,9 @@ int cInspector::getInspectorType(QSqlQuery& q)
         // Check...
         r &= ~IT_PROCESS_CARRIED;   // ellenörzés szempontjából érdektelen
         r |= getInspectorTiming(feature(_sTiming));
-        r &= ~IT_TIMING_THREAD;     // ellenörzés szempontjából érdektelen
         switch (r) {
         case IT_CUSTOM:
         case IT_PROCESS_POLLING  | IT_TIMING_TIMED:
-        case IT_PROCESS_TIMED    | IT_TIMING_TIMED:
             EXCEPTION(EDATA, inspectorType,
                 tr("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
@@ -1267,35 +1324,15 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text)
     _DBGFN() <<  name() << endl;
     enum eNotifSwitch r = RS_INVALID;
     int method = inspectorType & IT_METHOD_MASK;
-    switch (method) {
-//  case IT_METHOD_CUSTOM:
-    case IT_METHOD_CARRIED:
-        return RS_STAT_SETTED;
-//  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
-    case IT_METHOD_NAGIOS:
-    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
-    case IT_METHOD_SAVE_TEXT:
-    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
-    case IT_METHOD_QPARSE:
-        break;
-    default:
-        EXCEPTION(ENOTSUPP, inspectorType, name());
+    QByteArray bytes = _text.readAll();
+    QString text = QString::fromUtf8(bytes);
+    if (method & IT_METHOD_SAVE_TEXT) r = save_text(_ec, text);
+    switch (method & IT_METHODE_TEXT_DATA) {
+    case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text);    break;
+    case IT_METHOD_JSON:    r = parse_json(_ec, bytes);     break;
+    case IT_METHOD_XML:     r = parse_xml(_ec, bytes);      break;
     }
-    QString text = QString::fromUtf8(_text.readAll());
-    switch (method) {
-//  case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
-    case IT_METHOD_NAGIOS:
-    case IT_METHOD_NAGIOS | IT_METHOD_QPARSE:
-        r = parse_nagios(_ec, text);
-        break;
-    case IT_METHOD_SAVE_TEXT:
-        r = save_text(_ec, text);
-        break;
-    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
-    case IT_METHOD_QPARSE:
-        r = parse_qparse(_ec, text);
-        break;
-    }
+    if (method & IT_METHOD_QPARSE) r = parse_qparse(_ec, text);
     return r;
 }
 
@@ -1321,6 +1358,95 @@ enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text)
     }
     hostService.setState(*pq, notifSwitch(r), note, lastRun.elapsed());
     return RS_STAT_SETTED;
+}
+
+inline QJsonValue jsonDocToVal(const QJsonDocument& d)
+{
+    QJsonValue r;
+    if      (d.isArray()) {
+        QJsonArray a = d.array();
+        r = QJsonValue(a);
+    }
+    else if (d.isObject()) {
+        QJsonObject o = d.object();
+        r = QJsonValue(o);
+    }
+    return r;
+}
+
+static inline void jsonDeb(cDebug::eMask m, const QString& key, QJsonValue& jv)
+{
+    if (cDebug::pDeb(m | __DMOD__)) {
+        if (jv.type() == QJsonValue::Null) {
+            cDebug::cout() << "JSON : " << quoted(key) << " = " << endl;
+        }
+        else {
+            cDebug::cout() << "JSON : " << quoted(key) << " = " <<  debVariantToString(jv.toVariant()) << endl;
+        }
+    }
+}
+
+QJsonValue findJsonValue(const QJsonValue& o, const QString& key)
+{
+    QJsonValue r;
+    if (o.isObject()) return o[key];
+    else if (o.isArray()) {
+        QJsonArray ja = o.toArray();
+        QJsonArray::iterator i, e = ja.end();
+        for (i = ja.begin(); i < e; ++i) {
+            QJsonValue v = *i;
+            r = v[key];
+            if (!r.isNull()) break;
+        }
+    }
+    jsonDeb(cDebug::INFO, key, r);
+    return r;
+}
+
+static QJsonValue searchJsonValue(const QJsonValue& o, const QString& keys)
+{
+    QJsonValue r = o;
+    QStringList ksl = keys.split('.', QString::SkipEmptyParts);
+    foreach (QString key, ksl) {
+        key = key.simplified();
+        if (key.isEmpty()) continue;
+        r = findJsonValue(r, key);
+        if (r.isNull()) break;
+    }
+    return r;
+}
+
+enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text)
+{
+    QString note;
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(text, &err);
+    int st = _ec == 0 ? RS_ON : RS_WARNING;
+    if (err.error != 0) {
+        msgAppend(&note, tr("JSON text :"));
+        msgAppend(&note, QString::fromUtf8(text));
+        msgAppend(&note, tr("Error #%1; %2").arg(err.error).arg(err.errorString()));
+        hostService.setState(*pq, _sCritical, note, lastRun.elapsed());
+        return RS_STAT_SETTED;
+    }
+    QJsonValue jvBase = jsonDocToVal(doc);
+    QString keys = feature("json_base");
+    jvBase = searchJsonValue(jvBase, keys);
+    foreach (QString vname, varsFeatureMap.keys()) {
+        cServiceVar& sv = *getServiceVar(vname, EX_ERROR);
+        keys = varsFeatureMap[vname];
+        QJsonValue jv = searchJsonValue(jvBase, keys);
+        QVariant v = jv.toVariant();
+        sv.setValue(*pq, v, st);
+    }
+    return eNotifSwitch(st);
+}
+
+enum eNotifSwitch cInspector::parse_xml(int _ec, const QByteArray &text)
+{
+    (void)_ec;
+    (void)text;
+    return RS_UNREACHABLE;
 }
 
 enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
@@ -1760,11 +1886,16 @@ QString cInspector::typeErrMsg(QSqlQuery& q)
              .arg(pPrimeService == nullptr ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
 }
 
-cServiceVar *cInspector::getServiceVar(const QString& name)
+cServiceVar *cInspector::getServiceVar(const QString& _name, eEx __ex)
 {
-
-    if (pVars == nullptr || pVars->isEmpty()) return nullptr;
-    return pVars->get(name, EX_IGNORE);
+    cServiceVar *r = nullptr;
+    if (pVars != nullptr && !pVars->isEmpty()) {
+        r = pVars->get(_name, EX_IGNORE);
+    }
+    if (r == nullptr && __ex != EX_IGNORE) {
+        EXCEPTION(EDATA, 0, tr("Variable %1 not found in %2 ,").arg(_name, name()));
+    }
+    return r;
 }
 
 /* ********************************************************************************** */

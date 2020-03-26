@@ -147,6 +147,12 @@ EXT_ QString nameAndNumber(const QString& __pat, int __num, char __c = '?');
 
 EXT_ QStringList splitBy(const QString& s, const QChar& sep = QChar(':'), const QChar& esc = QChar('\\'));
 
+/// Egy listából eltávolitja az azonos stringeket, nem nagybetű érzékeny.
+/// @param sl A modosítandó lista
+/// @param s az eltávolítandó értékek
+/// @return az eltávolított elemek száma
+EXT_ int removeAll(QStringList& sl, const QString& s);
+
 class cRecordFieldRef;
 
 /// @class cFeatures

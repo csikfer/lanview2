@@ -535,6 +535,33 @@ QString debVariantToString(const QVariant& v)
     const char * tn = v.typeName();
     bool ok;
     QString s = QVariantToString(v, &ok);
-    if (!ok) s = "[?]";
+    if (!ok) {
+        s = "[?]";
+        switch (v.userType()) {
+        case QMetaType::QVariantMap:
+          {
+            QVariantMap vm = v.value<QVariantMap>();
+            s = " { " ;
+            foreach (QString key, vm.keys()) {
+                s += quotedString(key) + " = " + debVariantToString(vm[key]) + ", ";
+            }
+            s.chop(2);
+            s += " }";
+            break;
+          }
+        case QMetaType::QVariantList:
+          {
+            QVariantList vl = v.value<QVariantList>();
+            s = " [ " ;
+            foreach (QVariant v, vl) {
+                s += debVariantToString(v) + ", ";
+            }
+            s.chop(2);
+            s += " ]";
+            break;
+          }
+        }
+    }
     return quotedString(s) + "::" + (tn == nullptr ? _sNULL : QString(tn));
 }
+

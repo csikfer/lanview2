@@ -46,24 +46,30 @@ enum eInspectorType {
     IT_PROCESS_POLLING      = 0x0030,   ///< A programot start() indítja, lefut és kilép
     IT_PROCESS_MASK_NOTIME  = 0x0030,   ///< Maszk: Időzítés nélküli indítás
     IT_PROCESS_TIMED        = 0x0040,   ///< A programot időzítve kell indítani
-    IT_PROCESS_CARRIED      = 0x0080,   ///< A hívott program beállítja a status-t
+    IT_PROCESS_CARRIED      = 0x0080,   ///< A hívott program beállítja a status-t  ?????
     IT_PROCESS_MASK         = 0x00F0,   ///< Maszk: önálló processz indítása
 
     IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
-    IT_METHOD_NAGIOS        = 0x0100,   ///< Nagios plugin
-    IT_METHOD_QPARSE        = 0x0200,   ///< Query parser
-    IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
-    IT_METHOD_CARRIED       = 0x0800,   ///<
-    IT_METHOD_INSPECTOR     = 0x1000,   ///< Egy LanView2 service (cInspector) APP
-    IT_METHOD_SAVE_TEXT     = 0x2000,   ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
-    // IT_METHOD_MUNIN      = 0x4000,   ///< Munin plugin
-    IT_METHOD_MASK          = 0xFF00L,
+    IT_METHOD_QPARSE        = 0x0100,   ///< Query parser
+    IT_METHOD_PARSER        = 0x0200,   ///< Parser szülő objektum a query parser(ek)hez
+    IT_METHOD_SAVE_TEXT     = 0x0400,   ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
 
-    IT_SUPERIOR             =0x10000L,   ///< Alárendelt funkciók vannak
-    IT_MAIN                 =0x20000L,   ///< Fő folyamat, nincs parent
-    IT_PURE_PARSER          =0x40000L,   ///<
+    IT_METHOD_CARRIED       = 0x1000,   ///<
+    IT_METHOD_INSPECTOR     = 0x2000,   ///< Egy LanView2 service (cInspector) APP
+ // IT_METHOD_MUNIN         = 0x4000,   ///< Munin plugin
 
-    IT_AUTO_TRANSACTION     =0x80000L   ///< Nincs automatikus tranzakció kezelés
+    IT_METHODE_TEXT_DATA  = 0x0F0000L,
+    IT_METHOD_NAGIOS      = 0x010000L,   ///< NAGIOS plugin
+    IT_METHOD_JSON        = 0x030000L,   ///< JSON output
+    IT_METHOD_XML         = 0x040000L,   ///< XML output
+
+    IT_METHOD_MASK        = 0x0FFF00L,
+
+    IT_SUPERIOR           = 0x100000L,   ///< Alárendelt funkciók vannak
+    IT_MAIN               = 0x200000L,   ///< Fő folyamat, nincs parent
+    IT_PURE_PARSER        = 0x400000L,   ///<
+
+    IT_AUTO_TRANSACTION   = 0x800000L   ///< Nincs automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota
@@ -237,6 +243,18 @@ public:
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    /// A 'variables' nevű features paaméter feldolgozása.
+    /// A variables features paraméter egy list map típusú paraméter. Ahhol a kulcs a szervíz változó neve,
+    /// Az érték pedig egy két elemű lista, aminek az első eleme egy tevákenységtől függő paraméter,
+    /// a második eleme pedig a változó típusának a neve.
+    /// Ha létezik a 'variables', akkor a hivatkozott változókat vagy létrehozza, vagy ellenörzi a típusukat.
+    /// A feldolgozás során a feature paraméter szerinti map a varsListMap adattagba kerül,
+    /// a tevékenységtől függő paraméter pedig a változó nevek szerinti varsFeatureMap map adattagba.
+    /// Hiba esetén hibát dob cError * -al.
+    virtual void variablesPostInit(QSqlQuery &q);
+    virtual bool variablesPostInitFeature(QSqlQuery &q, const QString& _name);
+    virtual void variablesPostInitCreateOrCheck(QSqlQuery &q);
+    virtual void variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name);
     /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
@@ -282,7 +300,10 @@ public:
     /// @return 0, ha nincs parancs string, 1, ha van és checkCmd beállítva, -1 ha a parancs az éppen futó process
     virtual int getCheckCmd(QSqlQuery &q);
     /// Egy változó objektum elöszedése, név szerint
-    cServiceVar *getServiceVar(const QString& name);
+    /// @param name A keresett változó neve
+    /// @param __ex Ha értéke nem az alapértelmezett EX_IGNORE, akkor ha nincs ilyen nevű változó kizárást dob.
+    /// @return A talált objektum pointere, vagy nullptr, ha nincs ilyen nevű változónk.
+    cServiceVar *getServiceVar(const QString& name, eEx __ex = EX_IGNORE);
     // Adattagok
     /// Objektum típus
     int inspectorType;
@@ -341,6 +362,9 @@ public:
     /// Változók, ha vannak, vagy NULL.
     tOwnRecords<cServiceVar, cHostService>    *pVars;
     cServiceVar *pRunTimeVar;
+    /// A "variables" featue változó kifejtve, ha van
+    QMap<QString, QStringList>  varsListMap;
+    tStringMap                  varsFeatureMap;
     ///
     bool isDeleted() const { return hostService.getBool(hostService.deletedIndex()); }
 protected:
@@ -351,6 +375,8 @@ protected:
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
     enum eNotifSwitch parse_nagios(int _ec, const QString &text);
+    enum eNotifSwitch parse_json(int _ec, const QByteArray &text);
+    enum eNotifSwitch parse_xml(int _ec, const QByteArray &text);
     enum eNotifSwitch save_text(int _ec, const QString &text);
     enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);

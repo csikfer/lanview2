@@ -272,6 +272,86 @@ SERVICE "indalarmif2" "IndAlarm Contact V2" {
     TYPE "life_contr";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "iostat-c-json" {
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "iostat -c -o JSON";
+    FEATURES  {
+        "json_base" = "sysstat.hosts.statistics.avg-cpu";
+        "method" = "json";
+        "timing" = "timed";
+        "variables" =  {
+            "cpuIdle" = "idle,cpuIdlePercent";
+            "cpuIowait" = "iowait,cpuPercent";
+            "cpuNice" = "nice,cpuPercent";
+            "cpuSystem" = "system,cpuPercent";
+            "cpuUser" = "user,cpuPercent";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 10;
+    TYPE "querying";
+}
+SERVICE "linux_cpu-snmp" {
+    SUPERIOR SERVICE MASK "^snmpvars$";
+    FEATURES  {
+        "timing" = "timed";
+        "variables" =  {
+            "cpuIdle" = "UCD-SNMP-MIB::ssCpuIdle,cpuIdlePercent";
+            "cpuSystem" = "UCD-SNMP-MIB::ssCpuSystem,cpuPercent";
+            "cpuUser" = "UCD-SNMP-MIB::ssCpuUser,cpuPercent";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "link";
+    OFF LINE GROUPS "admin_net";
+}
+SERVICE "linux_load-snmp" {
+    SUPERIOR SERVICE MASK "^snmpvars$";
+    FEATURES  {
+        "timing" = "timed";
+        "variables" =  {
+            "load15m" = "UCD-SNMP-MIB::ucdavis.10.1.3.3.,load15m";
+            "load1m" = "UCD-SNMP-MIB::ucdavis.10.1.3.1.,load1m";
+            "load5m" = "UCD-SNMP-MIB::ucdavis.10.1.3.2.,load5m";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "link";
+    OFF LINE GROUPS "admin_net";
+}
+SERVICE "linux_mem-snmp" {
+    SUPERIOR SERVICE MASK "^snmpvars$";
+    FEATURES  {
+        "timing" = "timed";
+        "variables" =  {
+            "memAvail" = "UCD-SNMP-MIB::memAvailReal,memory";
+            "memBuffer" = "UCD-SNMP-MIB::memBuffer,memory";
+            "memCached" = "UCD-SNMP-MIB::memCached,memory";
+            "memFree" = "UCD-SNMP-MIB::memTotalFree,memory";
+            "memTotal" = "UCD-SNMP-MIB::memTotalReal,memory";
+            "swapAvail" = "UCD-SNMP-MIB::memAvailSwap,memory";
+            "swapTotal" = "UCD-SNMP-MIB::memTotalSwap,memory";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "link";
+    OFF LINE GROUPS "admin_net";
+}
 SERVICE "local" "local service" {
     SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 1800;
@@ -348,11 +428,11 @@ SERVICE "ping" "Ping check" {
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
     FEATURES ":timing=timed:superior:";
-    MAX CHECK ATTEMPTS 2;
+    MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL 60;
     FLAPPING INTERVAL 3600;
-    FLAPPING MAX CHANGE 5;
+    FLAPPING MAX CHANGE 6;
     OFF LINE GROUPS "admin_net";
 }
 SERVICE "portmac" "Device port address table query daemon" {
@@ -438,15 +518,14 @@ SERVICE "pstat" "Query port status by <protocol>" {
     }
     MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 30;
-    RETRY CHECK INTERVAL 30;
-    FLAPPING INTERVAL 3600;
+    FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 10;
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
 SERVICE "pvlan" {
     SUPERIOR SERVICE MASK "^portvlan$";
-    FEATURES ":timing=timed:delay=1000:";
+    FEATURES ":delay=1000:dump:timing=timed:";
     MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 1800;
     RETRY CHECK INTERVAL 300;
@@ -568,7 +647,7 @@ SERVICE "snmp" "SNMP" {
 }
 SERVICE "snmpvars" {
     SUPERIOR SERVICE MASK "^lv2|group$";
-    COMMAND "snmpvars $S -R $host_service_id -d -1";
+    COMMAND "snmpvars $S -R $host_service_id";
     FEATURES  {
         "logrot" = "500M,8";
         "method" = "inspector";
@@ -666,9 +745,20 @@ SERVICE "temp.raspb" "Temp by raspbian" {
     OFF LINE GROUPS "admin_net";
 }
 SERVICE "updt_oui" "Update OUI" {
-    SUPERIOR SERVICE MASK "~.";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
+    COMMAND "updt_oui $S -R $host_service_id -d -1";
+    FEATURES  {
+        "delay" = "60000";
+        "methode" = "inspector";
+        "process" = "polling";
+        "timing" = "timed";
+    }
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 86400;
+    HEARTBEAT TIME 345600;
+    RETRY CHECK INTERVAL 1800;
+    FLAPPING INTERVAL 345600;
+    FLAPPING MAX CHANGE 12;
 }
 SERVICE "UPS-MIB" {
     SUPERIOR SERVICE MASK "^snmpvars$";
@@ -699,10 +789,14 @@ SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     FEATURES  {
         "comment" = "#";
         "method" = "qparse";
-        "timing" = "polling";
+        "timing" = "timed";
     }
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 3600;
+    HEARTBEAT TIME 86400;
+    RETRY CHECK INTERVAL 600;
+    FLAPPING INTERVAL 43200;
+    FLAPPING MAX CHANGE 8;
     OFF LINE GROUPS "admin_net";
 }
 PARAM "bigint" TYPE "integer";
@@ -729,6 +823,20 @@ PARAM "text" TYPE "text";
 PARAM "time" TYPE "time";
 PARAM "timestamp" TYPE "datetime";
 PARAM "voltage" TYPE "real" "V";
+SERVICE VAR TYPE "cpuIdlePercent" {
+    TYPE "double precision" "GAUGE";
+    PLAUSIBILITY "interval" "-0.0001", "100.0001";
+    CRITICAL "no";
+    WARNING "litle" "1.0";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "cpuPercent" {
+    TYPE "double precision" "GAUGE";
+    PLAUSIBILITY "interval" "-0.0001", "100.0001";
+    CRITICAL "no";
+    WARNING "big" "90";
+    NO RAW TO RRD;
+}
 SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
     TYPE "bytes_per_sec", "bytes" "COUNTER";
     PLAUSIBILITY "no";
@@ -739,16 +847,27 @@ SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
 SERVICE VAR TYPE "ifmtu" "MTU" {
     TYPE "bytes" "GAUGE";
     PLAUSIBILITY "interval" "48", "10240";
+    CRITICAL "no";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifoutoctets" "Output bytes" {
     TYPE "bytes" "GAUGE";
+    PLAUSIBILITY "no";
+    CRITICAL "no";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifpacks" "Input/output packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
+    PLAUSIBILITY "no";
+    CRITICAL "no";
+    WARNING "no";
     RAW TO RRD;
 }
 SERVICE VAR TYPE "ifpacks_err" "Input/output error/discard packets" {
     TYPE "packets_per_sec", "packets" "COUNTER";
+    PLAUSIBILITY "no";
     CRITICAL "big" "1.0";
     WARNING "big" "0.0001";
     RAW TO RRD;
@@ -756,29 +875,69 @@ SERVICE VAR TYPE "ifpacks_err" "Input/output error/discard packets" {
 SERVICE VAR TYPE "ifspeed" "Ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
+    CRITICAL "no";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_10g" "Ethernet 10G port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "4294967295";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_fast" "Fast ethernet port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "100000000";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifspeed_gig" "Ethernet gigabit port átviteli sebessége" {
     TYPE "bps" "GAUGE";
     PLAUSIBILITY "big" "1";
     CRITICAL "litle" "1000000000";
+    WARNING "no";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "load15m" "CPU Load 15m" {
+    TYPE "double precision" "GAUGE";
+    PLAUSIBILITY INVERSE "litle" "0";
+    CRITICAL "big" "4";
+    WARNING "big" "1";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "load1m" "CPU Load 1m" {
+    TYPE "double precision" "GAUGE";
+    PLAUSIBILITY INVERSE "litle" "0";
+    CRITICAL "big" "4";
+    WARNING "big" "1";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "load5m" "CPU Load 5m" {
+    TYPE "double precision" "GAUGE";
+    PLAUSIBILITY INVERSE "litle" "0";
+    CRITICAL "big" "4";
+    WARNING "big" "1";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "memory" "Memória kByte" {
+    TYPE "bigint" "GAUGE";
+    PLAUSIBILITY INVERSE "litle" "0";
+    CRITICAL "no";
+    WARNING "no";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ping_time" {
     TYPE "ping_time" "GAUGE";
     PLAUSIBILITY "big" "0.0";
+    CRITICAL "no";
+    WARNING "no";
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "runtime" "Egy lkérdezést futásának az ideje" {
     TYPE "interval" "GAUGE";
+    PLAUSIBILITY "no";
     CRITICAL "big" "00:00:30";
     WARNING "big" "00:00:10";
     NO RAW TO RRD;
@@ -815,8 +974,8 @@ SERVICE VAR TYPE "temp_indoor" "Beltéri hőmérséklet" {
 SERVICE VAR TYPE "temp_indoor_clim" "Beltéri hőmérséklet klimatizált" {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "0", "60";
-    CRITICAL INVERSE "interval" "10", "30";
-    WARNING INVERSE "interval" "13", "25";
+    CRITICAL INVERSE "interval" "5", "30";
+    WARNING INVERSE "interval" "8", "25";
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "temp_outdoor" "Kültéri hőmérséklet" {
@@ -843,8 +1002,10 @@ SERVICE VAR TYPE "upsAdvBatteryRunTimeRemaining" "service : PoweNet-MIB" {
 }
 SERVICE VAR TYPE "upsBatteryStatus" "service : UPS-MIB" {
     TYPE "text", "bigint" "GAUGE";
+    PLAUSIBILITY "no";
     CRITICAL INVERSE "interval" "1", "3";
     WARNING INVERSE "equal" "batteryNormal";
+    NO RAW TO RRD;
     FEATURES  {
         "enumeration" = "!,unknown,batteryNormal,batteryLow,batteryDepleted";
     }
