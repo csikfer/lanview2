@@ -1389,13 +1389,13 @@ static inline void jsonDeb(cDebug::eMask m, const QString& key, QJsonValue& jv)
 QJsonValue findJsonValue(const QJsonValue& o, const QString& key)
 {
     QJsonValue r;
-    if (o.isObject()) return o[key];
+    if (o.isObject()) return o.toObject()[key];
     else if (o.isArray()) {
         QJsonArray ja = o.toArray();
         QJsonArray::iterator i, e = ja.end();
         for (i = ja.begin(); i < e; ++i) {
             QJsonValue v = *i;
-            r = v[key];
+            r = v.toObject()[key];
             if (!r.isNull()) break;
         }
     }
