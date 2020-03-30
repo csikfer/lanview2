@@ -1032,7 +1032,7 @@ static void snmpWalk(cSnmpDevice * pn, cOId *po)
 
 }
 #else  // SNMP_IS_EXISTS
-static cOid * newOId(QString *)         { EXCEPTION(ENOTSUPP); }
+static cOId * newOId(QString *)         { EXCEPTION(ENOTSUPP); }
 static cOId * addOId(cOId *, qlonglong) { EXCEPTION(ENOTSUPP); }
 static void printOId(cOId *)            { EXCEPTION(ENOTSUPP); }
 static void snmpGet(cSnmpDevice *, cOId *) { EXCEPTION(ENOTSUPP); }
