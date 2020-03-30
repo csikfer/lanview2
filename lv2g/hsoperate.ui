@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1680</width>
-    <height>978</height>
+    <width>1132</width>
+    <height>673</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -228,11 +228,14 @@
          <property name="tabKeyNavigation">
           <bool>false</bool>
          </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
          <attribute name="horizontalHeaderCascadingSectionResizes">
           <bool>false</bool>
          </attribute>
          <attribute name="horizontalHeaderMinimumSectionSize">
-          <number>32</number>
+          <number>20</number>
          </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>false</bool>
@@ -362,10 +365,14 @@
          </column>
          <column>
           <property name="text">
-           <string>Kiválasztás</string>
+           <string/>
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás kiválasztása a modosításra.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
           </property>
          </column>
          <column>
@@ -421,12 +428,20 @@
            <property name="text">
             <string>Lekérdez</string>
            </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/system-search-4.ico</normaloff>:/icons/system-search-4.ico</iconset>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="pushButtonRoot">
            <property name="text">
             <string>Gyökér</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/top.ico</normaloff>:/icons/top.ico</iconset>
            </property>
           </widget>
          </item>
@@ -437,6 +452,10 @@
            </property>
            <property name="text">
             <string>Al példányok</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
            </property>
           </widget>
          </item>
@@ -509,6 +528,10 @@
            <property name="text">
             <string>Újraolvas</string>
            </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+           </property>
           </widget>
          </item>
          <item>
@@ -532,6 +555,10 @@
            <property name="text">
             <string>Mind</string>
            </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/check.ico</normaloff>:/icons/check.ico</iconset>
+           </property>
           </widget>
          </item>
          <item>
@@ -541,6 +568,10 @@
            </property>
            <property name="text">
             <string>Egyiksem</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/check_no.ico</normaloff>:/icons/check_no.ico</iconset>
            </property>
           </widget>
          </item>
@@ -565,6 +596,16 @@
            <property name="text">
             <string>Al.mind</string>
            </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/check_down.ico</normaloff>:/icons/check_down.ico</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>16</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item>
@@ -575,6 +616,16 @@
            <property name="text">
             <string>Al.egyiksem</string>
            </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/check_no_down.ico</normaloff>:/icons/check_no_down.ico</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>16</height>
+            </size>
+           </property>
           </widget>
          </item>
         </layout>
@@ -582,19 +633,26 @@
       </layout>
      </widget>
      <widget class="QWidget" name="verticalLayoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayoutJustify">
+      <layout class="QVBoxLayout" name="verticalLayoutJustify" stretch="0,1">
        <property name="leftMargin">
         <number>0</number>
        </property>
        <item>
-        <widget class="QLabel" name="labelJustify">
+        <widget class="QLabel" name="labelSrvVar">
          <property name="text">
-          <string>Indoklás :</string>
+          <string>Szervíz változók</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QTextEdit" name="textEditJustify"/>
+        <widget class="QWidget" name="widgetSrvVars" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -951,45 +1009,48 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
       <widget class="QPushButton" name="pushButtonSet">
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="text">
         <string>Beállít</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QLabel" name="labelJustify">
+       <property name="text">
+        <string>Indoklás/megjegyzés :</string>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
        </property>
-      </spacer>
+      </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonClose">
-       <property name="text">
-        <string>Becsuk</string>
+      <widget class="QTextEdit" name="textEditJustify">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>50</height>
+        </size>
        </property>
       </widget>
      </item>

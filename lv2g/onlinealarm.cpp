@@ -23,7 +23,7 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
     pMainSplitter  = new QSplitter(Qt::Horizontal);     // Fő splitter
     pMainLayout->addWidget(pMainSplitter);
 
-    pAlarmSplitter = new QSplitter(Qt::Vertical);       // Jobb oldalon a két tábla
+    pAlarmSplitter = new QSplitter(Qt::Vertical);       // Bal oldalon a két tábla
     pMainSplitter->addWidget(pAlarmSplitter);
 
     pRecTabNoAck  = new cRecordTable("uaalarms", false, pAlarmSplitter);    // nem nyugtázott riasztások tábla; bal felső

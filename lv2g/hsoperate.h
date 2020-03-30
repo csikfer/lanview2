@@ -7,6 +7,7 @@
 #include "lv2g.h"
 #include "ui_hsoperate.h"
 #include "lv2models.h"
+#include "record_table.h"
 
 class cHSOState;
 class cHSOperate;
@@ -115,6 +116,7 @@ protected:
     QString sStop;
     qlonglong minIntervalMs;
     QDateTime now;
+    cRecordTable *pSrvVarsTable;
 protected slots:
     void refresh();
     /// Al példányok megjelenítése
@@ -159,6 +161,8 @@ private slots:
     void on_toolButtonRstTo_clicked();
 
     void on_toolButtonIntervalDef_clicked();
+
+    void on_tableWidget_itemSelectionChanged();
 
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {

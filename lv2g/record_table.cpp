@@ -243,6 +243,11 @@ const cEnumVal *cRecordTableFilter::pActFilterType()
     return filterTypeList.at(iFilter);
 }
 
+void cRecordTableFilter::clearFilter()
+{
+
+}
+
 inline QString arrayAnyAll(bool isArray, bool any, QString o, QString n, int t = ENUM_INVALID)
 {
     QString r;
@@ -1414,6 +1419,38 @@ cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, cRecordsViewBase *_upper, b
     initShape();
 }
 
+cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget)
+    : QObject(__pWidget)
+    , isDialog(false)
+    , pTableShape(pTS)
+    , fields()
+    , inheritTableList()
+    , viewName()
+{
+    flags = 0;
+    isReadOnly = false;
+    pq = newQuery();
+    pTabQuery = newQuery();
+    pModel = nullptr;
+    pMaster = pUpper = nullptr;
+    pRecDescr = nullptr;
+    _pWidget = nullptr;
+    pMasterSplitter = nullptr;
+    pButtons = nullptr;
+    pMainLayout = nullptr;
+    pLeftWidget = nullptr;
+    pRightTables = nullptr;
+    pRightTabWidget = nullptr;
+    pFODialog   = nullptr;
+    owner_id = NULL_ID;
+    parent_id= NULL_ID;
+    pInhRecDescr = nullptr;
+    tableInhType = TIT_NO;
+    pRecordDialog = nullptr;
+    _pWidget = __pWidget;
+    initShape();
+}
+
 cRecordsViewBase::~cRecordsViewBase()
 {
     delete pq;
@@ -2262,8 +2299,9 @@ void cRecordsViewBase::setButtons()
 
 QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
 {
+    static const int ixRefine = tableShape().toIndex(_sRefine);
     QStringList r;
-    QString refine = tableShape().getName(_sRefine);
+    QString refine = tableShape().getName(ixRefine);
     if (! refine.isEmpty()) {  // Ha megadtak egy általános érvényű szűrőt
         QStringList rl = splitBy(refine);
         r << rl.at(0);
@@ -2332,6 +2370,7 @@ bool cRecordsViewBase::enabledBatchEdit(const cTableShapeField& tsf)
 {
     // While it is incorrect in case of inheritance, it is disabled
     // if (tableInhType != TIT_NO) return false;
+    if (isReadOnly) return false;
     if (!tsf.getBool(_sFieldFlags, FF_BATCH_EDIT)) return false;            // Mezőnként kell engedélyezni
     if (lanView::isAuthorized(PL_ADMIN)) return true;                       // ADMIN-nak ok
     ePrivilegeLevel pl = ePrivilegeLevel(privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE));
@@ -2484,15 +2523,20 @@ void cRecordsViewBase::hideColumns(void)
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
     : cRecordsViewBase(new cTableShape(_mn), nullptr, _isDialog, par)
 {
-    ;
+
 }
 
 cRecordTable::cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
     : cRecordsViewBase(pts, _upper, _isDialog, par)
 {
-    ;
+
 }
 
+cRecordTable::cRecordTable(cTableShape *pts, QWidget * __pWidget)
+    : cRecordsViewBase(pts, __pWidget)
+{
+
+}
 
 cRecordTable::~cRecordTable()
 {

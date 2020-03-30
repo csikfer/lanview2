@@ -510,6 +510,73 @@ ENUM "portvars.disabled" {
         ICON "disable.ico";
     }
 }
+ENUM "service_rrd_vars.delegate_port_state" {
+    VIEW NULL;
+    ICON "go-jump-3.ico";
+    TOOL TIP "false";
+     "false" {
+        VIEW "false",@;
+        ICON "cancel.ico";
+    }
+     "true" {
+        VIEW "true",@;
+        ICON "go-jump-3.ico";
+    }
+}
+ENUM "service_rrd_vars.delegate_service_state" {
+    VIEW NULL;
+    ICON "go-jump.ico";
+    TOOL TIP "Állapot továbbítás a szolgáltatás példány felé.";
+     "false" {
+        VIEW "Az állapota nincs továbbítva a szolgáltatás felé","Nem tov.";
+        ICON "cancel.ico";
+        BACKGROUND COLOR "#babdb6";
+    }
+     "true" {
+        VIEW "Az állapota továbbítva a szolgáltatás felé","Továbbít";
+        ICON "go-jump.ico";
+        BACKGROUND COLOR "#e9b96e";
+    }
+}
+ENUM "service_rrd_vars.disabled" {
+    VIEW NULL;
+    ICON "cancel.ico";
+    TOOL TIP "false";
+     "false" {
+        VIEW "false",@;
+        ICON "dialog-ok-2.ico";
+    }
+     "true" {
+        VIEW "true",@;
+        ICON "cancel.ico";
+    }
+}
+ENUM "service_rrd_vars.flag" {
+    VIEW NULL;
+    ICON "flag-black.ico";
+    TOOL TIP "false";
+     "false" {
+        VIEW "false",@;
+        ICON "have_no.png";
+    }
+     "true" {
+        VIEW "true",@;
+        ICON "flag-black.ico";
+    }
+}
+ENUM "service_rrd_vars.rrd_disabled" {
+    VIEW NULL;
+    ICON "cancel.ico";
+    TOOL TIP "false";
+     "false" {
+        VIEW "false",@;
+        ICON "dialog-ok-2.ico";
+    }
+     "true" {
+        VIEW "true",@;
+        ICON "cancel.ico";
+    }
+}
 ENUM "services.deleted" {
     VIEW "services.deleted",@;
     ICON "delete.ico";
@@ -525,18 +592,18 @@ ENUM "services.deleted" {
     }
 }
 ENUM "services.disabled" {
-    VIEW "services.disabled",@;
+    VIEW NULL;
     ICON "disable.ico";
-    TOOL TIP "A változó letiltása";
-     "false" "A services.disabled boolean mező igaz értékéhez rendelt szín" {
-        VIEW "false",@;
+    TOOL TIP "false";
+     "false" {
+        VIEW "Nincs letiltva az összes példánya","Nincs tiltva";
         ICON "dialog-ok-2.ico";
         BACKGROUND COLOR "#7fff00";
     }
-     "true" "A services.disabled boolean mező igaz értékéhez rendelt szín" {
-        VIEW "true",@;
+     "true" {
+        VIEW "Minden példánya letiltva","Tiltva";
         ICON "disable.ico";
-        BACKGROUND COLOR "#ffa050";
+        BACKGROUND COLOR "#e9b96e";
     }
 }
 ENUM "service_vars.delegate_port_state" {
@@ -3160,7 +3227,7 @@ TABLE SHAPE "port_vlans" {
         TITLE "Port",@;
         FEATURES  {
             "filter" = "port.node";
-            "view.func" = "port_id2full_name";
+            "view_func" = "port_id2full_name";
         }
     }
     ADD FIELD "vlan_id" AS "vlan_id_raw" {
@@ -3426,35 +3493,31 @@ TABLE SHAPE "service_rrd_vars" {
     DELETE RIGHTS "admin";
     INSERT RIGHTS "operator";
     ADD FIELD "service_var_id" {
-        TITLE "service_var_id",@;
-        FLAG "table_hide", "dialog_hide", "read_only";
+        TITLE "ID","Egyedi azonosító, ID";
+        FLAG "table_hide", "read_only";
     }
     ADD FIELD "service_var_name" {
-        TITLE "service_var_name",@;
-        FLAG "HTML";
-    }
-    ADD FIELD "service_var_note" {
-        TITLE "service_var_note",@;
+        TITLE "Név","A változó neve";
         FLAG "HTML";
     }
     ADD FIELD "service_var_type_id" {
-        TITLE "service_var_type_id",@;
+        TITLE "Típus","Típus leíró";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "host_service_id" {
-        TITLE "host_service_id",@;
+        TITLE "Szervíz példány","A tulajdonos szervíz példány";
         FLAG "HTML";
     }
     ADD FIELD "service_var_value" {
-        TITLE "service_var_value",@;
+        TITLE "Érték","Aktuális érték";
         FLAG "HTML";
     }
     ADD FIELD "var_state" {
-        TITLE "var_state",@;
-        FLAG "HTML";
+        TITLE NULL,"Állapot";
+        FLAG "HTML", "image", "notext";
     }
     ADD FIELD "last_time" {
-        TITLE "last_time",@;
+        TITLE "Utolsó","A legutolsó értékadás";
         FLAG "HTML";
     }
     ADD FIELD "features" {
@@ -3462,55 +3525,60 @@ TABLE SHAPE "service_rrd_vars" {
         FLAG "HTML";
     }
     ADD FIELD "deleted" {
-        TITLE "deleted",@;
-        FLAG "table_hide", "dialog_hide", "read_only";
+        TITLE NULL,"deleted";
+        FLAG "table_hide", "dialog_hide", "read_only", "image", "notext";
     }
     ADD FIELD "raw_value" {
-        TITLE "raw_value",@;
+        TITLE "Nyers","Nyers érték";
         FLAG "HTML";
     }
     ADD FIELD "delegate_service_state" {
-        TITLE "delegate_service_state",@;
-        FLAG "batch_edit", "HTML";
+        TITLE NULL,"Állapot továbbítása a szolgáltatás felé";
+        FLAG "batch_edit", "HTML", "image", "notext";
     }
     ADD FIELD "state_msg" {
-        TITLE "state_msg",@;
+        TITLE "Állapot üz.","Állapot üzenet";
         FLAG "HTML";
     }
     ADD FIELD "delegate_port_state" {
-        TITLE "delegate_port_state",@;
-        FLAG "batch_edit", "HTML";
+        TITLE NULL,"Állapot továbbítása a port felé";
+        FLAG "batch_edit", "HTML", "image", "notext";
     }
     ADD FIELD "disabled" {
-        TITLE "disabled",@;
-        FLAG "batch_edit", "HTML";
+        TITLE NULL,"Letiltva";
+        FLAG "batch_edit", "HTML", "image", "notext";
     }
     ADD FIELD "flag" {
-        TITLE "flag",@;
-        FLAG "table_hide", "dialog_hide";
+        TITLE NULL,"Jelző";
+        FLAG "table_hide", "dialog_hide", "image", "notext";
     }
     ADD FIELD "rarefaction" {
-        TITLE "rarefaction",@;
+        TITLE "Ritkít","Ritkítás";
+        TOOL TIP "Nem minden mért érték kerül kiszámításra, ill. letárolásra, ha értéke 1-nél nagyobb.";
         FLAG "HTML";
     }
     ADD FIELD "rrdhelper_id" {
-        TITLE "rrdhelper_id",@;
+        TITLE "rrdhelper","Az rrdhelper szolgáltaás példány";
         FEATURES  {
             "refine" = "service_id = service_name2id('rrdhelper')";
         }
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "rrd_beat_id" {
-        TITLE "rrd_beat_id",@;
+        TITLE "RRD ütem.","RRD ütemezés";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "rrd_disabled" {
-        TITLE "rrd_disabled",@;
+        TITLE "RRD tilt.","RRD letiltva";
         FLAG "batch_edit", "HTML";
     }
+    ADD FIELD "service_var_note" {
+        TITLE "Megjegyzés",@;
+        FLAG "HTML";
+    }
     FIELD "service_var_name", "service_var_type_id", "host_service_id" ORD asc, no, desc;
-    FIELD "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "host_service_id", "service_var_name", "service_var_type_id", "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id";
+    FIELD "service_var_id", "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "service_var_id", "host_service_id", "service_var_name", "service_var_type_id", "service_var_value", "var_state", "raw_value", "rrdhelper_id", "rrd_beat_id";
 }
 TABLE SHAPE "services" {
     TITLE "Szolgáltatások","Szolgáltatás";
@@ -3548,7 +3616,7 @@ TABLE SHAPE "services" {
         TITLE "Modosítók","Egyéb modosítók";
     }
     ADD FIELD "disabled" {
-        TITLE "disabled",@;
+        TITLE "Letíltva","Minden példánya letíltva";
         FEATURES ":color:";
         FLAG "batch_edit", "image";
     }

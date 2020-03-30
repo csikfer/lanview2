@@ -99,5 +99,8 @@
         <file>icons/runit.ico</file>
         <file>icons/measure.png</file>
         <file>icons/control.png</file>
+        <file>icons/check_no.ico</file>
+        <file>icons/check_down.ico</file>
+        <file>icons/check_no_down.ico</file>
     </qresource>
 </RCC>

@@ -47,6 +47,7 @@ public:
     void setFilter(int i);
     int fieldType();                ///< A mező (oszlop) típusa
     const cEnumVal *pActFilterType();///< Filter type
+    void clearFilter();
     cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
     cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
     int                 iFilter;    ///< A kiválasztott szűrő leíró indexe vagy -1, ha nincs aktív szűrő
@@ -263,6 +264,7 @@ class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
     cRecordsViewBase(cTableShape *_pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par);
+    cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget);
     ~cRecordsViewBase();
 
     QWidget& widget() const { return *_pWidget; }
@@ -465,10 +467,12 @@ public:
     cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = nullptr);
     /// Konstruktor
     /// Fő, al, vagy önálló tábla megjelenítése, már beolvasott leíró
-    /// @param pts A tábla megjelenítését leíró objektum pointere
+    /// @param pts A tábla megjelenítését leíró objektum pointere, az objektumot a destruktor felszabadítja.
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
     cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = nullptr, QWidget * par = nullptr);
+    ///
+    cRecordTable(cTableShape *pts, QWidget * __pWidget);
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }

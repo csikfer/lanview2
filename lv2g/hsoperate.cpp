@@ -357,6 +357,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
 {
     pq  = newQuery();
+    pSrvVarsTable = nullptr;
     minIntervalMs = cSysParam::getIntervalSysParam(*pq, _sMinInterval, 1800000LL);  // default 1800sec (30m)
     pq2 = newQuery();
     pUi = new Ui::hostServiceOp;
@@ -475,7 +476,6 @@ cHSOperate::cHSOperate(QMdiArea *par)
 
     connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)), this, SLOT(zoneChanged(int)));
 
-    connect(pUi->pushButtonClose,   SIGNAL(clicked()),  this,   SLOT(endIt()));
     connect(pUi->pushButtonFetch,   SIGNAL(clicked()),  this,   SLOT(fetchByFilter()));
     connect(pUi->pushButtonSub,     SIGNAL(clicked()),  this,   SLOT(fetchSubs()));
     connect(pUi->pushButtonSubAll,  SIGNAL(clicked()),  this,   SLOT(subAll()));
@@ -512,6 +512,14 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->comboBoxServiceSelect->setModel(pServiceModel);
     pServiceModel->setFilter();
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
+
+    // Service variables table
+    cTableShape *pts = new cTableShape;
+    pts->fetchByName(*pq, _sServiceRrdVars);
+    pts->setId(_sTableShapeType, ENUM2SET2(TS_BARE, TS_READ_ONLY));
+    pts->setName(_sRefine, _sFalse);    // Empty table
+    pSrvVarsTable = new cRecordTable(pts, pUi->widgetSrvVars);
+    pSrvVarsTable->init();
 }
 
 
@@ -1300,4 +1308,30 @@ void cHSOperate::on_toolButtonIntervalDef_clicked()
     pUi->dateTimeEditFrom->setDateTime(now);
     QDateTime dt = now.addMSecs(minIntervalMs);
     pUi->dateTimeEditTo->setDateTime(dt);
+}
+
+void cHSOperate::on_tableWidget_itemSelectionChanged()
+{
+    QModelIndexList mil = pUi->tableWidget->selectionModel()->selectedRows();
+    QString refine;
+    if (mil.isEmpty())  {
+        refine = _sFalse;
+    }
+    else if (mil.size() == 1) {
+        int row = mil.first().row();
+        qlonglong id = actState()->rows.at(row)->id;
+        refine = QString("host_service_id = %1").arg(id);
+    }
+    else {
+        QString ids;
+        foreach (QModelIndex mi, mil) {
+            int row = mi.row();
+            qlonglong id = actState()->rows.at(row)->id;
+            ids += QString::number(id) + _sCommaSp;
+        }
+        ids.chop(_sCommaSp.size());
+        refine = QString("host_service_id = ANY ('{%1}'\\:\\:bigint[])").arg(ids);
+    }
+    pSrvVarsTable->pTableShape->setName(_sRefine, refine);
+    pSrvVarsTable->refresh(true);
 }
