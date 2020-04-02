@@ -106,7 +106,6 @@ bool cService::toEnd(int i)
 
 void cService::clearToEnd()
 {
-    ;
 }
 CRECDEF(cService)
 RECACHEDEF(cService, service)
@@ -1127,8 +1126,8 @@ int regexpAttr(const QString& s, eEx __ex)
 const cRecStaticDescr&  cQueryParser::descr() const
 {
     if (initPDescr<cQueryParser>(_sQueryParsers)) {
-        CHKENUM(_sParseType, parseType);
-        CHKENUM(_sRegexpAttr, regexpAttr);
+        CHKENUM(_sParseType, parseType)
+        CHKENUM(_sRegexpAttr, regexpAttr)
     }
     return *_pRecordDescr;
 }
@@ -1215,12 +1214,14 @@ int cQueryParser::prep(cError *& pe)
 int cQueryParser::parse(QString src,  cError *&pe)
 {
     pe = nullptr;
+    // Sanity check
     if (pListCmd == nullptr || pListRExp == nullptr || pListReAttr == nullptr
      || pListCmd->size() != pListRExp->size() || pListCmd->size() != pListReAttr->size()) EXCEPTION(EPROGFAIL);
     int i, n = pListCmd->size();
+    // Foreach all regular expressions
     for (i = 0; i < n; i++) {
-        QRegExp   rexp = pListRExp->at(i);
-        qlonglong reat = pListReAttr->at(i);
+        QRegExp   rexp = pListRExp->at(i);      // Regular expr.
+        qlonglong reat = pListReAttr->at(i);    // Atrributum (set)
         // PDEB(VERBOSE) << src << " ~ " << rexp.pattern() << " - " << reat << endl;
         const QString& cmd = pListCmd->at(i);
         if (ENUM2SET(RA_EXACTMATCH) & reat) {
@@ -1304,7 +1305,8 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
     pListCmd  = new QStringList;
     do {
         *pListCmd << getName(_sImportExpression);
-        qlonglong reat = getBool(_sRegexpAttr);
+        qlonglong reat = getId(_sRegexpAttr);
+        if (reat == NULL_ID) reat = 0;
         enum Qt::CaseSensitivity cs = reat & ENUM2SET(RA_CASESENSITIVE) ? Qt::CaseSensitive : Qt::CaseInsensitive;
         QRegExp rexp(getName(_sRegularExpression),cs);
         if (!rexp.isValid()) EXCEPTION(EDATA, getId(), getName(_sRegularExpression));

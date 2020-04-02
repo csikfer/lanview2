@@ -167,7 +167,7 @@ int cRrdHelper::run(QSqlQuery& q, QString &runMsg)
     return r;
 }
 
-enum ixRRDPar { RP_RRD, RP_HELPER_ID_IX, RP_TIMESTAMP, RP_VALUE_IX, RP_SERVICE_VAR_ID_IX, RP_FIELD_NUM };
+enum ixRRDPar { RP_RRD, RP_HELPER_ID_IX, RP_TIMESTAMP_IX, RP_VALUE_IX, RP_SERVICE_VAR_ID_IX, RP_FIELD_NUM };
 void cRrdHelper::execRrd(const QString& payload)
 {
     cntFail++;  // it's not good yet
@@ -192,7 +192,8 @@ void cRrdHelper::execRrd(const QString& payload)
         }
     }
     else {
-        i = rrdFileMap.insert(serviceVarId, cRrdFile());
+        // Not found cRrdFile objet, create
+        i = rrdFileMap.insert(serviceVarId, cRrdFile());    // Empty disabled object
         // ID -> object names
         static const QString sql =
                 "SELECT node_name, port_name, service_name, service_var_name "
@@ -227,7 +228,7 @@ void cRrdHelper::execRrd(const QString& payload)
         if (accesType == RAT_LOCAL) {
             QFileInfo fi(i.value().fileName);
             if (fi.exists() && fi.isRelative() && fi.isWritable()) {
-                i.value().enable();
+                i.value().enable();     // RRD file is exist, and accessible
             }
         }
         else {
@@ -256,16 +257,17 @@ void cRrdHelper::execRrd(const QString& payload)
     args << "update";
     args << daemonOption;
     args << i.value().fileName;
-    args << QString("%1:%2").arg(sl.at(RP_TIMESTAMP), sl.at(RP_VALUE_IX));
+    args << QString("%1:%2").arg(sl.at(RP_TIMESTAMP_IX), sl.at(RP_VALUE_IX));
     QString msg;
     int r = startProcessAndWait(sRrdTool, args, &msg);
     if (r != 0) {
-        msg = tr("I can't update the %1 RRD file.\n %2").arg(i.value().fileName, msg);
+        msgAppend(&msg, tr("I can't update the %1 RRD file.").arg(i.value().fileName));
         APPMEMO(q, msg, RS_CRITICAL);
         PDEB(WARNING) << msg << endl;
     }
     else {
-        PDEB(VERBOSE) << tr("Updated the %1 RRD file.\n %2").arg(i.value().fileName, msg);
+        msgAppend(&msg, tr("Updated the %1 RRD file.\n %2").arg(i.value().fileName));
+        PDEB(VERBOSE) << msg << endl;
         --cntFail;
         ++cntOk;
     }

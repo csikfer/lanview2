@@ -712,7 +712,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
                "AND NOT s.deleted  AND NOT hs.deleted "    // töröltek sem kellenek
             ;
     sql = ssi(sql, qs, hostServiceId());
-    EXECSQL(q, sql);
+    EXECSQL(q, sql)
     if (q.first()) do {
         qlonglong       hsid = variantToId(q.value(0));  // host_service_id      A szervíz rekord amit be kell olvasni
         qlonglong       hoid = variantToId(q.value(1));  // node tableoid        A node típusa
@@ -723,7 +723,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             if (p != nullptr) {
                 p->postInit(q2);  // ??
             }
-        } CATCHS(pe);
+        } CATCHS(pe)
         if (pe != nullptr) {
             ok = false;
             if (pe->mErrorCode != eError::EOK) {
@@ -808,11 +808,11 @@ int cInspector::getInspectorTiming(const QString& value)
         if (vl.size() == 1) return r;
         goto getFunc_error_label;
     }
-    CONT_ONE_ONE(_sTimed,   IT_TIMING_TIMED);
-    CONT_ONE_ONE(_sPassive, IT_TIMING_PASSIVE);
-    CONT_ONE_ONE(_sPolling, IT_TIMING_POLLING);
+    CONT_ONE_ONE(_sTimed,   IT_TIMING_TIMED)
+    CONT_ONE_ONE(_sPassive, IT_TIMING_PASSIVE)
+    CONT_ONE_ONE(_sPolling, IT_TIMING_POLLING)
     if (!on) goto getFunc_error_label;
-    CONT_ONE(_sThread,  IT_TIMING_THREAD);
+    CONT_ONE(_sThread,  IT_TIMING_THREAD)
     if (vl.isEmpty()) {
         PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
         return r;
@@ -834,11 +834,11 @@ int cInspector::getInspectorProcess(const QString &value)
     QStringList vl;
     if (!value.isEmpty()) {
         vl = value.split(QRegExp("\\s*,\\s*"));
-        CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING);
-        CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED);
-        CONT_ONE(    _sCarried,  IT_PROCESS_CARRIED);   // ????
-        CONT_ONE_ONE(_sRespawn,  IT_PROCESS_RESPAWN);
-        CONT_ONE_ONE(_sContinue, IT_PROCESS_CONTINUE);
+        CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING)
+        CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED)
+        CONT_ONE(    _sCarried,  IT_PROCESS_CARRIED)   // ????
+        CONT_ONE_ONE(_sRespawn,  IT_PROCESS_RESPAWN)
+        CONT_ONE_ONE(_sContinue, IT_PROCESS_CONTINUE)
     }
     if (!on) {
         n = getInspectorTiming(feature(_sTiming));
@@ -873,15 +873,15 @@ int cInspector::getInspectorMethod(const QString &value)
         if (vl.size() == 1) return r;
         goto getFunc_error_label;
     }
-    CONT_ONE(_sQparse,   IT_METHOD_QPARSE);
-    CONT_ONE(_sParser,   IT_METHOD_PARSER);
+    CONT_ONE(_sQparse,   IT_METHOD_QPARSE)
+    CONT_ONE(_sParser,   IT_METHOD_PARSER)
     on = false;
-    CONT_ONE_ONE(_sInspector,IT_METHOD_INSPECTOR);
-    CONT_ONE(_sText,     IT_METHOD_SAVE_TEXT);
-    CONT_ONE(_sCarried,  IT_METHOD_CARRIED);
-    CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED));
-    CONT_ONE_ONE(_sJson,     IT_METHOD_JSON);
-    CONT_ONE_ONE(_sXml,      IT_METHOD_XML);
+    CONT_ONE_ONE(_sInspector,IT_METHOD_INSPECTOR)
+    CONT_ONE(_sText,     IT_METHOD_SAVE_TEXT)
+    CONT_ONE(_sCarried,  IT_METHOD_CARRIED)
+    CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED))
+    CONT_ONE_ONE(_sJson,     IT_METHOD_JSON)
+    CONT_ONE_ONE(_sXml,      IT_METHOD_XML)
     if (vl.isEmpty()) {
         PDEB(VERBOSE) << name() << VDEB(value) << " method = " << r << endl;
         return r;
@@ -1483,6 +1483,11 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
             if (pQparser != nullptr) break;     // Megtaláltuk
         }
         if (pQparser == nullptr) {
+            if ((inspectorType & IT_METHODE_TEXT_DATA) == IT_METHOD_NAGIOS) {
+                // If nagios plugin, then drop qparse, if not found parser. No warning.
+                inspectorType &= ~IT_METHOD_QPARSE;
+                return RS_DOWN;
+            }
             QString msg = tr(
                         "A '%1' parancs nem hajtható végre.\n"
                         "A %2 szolgáltatás példány kontexusa hibás\n"
@@ -1499,14 +1504,14 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
     QStringList sl = text.split(sep);
     foreach (QString t, sl) {
         t = t.simplified();
-        if (t.isEmpty()) continue;      // üres
-        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Van komment jel. és az első karakter az
+        if (t.isEmpty()) continue;      // Empty line
+        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Comment line
         cError *pe = nullptr;
         int r = pQparser->parse(t, pe);
-        // Ha semmire sem volt találat
+        // Match?
         if (r == R_NOTFOUND) {
             PDEB(VVERBOSE) << "DROP : " << quotedString(t) << endl;
-            continue;  // Nincs minta a sorra, nem foglalkozunk vele
+            continue;  // No match, drop line
         }
         // Találat, és hiba
         if (r != REASON_OK) {
