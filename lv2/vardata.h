@@ -1,5 +1,5 @@
-#ifndef MUNINDATA
-#define MUNINDATA
+#ifndef VARDATA
+#define VARDATA
 
 #include "lanview.h"
 #include "guidata.h"
@@ -217,29 +217,32 @@ class LV2SHARED_EXPORT cServiceRrdVar : public cServiceVar {
 public:
 };
 
-
+#if 0
 /*!
-@class cGraph
+@class cSrvDiagramTypVar
 @brief
  */
-class LV2SHARED_EXPORT cGraph : public cRecord {
-    CRECORD(cGraph);
-    FEATURES(cGraph)
+class LV2SHARED_EXPORT cSrvDiagramTypeVar : public cRecord {
+    CRECORD(cSrvDiagramTypeVar);
+    FEATURES(cSrvDiagramTypeVar)
+    STATICIX(cSrvDiagramTypeVar, SrvDiagramTypeId)
 public:
 };
 
 /*!
-@class cGraphVar
+@class cSrvDiagramType
 @brief
  */
-class LV2SHARED_EXPORT cGraphVar : public cRecord {
-    CRECORD(cGraphVar);
-    FEATURES(cGraphVar)
+class LV2SHARED_EXPORT cSrvDiagramType : public cRecord {
+    CRECORD(cSrvDiagramType);
+    FEATURES(cSrvDiagramType)
+    STATICIX(cSrvDiagramType, ServiceId)
 public:
+    tOwnRecords<cSrvDiagramType, cSrvDiagramType>    vars;
+
 };
 
-EXT_  double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st);
+#endif
 
-
-#endif // MUNINDATA
+#endif // VARDATA
 

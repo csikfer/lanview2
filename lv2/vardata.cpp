@@ -345,7 +345,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
             val = - val;
         }
     }
-    QString rpn = mergedFeatures().value("rpn");
+    QString rpn = mergedFeatures().value(_sRpn);
     if (!rpn.isEmpty()) {
         QString err;
         val = rpn_calc(val, rpn, mergedFeatures(), err);
@@ -425,7 +425,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
             d   = - d;
         }
     }
-    QString rpn = mergedFeatures().value("rpn");
+    QString rpn = mergedFeatures().value(_sRpn);
     if (!rpn.isEmpty()){
         QString err;
         d = rpn_calc(d, rpn, mergedFeatures(), err);
@@ -1064,32 +1064,7 @@ CRECDDCR(cServiceRrdVar, _sServiceRrdVars)
 CRECDEFD(cServiceRrdVar)
 
 /* ---------------------------------------------------------------------------- */
-// ERROR: _pFeatures inicializálás, törlés !!! (nem használlt class)
-CRECCNTR(cGraph)
-int  cGraph::_ixFeatures = NULL_IX;
-const cRecStaticDescr&  cGraph::descr() const
-{
-    if (initPDescr<cGraph>(_sGraphs)) {
-        _ixFeatures = _descr_cGraph().toIndex(_sFeatures);
-    }
-    return *_pRecordDescr;
-}
-CRECDEFD(cGraph)
-/* ---------------------------------------------------------------------------- */
 
-// ERROR: _pFeatures inicializálás, törlés !!! (nem használlt class)
-CRECCNTR(cGraphVar)
-
-int  cGraphVar::_ixFeatures = NULL_IX;
-const cRecStaticDescr&  cGraphVar::descr() const
-{
-    if (initPDescr<cGraphVar>(_sGraphVars)) {
-        CHKENUM(_sDrawType, varDrawType)
-    }
-    return *_pRecordDescr;
-}
-
-CRECDEFD(cGraphVar)
 
 /* ---------------------------------------------------------------------------- */
 
