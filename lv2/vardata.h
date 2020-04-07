@@ -217,6 +217,9 @@ class LV2SHARED_EXPORT cServiceRrdVar : public cServiceVar {
 public:
 };
 
+EXT_ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st);
+
+
 #if 0
 /*!
 @class cSrvDiagramTypVar

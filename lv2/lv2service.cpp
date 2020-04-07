@@ -6,13 +6,14 @@
 cThreadAcceptor::cThreadAcceptor(cInspectorThread *pThread)
     : QObject(nullptr), inspector(pThread->inspector)
 {
+    PDEB(INFO) << inspector.name() << endl;
     moveToThread(pThread);
     pTimer = nullptr;
 }
 
 cThreadAcceptor::~cThreadAcceptor()
 {
-    ;
+    PDEB(INFO) << inspector.name() << endl;
 }
 
 void cThreadAcceptor::timer(int ms, eTimerStat tst)
@@ -1103,11 +1104,13 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     }
     checkCmdArgs << arg;                // Utolsó paraméter
     if (protoService().getName() == _sSsh) {
-        checkCmdArgs.prepend(node().getIpAddress(q).toString());
+        QString sUser = feature(_sUser);
+        QString sHost = node().getIpAddress(q).toString();
+        if (!sUser.isEmpty()) sHost = sUser + "@" + sHost;
+        checkCmdArgs.prepend(sHost);
         checkCmdArgs.prepend(_sSsh);
     }
-    checkCmd = checkCmdArgs.first();    // Parancs név
-    checkCmdArgs.pop_front();           // Argumentumok
+    checkCmd = checkCmdArgs.takeFirst();    // Split command and arguments
 
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
     enum Qt::CaseSensitivity cs = Qt::CaseSensitive;
