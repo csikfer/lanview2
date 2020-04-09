@@ -329,7 +329,7 @@ QBitArray cHostService::clearStateFields(eTristate flag)
     setId(_sCheckAttempts, 0);
     setMask |= mask(_sLastChanged, _sLastTouched, _sCheckAttempts);
     if (flag != TS_NULL) {
-        int ix = toIndex(_sFlag);
+        static int ix = toIndex(_sFlag);
         setBool(ix, flag == TS_TRUE);
         setMask.setBit(ix);
     }

@@ -158,6 +158,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     QString s;
 
     reStartCnt = 0;
+    lastElapsed = NULL_ID;
 
     _DBGFN() << inspector.name() << endl;
 
@@ -229,6 +230,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
         connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
         connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
     }
+    lastStart.invalidate();
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
@@ -238,6 +240,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     }
     switch (state()) {
     case QProcess::Running:
+        lastStart.start();
         if (stopTo == 0) {
             PDEB(VVERBOSE) << "Runing and continue ..." << endl;
             return 0; // RUN...
@@ -278,18 +281,27 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         DERR() << tr("Invalid event, internalStat = %1").arg(internalStatName(inspector.internalStat)) << endl;
         return;
     }
+    lastElapsed = lastStart.isValid() ? lastStart.elapsed() : NULL_ID;
     if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
+        if (lastElapsed > errCntClearTime) reStartCnt = 0;
+        QString msg;
+        if (exitStatus ==  QProcess::CrashExit) {
+            msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
+        }
+        else {
+            msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
+        }
+        if (!inspector.hostService.fetchById(*inspector.pq) || !inspector.hostService.getBool(_sEnabled)) {     // reread, enabled?
+            if (!inspector.hostService.isNull()) {
+                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Letíltva.", inspector.lastRun.elapsed());
+            }
+            inspector.internalStat = IS_STOPPED;
+            return;
+        }
         if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
             ++reStartCnt;
-            QString msg;
-            if (exitStatus ==  QProcess::CrashExit) {
-                msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
-            }
-            else {
-                msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
-            }
             if (reStartCnt > reStartMax) {
-                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.", inspector.lastRun.elapsed());
+                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Túl sok úgraindítási kísérlet.", inspector.lastRun.elapsed());
                 inspector.internalStat = IS_STOPPED;
                 return;
             }

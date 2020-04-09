@@ -155,6 +155,8 @@ protected:
     int         reStartCnt;         ///< Hiba számláló
     int         reStartMax;         ///< Maximális megengedett hiba szám
     int         errCntClearTime;    ///< Hiba számláló törlése, ha nincs hiba ennyi msec ideig.
+    QElapsedTimer       lastStart;
+    qlonglong   lastElapsed;        ///< Utoljára mért program futási ideje mSec
     int         maxArcLog;
     int         maxLogSize;
     int         logNull;

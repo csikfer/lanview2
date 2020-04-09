@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1132</width>
-    <height>673</height>
+    <width>1410</width>
+    <height>723</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -240,6 +240,11 @@
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>false</bool>
          </attribute>
+         <column>
+          <property name="text">
+           <string>ID</string>
+          </property>
+         </column>
          <column>
           <property name="text">
            <string>Hoszt</string>

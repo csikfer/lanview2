@@ -328,6 +328,7 @@ enum eFilterButtonId {
 };
 
 enum eTableColumnIx {
+    TC_ID,
     TC_HOST,
     TC_SERVICE,
     TC_PORT,
@@ -570,6 +571,7 @@ void cHSOperate::refreshTable()
     pUi->tableWidget->setRowCount(0);
     pUi->tableWidget->setRowCount(actState()->size);
     foreach (cHSORow *pRow, actState()->rows) {
+        setCell(row, TC_ID,      pRow->item(RX_ID));
         setCell(row, TC_HOST,    pRow->item(RX_HOST_NAME));
         setCell(row, TC_SERVICE, pRow->item(RX_SERVICE_NAME));
         setCell(row, TC_PORT,    pRow->item(RX_PORT_NAME));

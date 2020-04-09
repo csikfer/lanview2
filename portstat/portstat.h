@@ -17,7 +17,7 @@ class lv2portStat;
 class cPortStat;
 
 /// @class cDevicePSt
-/// Az egy lekérdezendő eszközt reprezentál
+/// A lekérdezendő eszközt reprezentálja
 class cDevPortStat : public cInspector {
 public:
     /// Konstruktor
@@ -69,6 +69,7 @@ public:
     static int ixDelegatePortState;
 };
 
+/// A lekérdezendő portokat reprezentálja
 class cPortStat {
 public:
     cPortStat(cInterface *pIf, cDevPortStat *par);

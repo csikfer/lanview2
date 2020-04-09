@@ -97,7 +97,7 @@ int cDevPortStat::ixDelegatePortState = NULL_IX;
 const QString cDevPortStat::sSnmpElapsed = "snmp_elapsed";
 
 cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
-    : cInspector(nullptr)  // Self host service
+    : cInspector(nullptr)  // Is not self host service !!
     , snmp()
 {
     first = true;
@@ -127,14 +127,6 @@ cDevPortStat::~cDevPortStat()
 
 }
 
-#if 1
-#define _DM PDEB(VVERBOSE)
-#define DM  _DM << endl;
-#else
-#define _DM
-#define DM
-#endif
-
 void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
@@ -157,14 +149,11 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     tRecordList<cNPort>::iterator it, eit = dev.ports.end();
     for (it = dev.ports.begin(); it != eit; ++it) {      // for each all ports
         cNPort     *pPort    = *it;
-        _DM << pPort->getName() << endl;
         // Only the interface types are interesting
         if (!(pPort->descr() >= cInterface::_descr_cInterface())) continue;
         cInterface *pInterface = dynamic_cast<cInterface *>(pPort);
         qlonglong   pid = pInterface->getId();
-        DM
         ifMap[pid] = new cPortStat(pInterface, this);
-        DM
     }
     QString msg;
     int r = queryInit(_q, msg);
@@ -195,10 +184,9 @@ int cDevPortStat::queryInit(QSqlQuery &_q, QString& msg)
     // Sub services those that no longer belongs to us, you must be disconnected!
     cHostService hsf;   // Flags is set true, all sub service
     hsf.setId(_sSuperiorHostServiceId, hostServiceId());    // Connected
-    hsf.setBool(_sDisabled, false);                         // not disabled
-    hsf.setBool(hsf.deletedIndex(),  false);                         // not deleted
-    QBitArray hsfWhereBits = hsf.mask(_sSuperiorHostServiceId, _sDisabled, _sDeleted);
-    hsf.mark(_q, hsfWhereBits);
+    QBitArray hsfWhereBits = hsf.mask(_sSuperiorHostServiceId);
+    int marked = hsf.mark(_q, hsfWhereBits);
+    PDEB(VERBOSE) << QString("Marked %1 record(s).").arg(marked) << endl;
 
     delayCounter = 0;
     foreach (qlonglong pid, ifMap.keys()) {
@@ -210,6 +198,9 @@ int cDevPortStat::queryInit(QSqlQuery &_q, QString& msg)
             delete ifMap.take(pid);     // It does not do anything, so we throw it away
         }
     }
+
+    int removed = hsf.removeMarked(_q, hsfWhereBits); // Delete unnecessary sub service
+    PDEB(INFO) << QString("Removed %1 record(s).").arg(removed) << endl;
     return RS_ON;
 }
 
@@ -218,20 +209,23 @@ cPortStat::cPortStat(cInterface * pIf, cDevPortStat *par)
     parent     = par;
     pInterface = pIf;
     pRlinkStat = nullptr;
-    pPortVars  = new cInspector(parent, parent->host().dup()->reconvert<cNode>(), parent->pSrvPortVars, pInterface->dup()->reconvert<cNPort>());
+    pPortVars  = nullptr;
 }
 
+/// Port lekérdezések inicialozálása.
+/// A portvars és rlinkstat al szolgáltatások cIspector objektumainak a létrehozása (ha szükséges)
 bool cPortStat::postInit(QSqlQuery& q)
 {
     bool isWanted = true;
     pInterface->_toReadBack = RB_NO;
  // portvars *********************************************
+    pPortVars  = new cInspector(parent, parent->host().dup()->reconvert<cNode>(), parent->pSrvPortVars, pInterface->dup()->reconvert<cNPort>());
     // host service
     cHostService& vhs = pPortVars->hostService;
     // Record exists ?
-    int n = vhs.completion(q);
-    if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());
-    if (n == 0) {   // Not found, create if port type is ethernet
+    int n = vhs.completion(q);      // Fetch
+    if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());                     // Incredible, multiple readed record
+    if (n == 0) {                       // Not found, create if port type is ethernet
         if (cIfType::ifTypeId(_sEthernet) == pInterface->getId(_sIfTypeId)) {
             vhs.setId(_sServiceId, parent->pSrvPortVars->getId());
             vhs.setId(_sNodeId,    parent->host().getId());
@@ -245,12 +239,16 @@ bool cPortStat::postInit(QSqlQuery& q)
             vhs._toReadBack = RB_YES;
         }
         else {
-            pDelete(pPortVars);
+            pDelete(pPortVars);         // Not found record, and not create.
         }
     }
     else {
         int ix = vhs.toIndex(_sSuperiorHostServiceId);
-        if (parent->hostServiceId() != vhs.getId(ix)) {
+        if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
+            vhs.clearState(q);
+            pDelete(pPortVars);
+        }
+        else if (parent->hostServiceId() != vhs.getId(ix)) {
             // Not ours !!!???
             QBitArray m = vhs.clearStateFields(TS_FALSE);
             vhs.setId(ix, parent->hostServiceId());
@@ -261,23 +259,16 @@ bool cPortStat::postInit(QSqlQuery& q)
         else {  // OK
             vhs.mark(q, vhs.primaryKey(), false); // clear flag
         }
-        if (vhs.getBool(_sDisabled)) {  // port_vars service is disabled ?
-            vhs.clearState(q);
-            pDelete(pPortVars);
-        }
     }
-    DM
     if (pPortVars != nullptr) {
         // service variables
         pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
-        DM
         if (pPortVars->pVars == nullptr) {
             pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
         }
         else {
             pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
         }
-        DM
         bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
         n = parent->vnames.size();
         if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
@@ -344,7 +335,6 @@ bool cPortStat::postInit(QSqlQuery& q)
  // portvars end
 
  // rlinkstat *****************************************************************
-    DM
     if (!cIfType::ifType(pInterface->getId(cDevPortStat::ixIfTypeId)).isLinkage()) return isWanted;
     QString wMsg;   // Message if something is suspicious
     // By the time it is connected (log_links, lldp_links -> rlinkstat)
@@ -354,17 +344,14 @@ bool cPortStat::postInit(QSqlQuery& q)
         APPMEMO(q, wMsg, RS_CRITICAL);
     }
     if (lpid == NULL_ID) return isWanted;  // No likely link
-    DM
     // Linked object
     cNPort *p = cNPort::getPortObjById(q, lpid);      // port ID --> node
     pRlinkStat = new cInspector(parent, cNode::getNodeObjById(q, p->getId(_sNodeId))->reconvert<cNode>(), parent->pRLinkStat, p);
     cHostService& lhs = pRlinkStat->hostService;
-    DM
     // host_services record ?
     n = lhs.completion(q);
     // Only one record may be
     if (n  > 1) EXCEPTION(EDATA, n, parent->hostService.identifying(false));
-    DM
     if (n == 1) {   // Found exists record, check and repair if necessary
         QBitArray sets(lhs.cols(), false);
         if (lhs.getBool(_sDisabled) || lhs.getBool(_sDeleted)) {
@@ -420,7 +407,7 @@ bool cPortStat::postInit(QSqlQuery& q)
         lhs.setId(_sServiceId, pRlinkStat->serviceId());
         lhs.setId(_sSuperiorHostServiceId, parent->hostServiceId());
         lhs.setId(_sPortId, lpid);
-        lhs.setBool(_sFlag, false);
+        // lhs.setBool(_sFlag, false); = DEFAULT
         QString note =
                 QObject::tr("Automatically generated by portstat (%1) : \n")
                                 .arg(parent->hostService.identifying());
