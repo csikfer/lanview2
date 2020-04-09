@@ -291,7 +291,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         else {
             msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
         }
-        if (!inspector.hostService.fetchById(*inspector.pq) || !inspector.hostService.getBool(_sEnabled)) {     // reread, enabled?
+        if (!inspector.hostService.fetchById(*inspector.pq) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
             if (!inspector.hostService.isNull()) {
                 inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Letíltva.", inspector.lastRun.elapsed());
             }
