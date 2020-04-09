@@ -52,6 +52,8 @@ STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
 STRDEF(Color, "color")
 
+STRDEF(Save, "save")
+
 STRDEF(Variables, "variables")
 STRDEF(ViewFunc, "view_func")
 STRDEF(ViewExpr, "view_expr")

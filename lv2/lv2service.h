@@ -53,6 +53,7 @@ enum eInspectorType {
     IT_METHOD_QPARSE        = 0x0100,   ///< Query parser
     IT_METHOD_PARSER        = 0x0200,   ///< Parser szülő objektum a query parser(ek)hez
     IT_METHOD_SAVE_TEXT     = 0x0400,   ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
+    IT_METHOD_PARSE_TEXT    = 0x0800,   ///< Program kimenetének értelmezése
 
     IT_METHOD_CARRIED       = 0x1000,   ///<
     IT_METHOD_INSPECTOR     = 0x2000,   ///< Egy LanView2 service (cInspector) APP
@@ -61,15 +62,13 @@ enum eInspectorType {
     IT_METHODE_TEXT_DATA  = 0x0F0000L,
     IT_METHOD_NAGIOS      = 0x010000L,   ///< NAGIOS plugin
     IT_METHOD_JSON        = 0x030000L,   ///< JSON output
-    IT_METHOD_XML         = 0x040000L,   ///< XML output
 
     IT_METHOD_MASK        = 0x0FFF00L,
 
     IT_SUPERIOR           = 0x100000L,   ///< Alárendelt funkciók vannak
     IT_MAIN               = 0x200000L,   ///< Fő folyamat, nincs parent
-    IT_PURE_PARSER        = 0x400000L,   ///<
 
-    IT_AUTO_TRANSACTION   = 0x800000L   ///< Nincs automatikus tranzakció kezelés
+    IT_AUTO_TRANSACTION  = 0x8000000L   ///< Nincs automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota
@@ -215,7 +214,7 @@ public:
     virtual int run(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
-    virtual enum eNotifSwitch parse(int _ec, QIODevice &_text);
+    virtual enum eNotifSwitch parse(int _ec, QIODevice &_text, QString &runMsg);
     /// Futás időzítés indítása
     virtual void start();
     int firstDelay();
@@ -374,10 +373,10 @@ protected:
     int getInspectorTiming(const QString &value);
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
-    enum eNotifSwitch parse_nagios(int _ec, const QString &text);
-    enum eNotifSwitch parse_json(int _ec, const QByteArray &text);
-    enum eNotifSwitch parse_xml(int _ec, const QByteArray &text);
+    enum eNotifSwitch parse_nagios(int _ec, const QString &text, QString &runMsg);
+    enum eNotifSwitch parse_json(int _ec, const QByteArray &text, QString &runMsg);
     enum eNotifSwitch save_text(int _ec, const QString &text);
+    enum eNotifSwitch parse_text(int _ec, const QString &text, QString &runMsg);
     enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:

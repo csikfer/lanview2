@@ -70,7 +70,7 @@ SERVICE "attached" "IndAlarm Contact védett eszköz" {
 }
 SERVICE "check_dhcp" "DHCP monitorozás" {
     COMMAND "dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw";
-    FEATURES ":method=nagios:";
+    FEATURES ":method=nagios:timing=timed:";
     MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 600;
     HEARTBEAT TIME 1800;
@@ -180,7 +180,7 @@ SERVICE "http" "Check http server" {
     FLAPPING MAX CHANGE 4;
     TYPE "check_service";
 }
-SERVICE "http.proxy" "Check http proxy server" {
+SERVICE "http_proxy" "Check http proxy server" {
     SUPERIOR SERVICE MASK "^http$";
     PORT 3128;
     COMMAND "/usr/lib/nagios/plugins/check_http -I $address -p $port -u http://$parent.address:$parent.port$parent.uri -w $w -c $c -t $t";
@@ -507,6 +507,29 @@ SERVICE "PowerNet-MIB" "SNMP query old MIB " {
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "proc_loadavg" {
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "cat $file";
+    FEATURES  {
+        "file" = "/proc/loadavg";
+        "list";
+        "method" = "text";
+        "regexp_separator" = "\\s+";
+        "timing" = "timed";
+        "variables" =  {
+            "load15m" = "3,load15m";
+            "load1m" = "1,load1m";
+            "load5m" = "2,load5m";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "querying";
+    OFF LINE GROUPS "admin_net";
+}
 SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
     COMMAND "pstat $S  -R $host_service_id";
@@ -693,7 +716,7 @@ SERVICE "syscron" "System cron" {
     FLAPPING MAX CHANGE 5;
     OFF LINE GROUPS "admin_net";
 }
-SERVICE "sysUpTime.snmp" {
+SERVICE "sysUpTime_snmp" {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
         "timing" = "timed";
@@ -1073,7 +1096,7 @@ QUERY PARSER "temp.owget" {
 }
 DELETE QUERY PARSER "ping";
 QUERY PARSER "ping" {
-    TEMPLATE  "RTA\\s*=\\s*([\\d\\.]+)\\s*ms"  "SET HOST SERVICE $host_service_id VAR ping_time = $1 ;";
+    TEMPLATE ATTR(casesensitive)  "RTA\\s*=\\s*([\\d\\.]+)\\s*ms"  "SET HOST SERVICE $host_service_id VAR ping_time = $1 ;";
 }
 DELETE QUERY PARSER "soniwall_arp";
 QUERY PARSER "soniwall_arp" {

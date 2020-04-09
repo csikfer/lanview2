@@ -878,11 +878,11 @@ int cInspector::getInspectorMethod(const QString &value)
     CONT_ONE(_sParser,   IT_METHOD_PARSER)
     on = false;
     CONT_ONE_ONE(_sInspector,IT_METHOD_INSPECTOR)
-    CONT_ONE(_sText,     IT_METHOD_SAVE_TEXT)
+    CONT_ONE(_sSave,     IT_METHOD_SAVE_TEXT)
+    CONT_ONE(_sText,     IT_METHOD_PARSE_TEXT)
     CONT_ONE(_sCarried,  IT_METHOD_CARRIED)
     CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED))
     CONT_ONE_ONE(_sJson,     IT_METHOD_JSON)
-    CONT_ONE_ONE(_sXml,      IT_METHOD_XML)
     if (vl.isEmpty()) {
         PDEB(VERBOSE) << name() << VDEB(value) << " method = " << r << endl;
         return r;
@@ -942,7 +942,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
             int timing = getInspectorTiming(feature(_sTiming));
-            if (!timing && inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_SAVE_TEXT /*| IT_METHOD_MUNIN */))
+            if (!timing && inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_SAVE_TEXT | IT_METHOD_PARSE_TEXT))
                 timing = IT_PROCESS_TIMED;
             inspectorType |= timing;
             break;
@@ -1312,7 +1312,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
         if (ec == -1) return RS_STAT_SETTED;    // Already sended: RS_CRITICAL
-        return parse(ec, *pProcess);
+        return parse(ec, *pProcess, runMsg);
     }
     else {
         runMsg = tr("Incomplete cInspector (%1) object. No activity specified.").arg(name());
@@ -1322,45 +1322,34 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     return RS_UNREACHABLE;
 }
 
-enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text)
+enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
 {
     _DBGFN() <<  name() << endl;
     enum eNotifSwitch r = RS_INVALID;
     int method = inspectorType & IT_METHOD_MASK;
     QByteArray bytes = _text.readAll();
     QString text = QString::fromUtf8(bytes);
-    if (method & IT_METHOD_SAVE_TEXT) r = save_text(_ec, text);
+    if (method & IT_METHOD_SAVE_TEXT)  r = save_text(_ec, text);
+    if (method & IT_METHOD_PARSE_TEXT) r = parse_text(_ec, text, runMsg);
     switch (method & IT_METHODE_TEXT_DATA) {
-    case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text);    break;
-    case IT_METHOD_JSON:    r = parse_json(_ec, bytes);     break;
-    case IT_METHOD_XML:     r = parse_xml(_ec, bytes);      break;
+    case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text, runMsg);    break;
+    case IT_METHOD_JSON:    r = parse_json(_ec, bytes, runMsg);     break;
     }
     if (method & IT_METHOD_QPARSE) r = parse_qparse(_ec, text);
     return r;
 }
 
-enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text)
+enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text, QString& runMsg)
 {
-    int r = RS_DOWN, rr;
+    eNotifSwitch r = RS_DOWN;
     switch (_ec) {
     case NR_OK:         r = RS_ON;           break;
     case NR_WARNING:    r = RS_WARNING;      break;
     case NR_CRITICAL:   r = RS_CRITICAL;     break;
     case NR_UNKNOWN:    r = RS_UNREACHABLE;  break;
     }
-    QString note = text;
-    if (inspectorType & IT_METHOD_QPARSE) switch (r) {
-    case RS_ON:
-    case RS_WARNING:
-    case RS_CRITICAL:
-        rr = parse_qparse(_ec, text);
-        note += tr("\nQuery pareser result : %1 (#%2).").arg(notifSwitch(rr, EX_IGNORE)).arg(rr);
-        break;
-    default:
-        note += tr("\nQuery pareser has been left out.");
-    }
-    hostService.setState(*pq, notifSwitch(r), note, lastRun.elapsed());
-    return RS_STAT_SETTED;
+    msgAppend(&runMsg, text);
+    return r;
 }
 
 inline QJsonValue jsonDocToVal(const QJsonDocument& d)
@@ -1419,18 +1408,16 @@ static QJsonValue searchJsonValue(const QJsonValue& o, const QString& keys)
     return r;
 }
 
-enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text)
+enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text, QString &runMsg)
 {
-    QString note;
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(text, &err);
     int st = _ec == 0 ? RS_ON : RS_WARNING;
     if (err.error != 0) {
-        msgAppend(&note, tr("JSON text :"));
-        msgAppend(&note, QString::fromUtf8(text));
-        msgAppend(&note, tr("Error #%1; %2").arg(err.error).arg(err.errorString()));
-        hostService.setState(*pq, _sCritical, note, lastRun.elapsed());
-        return RS_STAT_SETTED;
+        msgAppend(&runMsg, tr("JSON text :"));
+        msgAppend(&runMsg, QString::fromUtf8(text));
+        msgAppend(&runMsg, tr("Error #%1; %2").arg(err.error).arg(err.errorString()));
+        return RS_CRITICAL;
     }
     QJsonValue jvBase = jsonDocToVal(doc);
     QString keys = feature("json_base");
@@ -1443,13 +1430,6 @@ enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text)
         sv.setValue(*pq, v, st);
     }
     return eNotifSwitch(st);
-}
-
-enum eNotifSwitch cInspector::parse_xml(int _ec, const QByteArray &text)
-{
-    (void)_ec;
-    (void)text;
-    return RS_UNREACHABLE;
 }
 
 enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
@@ -1472,6 +1452,61 @@ enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
                     .arg(name(), (QStringList(checkCmd) += checkCmdArgs).join(_sSpace)).arg(_ec));
     pParam->replace(*pq);
     return _ec == 0 ? RS_ON : RS_WARNING;
+}
+
+enum eNotifSwitch cInspector::parse_text(int _ec, const QString &text, QString &runMsg)
+{
+    int r = RS_ON;
+    if (_ec != 0) {
+        msgAppend(&runMsg, tr("Command return : %1.").arg(_ec));
+        r = RS_WARNING;
+    }
+    if (isFeature("list")) {
+        QString sSeparator = feature("separator");
+        QString sRegexp;
+        QStringList values;
+        if (!sSeparator.isEmpty()) {
+            values = text.split(sSeparator);
+        }
+        else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
+            values = text.split(QRegExp(sRegexp));
+        }
+        else if (!(sRegexp = feature("regexp")).isEmpty()) {
+            QRegExp regexp(sRegexp);
+            if (regexp.indexIn(text, 0) >= 0) {
+                values = regexp.capturedTexts().mid(1);
+            }
+        }
+        else {
+            msgAppend(&runMsg, tr("Parse text : Important parameters are missing."));
+            return RS_UNREACHABLE;
+        }
+        if (values.isEmpty()) {
+            msgAppend(&runMsg, tr("Parse text : There is no value."));
+            return RS_UNREACHABLE;
+        }
+        bool ok;
+        foreach (QString vname, varsFeatureMap.keys()) {
+            QString sIx = varsFeatureMap[vname];
+            int ix = sIx.toInt(&ok);
+            if (!ok) {
+                msgAppend(&runMsg, tr("Invalid variable index : %1.").arg(sIx));
+                r = RS_UNREACHABLE;
+                break;
+            }
+            --ix;   // 1,2,3,... --> 0,1,2,...
+            if (!isContIx(values, ix)) {
+                msgAppend(&runMsg, tr("Nincs ilyen indexű adat : %1.").arg(ix));
+                r = RS_UNREACHABLE;
+                break;
+            }
+            cServiceVar& sv = *getServiceVar(vname, EX_ERROR);
+            sv.setValue(*pq, values[ix], r);
+        }
+        return eNotifSwitch(r);
+    }
+    msgAppend(&runMsg, tr("Parse text : Type is not defined."));
+    return RS_UNREACHABLE;
 }
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
@@ -1560,7 +1595,6 @@ void cInspector::start()
         int r = pQparser->load(*pq, serviceId(), true);
         if (R_NOTFOUND == r && nullptr != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
         if (R_NOTFOUND == r && nullptr != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
-        if (R_NOTFOUND == r) inspectorType |= IT_PURE_PARSER;
         cError *pe = nullptr;
         pQparser->setInspector(this);
         pQparser->prep(pe);

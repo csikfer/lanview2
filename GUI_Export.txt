@@ -446,7 +446,7 @@ ENUM "notifswitch" {
      "on" "rendben" {
         VIEW "rendben","on";
         ICON "dialog-ok-2.ico";
-        BACKGROUND COLOR "#d0ff60";
+        BACKGROUND COLOR "#73d216";
         FONT ATTR "underline";
     }
      "recovered" "helyreállt" {
@@ -468,7 +468,7 @@ ENUM "notifswitch" {
      "warning" "figyelmeztetés" {
         VIEW "figyelmeztetés","warning";
         ICON "emblem-important-yellow.ico";
-        BACKGROUND COLOR "yellow";
+        BACKGROUND COLOR "#edd400";
     }
 }
 ENUM "portvars.delegate_port_state" {
