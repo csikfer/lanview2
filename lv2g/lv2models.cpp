@@ -1,6 +1,11 @@
 #include "lv2models.h"
 #include <algorithm>
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
+#define swapItemsAt swap
+#endif
+
+
 QVector<int> mil2rowsAsc(const QModelIndexList& mil)
 {
     QVector<int> rows;
