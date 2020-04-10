@@ -334,7 +334,7 @@ void cGateway::getSocketParams()
     if (!ok)  sockPort = protoService().getId(_sPort);
     if (sockPort < 1 || sockPort > 65535) EXCEPTION(EDATA, sockPort, feature(_sTcp));
     QSqlQuery qq = getQuery();
-    if (checkThread(&host())) {
+    if (isCurrentThread(&host())) {
         host().fetchPorts(qq);  // Az IP cím kitalálásához kelleni fognak a portok
         sockAddr = host().getIpAddress();
     }

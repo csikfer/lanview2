@@ -282,7 +282,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             cnt++;
             // deadlock ?
             if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= setStateMaxTry) {
-                DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.number()).arg(cnt)
+                DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.nativeErrorCode()).arg(cnt)
                     << tr("driverText   : ") << le.driverText() << "\n"
                     << tr("databaseText : ") << le.databaseText() << endl;
                 QThread::msleep(200);

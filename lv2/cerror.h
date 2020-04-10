@@ -327,7 +327,7 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
 
 #define LV2_SQLERR(le, e)  { \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
-        _sql_err_ex(NEWCERROR(e, le.number(), le.text()), le); \
+        _sql_err_ex(NEWCERROR(e, 0, le.text()), le); \
     }
 
 /**
@@ -340,7 +340,7 @@ Exception SQL error
 #define SQLERR(o, e)  { \
         QSqlError le = (o).lastError(); \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
-        _sql_err_ex(NEWCERROR(e, le.number(), le.text()), le); \
+        _sql_err_ex(NEWCERROR(e, 0, le.text()), le); \
     }
 
 /**
@@ -360,7 +360,7 @@ Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is.
 #define SQLPREPERR(o, t)  { \
         QSqlError le = (o).lastError(); \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, t); \
-        _sql_err_ex(NEWCERROR(EQUERY, le.number(), le.text()), le, t); \
+        _sql_err_ex(NEWCERROR(EQUERY, 0, le.text()), le, t); \
     }
 
 /**
@@ -373,7 +373,7 @@ SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
 #define SQLQUERYNEWERR(pe, o)  { \
         QSqlError le = (o).lastError(); \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + _sql_err_bound(o, " / Bound : ")); \
-        pe = NEWCERROR(EQUERY, le.number(), le.text()); \
+        pe = NEWCERROR(EQUERY, 0, le.text()); \
         _sql_err_ex(pe, le, (o).lastQuery(), _sql_err_bound(o)); \
     }
 

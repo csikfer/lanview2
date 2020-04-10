@@ -68,7 +68,7 @@ enum eInspectorType {
     IT_SUPERIOR           = 0x100000L,   ///< Alárendelt funkciók vannak
     IT_MAIN               = 0x200000L,   ///< Fő folyamat, nincs parent
 
-    IT_AUTO_TRANSACTION  = 0x8000000L   ///< Nincs automatikus tranzakció kezelés
+    IT_AUTO_TRANSACTION  = 0x8000000L   ///< Automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota
@@ -77,12 +77,13 @@ enum eTimerStat {
     TS_NORMAL,  ///< normál időzítés (normal_interval)
     TS_RETRY,   ///< Hiba miatt gyorsabb időzítés (retry_interval)
     TS_FIRST,   ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
-    TS_OMMIT    ///< Timeperiod felfüggesztve
+    TS_OMMIT    ///< Timeperiod alapján felfüggesztve
 };
 
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
 EXT_ QString internalStatName(eInternalStat is);
 
+/// Nagios pluginek visszatérési kódjai
 enum eNagiosPluginRetcode {
     NR_OK       = 0,
     NR_WARNING  = 1,
@@ -94,7 +95,7 @@ class cInspector;
 class cInspectorThread;
 
 /// Ha a megadott objektum az aktuális szálhoz tartozik, akkor true-vel tér vissza
-static inline bool checkThread(QObject *po) {
+inline bool isCurrentThread(QObject *po) {
     return po->thread() == QThread::currentThread();
 }
 
@@ -244,7 +245,7 @@ public:
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
-    /// A 'variables' nevű features paaméter feldolgozása.
+    /// A 'variables' nevű features paraméter feldolgozása.
     /// A variables features paraméter egy list map típusú paraméter. Ahhol a kulcs a szervíz változó neve,
     /// Az érték pedig egy két elemű lista, aminek az első eleme egy tevákenységtől függő paraméter,
     /// a második eleme pedig a változó típusának a neve.
@@ -256,6 +257,7 @@ public:
     virtual bool variablesPostInitFeature(QSqlQuery &q, const QString& _name);
     virtual void variablesPostInitCreateOrCheck(QSqlQuery &q);
     virtual void variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name);
+    virtual void variablesFeaturesMerge(const cFeatures& __feature, const QString &_key = _sServiceVars);
     /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
@@ -480,7 +482,7 @@ public:
     /// Ha a cInspoector objektum saját szálat indított, akkor viszont a pInspectorThread pointerrel tér vissza.
     /// Hiba esetén kozárást dob: A checkThread(this) false-val tért vissza, de a pInspectorThread pointer NULL, vagy nem az aktuális thread
     QObject *useParent() {
-        if (checkThread(this)) return this;
+        if (isCurrentThread(this)) return this;
         if (pInspectorThread == nullptr || (QThread *)pInspectorThread != QThread::currentThread()) {
             EXCEPTION(EPROGFAIL, 0, name());
         }

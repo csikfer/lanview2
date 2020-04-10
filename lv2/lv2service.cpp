@@ -27,7 +27,7 @@ void cThreadAcceptor::timer(int ms, eTimerStat tst)
         pDelete(pTimer);
         return;
     }
-    if (!checkThread(this)) {
+    if (!isCurrentThread(this)) {
         EXCEPTION(EDATA, 0, tr("Inv. thread : %1 != %2").arg(thread()->objectName(), QThread::currentThread()->objectName()));
     }
     if (pTimer == nullptr) {
@@ -631,7 +631,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     }
     // "variables" feature
     variablesPostInit(q);
-
+    // merge features
+    variablesFeaturesMerge(features());
 }
 
 void cInspector::variablesPostInit(QSqlQuery& q)
@@ -696,6 +697,15 @@ void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _nam
 
 }
 
+void cInspector::variablesFeaturesMerge(const cFeatures& __feature, const QString& _key)
+{
+    if (pVars == nullptr) return;
+    cFeatures f;
+    f.merge(__feature, _key);
+    foreach (cServiceVar *pv,  pVars->list()) {
+        pv->features().merge(f, pv->getName());
+    }
+}
 
 void cInspector::threadPreInit()
 {

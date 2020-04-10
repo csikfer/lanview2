@@ -1237,14 +1237,14 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
     if (isHost) {
         if (!a.isNull()) {
             int plix = pi - o.ports.constBegin();
-            if (plix != 0) pl.swap(0, plix);   // set first port
+            if (plix != 0) pl.swapItemsAt(0, plix);   // set first port
             tOwnRecords<cIpAddress, cInterface>& addresses = pl.first()->reconvert<cInterface>()->addresses;
             if (addresses.isEmpty()) EXCEPTION(EPROGFAIL);  // Imposible
             if (a != addresses.first()->address()) {    // Find address
                 int i, n = addresses.size();
                 for (i = 1; i < n; ++i) {
                     if (addresses.at(i)->address() == a) {
-                        addresses.swap(0, i);           // Set first address in first port
+                        addresses.swapItemsAt(0, i);           // Set first address in first port
                         break;
                     }
                 }
@@ -1258,7 +1258,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
             if (pl.first()->chkObjType<cInterface>(EX_IGNORE) < 0) {   // First port object type is not interface
                 for (pi = pl.begin() + 1; pi < pl.end(); ++pi) {
                     if ((*pi)->chkObjType<cInterface>(EX_IGNORE) == 0) {
-                        pl.swap(0, pi - pl.begin());
+                        pl.swapItemsAt(0, pi - pl.begin());
                         break;
                     }
                 }

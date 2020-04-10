@@ -241,7 +241,7 @@ lanView::lanView()
             // Ha GUI, és nem volt megadva könyvtár, akkor az user home könyvtár lessz a home
             if (gui) {
                 if (pSet->value(_sHomeDir).isNull()) {
-                    d = QDir::homePath();
+                    d.setPath(QDir::homePath());
                     homeDir = d.path();
                 }
                 else {
@@ -515,7 +515,7 @@ bool lanView::openDatabase(eEx __ex)
     else {
         QSqlError le = (*pDb).lastError();
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__);
-        pe = NEWCERROR(ESQLOPEN, le.number(), le.text());
+        pe = NEWCERROR(ESQLOPEN, 0, le.text());
         if (__ex == EX_IGNORE) nonFatal = pe;
         else pe->exception();
     }

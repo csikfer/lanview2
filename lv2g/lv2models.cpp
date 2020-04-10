@@ -103,7 +103,7 @@ cStringListModel& cStringListModel::up(const QModelIndexList& mil)
         if (!isContIx(_stringList, row1)) continue;
         int row2 = row1 -1;
         if (row2 < 0) row2 = _stringList.size() -1;
-        _stringList.swap(row1, row2);
+        _stringList.swapItemsAt(row1, row2);
     }
     endResetModel();
     return *this;
@@ -119,7 +119,7 @@ cStringListModel& cStringListModel::down(const QModelIndexList& mil)
         if (!isContIx(_stringList, row1)) continue;
         int row2 = row1 +1;
         if (row2 >=  _stringList.size()) row2 = 0;
-        _stringList.swap(row1, row2);
+        _stringList.swapItemsAt(row1, row2);
     }
     endResetModel();
     return *this;
@@ -271,7 +271,7 @@ cPolygonTableModel& cPolygonTableModel::up(const QModelIndexList& mil)
         if (!isContIx(_polygon, row1)) continue;
         int row2 = row1 -1;
         if (row2 < 0) row2 = _polygon.size() -1;
-        _polygon.swap(row1, row2);
+        _polygon.swapItemsAt(row1, row2);
     }
     endResetModel();
     return *this;
@@ -286,7 +286,7 @@ cPolygonTableModel& cPolygonTableModel::down(const QModelIndexList& mil)
         if (!isContIx(_polygon, row1)) continue;
         int row2 = row1 +1;
         if (row2 >=  _polygon.size()) row2 = 0;
-        _polygon.swap(row1, row2);
+        _polygon.swapItemsAt(row1, row2);
     }
     endResetModel();
     return *this;

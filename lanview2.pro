@@ -68,8 +68,8 @@ unix {
 
   !exists(rrdhelper/miss) {
     SUBDIRS += rrdhelper
-    lv2d.subdirs = rrdhelper
-    lv2d.depends = lv2
+    rrdhelper.subdirs = rrdhelper
+    rrdhelper.depends = lv2
   }
 
 }

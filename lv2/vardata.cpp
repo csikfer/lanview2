@@ -1106,6 +1106,10 @@ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st)
         }
         if (c == '$') {     // variable/macro for features
             QString key = token.mid(1);
+            if (key.isEmpty()) {
+                st = QObject::tr("Empty feature variable name %1.").arg(key);
+                return 0.0;
+            }
             QString val = _f.value(key);
             if (val.isEmpty()) {
                 st = QObject::tr("Unknown feature variable %1.").arg(key);
