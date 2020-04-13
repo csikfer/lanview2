@@ -47,5 +47,6 @@ ERRCOD( EDISP,       "Megjelenítési hiba.")
 ERRCOD( EREDO,       "Ismételten végrehajtott művelet.")
 ERRCOD( EENODATA,    "Nincs adat.")
 ERRCOD( ENESTED,     "Egymásba ágyazott hibák.")
+ERRCOD( ECONTEXT,    "Invalid context.")
 
 #define __LAST_ERROR_CODE__  ENESTED

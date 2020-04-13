@@ -73,14 +73,11 @@ public:
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int _ix);
-    const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
-    const cParamType& dataType(QSqlQuery& q)    { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixParamTypeId())); }
-    const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q)->getId(cServiceVarType::ixRawParamTypeId())); }
-    const cFeatures &mergedFeatures();
-    QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
-//    QVariant valFromString(QSqlQuery& q, const QString& val) { return dataType(q).paramFromString(val); }
-    QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
-//    QVariant rawValFromString(QSqlQuery& q, const QString& val) { return rawDataType(q).paramFromString(val); }
+    cServiceVarType &varType();
+    const cParamType& dataType()    { return cParamType::paramType(varType().getId(cServiceVarType::ixParamTypeId())); }
+    const cParamType& rawDataType() { return cParamType::paramType(varType().getId(cServiceVarType::ixRawParamTypeId())); }
+    QString  valToString(const QVariant& val)  { return dataType().paramToString(val); }
+    QString  rawValToString(const QVariant& val)  { return rawDataType().paramToString(val); }
     /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
     /// @param q
     /// @param val A nyers érték
@@ -172,16 +169,18 @@ protected:
         setName(_ixStateMsg, msg + _msg);
     }
     static tRecordList<cServiceVar>     serviceVars;  ///< Cache
-    static QMap<qlonglong, qlonglong>   heartbeats;   ///< Heartbeat cache
-    const cServiceVarType *pVarType;
+    cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
     qlonglong   lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
     QDateTime   lastLast;       ///< last_time mező előző értéke
     QDateTime   now;            ///< most
-    bool        featuresIsMerged;
-    // eNotifSwitch state;
-    QStringList * pEnumVals;
+    QStringList * pEnumVals;    ///< enum type value set
+    const cInspector *pInspector;
+    static QBitArray updateMask;
+    int    skeepCnt;
+    bool   skeep();
+
     STATICIX(cServiceVar, ServiceVarTypeId)
     STATICIX(cServiceVar, ServiceVarValue)
     STATICIX(cServiceVar, VarState)
@@ -189,23 +188,13 @@ protected:
     STATICIX(cServiceVar, RawValue)
     STATICIX(cServiceVar, StateMsg)
     STATICIX(cServiceVar, Rarefaction)
-protected:
-    static QBitArray updateMask;
-    int    skeepCnt;
-    bool   skeep();
 public:
-    static void resetCacheData() { serviceVars.clear(); heartbeats.clear(); }
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex = EX_ERROR);
     static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex = EX_ERROR);
-    /// A heartbeat értéket [msec] olvassa ki a host_services vagy services rekordokból, az értéket csak az első alkalommal
-    /// olvassa ki az adatbázisból, és letárolja a heartbeats konténerbe. A kiolvasott értéket (ha nem NULL, vagy nulla)
-    /// szorozza a rarefaction értékével, ha az nagyobb mint 1. Ha a heartbeat érték nulla vagy negatív,
-    /// akkor NULL_ID-vel térvissza.
-    /// A heartbeat_time mezőt elöszőr a host_services rekordból olvassa ki, majd ha az NULL, nulla, vagy negatív, akkor
-    /// a host_services.services_id mező által hivatkozott rekordból, majd a host_services.prme_services_id végül
-    /// host_services.proto_services_id vel hivatkozott services rekordból.
-    qlonglong heartbeat(QSqlQuery&__q, eEx __ex = EX_ERROR);
+    qlonglong heartbeat;
+    int rarefaction;
     bool initSkeepCnt(int& delayCnt);
+    void postInit(QSqlQuery &__q, cInspector * pParent);
 };
 
 /*!

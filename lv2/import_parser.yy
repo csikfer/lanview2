@@ -2826,10 +2826,10 @@ svars   :
         | svar svars
         ;
 svar    : FEATURES_T features                   { pServiceVar->setName(_sFeatures, sp2s($2)); }
-        | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2));
-                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$2)); delete $2; }
-        | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2)); delete $2;
-                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$4)); delete $4; }
+        | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(*$2));
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(*$2)); delete $2; }
+        | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(*$2)); delete $2;
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(*$4)); delete $4; }
         | DELEGATE_T SERVICE_T STATE_T bool ';' { pServiceVar->setBool(_sDelegateServiceState, $4); }
         | DELEGATE_T PORT_T    STATE_T bool ';' { pServiceVar->setBool(_sDelegatePortState, $4); }
         | RAREFACTION_T int ';'                 { pServiceVar->setBool(_sRarefaction, $2); }

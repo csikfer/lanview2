@@ -592,7 +592,6 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         timeperiod.setById(q);
         break;
     }
-    pVars = fetchVars(q);    // Változók, ha vannak
     // Ha még nincs meg a típus
     if (inspectorType == IT_CUSTOM) getInspectorType(q);
     // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrehozása
@@ -629,20 +628,19 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
             setSubs(q, qs);
         }
     }
+    pVars = fetchVars(q);    // Változók, ha vannak
     // "variables" feature
     variablesPostInit(q);
-    // merge features
-    variablesFeaturesMerge(features());
 }
 
 void cInspector::variablesPostInit(QSqlQuery& q)
 {
-    if (variablesPostInitFeature(q, _sVariables)) {
-        variablesPostInitCreateOrCheck(q);
+    if (variablesListFeature(q, _sVariables)) {
+        variablesListCreateOrCheck(q);
     }
 }
 
-bool cInspector::variablesPostInitFeature(QSqlQuery &q, const QString& _name)
+bool cInspector::variablesListFeature(QSqlQuery &q, const QString& _name)
 {
     (void)q;
     QString sVars = feature(_name);
@@ -666,7 +664,7 @@ bool cInspector::variablesPostInitFeature(QSqlQuery &q, const QString& _name)
     return !varNames.isEmpty();
 }
 
-void cInspector::variablesPostInitCreateOrCheck(QSqlQuery &q)
+void cInspector::variablesListCreateOrCheck(QSqlQuery &q)
 {
     QString vName;
     foreach (vName, varsListMap.keys()) {
@@ -688,6 +686,7 @@ void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _nam
         if (pVars == nullptr) {
             pVars = new tOwnRecords<cServiceVar, cHostService>(&hostService);
         }
+        pVar->postInit(q, this);
         (*pVars) << pVar;
     }
     else if (pVar->getId(_sServiceVarTypeId) != pType->getId()) {
@@ -695,16 +694,6 @@ void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _nam
                       .arg(_name, tName, cServiceVarType::srvartype(q, pVar->getId(_sServiceVarTypeId))->getName()));
     }
 
-}
-
-void cInspector::variablesFeaturesMerge(const cFeatures& __feature, const QString& _key)
-{
-    if (pVars == nullptr) return;
-    cFeatures f;
-    f.merge(__feature, _key);
-    foreach (cServiceVar *pv,  pVars->list()) {
-        pv->features().merge(f, pv->getName());
-    }
 }
 
 void cInspector::threadPreInit()
@@ -773,7 +762,7 @@ tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
     int n = p->fetch(q);
     if (0 < n) {
         for (int i = 0; i < n; ++i) {
-            p->at(i)->varType(q);
+            p->at(i)->postInit(q, this);
         }
         return p;
     }

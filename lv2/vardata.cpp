@@ -1,4 +1,5 @@
 #include "vardata.h"
+#include "lv2service.h"
 
 int varAggregateType(const QString& _n, eEx __ex)
 {
@@ -139,7 +140,6 @@ int cServiceVar::_ixStateMsg         = NULL_IX;
 int cServiceVar::_ixRarefaction      = NULL_IX;
 QBitArray                   cServiceVar::updateMask;
 tRecordList<cServiceVar>    cServiceVar::serviceVars;
-QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
 QString cServiceVar::sInvalidValue;
 QString cServiceVar::sNotCredible;
 QString cServiceVar::sFirstValue;
@@ -152,7 +152,7 @@ cServiceVar::cServiceVar() : cRecord()
     lastCount = 0;
     _set(cServiceVar::descr());
     skeepCnt = 0;
-    featuresIsMerged = false;
+    pInspector = nullptr;
 }
 cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
 {
@@ -165,13 +165,14 @@ cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
     lastCount = __o.lastCount;
     lastTime  = __o.lastTime;
     skeepCnt = 0;
-    featuresIsMerged = __o.featuresIsMerged;
+    pInspector = __o.pInspector;
 }
 
 cServiceVar::~cServiceVar()
 {
     pDelete(pEnumVals);
     pDelete(_pFeatures);
+    pDelete(pVarType);
 }
 
 const cRecStaticDescr&  cServiceVar::descr() const
@@ -217,6 +218,7 @@ bool cServiceVar::toEnd(int _ix)
 {
     if (_ix == _ixServiceVarTypeId) {
         if (pVarType != nullptr && getId(_ixServiceVarTypeId) != pVarType->getId()) {
+            if (pInspector != nullptr) EXCEPTION(ECONTEXT, 0, tr("Change type ID."));
             pVarType = nullptr;
             pDelete( _pFeatures);
             pDelete(pEnumVals);
@@ -224,39 +226,27 @@ bool cServiceVar::toEnd(int _ix)
         return true;
     }
     if (_ix == _ixFeatures) {
+        if (pInspector != nullptr) EXCEPTION(ECONTEXT, 0, tr("Change fetures."));
         pDelete( _pFeatures);
         return true;
     }
     return false;
 }
 
-const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
+cServiceVarType& cServiceVar::varType()
 {
-    if (pVarType == nullptr || pVarType->getId() != getId(_ixServiceVarTypeId)) {
-        pVarType = cServiceVarType::srvartype(q, getId(_ixServiceVarTypeId), __ex);
+    if (pVarType == nullptr) {
+        if (pInspector != nullptr) EXCEPTION(EPROGFAIL);
+        QSqlQuery q = getQuery();
+        pVarType = new cServiceVarType(*cServiceVarType::srvartype(q, getId(ixServiceVarTypeId())));
     }
-    return pVarType;
-}
-
-const cFeatures& cServiceVar::mergedFeatures()
-{
-    if (featuresIsMerged) {
-        if (_pFeatures == nullptr) EXCEPTION(EPROGFAIL);
-    }
-    else {
-        if (pVarType == nullptr) EXCEPTION(EPROGFAIL);
-        cFeatures *pTmp = new cFeatures(pVarType->features());
-        pTmp->merge(features());
-        pDelete(_pFeatures);
-        _pFeatures = pTmp;
-    }
-    return *_pFeatures;
+    return *pVarType;
 }
 
 int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
-    eParamType ptRaw = eParamType(rawDataType(q).getId(cParamType::ixParamTypeType()));
+    eParamType ptRaw = eParamType(rawDataType().getId(cParamType::ixParamTypeType()));
     eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
     if (rawChanged == TS_NULL) return RS_UNREACHABLE;
     bool ok = true;
@@ -290,7 +280,7 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
     }
     int rs;
     if (rawChanged == TS_TRUE) {
-        eParamType ptVal = eParamType(dataType(q).getId(cParamType::ixParamTypeType()));
+        eParamType ptVal = eParamType(dataType().getId(cParamType::ixParamTypeType()));
         rs = postSetValue(q, ptVal, _rawVal, RS_ON, state);
     }
     else {
@@ -303,7 +293,7 @@ int cServiceVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
 {
     if (skeep()) return ENUM_INVALID;
-    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    int rpt = int(rawDataType().getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_INTEGER || rpt == PT_INTERVAL) {
         return setValue(q, qlonglong(val + 0.5), state, rawChg);
@@ -325,7 +315,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
         break;
     }
     // Var preprocessing methode
-    qlonglong svt = varType(q)->getId(_sServiceVarType);
+    qlonglong svt = varType().getId(_sServiceVarType);
     switch (svt) {
     case SVT_COUNTER:
     case SVT_DCOUNTER:
@@ -345,17 +335,17 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
             val = - val;
         }
     }
-    QString rpn = mergedFeatures().value(_sRpn);
+    QString rpn = features().value(_sRpn);
     if (!rpn.isEmpty()) {
         QString err;
-        val = rpn_calc(val, rpn, mergedFeatures(), err);
+        val = rpn_calc(val, rpn, features(), err);
         if (!err.isEmpty()) {
             addMsg(tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
         }
     }
-    int vpt = int(dataType(q).getId(_sParamTypeType));
+    int vpt = int(dataType().getId(_sParamTypeType));
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
@@ -382,7 +372,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg
 int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
 {
     if (skeep()) return ENUM_INVALID;
-    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    int rpt = int(rawDataType().getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_REAL) {
         return setValue(q, double(val), state, rawChg);
@@ -404,7 +394,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
         break;
     }
     // Var preprocessing methode
-    qlonglong svt = varType(q)->getId(_sServiceVarType);
+    qlonglong svt = varType().getId(_sServiceVarType);
     switch (svt) {
     case SVT_COUNTER:
     case SVT_DCOUNTER:
@@ -425,10 +415,10 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
             d   = - d;
         }
     }
-    QString rpn = mergedFeatures().value(_sRpn);
+    QString rpn = features().value(_sRpn);
     if (!rpn.isEmpty()){
         QString err;
-        d = rpn_calc(d, rpn, mergedFeatures(), err);
+        d = rpn_calc(d, rpn, features(), err);
         if (!err.isEmpty()) {
             addMsg(tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
@@ -437,7 +427,7 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate raw
         }
         val = qlonglong(d + 0.5);
     }
-    const cParamType& pt = dataType(q);
+    const cParamType& pt = dataType();
     int vpt = int(pt.getId(cParamType::ixParamTypeType()));
 //    int vpt = int(dataType(q).getId(_sParamTypeType));
     switch (svt) {
@@ -476,7 +466,7 @@ int cServiceVar::setUnreachable(QSqlQuery q, const QString& msg)
 const QStringList * cServiceVar::enumVals()
 {
     if (pEnumVals == nullptr) {
-        pEnumVals = new QStringList(mergedFeatures().slValue(_sEnumeration));
+        pEnumVals = new QStringList(features().slValue(_sEnumeration));
     }
     return pEnumVals;
 }
@@ -602,14 +592,14 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
 int cServiceVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
 {
     int rs = RS_ON;
-    if (TS_TRUE != checkIntervalValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
+    if (TS_TRUE != checkIntervalValue(val, varType().getId(_sPlausibilityType), varType().getName(_sPlausibilityParam1), varType().getName(_sPlausibilityParam2), varType().getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
-    if (TS_TRUE == checkIntervalValue(val, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+    if (TS_TRUE == checkIntervalValue(val, varType().getId(_sCriticalType), varType().getName(_sCriticalParam1), varType().getName(_sCriticalParam2), varType().getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkIntervalValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+    else if (TS_TRUE == checkIntervalValue(val, varType().getId(_sWarningType), varType().getName(_sWarningParam1), varType().getName(_sWarningParam2), varType().getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
     postSetValue(q, PT_INTERVAL, val, rs, state);
@@ -618,15 +608,15 @@ int cServiceVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
 
 int cServiceVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
 {
-    if (TS_TRUE != checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
+    if (TS_TRUE != checkIntValue(val, varType().getId(_sPlausibilityType), varType().getName(_sPlausibilityParam1), varType().getName(_sPlausibilityParam2), varType().getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+    if (TS_TRUE == checkIntValue(val, varType().getId(_sCriticalType), varType().getName(_sCriticalParam1), varType().getName(_sCriticalParam2), varType().getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+    else if (TS_TRUE == checkIntValue(val, varType().getId(_sWarningType), varType().getName(_sWarningParam1), varType().getName(_sWarningParam2), varType().getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
     postSetValue(q, PT_INTEGER, val, rs, state);
@@ -635,15 +625,15 @@ int cServiceVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
 
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
 {
-    if (TS_TRUE != checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->getName(_sPlausibilityParam1), varType(q)->getName(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse), true)) {
+    if (TS_TRUE != checkRealValue(val, varType().getId(_sPlausibilityType), varType().getName(_sPlausibilityParam1), varType().getName(_sPlausibilityParam2), varType().getBool(_sPlausibilityInverse), true)) {
         addMsg(sNotCredible);
         return noValue(q, state);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+    if (TS_TRUE == checkRealValue(val, varType().getId(_sCriticalType), varType().getName(_sCriticalParam1), varType().getName(_sCriticalParam2), varType().getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+    else if (TS_TRUE == checkRealValue(val, varType().getId(_sWarningType), varType().getName(_sWarningParam1), varType().getName(_sWarningParam2), varType().getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
     postSetValue(q, PT_REAL, val, rs, state);
@@ -660,10 +650,10 @@ int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
         return noValue(q, state);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkEnumValue(ix, evals, varType(q)->getId(_sCriticalType), varType(q)->getName(_sCriticalParam1), varType(q)->getName(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
+    if (TS_TRUE == checkEnumValue(ix, evals, varType().getId(_sCriticalType), varType().getName(_sCriticalParam1), varType().getName(_sCriticalParam2), varType().getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkEnumValue(ix, evals, varType(q)->getId(_sWarningType), varType(q)->getName(_sWarningParam1), varType(q)->getName(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
+    else if (TS_TRUE == checkEnumValue(ix, evals, varType().getId(_sWarningType), varType().getName(_sWarningParam1), varType().getName(_sWarningParam2), varType().getBool(_sWarningInverse))) {
         rs = RS_CRITICAL;
     }
     postSetValue(q, PT_TEXT, evals[ix], rs, state);
@@ -673,15 +663,14 @@ int cServiceVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
 
 int cServiceVar::noValue(QSqlQuery& q, int &state, int _st)
 {
-    qlonglong hbt = heartbeat(q, EX_ERROR);
-    if (hbt > 0 && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
+    if (heartbeat > 0 && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
         qlonglong dt  = lastLast.msecsTo(QDateTime::currentDateTime());
-        if (hbt < dt) {
+        if (heartbeat < dt) {
             _st = RS_UNREACHABLE;
             setId(_ixVarState, _st);
             clear(_ixServiceVarValue);
             QString msg = getName(_ixStateMsg);
-            msgAppend(&msg, getName(_ixStateMsg) + tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(hbt)));
+            msgAppend(&msg, getName(_ixStateMsg) + tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(heartbeat)));
             setName(_ixStateMsg, msg);
             update(q, false, updateMask);
             if (getBool(_sDelegateServiceState)) state = _st;
@@ -929,8 +918,16 @@ eTristate cServiceVar::checkEnumValue(int ix, const QStringList& evals, qlonglon
 bool   cServiceVar::skeep() {
     --skeepCnt;
     bool r = skeepCnt > 0;
+    int rarefaction = int(getId(_ixRarefaction));
+    if (r) {
+        QDateTime last = get(_sLastTime).toDateTime();
+        r = last.isValid();
+        if (r) {
+
+        }
+    }
     if (!r) {
-        skeepCnt = int(getId(_ixRarefaction));
+        skeepCnt = int(rarefaction);
     }
     else {
         PDEB(VERBOSE) << "Skeep" << endl;
@@ -979,75 +976,49 @@ cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex)
     return p;
 }
 
-qlonglong cServiceVar::heartbeat(QSqlQuery&__q, eEx __ex)
-{
-    static int ixHostServiceId  = toIndex(_sHostServiceId);
-    static int ixSHeartbeatTime  = cService().toIndex(_sHeartbeatTime);
-    static int ixHSHeartbeatTime = cHostService().toIndex(_sHeartbeatTime);
-    static int ixServiceId       = cHostService().toIndex(_sServiceId);
-    static int ixPrimeServiceId  = cHostService().toIndex(_sPrimeServiceId);
-    static int ixProtoServiceId  = cHostService().toIndex(_sProtoServiceId);
-    qlonglong svid = getId();
-    if (NULL_ID == svid) {
-        if (__ex != EX_IGNORE) EXCEPTION(EOID, 0, identifying(false));
-        return NULL_ID;
-    }
-    qlonglong hbt;
-    if (heartbeats.contains(svid)) {
-        hbt = heartbeats[svid];
-    }
-    else {
-        qlonglong hsid = getId(ixHostServiceId);
-        cHostService hs;
-        if (hsid == NULL_ID || !hs.fetchById(__q, hsid)) {
-            if (__ex != EX_IGNORE) EXCEPTION(EOID, hsid, identifying(false));
-            return NULL_ID;
-        }
-        hbt = hs.getId(ixHSHeartbeatTime);
-        if (hbt <= 0) {
-            qlonglong sid = hs.getId(ixServiceId);
-            const cService *ps;
-            if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
-                if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
-                return NULL_ID;
-            }
-            hbt = ps->getId(ixSHeartbeatTime);
-            if (hbt <= 0) {
-                sid = hs.getId(ixPrimeServiceId);
-                const cService *ps;
-                if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
-                    if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
-                    return NULL_ID;
-                }
-                hbt = ps->getId(ixSHeartbeatTime);
-                if (hbt <= 0) {
-                    sid = hs.getId(ixProtoServiceId);
-                    const cService *ps;
-                    if (sid == NULL_ID || (ps = cService::service(__q, sid, EX_IGNORE)) == nullptr) {
-                        if (__ex != EX_IGNORE) EXCEPTION(EOID, sid, hs.identifying(false));
-                        return NULL_ID;
-                    }
-                    hbt = ps->getId(ixSHeartbeatTime);
-                }
-            }
-        }
-        heartbeats[svid] = hbt;
-    }
-    if (hbt <= 0) return NULL_ID;
-    int rarefaction = int(getId(_ixRarefaction));
-    if (rarefaction > 1) hbt *= rarefaction;
-    return hbt;
-}
-
 bool cServiceVar::initSkeepCnt(int& delayCnt)
 {
-    int rarefaction = int(getId(_ixRarefaction));
     if (rarefaction <= 1) return false;
     skeepCnt = (delayCnt % rarefaction) + 1;
     ++delayCnt;
     return true;
 }
 
+void cServiceVar::postInit(QSqlQuery& __q, cInspector * pParent)
+{
+    // Check ...
+    int e = 0;
+    QString eMsg;
+    if      (isNull())                    { e = 1; eMsg = tr("Object is NULL"); }
+    else if (isNull(_ixServiceVarTypeId)) { e = 2; eMsg = tr("Type ID is NULL"); }
+    if (e) {
+        EXCEPTION(EPROGFAIL, e, eMsg);
+    }
+    //
+    pInspector = pParent;
+    // Type, copy object
+    pDelete(pVarType);
+    pVarType = new cServiceVarType(*cServiceVarType::srvartype(__q, getId(_ixServiceVarTypeId)));
+    // feature, merge
+    pDelete(_pFeatures);
+    _pFeatures = new cFeatures(pVarType->features());
+    _pFeatures->merge(features());
+    _pFeatures->merge(pInspector->hostService.features(), _sServiceVars + "." + getName());
+    _pFeatures->merge(pInspector->hostService.features(), _sServiceVars + ".*");
+    //
+    heartbeat = pInspector->hostService.getId(_sHeartbeat);
+    if (heartbeat <= 0) heartbeat = pInspector->interval * 2;
+    if (heartbeat <= 0) {
+        const cInspector *pParInsp = pInspector->pParent;
+        if (pParInsp != nullptr) {
+            heartbeat = pParInsp->hostService.getId(_sHeartbeat);
+            if (heartbeat <= 0) heartbeat = pParInsp->interval * 2;
+        }
+    }
+    rarefaction = int(getId(ixRarefaction()));
+    if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
+    skeepCnt = 0;
+}
 /* ---------------------------------------------------------------------------- */
 
 cServiceRrdVar::cServiceRrdVar()

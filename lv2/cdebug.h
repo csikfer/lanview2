@@ -183,7 +183,7 @@ Nem kizárás, a PDEB(DERROR) makróval csak a hibaüzenetet írja ki.
 */
 #define SQLQUERYERRDEB(o)  { \
     QSqlError le = (o).lastError(); \
-    DERR() << QObject::tr("SQL PREPARE ERROR #") << le.number() << "\n" \
+    DERR() << QObject::tr("SQL PREPARE ERROR #") << le.nativeErrorCode() << "\n" \
     << QObject::tr("driverText   : ") << le.driverText() << "\n" \
     << QObject::tr("databaseText : ") << le.databaseText() << "\n" \
     << QObject::tr("SQL string   : ") << (o).lastQuery () << endl; \

@@ -104,7 +104,7 @@ void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
 
 void cDeviceSV::variablesPostInit(QSqlQuery &q)
 {
-    if (!variablesPostInitFeature(q, _sVariables)) {
+    if (!variablesListFeature(q, _sVariables)) {
         EXCEPTION(EDATA, 0, QObject::tr("Missing or empty variable list."));
     }
     varNames = varsFeatureMap.keys();

@@ -873,7 +873,7 @@ QString cExport::_export(QSqlQuery &q, cServiceVar& o)
     s += escaped(o.getName());
     ss = o.getNote();
     if (!ss.isEmpty()) s += _sSp + ss;
-    ss += " TYPE " + o.varType(q)->getName();
+    ss += " TYPE " + cServiceVarType::srvartype(q, o.getId(_sServiceVarTypeId))->getName();
     r = lineBeginBlock(s);
         QString b;
         b  = paramLine(q, "DELEGATE SERVICE STATE", o[_sDelegateServiceState], false);

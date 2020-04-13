@@ -254,10 +254,9 @@ public:
     /// a tevékenységtől függő paraméter pedig a változó nevek szerinti varsFeatureMap map adattagba.
     /// Hiba esetén hibát dob cError * -al.
     virtual void variablesPostInit(QSqlQuery &q);
-    virtual bool variablesPostInitFeature(QSqlQuery &q, const QString& _name);
-    virtual void variablesPostInitCreateOrCheck(QSqlQuery &q);
+    virtual bool variablesListFeature(QSqlQuery &q, const QString& _name);
+    virtual void variablesListCreateOrCheck(QSqlQuery &q);
     virtual void variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name);
-    virtual void variablesFeaturesMerge(const cFeatures& __feature, const QString &_key = _sServiceVars);
     /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
