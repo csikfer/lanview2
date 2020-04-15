@@ -1992,9 +1992,8 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
     static const QString sql = "SELECT * FROM service_vars WHERE host_service_id = ? AND service_var_name = ?";
     if (execSql(_q, sql, hsid, __name)) {
         _set(_q.record(), _descr_cServiceVar());
-        bool ok;
-        qlonglong stid = _fields[_descr_cServiceVar().toIndex(__sServiceTypeId)].toLongLong(&ok);
-        if (!ok || stid != _stid) {
+        qlonglong stid = _fields[_descr_cServiceVar().toIndex(_sServiceVarTypeId)].toLongLong();
+        if (_stid != NULL_ID && stid != _stid) {
             if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Different type ID (%1 - %2), for %1 variable.").arg(stid).arg(_stid).arg(__name));
             _clear();
         }
@@ -2006,8 +2005,8 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
         else {
             _set(_descr_cServiceVar());
             _fields[_descr_cServiceVar().nameIndex()] = __name;
-            _fields[_descr_cServiceVar().toIndex(__sHostServiceId)] = hsid;
-            _fields[_descr_cServiceVar().toIndex(__sServiceTypeId)] = _stid;
+            _fields[_descr_cServiceVar().toIndex(_sHostServiceId)] = hsid;
+            _fields[_descr_cServiceVar().toIndex(_sServiceTypeId)] = _stid;
         }
     }
 }
@@ -2312,11 +2311,13 @@ int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _nam
 int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals)
 {
     cInspector insp(q, hsid);
+    insp.splitFeature();
     int n = _names.size();
     n = std::min(n, vals.size());
     int r = RS_ON, st, dummy;
     for (int i = 0; i < n; ++i) {
         cInspectorVar var(q, &insp, _names.at(i));
+        var.postInit(q);
         st = var.setValue(q, vals.at(i), dummy);
         r = std::max(r, st);
     }
