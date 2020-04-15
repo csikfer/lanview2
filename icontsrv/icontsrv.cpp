@@ -172,7 +172,7 @@ void cGateway::setSubs(QSqlQuery &q, const QString &)
 
 }
 
-void cGateway::preInit()
+void cGateway::_init()
 {
     ;
 }

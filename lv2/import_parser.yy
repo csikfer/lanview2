@@ -1,17 +1,20 @@
 %{
 
 #include <math.h>
+#include <QStringList>
 #include "lanview.h"
 #include "guidata.h"
 #include "others.h"
 #include "lv2link.h"
+#include "lv2service.h"
+
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
+
 #include "import_parser.h"
 #include "scan.h"
 #include "vardata.h"
 #include "export.h"
-#include <QStringList>
 
 #define  YYERROR_VERBOSE
 
@@ -1969,7 +1972,7 @@ grpid   : str                       { $$ = cGroup().getIdByName(qq(), *$1); dele
 grpids  : grpid                     { *($$ = new QVariantList) << $1; }
         | grpids ',' grpid          { *($$ = $1) << $3; }
         ;
-srvvt_id: str                       { $$ = cServiceVarType().getIdByName(qq(), *$1); delete $1; }
+srvvt_id: str                       { $$ = cServiceVarType::srvartype(qq(), *$1)->getId(); delete $1; }
         ;
 /* */
 iexpr   : int_                      { $$ = $1; }
@@ -2826,10 +2829,10 @@ svars   :
         | svar svars
         ;
 svar    : FEATURES_T features                   { pServiceVar->setName(_sFeatures, sp2s($2)); }
-        | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(*$2));
-                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(*$2)); delete $2; }
-        | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(*$2)); delete $2;
-                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(*$4)); delete $4; }
+        | VAR_T value ';'                       { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(), *$2));
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(),*$2)); delete $2; }
+        | VAR_T value ',' value ';'             { pServiceVar->setName(_sServiceVarValue, pServiceVar->valToString(qq(),*$2)); delete $2;
+                                                  pServiceVar->setName(_sRawValue,    pServiceVar->rawValToString(qq(), *$4)); delete $4; }
         | DELEGATE_T SERVICE_T STATE_T bool ';' { pServiceVar->setBool(_sDelegateServiceState, $4); }
         | DELEGATE_T PORT_T    STATE_T bool ';' { pServiceVar->setBool(_sDelegatePortState, $4); }
         | RAREFACTION_T int ';'                 { pServiceVar->setBool(_sRarefaction, $2); }
@@ -3069,8 +3072,7 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
         | ENABLE_T  HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $4).setBool(_sDisabled, false).update(qq(), false); }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
-        | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { int dummy;
-                                                                   ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8), dummy); }
+        | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { ivars[_sState] = cInspectorVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
         | SET_T HOST_T SERVICE_T hsid STATE_T int str_z ';'      { pHostService = new cHostService();
                                                                    pHostService->setById(qq(), $4);
                                                                    pHostService->setState(qq(), notifSwitch($6), sp2s($7));

@@ -164,6 +164,8 @@ protected:
     QFile       actLogFile;
 };
 
+class cInspectorVar;
+
 /// @class cInspector
 /// Egy szolgáltatás példány adatai és időzítése, kezelése
 /// Az osztály közvetlenül is használható, nem klasszikus értelemben vett bázis osztály,
@@ -171,6 +173,7 @@ protected:
 /// a feladattól föggően.
 class LV2SHARED_EXPORT cInspector : public QObject {
     friend class cInspectorThread;
+    friend class cInspectorProcess;
     Q_OBJECT
 public:
     /// Ha a _par értéke NULL, és a lanView::pSelfHostService nem NULL, akkor a lanView::pSelfHostService alapján inicializálja az objektumot.
@@ -264,7 +267,7 @@ public:
     /// @param cmd Command string
     virtual void dbNotif(const QString& cmd);
     /// Beolvassa a szolgáltatás példányhoz tartozó változókat
-    tOwnRecords<cServiceVar, cHostService> *fetchVars(QSqlQuery& q);
+    QList<cInspectorVar *> *fetchVars(QSqlQuery& _q);
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
     /// akkor aservices adattagból olvassa be, majd a prime és végül a proto szervíz rekordbol (ha van).
     /// @param __n A mező név
@@ -278,7 +281,7 @@ public:
     cFeatures& splitFeature(enum eEx __ex = EX_ERROR);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    cFeatures& features(enum eEx __ex = EX_ERROR)   { if (_pFeatures == nullptr) splitFeature(__ex); return *_pFeatures; }
+    cFeatures& features(enum eEx __ex = EX_ERROR)   { if (pMergedFeatures == nullptr) splitFeature(__ex); return *pMergedFeatures; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
@@ -305,7 +308,7 @@ public:
     /// @param name A keresett változó neve
     /// @param __ex Ha értéke nem az alapértelmezett EX_IGNORE, akkor ha nincs ilyen nevű változó kizárást dob.
     /// @return A talált objektum pointere, vagy nullptr, ha nincs ilyen nevű változónk.
-    cServiceVar *getServiceVar(const QString& name, eEx __ex = EX_IGNORE);
+    cInspectorVar *getInspectorVar(const QString& name, eEx __ex = EX_IGNORE);
     // Adattagok
     /// Objektum típus
     int inspectorType;
@@ -322,7 +325,7 @@ public:
     /// A port objektum pointere, ha meg van adva a host_services rekordban, egyébként NULL
     cNPort             *pPort;
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
-    cFeatures        *_pFeatures;
+    cFeatures        *pMergedFeatures;
     /// Két lekérdezés közötti idő intervallum ezred másodpercben normal_check_interval
     int                 interval;
     /// Hiba esetén az időzítés
@@ -362,8 +365,8 @@ public:
     /// Szabad felhasználású flag
     bool    flag;
     /// Változók, ha vannak, vagy NULL.
-    tOwnRecords<cServiceVar, cHostService>    *pVars;
-    cServiceVar *pRunTimeVar;
+    QList<cInspectorVar *>    *pVars;
+    cInspectorVar *pRunTimeVar;
     /// A "variables" featue változó kifejtve, ha van
     QMap<QString, QStringList>  varsListMap;
     tStringMap                  varsFeatureMap;
@@ -488,6 +491,7 @@ public:
         return &pInspectorThread->acceptor;
     }
 protected:
+    void setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Az időzítés módosítása
     void toRetryInterval();
     /// Az időzítés módosítása
@@ -500,11 +504,149 @@ protected:
     void startSubs();
 private:
     /// Alaphelyzetbe állítja az adattagokat (a konstruktorokhoz)
-    void preInit(cInspector *__par);
+    void _init(cInspector *__par);
     /// Típus hiba üzenethez azonosító adatok
     QString typeErrMsg(QSqlQuery &q);
 public:
     static qlonglong rnd(qlonglong i, qlonglong m = 1000);
 };
+
+
+class LV2SHARED_EXPORT cInspectorVar : public cServiceVar {
+public:
+    /// Konstruktor
+    /// A beolvasott cServiceVar rekordot a _q objektum tartalmazza
+    cInspectorVar(QSqlQuery &_q, cInspector * pParent);
+    /// Konstruktor
+    /// Megkísérli beolvasni a megadott szervíz változót.
+    /// Ha nem adtuk meg a stid paramétert, és nem létezik a változó, akkor hibát dob.
+    /// Ha megadtuk a típust, akkor ha nem létezik a változó, eltárolja a releváns mezőket, és a postInit() majd létrehozza.
+    /// Ha megadtuk a típust, akkor ha létezik a változó, akkor ellenörzi a típusát, ha nem egyezik az ID, hibát dob.
+    /// @param _q Az adatbázis művelethez használ query objektum.
+    /// @param pParent  A tulajdonos cInspector objektum pointere
+    /// @param __name A változó neve
+    /// @param _stid A típus ID, opcionális.
+    /// @param Ha megadjuk, és értéke EX_IGNORE, akkor hiba esetén nem dob kizárást, hanem csak hívja a _clear() metódust.
+    cInspectorVar(QSqlQuery &_q, cInspector * pParent, const QString& __name, qlonglong _stid = NULL_ID, eEx __ex = EX_ERROR);
+    /// A konstruktor tiltott.
+    cInspectorVar(const cInspectorVar&) = delete;
+    ///
+    virtual ~cInspectorVar();
+    /// A konstruktor után kötelezően meghívandó inicializáló metódus. Szükség esetén újrahívható.
+    /// @return Hiba esetén false.
+    bool postInit(QSqlQuery &_q);
+    /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
+    /// @param q
+    /// @param val A nyers érték
+    /// @param state Továbbítandó állapot
+    /// @param rawChg Közvetlen, feltétel nélküli beállítás
+    /// @return A vátozó állapota.
+    /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
+    /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
+    /// Ha val értéke NULL/invalid, akkor hívja a noValue() metódust, NULL értéket nem állítbe mint valós értéket.
+    ///
+    int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
+    int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
+    /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
+    /// @param q
+    /// @param val A nyers egész típusú érték
+    /// @param state Továbbítandó állapot
+    /// @param rawChg Közvetlen, feltétel nélküli beállítás
+    /// @return A vátozó állapota.
+    /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
+    /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
+    int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
+    int setUnreachable(QSqlQuery q, const QString &msg = QString());
+    cFeatures   *pMergedFeatures;
+    const QStringList * enumVals();
+    static int setValue(QSqlQuery& q, cInspector *pInsp, const QString& _name, const QVariant& val, int &state);
+    static int setValues(QSqlQuery& q, cInspector *pInsp, const QStringList& _names, const QVariantList& vals, int &state);
+    static int setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals);
+    static QString sInvalidValue;
+    static QString sNotCredible;
+    static QString sFirstValue;
+    static QString sRawIsNull;
+protected:
+    /// Aktualizálja a now adattagot. Törli a state_msg mezőt.
+    /// Ha raw érték változott, akkor TS_TRUE-val tér vissza
+    /// Ha nem konvertálható az adat a megadott tíousba, akkor TS_NULL -lal  tér vissza,
+    ///  elötte a state_msg mezőbe beírja a hiba üzenetet, és kiírja az állapotot (hívja a postSetValue() metódust).
+    /// Ha rawVal értéke null, akkor szintén TS_NULL-lal térvissza, szintén kiírja az állapotot (hivja a noDate() metódust).
+    eTristate preSetValue(QSqlQuery &q, int ptRaw, const QVariant &rawVal, int &state);
+    bool postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state);
+    int setCounter(QSqlQuery &q, qlonglong val, int svt, int& state);
+    int setDerive(QSqlQuery &q, double val, int& state);
+    int updateIntervalVar(QSqlQuery& q, qlonglong val, int &state);
+    int updateVar(QSqlQuery& q, qlonglong val, int& state);
+    int updateVar(QSqlQuery& q, double val, int& state);
+    int updateEnumVar(QSqlQuery& q, qlonglong i, int& state);
+    /// Nincs érték. Ha a tulajdonos szolgáltatás heartbeat értéke szorozva a rarefaction értékével,
+    /// kevesebb mint az utolsó érték megadása óta eltelt idő, akkor nem csinál semmit. Ha több idő telt el, akkor
+    /// ismeretlenre (NULL/RS_UNREACHABLE) állítja az objktumot, és state értéke RS_UNREACHABLE lesz.
+    int noValue(QSqlQuery& q, int& state, int _st = RS_UNREACHABLE);
+    /// Egy egész típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható egész számmá akkor TS_NULL.
+    eTristate checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo = false);
+    /// Egy valós típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható számmá akkor TS_NULL.
+    eTristate checkRealValue(double val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo = false);
+    /// Egy idő intervallum típusú értékre a megadott feltétel alkalmazása.
+    /// A feltétel paramétere megadható egész számként, ekkor az ezredmásodpercben értendő, vagy az időintervallumoknál elfogadott sztringként.
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható akkor TS_NULL.
+    eTristate checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo = false);
+    /// Egy enumerációs típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @param ifNo Ha nincs feltétel megadva, akkor true esetén TS_TRUE ill, false esetén TS_FALSE-val tér vissza.
+    /// @return Az összehasonlítás eredménye, vagy ha egy szükséges paraméter nem konvertálható egész számmá akkor TS_NULL.
+    eTristate checkEnumValue(int ix, const QStringList &evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
+    /// String hozzáadása a state_msg mezőhöz.
+    void addMsg(const QString& _msg) {
+        QString msg = getName(_ixStateMsg);
+        if (!msg.isEmpty()) msg += "\n";
+        setName(_ixStateMsg, msg + _msg);
+    }
+    cServiceVarType *pVarType;
+    double      lastValue;      ///< Derived esetén az előző érték
+    qlonglong   lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
+    QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
+    QDateTime   lastLast;       ///< last_time mező előző értéke
+    QDateTime   now;            ///< most
+    QStringList * pEnumVals;    ///< enum type value set
+    const cInspector *pInspector;
+    static QBitArray updateMask;
+    int    skeepCnt;
+    bool   skeep();
+public:
+    qlonglong heartbeat;
+    int rarefaction;
+    bool initSkeepCnt(int& delayCnt);
+    bool rpn_calc(double &_v, const QString& _expr, QString& st);
+private:
+    /// Az adattagokat inicializálja.
+    void _init();
+};
+
 
 #endif // LV2SERVICE_H

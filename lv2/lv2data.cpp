@@ -2406,9 +2406,14 @@ const QString& nodeType(int __e, eEx __ex)
     return _sNul;
 }
 
+int cNode::_ixFeatures = NULL_IX;
+
 cNode::cNode() : cPatch(_no_init_)
 {
 //  DBGOBJ();
+    _pFeatures = nullptr;
+    toEnd(idIndex());
+    cRecord::toEnd();
     _set(cNode::descr());
     bDelCollisionByMac = bDelCollisionByIp = false;
 }
@@ -2416,6 +2421,8 @@ cNode::cNode() : cPatch(_no_init_)
 cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 {
 //  DBGOBJ();
+    if (__o._pFeatures == nullptr) _pFeatures = nullptr;
+    else                           _pFeatures = new cFeatures(*__o._pFeatures);
     _copy(__o, _descr_cNode());
     __cp(__o);
     if (__o.pShares != nullptr) EXCEPTION(EPROGFAIL,0,__o.toString());
@@ -2447,12 +2454,16 @@ cNode& cNode::clone(const cRecord &__o)
         bDelCollisionByIp  = o.bDelCollisionByIp;
         containerValid     = o.containerValid;
     }
+    const cNode *po = __o.creconvert<cNode>();
+    if (po->_pFeatures == nullptr) pDelete(_pFeatures);
+    else features() = po->features();
     return *this;
 }
 
 cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 {
 //    DBGOBJ();
+    _pFeatures = nullptr;
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
     _set(_descr_cNode().noteIndex(), __descr);
@@ -2463,6 +2474,7 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 const cRecStaticDescr&  cNode::descr() const
 {
     if (initPDescr<cNode>(_sNodes)) {
+        _ixFeatures = _descr_cNode().toIndex(_sFeatures);
         CHKENUM(_sNodeStat, notifSwitch)
     }
     return *_pRecordDescr;
@@ -2478,9 +2490,17 @@ void cNode::updateShared(QSqlQuery&, int, int, int, int, bool)  { EXCEPTION(ENOT
 
 void cNode::clearToEnd()
 {
+    pDelete(_pFeatures);
     ports.clear();
     params.clear();
     containerValid = 0;
+}
+
+void cNode::toEnd()
+{
+    toEnd(idIndex());
+    toEnd(_ixFeatures);
+    cRecord::toEnd();
 }
 
 bool cNode::toEnd(int i)
@@ -2493,6 +2513,9 @@ bool cNode::toEnd(int i)
             containerValid &= ~CV_NODE_PARAMS;
         }
         return true;
+    }
+    else if (i == _ixFeatures) {
+        pDelete(_pFeatures);
     }
     return false;
 }

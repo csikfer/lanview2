@@ -219,7 +219,7 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
 
 int cHostService::setStateMaxTry = NULL_IX;
 
-cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong elapsed, qlonglong __did, bool _resetIfDeleted)
+cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
 {
     tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
     QString readBackFields;
@@ -235,22 +235,15 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
         }
         readBackFields.chop(_sCommaSp.size());
     }
-    if (elapsed >= 0) {
-        cServiceVar srvVar;
-        srvVar.setName(_sRuntime);
-        srvVar.setId(_sHostServiceId, getId());
-        if (srvVar.completion(__q)) {
-            int dummyRetStat;
-            srvVar.setValue(__q, elapsed, dummyRetStat);
-        }
-    }
     static const QString _sHostServiceId2Name = "host_service_id2name";
-    QString sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
-    if (sFulName.isEmpty()) {   // Törölték?
-        APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
-        setBool(_sDeleted, true);
-        if (_resetIfDeleted) lanView::getInstance()->reSet();
-        return *this;
+    if (sFulName.isEmpty()) {
+        sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
+        if (sFulName.isEmpty()) {   // Törölték?
+            APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
+            setBool(_sDeleted, true);
+            if (_resetIfDeleted) lanView::getInstance()->reSet();
+            return *this;
+        }
     }
     _DBGFN() << sFulName << VDEB(__st) << VDEB(__note) << endl;
     QVariant did;
@@ -264,20 +257,20 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     }
     sql = sql.arg(readBackFields).arg(_sSetServiceStat);
     bool tf = trFlag(TS_NULL) == TS_TRUE;
-    sFulName = toSqlName(sFulName);
+    QString sTrFulName = toSqlName(sFulName);
     int cnt = 0;
     while (true) {
-        if (tf) sqlBegin(__q, sFulName);
+        if (tf) sqlBegin(__q, sTrFulName);
         int r = _execSql(__q, sql, getId(), __st, __note, did);
         if (r == 0) {   // Nincs adat ?!
-            if (tf) sqlRollback(__q, sFulName, EX_IGNORE);
+            if (tf) sqlRollback(__q, sTrFulName, EX_IGNORE);
             EXCEPTION(EENODATA, 0, tr("SQL függvény: %1(%2,%3,%4,%5)")
                       .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
                       );
         }
         if (r < 0) {    // prepare or exec error
             QSqlError le = __q.lastError();
-            if (tf) sqlRollback(__q, sFulName);
+            if (tf) sqlRollback(__q, sTrFulName);
             QString s = le.databaseText().split('\n').first();  // első sor
             cnt++;
             // deadlock ?
@@ -295,7 +288,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             for (int i = 0; i < readBackFieldIxs.size(); ++i) {
                 setq(readBackFieldIxs.at(i), __q, i);
             }
-            if (tf) sqlCommit(__q, sFulName);
+            if (tf) sqlCommit(__q, sTrFulName);
             _DBGFNL() << toString() << endl;
             if (getBool(_sDisabled) && _resetIfDeleted) lanView::getInstance()->reSet();
             break;

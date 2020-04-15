@@ -195,7 +195,7 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
     if (next == TS_TRUE) {
         for (i = 0; i < n; ++i) {
             const QString& vName = varNames.at(i);
-            cServiceVar& svar = *getServiceVar(vName, EX_ERROR);
+            cInspectorVar& svar = *getInspectorVar(vName, EX_ERROR);
             if (oidVector.at(i) < snmp.name()) {
                 QVariant value = snmp.value();
                 svar.setValue(q, value, rs);
@@ -210,7 +210,7 @@ int cDeviceSV::run(QSqlQuery& q, QString &runMsg)
     else {
         for (i = 0; i < n; ++i) {
             const QString& vName = varNames.at(i);
-            cServiceVar& svar = *getServiceVar(vName, EX_ERROR);
+            cInspectorVar& svar = *getInspectorVar(vName, EX_ERROR);
             QVariant value = snmp.value();
             svar.setValue(q, value, rs);
             snmp.next();

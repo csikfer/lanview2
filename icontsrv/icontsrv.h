@@ -84,7 +84,7 @@ public:
     ~cGateway();
     /// Lekérdező objektumok (cIndAlarmIf) beolvasása / pSubordinates feltöltése
     virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
-    virtual void preInit();
+    virtual void _init();
     virtual void threadPreInit();
     virtual int run(QSqlQuery &q, QString &runMsg);
     int open(QSqlQuery& q, QString &msg, int to);

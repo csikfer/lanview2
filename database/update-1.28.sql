@@ -1,4 +1,11 @@
 -- Hibajavítás
+-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Figyelmeztetés !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+-- A következő két utasítás mellékhatása, hogy a features mező indexe a nodes, és az snmpdevices táblában nem lessz azonos.
+-- A LanView2 API ezt nbem tolerálja, ki kel menteni a teljes adatbázist, és visszatölteni, ezután az indexek helyreállnak.
+ALTER TABLE patchs DROP COLUMN IF EXISTS features CASCADE;
+ALTER TABLE nodes ADD COLUMN IF NOT EXISTS features text DEFAULT NULL;
+
+
 ALTER TABLE service_var_types ALTER COLUMN service_var_type SET DEFAULT 'GAUGE';
 UPDATE service_var_types SET service_var_type = DEFAULT WHERE service_var_type IS NULL;
 ALTER TABLE service_var_types ALTER COLUMN service_var_type SET NOT NULL;

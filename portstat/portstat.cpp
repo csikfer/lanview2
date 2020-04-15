@@ -163,13 +163,10 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     else {
         hostService.setState(_q, _sUnreachable, msg, 0);
     }
-    pSnmpElapsed = getServiceVar(sSnmpElapsed);
+    pSnmpElapsed = getInspectorVar(sSnmpElapsed);
     if (pSnmpElapsed == nullptr) {
-        pSnmpElapsed = new cServiceVar();
-        pSnmpElapsed->setName(sSnmpElapsed);
-        pSnmpElapsed->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
-        pSnmpElapsed->setId(_sHostServiceId, hostServiceId());
-        pSnmpElapsed->insert(*pq);
+        pSnmpElapsed = new cInspectorVar(*pq, this, sSnmpElapsed, cServiceVarType::srvartype(*pq, _sRuntime)->getId());
+        pSnmpElapsed->postInit(*pq);
     }
 }
 
@@ -264,24 +261,23 @@ bool cPortStat::postInit(QSqlQuery& q)
         // service variables
         pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
         if (pPortVars->pVars == nullptr) {
-            pPortVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPortVars->hostService));
+            pPortVars->pVars = new QList<cInspectorVar *>;
         }
         else {
-            pPortVars->pVars->sets(_sFlag, QVariant(true));    // marked (only memory)
+            foreach (cInspectorVar *p, *pPortVars->pVars) {
+                p->setFlag();
+            }
         }
         bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
         n = parent->vnames.size();
         if (n != parent->vTypes.size() || n != parent->vRarefactions.size()) EXCEPTION(EPROGFAIL);
         for (int i = 0; i < n; ++i) {   // Names of required variables
             const QString& name = parent->vnames.at(i);
-            cServiceVar *pVar = pPortVars->pVars->get(name, EX_IGNORE);
+            cInspectorVar *pVar = pPortVars->getInspectorVar(name, EX_IGNORE);
             if (pVar == nullptr) {      // If not exists, create
-                pVar = new cServiceVar;
-                pVar->setName(name);
-                pVar->setId(cServiceVar::ixServiceVarTypeId(), parent->vTypes.at(i));
-                pVar->setId(_sHostServiceId, pPortVars->hostServiceId());
+                pVar = new cInspectorVar(q, pPortVars, name, parent->vTypes.at(i));
                 pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
-                pVar->insert(q);
+                pVar->postInit(q);
                 *(pPortVars->pVars) << pVar;
                 pVar->_toReadBack = RB_NO;
             }
@@ -293,9 +289,7 @@ bool cPortStat::postInit(QSqlQuery& q)
                         pVar->_toReadBack = RB_NO;
                         pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
                     }
-                    int ix = pPortVars->pVars->indexOf(pVar->getId());
-                    if (ix < 0) EXCEPTION(EPROGFAIL);
-                    pPortVars->pVars->removeAt(ix);
+                    pPortVars->pVars->removeAll(pVar);
                     delete pVar;
                     continue;
                 }
@@ -303,22 +297,22 @@ bool cPortStat::postInit(QSqlQuery& q)
                     if (pVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
                         pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
                         pVar->update(q, false, pVar->mask(cServiceVar::ixRarefaction()), pVar->primaryKey());
+                        pVar->postInit(q);
                     }
                 }
             }
-            pVar->setOff(_sFlag);   // unmarked
+            pVar->setFlag(false);   // unmarked
             pVar->initSkeepCnt(parent->delayCounter);
         }
         n = pPortVars->pVars->size();
-        for (int i = 0; i < n; ++i) {   // Find, and delete marked
-            cServiceVar *pVar = pPortVars->pVars->at(i);
+        foreach (cInspectorVar *pVar, *pPortVars->pVars) {
             if (pVar->getBool(_sFlag)) {
                 pVar->remove(q);                    // delete from database
-                delete pPortVars->pVars->takeAt(i); // delete from list, and delete object from memory
-                --i;
+                pPortVars->pVars->removeAll(pVar);  // delete from list,
+                delete pVar;                        // and delete object from memory
             }
         }
-        if (pPortVars->pVars->isEmpty()) {
+        if (pPortVars->pVars->isEmpty()) {  // If no variable, drop inspector object
             pDelete(pPortVars);
         }
     }
@@ -595,7 +589,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             }
             qlonglong raw;
             foreach (QString vname, vnames) {   // foreach variable names
-                cServiceVar *psv = insp.getServiceVar(vname);   // Get variable obj.
+                cInspectorVar *psv = insp.getInspectorVar(vname);   // Get variable obj.
                 if (psv == nullptr) continue;                   // not found, next
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);

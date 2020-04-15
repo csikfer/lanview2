@@ -1353,8 +1353,10 @@ néhány felesleges komponenst, de igy nem kell eltérni az adatbázisban defini
  */
 class LV2SHARED_EXPORT cNode : public cPatch {
     CRECORD(cNode);
+    FEATURES(cNode)
 protected:
     explicit cNode(no_init_& _dummy) : cPatch(_dummy) {
+        _pFeatures = nullptr;
         cNode::descr();
         bDelCollisionByIp = bDelCollisionByMac = false;
     }
@@ -1363,7 +1365,7 @@ public:
 //  cNode& operator=(const cNode& __o);
     /// Törli a child objektumokat tartalmazó konténereket, és a containerValid értékét nullára állítja.
     virtual void clearToEnd();
-    // virtual void toEnd();
+    virtual void toEnd();
     /// Ha i az ID indexe, akkor megvizsgálja a child objektumok konténerét (csak az első elemet!)
     /// és, ha chiuld objektumban a port_id értéke nem azonos a node objektum aktuális ID-jével,
     /// akkor törli a konténert, és a megfelelő containerValid bit(ek)et.

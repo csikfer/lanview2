@@ -51,7 +51,7 @@ public:
     cOIdVector      snmpTabOIds;
     QStringList     snmpTabColumns;
     static const QString sSnmpElapsed;
-    cServiceVar *   pSnmpElapsed;
+    cInspectorVar *   pSnmpElapsed;
     /// Az "rlinkstat" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pRLinkStat;
     /// Az "portvars" szolgáltatás obj. A pointert az lv2portStat konstruktora inicializálja.

@@ -234,7 +234,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
-        inspector.hostService.setState(*inspector.pq, _sDown, msg, inspector.lastRun.elapsed());
+        inspector.setState(*inspector.pq, _sDown, msg);
         inspector.internalStat = IS_STOPPED;
         return -1;
     }
@@ -251,7 +251,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
                     .arg(inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "))
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
-            inspector.hostService.setState(*inspector.pq, _sUnreachable, msg, inspector.lastRun.elapsed());
+            inspector.setState(*inspector.pq, _sUnreachable, msg);
             inspector.internalStat = IS_STOPPED;
             return -1;
         }
@@ -270,7 +270,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     inspector.internalStat = IS_STOPPED;
     msg = tr("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
-    inspector.hostService.setState(*inspector.pq, _sCritical, msg, inspector.lastRun.elapsed());
+    inspector.setState(*inspector.pq, _sCritical, msg);
     return -1;
 }
 
@@ -293,7 +293,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         }
         if (!inspector.hostService.fetchById(*inspector.pq) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
             if (!inspector.hostService.isNull()) {
-                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Letíltva.", inspector.lastRun.elapsed());
+                inspector.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Letíltva.");
             }
             inspector.internalStat = IS_STOPPED;
             return;
@@ -301,12 +301,12 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
             ++reStartCnt;
             if (reStartCnt > reStartMax) {
-                inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Túl sok úgraindítási kísérlet.", inspector.lastRun.elapsed());
+                inspector.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Túl sok úgraindítási kísérlet.");
                 inspector.internalStat = IS_STOPPED;
                 return;
             }
             else {
-                inspector.hostService.setState(*inspector.pq, _sWarning, msg + "Újraindítási kíérlet.", inspector.lastRun.elapsed());
+                inspector.setState(*inspector.pq, _sWarning, msg + "Újraindítási kíérlet.");
             }
         }
         PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
@@ -344,7 +344,7 @@ qlonglong cInspector::sdevOId = NULL_ID;
 /// A syscron szolgáltatást azonosító ID
 qlonglong cInspector::syscronId;
 
-void cInspector::preInit(cInspector *__par)
+void cInspector::_init(cInspector *__par)
 {
 //  DBGFN();
     inspectorType= IT_CUSTOM;
@@ -353,7 +353,7 @@ void cInspector::preInit(cInspector *__par)
 
     pNode    = nullptr;
     pPort    = nullptr;
-    _pFeatures= nullptr;
+    pMergedFeatures= nullptr;
     interval = -1;
     retryInt = -1;
     startTimeOut =  2000;   // Default  2s
@@ -394,7 +394,7 @@ cInspector::cInspector(cInspector * __par)
     : QObject(nullptr), hostService(), lastRun()
 {
     _DBGFN() << " parent : " << (__par == nullptr ? "NULL" : __par->name()) << endl;
-    preInit(__par);
+    _init(__par);
     if (__par != nullptr || lanView::getInstance()->pSelfHostService == nullptr) {
         inspectorType = IT_TIMING_PASSIVE;
     }
@@ -419,7 +419,7 @@ cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort
     _DBGFN() << " (" << (__par == nullptr ? "NULL" : __par->name()) << ", "
              << pN->getName() << ", " << pS->getName() << ", " << (pP == nullptr ? "NULL" : pP->getName())
              << ")" << endl;
-    preInit(__par);
+    _init(__par);
     inspectorType = IT_TIMING_PASSIVE;
     pNode    = pN;
     pService = pS;
@@ -433,7 +433,7 @@ cInspector::cInspector(QSqlQuery& q, const QString &sn)
     : QObject(nullptr), hostService(), lastRun()
 {
     _DBGFN() << VDEB(sn) << endl;
-    preInit(nullptr);
+    _init(nullptr);
     self(q, sn);
     // Ha van specifikált port is
     if (! hostService.isNull(_sPortId)) pPort = cNPort::getPortObjById(q, hostService.getId(_sPortId));
@@ -447,7 +447,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     : QObject(nullptr), hostService(), lastRun()
 {
     _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << (__par == nullptr ? "NULL" : __par->name()) << endl;
-    preInit(__par);
+    _init(__par);
     // Megallokáljuk a megfelelő típusú node objektumot
     if      (__tableoid == nodeOId
           || __tableoid == NULL_ID) pNode = new cNode();
@@ -479,8 +479,8 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     // A prime és proto service, ha van
     pPrimeService = hostService.getPrimeService(q2);
     pProtoService = hostService.getProtoService(q2);
-    // features mező értelmezése
-    getInspectorType(q2);
+//    // features mező értelmezése
+//    getInspectorType(q2);
     _DBGFNL() << name() << endl;
 }
 
@@ -525,7 +525,12 @@ void cInspector::down()
     pDelete(pq);
     pDelete(pPort);
     pDelete(pNode);
-    pDelete(_pFeatures);
+    pDelete(pMergedFeatures);
+    if (pVars != nullptr) {
+        while (!pVars->isEmpty()) delete pVars->takeFirst();
+        delete pVars;
+        pVars = nullptr;
+    }
     pDelete(pVars);
     inspectorType = IT_CUSTOM;
 }
@@ -629,7 +634,6 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         }
     }
     pVars = fetchVars(q);    // Változók, ha vannak
-    // "variables" feature
     variablesPostInit(q);
 }
 
@@ -675,25 +679,16 @@ void cInspector::variablesListCreateOrCheck(QSqlQuery &q)
 void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name)
 {
     const QString& tName = varsListMap[_name].at(1);
-    const cServiceVarType *pType = cServiceVarType::srvartype(q, tName);
-    cServiceVar *pVar = getServiceVar(_name);
+    qlonglong stid = cServiceVarType::srvartype(q, tName)->getId();
+    cInspectorVar *pVar = getInspectorVar(_name);
     if (pVar == nullptr) {  // If missing, then create
-        pVar = new cServiceVar;
-        pVar->setId(_sHostServiceId, hostServiceId());
-        pVar->setName(_sServiceVarName, _name);
-        pVar->setId(_sServiceVarTypeId, pType->getId());
-        pVar->insert(q);
+        pVar = new cInspectorVar(q, this, _name, stid);
+        pVar->postInit(q);
         if (pVars == nullptr) {
-            pVars = new tOwnRecords<cServiceVar, cHostService>(&hostService);
+            pVars = new QList<cInspectorVar *>;
         }
-        pVar->postInit(q, this);
         (*pVars) << pVar;
     }
-    else if (pVar->getId(_sServiceVarTypeId) != pType->getId()) {
-            EXCEPTION(EDATA, 0, QObject::tr("Invalid '%1' variable type, not '%2' but '%3'.")
-                      .arg(_name, tName, cServiceVarType::srvartype(q, pVar->getId(_sServiceVarTypeId))->getName()));
-    }
-
 }
 
 void cInspector::threadPreInit()
@@ -741,7 +736,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             if (pe->mErrorCode != eError::EOK) {
                 cHostService hs;
                 QSqlQuery q3 = getQuery();
-                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), 0, hostServiceId(), false);
+                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId(), false);
             }
             pDelete(p);
             delete pe;
@@ -756,18 +751,23 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     }
 }
 
-tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
+QList<cInspectorVar *> * cInspector::fetchVars(QSqlQuery& _q)
 {
-    tOwnRecords<cServiceVar, cHostService> *p = new tOwnRecords<cServiceVar, cHostService>(&hostService);
-    int n = p->fetch(q);
-    if (0 < n) {
-        for (int i = 0; i < n; ++i) {
-            p->at(i)->postInit(q, this);
-        }
-        return p;
+    static const QString sql =
+            "SELECT *"
+            " FROM service_vars"
+            " WHERE host_service_id = ?";
+    QList<cInspectorVar *> *pl = nullptr;
+    if (execSql(_q, sql, hostServiceId())) {
+        pl = new QList<cInspectorVar *>;
+        QSqlQuery q = getQuery();
+        do {
+            cInspectorVar * pv = new cInspectorVar(_q, this);
+            pv->postInit(q);
+            *pl << pv;
+        } while (_q.next());
     }
-    delete p;
-    return nullptr;
+    return pl;
 }
 
 
@@ -784,15 +784,15 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 {
     int ixFeatures = cService::_descr_cService().toIndex(_sFeatures);
 
-    if (_pFeatures  == nullptr) _pFeatures = new cFeatures();
-    else                        _pFeatures->clear();
+    if (pMergedFeatures  == nullptr) pMergedFeatures = new cFeatures();
+    else                        pMergedFeatures->clear();
 
-    if (pProtoService != nullptr) _pFeatures->split(pProtoService->getName(ixFeatures), true, __ex);
-    if (pPrimeService != nullptr) _pFeatures->split(pPrimeService->getName(ixFeatures), true, __ex);
-    _pFeatures->split(service()-> getName(ixFeatures), true, __ex);
-    _pFeatures->split(hostService.getName(_sFeatures), true, __ex);
-    PDEB(VVERBOSE) << name() << " features : " << _pFeatures->join() << endl;
-    return *_pFeatures;
+    if (pProtoService != nullptr) pMergedFeatures->split(pProtoService->getName(ixFeatures), true, __ex);
+    if (pPrimeService != nullptr) pMergedFeatures->split(pPrimeService->getName(ixFeatures), true, __ex);
+    pMergedFeatures->split(service()-> getName(ixFeatures), true, __ex);
+    pMergedFeatures->split(hostService.getName(_sFeatures), true, __ex);
+    PDEB(VVERBOSE) << name() << " features : " << pMergedFeatures->join() << endl;
+    return *pMergedFeatures;
 }
 
 #define CONT_ONE(e, c)  \
@@ -994,7 +994,7 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     pService = nullptr;
     pDelete(pNode);
     pDelete(pPort);
-    pDelete(_pFeatures);
+    pDelete(pMergedFeatures);
     hostService.clear();
     // Ha már beolvastuk..
     if (lanView::getInstance()->pSelfHostService != nullptr
@@ -1295,7 +1295,7 @@ bool cInspector::doRun(bool __timed)
         if (plv->lastError == lastError) plv->lastError = nullptr;
         pDelete(lastError);
         statMsg = msgCat(statMsg, tr("Hiba, ld.: app_errs.applog_id = %1").arg(id));
-        hostService.setState(*pq, _sUnreachable, statMsg, elapsed, parentId(EX_IGNORE));
+        setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
     }
     else {
@@ -1303,11 +1303,11 @@ bool cInspector::doRun(bool __timed)
         if (retStat < RS_WARNING
          && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
             statMsg = msgCat(statMsg, tr("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
-            hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, elapsed, parentId(EX_IGNORE));
+            setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
         }
         else if (!statIsSet) {   // Ha még nem volt status állítás
             statMsg = msgCat(statMsg, tr("Futási idő %1 ezred másodperc").arg(elapsed));
-            hostService.setState(*pq, notifSwitch(retStat), statMsg, elapsed, parentId(EX_IGNORE));
+            setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
         }
     }
     _DBGFNL() << name() << endl;
@@ -1434,7 +1434,7 @@ enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text, QStrin
     QString keys = feature("json_base");
     jvBase = searchJsonValue(jvBase, keys);
     foreach (QString vname, varsFeatureMap.keys()) {
-        cServiceVar& sv = *getServiceVar(vname, EX_ERROR);
+        cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
         keys = varsFeatureMap[vname];
         QJsonValue jv = searchJsonValue(jvBase, keys);
         QVariant v = jv.toVariant();
@@ -1511,7 +1511,7 @@ enum eNotifSwitch cInspector::parse_text(int _ec, const QString &text, QString &
                 r = RS_UNREACHABLE;
                 break;
             }
-            cServiceVar& sv = *getServiceVar(vname, EX_ERROR);
+            cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
             sv.setValue(*pq, values[ix], r);
         }
         return eNotifSwitch(r);
@@ -1578,14 +1578,6 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
     if (ok) return (inspectorType & IT_METHOD_CARRIED) ? RS_STAT_SETTED : RS_ON;
     return RS_INVALID;
 }
-/*
-enum eNotifSwitch cInspector::munin(QSqlQuery& q, QString& runMsg)
-{
-    runMsg = tr("Nem támogatott (még).");
-    (void)q;
-    return RS_INVALID;
-}
-*/
 
 void cInspector::start()
 {
@@ -1630,13 +1622,11 @@ void cInspector::start()
     }
     // Start timer
     if (isTimed()) {
-        pRunTimeVar = getServiceVar(_sRuntime);
+        pRunTimeVar = getInspectorVar(_sRuntime);
         if (pRunTimeVar == nullptr) {
-            pRunTimeVar = new cServiceVar();
-            pRunTimeVar->setName(_sRuntime);
-            pRunTimeVar->setId(cServiceVar::ixServiceVarTypeId(), cServiceVarType::srvartype(*pq, _sRuntime)->getId());
-            pRunTimeVar->setId(_sHostServiceId, hostServiceId());
-            pRunTimeVar->insert(*pq);
+            pRunTimeVar = new cInspectorVar(*pq, this, _sRuntime, cServiceVarType::srvartype(*pq, _sRuntime)->getId());
+            pRunTimeVar->postInit(*pq);
+            *pVars << pRunTimeVar;
         }
         internalStat = IS_SUSPENDED;
         qlonglong t = firstDelay();
@@ -1779,6 +1769,13 @@ void cInspector::drop(eEx __ex)
     }
     if (!thread()) dropSubs();
     _DBGFNL() << name() << endl;
+}
+
+void cInspector::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
+{
+    hostService.setState(__q, __st, __note, __did, _resetIfDeleted);
+    int dumy;
+    pRunTimeVar->setValue(__q, QVariant(lastRun.elapsed()), dumy);
 }
 
 void cInspector::toRetryInterval()
@@ -1939,11 +1936,16 @@ QString cInspector::typeErrMsg(QSqlQuery& q)
              .arg(pPrimeService == nullptr ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
 }
 
-cServiceVar *cInspector::getServiceVar(const QString& _name, eEx __ex)
+cInspectorVar *cInspector::getInspectorVar(const QString& _name, eEx __ex)
 {
-    cServiceVar *r = nullptr;
+    cInspectorVar *r = nullptr;
     if (pVars != nullptr && !pVars->isEmpty()) {
-        r = pVars->get(_name, EX_IGNORE);
+        foreach (cInspectorVar *p, *pVars) {
+            if (p->getName() == _name) {
+                r = p;
+                break;
+            }
+        }
     }
     if (r == nullptr && __ex != EX_IGNORE) {
         EXCEPTION(EDATA, 0, tr("Variable %1 not found in %2 ,").arg(_name, name()));
@@ -1966,4 +1968,921 @@ QString internalStatName(eInternalStat is)
     }
     return QString("Invalid(%1)").arg(is, 0, 16);
 }
+
+/* *************************************************************************************** */
+
+QBitArray                   cInspectorVar::updateMask;
+QString cInspectorVar::sInvalidValue;
+QString cInspectorVar::sNotCredible;
+QString cInspectorVar::sFirstValue;
+QString cInspectorVar::sRawIsNull;
+
+cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent)
+{
+    _init();
+    pInspector = pParent;
+    _set(_q.record(), _descr_cServiceVar());
+}
+
+cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString& __name, qlonglong _stid, eEx __ex)
+{
+    _init();
+    pInspector = pParent;
+    qlonglong hsid = pInspector->hostServiceId();
+    static const QString sql = "SELECT * FROM service_vars WHERE host_service_id = ? AND service_var_name = ?";
+    if (execSql(_q, sql, hsid, __name)) {
+        _set(_q.record(), _descr_cServiceVar());
+        bool ok;
+        qlonglong stid = _fields[_descr_cServiceVar().toIndex(__sServiceTypeId)].toLongLong(&ok);
+        if (!ok || stid != _stid) {
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Different type ID (%1 - %2), for %1 variable.").arg(stid).arg(_stid).arg(__name));
+            _clear();
+        }
+    }
+    else {  // Not found. Create by postInit()
+        if (_stid == NULL_ID) {
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Missing type ID, for %1 variable.").arg(__name));
+        }
+        else {
+            _set(_descr_cServiceVar());
+            _fields[_descr_cServiceVar().nameIndex()] = __name;
+            _fields[_descr_cServiceVar().toIndex(__sHostServiceId)] = hsid;
+            _fields[_descr_cServiceVar().toIndex(__sServiceTypeId)] = _stid;
+        }
+    }
+}
+
+cInspectorVar::~cInspectorVar()
+{
+    pDelete(pEnumVals);
+    pDelete(pMergedFeatures);
+    pDelete(pVarType);
+}
+
+void cInspectorVar::_init()
+{
+    pMergedFeatures = nullptr;
+    pEnumVals = nullptr;
+    pVarType = nullptr;
+    lastCount = 0;
+    skeepCnt = 0;
+    pVarType = nullptr;
+    if (updateMask.isEmpty()) {
+        updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
+                   | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
+        sInvalidValue = tr("Value is invalid : %1");
+        sNotCredible  = tr("Data is not credible.");
+        sFirstValue   = tr("First value, no data.");
+        sRawIsNull    = tr("Raw value is NULL");
+    }
+}
+
+bool cInspectorVar::postInit(QSqlQuery& _q)
+{
+    if (_isNull()) return false;
+    if (isNullId()) {   // create?
+        insert(_q);
+    }
+    pDelete(pVarType);
+    pVarType = new cServiceVarType(varType(_q));
+
+    // feature, merge
+    pDelete(pMergedFeatures);
+    pMergedFeatures = new cFeatures(pVarType->features());
+    pMergedFeatures->merge(features());
+    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + "." + getName());
+    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + ".*");
+    //
+    heartbeat = pInspector->hostService.getId(_sHeartbeatTime);
+    if (heartbeat <= 0) heartbeat = pInspector->interval * 2;
+    if (heartbeat <= 0) {
+        const cInspector *pParInsp = pInspector->pParent;
+        if (pParInsp != nullptr) {
+            heartbeat = pParInsp->hostService.getId(_sHeartbeatTime);
+            if (heartbeat <= 0) heartbeat = pParInsp->interval * 2;
+        }
+    }
+    bool ok;
+    rarefaction = (*pMergedFeatures)[_sRarefaction].toInt(&ok);
+    if (!ok || rarefaction <= 0) rarefaction = int(getId(ixRarefaction()));
+    if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
+    skeepCnt = 0;
+    return true;
+}
+
+
+int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
+{
+    if (skeep()) return ENUM_INVALID;
+    eParamType ptRaw = eParamType(rawDataType(q).getId(cParamType::ixParamTypeType()));
+    eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
+    if (rawChanged == TS_NULL) return RS_UNREACHABLE;
+    bool ok = true;
+    switch (ptRaw) {
+    case PT_INTEGER: {
+        qlonglong rwi = _rawVal.toLongLong(&ok);
+        if (ok) return setValue(q, rwi, state, rawChanged);
+    }   break;
+    case PT_REAL: {
+        double    rwd = _rawVal.toDouble(&ok);
+        if (ok) return setValue(q, rwd, state, rawChanged);
+    }   break;
+    case PT_INTERVAL: {
+        qlonglong rwi;
+        if (variantIsInteger(_rawVal)) rwi = _rawVal.toLongLong(&ok);
+        else                           rwi = parseTimeInterval(_rawVal.toString(), &ok);
+        if (ok) return setValue(q, rwi, state, rawChanged);
+    }   break;
+    case PT_TEXT:
+        if (nullptr != enumVals()) {   // ENUM?
+            qlonglong i = enumVals()->indexOf(_rawVal.toString());
+            return updateEnumVar(q, i, state);
+        }
+        break;
+    default:
+        break;
+    }
+    if (!ok) {
+        addMsg(sInvalidValue.arg(debVariantToString(_rawVal)));
+        return noValue(q, state);
+    }
+    int rs;
+    if (rawChanged == TS_TRUE) {
+        eParamType ptVal = eParamType(dataType(q).getId(cParamType::ixParamTypeType()));
+        rs = postSetValue(q, ptVal, _rawVal, RS_ON, state);
+    }
+    else {
+        touch(q);
+        rs = int(getId(_ixVarState));
+    }
+    return rs;
+}
+
+int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
+{
+    if (skeep()) return ENUM_INVALID;
+    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    // Check raw type
+    if (rpt == PT_INTEGER || rpt == PT_INTERVAL) {
+        return setValue(q, qlonglong(val + 0.5), state, rawChg);
+    }
+    if (rpt != PT_REAL) {    // supported types
+        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        noValue(q, state);
+        return RS_UNREACHABLE;
+    }
+    eTristate changed = TS_NULL;
+    switch (rawChg) {
+    case TS_NULL:
+        changed = preSetValue(q, rpt, QVariant(val), state);
+        if (changed == TS_NULL) return RS_UNREACHABLE;
+        break;
+    case TS_TRUE:
+    case TS_FALSE:
+        changed = rawChg;
+        break;
+    }
+    // Var preprocessing methode
+    qlonglong svt = pVarType->getId(_sServiceVarType);
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+        return setCounter(q, qlonglong(val + 0.5), int(svt), state);
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         return setDerive(q, val, state);
+    }
+    int rs = int(getId(_sVarState));
+    if (changed == TS_FALSE && rs != RS_UNKNOWN) {
+        touch(q);
+        return rs;
+    }
+    rs = RS_INVALID;
+    if (svt == SVT_ABSOLUTE) {
+        if (val < 0) {
+            val = - val;
+        }
+    }
+    QString rpn = features().value(_sRpn);
+    if (!rpn.isEmpty()) {
+        QString err;
+        if (!rpn_calc(val, rpn, err)) {
+            addMsg(tr("RPN error : %1").arg(err));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+        }
+    }
+    int vpt = int(dataType(q).getId(_sParamTypeType));
+    switch (svt) {
+    case SVT_ABSOLUTE:
+    case NULL_ID:
+    case SVT_GAUGE: {
+        switch (vpt) {
+        case PT_INTEGER:    rs = updateVar(q, qlonglong(val + 0.5), state);   break;
+        case PT_REAL:       rs = updateVar(q, val,                  state);   break;
+        case PT_INTERVAL:   rs = updateIntervalVar(q, qlonglong(val), state); break;
+        default:
+            addMsg(tr("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+            return rs;
+        }
+    }   break;
+    default:
+        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+    }
+    return rs;
+}
+
+int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
+{
+    if (skeep()) return ENUM_INVALID;
+    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    // Check raw type
+    if (rpt == PT_REAL) {
+        return setValue(q, double(val), state, rawChg);
+    }
+    if (rpt != PT_INTEGER && rpt != PT_INTERVAL) {    // supported types
+        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        noValue(q, state);
+        return RS_UNREACHABLE;
+    }
+    eTristate changed = TS_NULL;
+    switch (rawChg) {
+    case TS_NULL:
+        changed = preSetValue(q, rpt, QVariant(val), state);
+        if (changed == TS_NULL) return RS_UNREACHABLE;
+        break;
+    case TS_TRUE:
+    case TS_FALSE:
+        changed = rawChg;
+        break;
+    }
+    // Var preprocessing methode
+    qlonglong svt = pVarType->getId(_sServiceVarType);
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         return setCounter(q, val, int(svt), state);
+    }
+    int rs = int(getId(_sVarState));
+    if (changed == TS_FALSE && rs != RS_UNKNOWN) {
+        touch(q);
+        return rs;
+    }
+    rs = RS_INVALID;
+    double d = val;
+    if (svt == SVT_ABSOLUTE) {
+        if (val < 0) {
+            val = - val;
+            d   = - d;
+        }
+    }
+    QString rpn = features().value(_sRpn);
+    if (!rpn.isEmpty()){
+        QString err;
+        if (!rpn_calc(d, rpn, err)) {
+            addMsg(tr("RPN error : %1").arg(err));
+            rs = RS_UNKNOWN;
+            postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+            return rs;
+        }
+        val = qlonglong(d + 0.5);
+    }
+    const cParamType& pt = dataType(q);
+    int vpt = int(pt.getId(cParamType::ixParamTypeType()));
+//    int vpt = int(dataType(q).getId(_sParamTypeType));
+    switch (svt) {
+    case SVT_ABSOLUTE:
+    case NULL_ID:
+    case SVT_GAUGE: {
+        switch (vpt) {
+        case PT_INTEGER:    return updateVar(q, val,         state);
+        case PT_REAL:       return updateVar(q, d,           state);
+        case PT_INTERVAL:   return updateIntervalVar(q, val, state);
+        case PT_TEXT:
+            if (nullptr != enumVals()) {   // ENUM ?
+                return updateEnumVar(q, val, state);
+            }
+        }
+        addMsg(tr("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+    }   break;
+    default:
+        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        rs = RS_UNKNOWN;
+        postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+    }
+    return rs;
+}
+
+int cInspectorVar::setUnreachable(QSqlQuery q, const QString& msg)
+{
+    setName(_ixVarState, _sUnreachable);
+    setName(_ixLastTime, _sNOW);
+    setName(_ixStateMsg, msg);
+    return update(q, false, mask(_ixVarState, _ixLastTime));
+}
+
+const QStringList * cInspectorVar::enumVals()
+{
+    if (pEnumVals == nullptr) {
+        pEnumVals = new QStringList(features().slValue(_sEnumeration));
+    }
+    return pEnumVals;
+}
+
+
+int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _name, const QVariant& val, int& state)
+{
+    int rs;
+    int r;
+    cInspectorVar *p = pInsp->getInspectorVar(_name);
+    r = p->setValue(q, val, rs);
+    if (p->getBool(_sDelegateServiceState) && state < rs) state = rs;
+    if (rs > state) state = rs;
+    return r;
+}
+
+int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals)
+{
+    cInspector insp(q, hsid);
+    int n = _names.size();
+    n = std::min(n, vals.size());
+    int r = RS_ON, st, dummy;
+    for (int i = 0; i < n; ++i) {
+        cInspectorVar var(q, &insp, _names.at(i));
+        st = var.setValue(q, vals.at(i), dummy);
+        r = std::max(r, st);
+    }
+    return r;
+}
+
+int cInspectorVar::setValues(QSqlQuery& q, cInspector *pInsp, const QStringList& _names, const QVariantList& vals, int& state)
+{
+    int r = RS_ON;
+    int n = _names.size();
+    n = std::min(n, vals.size());
+    for (int i = 0; i < n; ++i) {
+        int rr = setValue(q, pInsp, _names.at(i), vals.at(i), state);
+        if (r < rr) r = rr;
+    }
+    return r;
+}
+
+eTristate cInspectorVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& rawVal, int& state)
+{
+    now = QDateTime::currentDateTime();
+    clear(_ixStateMsg);
+    if (rawVal.isNull()) {
+        addMsg(tr("Raw data is NULL."));
+        noValue(q, state);
+        return TS_NULL;
+    }
+    bool ok;
+    QString s = cParamType::paramToString(eParamType(ptRaw), rawVal, EX_IGNORE, &ok);
+    if (!ok) {
+        addMsg(tr("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
+        postSetValue(q, ENUM_INVALID, QVariant(), RS_UNREACHABLE, state);
+        return TS_NULL;
+    }
+    bool changed = s.compare(getName(_ixRawValue));
+    if (changed) setName(_ixRawValue, s);
+    lastLast = get(_ixLastTime).toDateTime();
+    set(_ixLastTime, now);
+    return bool2ts(changed); // Raw value is changed ?
+}
+
+bool cInspectorVar::postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state)
+{
+    bool ok = true;
+    if (ptVal == ENUM_INVALID || val.isNull()) clear(_ixServiceVarValue);
+    else setName(_ixServiceVarValue, cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
+    if (!ok) {
+        rs = RS_UNREACHABLE;
+        addMsg(tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+    }
+    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
+    setId(_ixVarState, rs);
+    return 1 == update(q, false, updateMask);
+}
+
+int cInspectorVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
+{
+    if (!lastTime.isValid()) {
+        lastCount = val;
+        lastTime  = now;
+        addMsg(sFirstValue);
+        return noValue(q, state, ENUM_INVALID);
+    }
+    qlonglong delta = 0;
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
+        if (lastCount > val) {
+            addMsg(tr("A számláló túlcsordult."));
+            delta = val + 0x100000000LL - lastCount;
+            if (delta > 0x100000000LL) {
+                lastCount = val;
+                lastTime  = now;
+                addMsg(tr("Többszörös túlcsordulás?"));
+                return noValue(q, state);
+            }
+            break;
+        }
+        delta = val - lastCount;
+        break;
+    case SVT_DDERIVE:   //
+    case SVT_DCOUNTER:
+        delta = val - lastCount;
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    lastCount = val;
+    double dt = double(lastTime.msecsTo(now)) / 1000;
+    lastTime = now;
+    double dVal = double(delta) / dt;
+    return updateVar(q, dVal, state);
+}
+
+int cInspectorVar::setDerive(QSqlQuery &q, double val, int& state)
+{
+    QDateTime now = QDateTime::currentDateTime();
+    if (!lastTime.isValid()) {
+        lastValue = val;
+        lastTime  = now;
+        addMsg(sFirstValue);
+        return noValue(q, state, ENUM_INVALID);
+    }
+    double delta = val - lastValue;
+    lastValue = val;
+    double dt = double(lastTime.msecsTo(now)) / 1000;
+    lastTime = now;
+    double dVal = delta / double(dt);
+    return updateVar(q, dVal, state);
+}
+
+
+int cInspectorVar::updateIntervalVar(QSqlQuery& q, qlonglong val, int &state)
+{
+    int rs = RS_ON;
+    if (TS_TRUE != checkIntervalValue(val, pVarType->getId(_sPlausibilityType), pVarType->getName(_sPlausibilityParam1), pVarType->getName(_sPlausibilityParam2), pVarType->getBool(_sPlausibilityInverse), true)) {
+        addMsg(sNotCredible);
+        return noValue(q, state);
+    }
+    if (TS_TRUE == checkIntervalValue(val, pVarType->getId(_sCriticalType), pVarType->getName(_sCriticalParam1), pVarType->getName(_sCriticalParam2), pVarType->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkIntervalValue(val, pVarType->getId(_sWarningType), pVarType->getName(_sWarningParam1), pVarType->getName(_sWarningParam2), pVarType->getBool(_sWarningInverse))) {
+        rs = RS_WARNING;
+    }
+    postSetValue(q, PT_INTERVAL, val, rs, state);
+    return rs;
+}
+
+int cInspectorVar::updateVar(QSqlQuery& q, qlonglong val, int &state)
+{
+    if (TS_TRUE != checkIntValue(val, pVarType->getId(_sPlausibilityType), pVarType->getName(_sPlausibilityParam1), pVarType->getName(_sPlausibilityParam2), pVarType->getBool(_sPlausibilityInverse), true)) {
+        addMsg(sNotCredible);
+        return noValue(q, state);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkIntValue(val, pVarType->getId(_sCriticalType), pVarType->getName(_sCriticalParam1), pVarType->getName(_sCriticalParam2), pVarType->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkIntValue(val, pVarType->getId(_sWarningType), pVarType->getName(_sWarningParam1), pVarType->getName(_sWarningParam2), pVarType->getBool(_sWarningInverse))) {
+        rs = RS_WARNING;
+    }
+    postSetValue(q, PT_INTEGER, val, rs, state);
+    return rs;
+}
+
+int cInspectorVar::updateVar(QSqlQuery& q, double val, int& state)
+{
+    if (TS_TRUE != checkRealValue(val, pVarType->getId(_sPlausibilityType), pVarType->getName(_sPlausibilityParam1), pVarType->getName(_sPlausibilityParam2), pVarType->getBool(_sPlausibilityInverse), true)) {
+        addMsg(sNotCredible);
+        return noValue(q, state);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkRealValue(val, pVarType->getId(_sCriticalType), pVarType->getName(_sCriticalParam1), pVarType->getName(_sCriticalParam2), pVarType->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkRealValue(val, pVarType->getId(_sWarningType), pVarType->getName(_sWarningParam1), pVarType->getName(_sWarningParam2), pVarType->getBool(_sWarningInverse))) {
+        rs = RS_WARNING;
+    }
+    postSetValue(q, PT_REAL, val, rs, state);
+    return rs;
+}
+
+int cInspectorVar::updateEnumVar(QSqlQuery& q, qlonglong i, int& state)
+{
+    int ix = int(i);
+    if (pEnumVals == nullptr) EXCEPTION(EPROGFAIL);
+    const QStringList& evals = *pEnumVals;
+    if (!isContIx(evals, i) || evals[ix] == "!") {
+        addMsg(sNotCredible);
+        return noValue(q, state);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkEnumValue(ix, evals, pVarType->getId(_sCriticalType), pVarType->getName(_sCriticalParam1), pVarType->getName(_sCriticalParam2), pVarType->getBool(_sCriticalInverse))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkEnumValue(ix, evals, pVarType->getId(_sWarningType), pVarType->getName(_sWarningParam1), pVarType->getName(_sWarningParam2), pVarType->getBool(_sWarningInverse))) {
+        rs = RS_CRITICAL;
+    }
+    postSetValue(q, PT_TEXT, evals[ix], rs, state);
+    return rs;
+}
+
+
+int cInspectorVar::noValue(QSqlQuery& q, int &state, int _st)
+{
+    if (heartbeat > 0 && lastLast.isValid()) { // Ha van türelmi idő, volt előző érték
+        qlonglong dt  = lastLast.msecsTo(QDateTime::currentDateTime());
+        if (heartbeat < dt) {
+            _st = RS_UNREACHABLE;
+            setId(_ixVarState, _st);
+            clear(_ixServiceVarValue);
+            QString msg = getName(_ixStateMsg);
+            msgAppend(&msg, getName(_ixStateMsg) + tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(heartbeat)));
+            setName(_ixStateMsg, msg);
+            update(q, false, updateMask);
+            if (getBool(_sDelegateServiceState)) state = _st;
+        }
+    }
+    // Ha nincs adat, és türelmi idő nem járt le (nincs türelmi idő, első alkalom) akkor nem csinálunk semmit
+    return _st;
+}
+
+eTristate cInspectorVar::checkIntValue(qlonglong val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo)
+{
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
+    bool ok1 = true, ok2 = true;
+    qlonglong p1 = 0, p2 = 0;
+    eTristate r = TS_NULL;
+    // required parameters
+    switch (ft) {
+    case FT_BOOLEAN:
+        r = str2tristate(_p1, EX_IGNORE);
+        if (r != TS_NULL) p1 = r;
+        else              ok1 = false;
+        break;
+    case FT_EQUAL:
+    case FT_LITLE:
+    case FT_BIG:
+        p1 = _p1.toLongLong(&ok1);
+        break;
+    case FT_INTERVAL:
+        p1 = _p1.toLongLong(&ok1);
+        p2 = _p2.toLongLong(&ok2);
+        break;
+    }
+    // Check parameter(s)
+    if (!ok1) {
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+    }
+    if (!ok2) {
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+    }
+    // Check rules, if all parameters is OK.
+    if (ok1 && ok2) {
+        switch (ft) {
+        case FT_BOOLEAN:
+            r = (val == 0) == (p1 == 0) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_EQUAL:
+            r = (val == p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_LITLE:
+            r = (val  < p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_BIG:
+            r = (val  > p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_INTERVAL:
+            r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
+            break;
+        default:
+            addMsg(tr("Invalid filter %1(%2) for integer type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            break;
+        }
+    }
+    return _inverse ? inverse(r) : r;
+}
+
+eTristate cInspectorVar::checkRealValue(double val, qlonglong ft, const QString &_p1, const QString &_p2, bool _inverse, bool ifNo)
+{
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
+    bool ok1 = true, ok2 = true;
+    eTristate r = TS_NULL;
+    double p1 = 0.0;
+    double p2 = 0.0;
+    // required parameters
+    switch (ft) {
+    case FT_LITLE:
+    case FT_BIG:
+        p1 = _p1.toDouble(&ok1);
+        break;
+    case FT_INTERVAL:
+        p1 = _p1.toDouble(&ok1);
+        p2 = _p2.toDouble(&ok2);
+        break;
+    }
+    // Check parameter(s)
+    if (!ok1) {
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+    }
+    if (!ok2) {
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+    }
+    // Check rules, if all parameters is OK.
+    if (ok1 && ok2) {
+        switch (ft) {
+        case FT_LITLE:
+            r = (val < p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_BIG:
+            r = (val > p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_INTERVAL:
+            r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
+            break;
+        default:
+            addMsg(tr("Invalid filter %1(%2) for real numeric type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            break;
+        }
+    }
+    return _inverse ? inverse(r) : r;
+}
+
+eTristate cInspectorVar::checkIntervalValue(qlonglong val, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse, bool ifNo)
+{
+    if (ft == NULL_ID || ft == FT_NO) return bool2ts(ifNo);
+    bool ok1 = true, ok2 = true;
+    qlonglong p1 = 0, p2 = 0;
+    eTristate r = TS_NULL;
+    // required parameters
+    switch (ft) {
+    case FT_BOOLEAN:
+        r = str2tristate(_p1, EX_IGNORE);
+        if (r != TS_NULL) p1 = r;
+        else              ok1 = false;
+        break;
+    case FT_EQUAL:
+    case FT_LITLE:
+    case FT_BIG:
+        p1 = _p1.toLongLong(&ok1);
+        if (!ok1) {
+            p1 = parseTimeInterval(_p1, &ok1);
+        }
+        break;
+    case FT_INTERVAL:
+        p1 = _p1.toLongLong(&ok1);
+        p2 = _p2.toLongLong(&ok2);
+        if (!ok1) {
+            p1 = parseTimeInterval(_p1, &ok1);
+        }
+        if (!ok2) {
+            p2 = parseTimeInterval(_p2, &ok2);
+        }
+        break;
+    }
+    // Check parameter(s)
+    if (!ok1) {
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+    }
+    if (!ok2) {
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+    }
+    // Check rules, if all parameters is OK.
+    if (ok1 && ok2) {
+        switch (ft) {
+        case FT_BOOLEAN:
+            r = (val == 0) == (p1 == 0) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_EQUAL:
+            r = (val == p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_LITLE:
+            r = (val  < p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_BIG:
+            r = (val  > p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_INTERVAL:
+            r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
+            break;
+        default:
+            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            break;
+        }
+    }
+    return _inverse ? inverse(r) : r;
+}
+
+eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse)
+{
+    if (ft == NULL_ID || ft == FT_NO) return TS_FALSE;
+    bool ok1 = true, ok2 = true;
+    int p1 = 0, p2 = 0;
+    eTristate r = TS_NULL;
+    // required parameters
+    switch (ft) {
+    case FT_BOOLEAN:
+        r = str2tristate(_p1, EX_IGNORE);
+        if (r != TS_NULL) p1 = r;
+        else              ok1 = false;
+        break;
+    case FT_EQUAL:
+    case FT_LITLE:
+    case FT_BIG:
+        p1 = _p1.toInt(&ok1);
+        if (!ok1) {
+            p1 = evals.indexOf(_p1);
+            ok1 = p1 >= 0;
+        }
+        break;
+    case FT_INTERVAL:
+        p1 = _p1.toInt(&ok1);
+        p2 = _p2.toInt(&ok2);
+        if (!ok1) {
+            p1 = evals.indexOf(_p1);
+            ok1 = p1 >= 0;
+        }
+        if (!ok2) {
+            p2 = evals.indexOf(_p2);
+            ok2 = p2 >= 0;
+        }
+        break;
+    }
+    // Check parameter(s)
+    if (!ok1) {
+        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+    }
+    if (!ok2) {
+        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+    }
+    // Check rules, if all parameters is OK.
+    if (ok1 && ok2) {
+        switch (ft) {
+        case FT_BOOLEAN:
+            r = (ix == 0) == (p1 == 0) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_EQUAL:
+            r = (ix == p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_LITLE:
+            r = (ix  < p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_BIG:
+            r = (ix  > p1) ? TS_TRUE : TS_FALSE;
+            break;
+        case FT_INTERVAL:
+            r = (ix > p1 && ix < p2) ? TS_TRUE : TS_FALSE;
+            break;
+        default:
+            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            break;
+        }
+    }
+    return _inverse ? inverse(r) : r;
+
+}
+
+bool   cInspectorVar::skeep() {
+    --skeepCnt;
+    bool r = skeepCnt > 0;
+    int rarefaction = int(getId(_ixRarefaction));
+    if (r) {
+        QDateTime last = get(_sLastTime).toDateTime();
+        r = last.isValid();
+        if (r) {
+
+        }
+    }
+    if (!r) {
+        skeepCnt = int(rarefaction);
+    }
+    else {
+        PDEB(VERBOSE) << "Skeep" << endl;
+    }
+    return r;
+}
+
+bool cInspectorVar::initSkeepCnt(int& delayCnt)
+{
+    if (rarefaction <= 1) return false;
+    skeepCnt = (delayCnt % rarefaction) + 1;
+    ++delayCnt;
+    return true;
+}
+
+/// Reverse Polish Notation
+bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
+{
+    QStack<double>  stack;
+    stack << _v;
+    _v = 0.0;
+    QRegExp sep(QString("\\s+"));
+    QStringList tokens = _expr.split(sep);
+    while (!tokens.isEmpty()) {
+        QString token = tokens.takeFirst();
+        bool ok;
+        _v = token.toDouble(&ok);
+        if (ok) {   // numeric
+            stack.push(_v);
+            continue;
+        }
+        int n = stack.size();
+        char c = token[0].toLatin1();
+        if (token.size() == 1) {    // Character token
+            static const char * ctokens = "+-*/";   // all
+            static const char * binToks = "+-*/";   // binary
+            if (nullptr == strchr(ctokens, c)) {
+                st = QObject::tr("One character token %1 unknown.").arg(token);
+                return false;
+            }
+            if (n < 2 && nullptr != strchr(binToks, c)) {
+                st = QObject::tr("A binary operator %1 expects two parameters.").arg(token);
+                return false;
+            }
+            // Binary operator:
+            _v = stack.pop();
+            switch (c) {
+            case '+':   stack.top() += _v;  break;
+            case '-':   stack.top() -= _v;  break;
+            case '*':   stack.top() *= _v;  break;
+            case '/':   stack.top() /= _v;  break;
+            }
+            continue;
+        }
+        if (c == '$') {     // parameter
+            QString key = token.mid(1);
+            if (key.isEmpty()) {
+                st = QObject::tr("Empty feature name %1.").arg(key);
+                return false;
+            }
+            QString val = (*pMergedFeatures)[key];
+            if (val.isEmpty() && key.contains(QChar('.'))) {
+                QStringList keys = key.split(QChar('.'));
+                QString key1 = keys.takeFirst();
+                QString key2 = keys.join(QChar('.'));
+                if      (0 == key1.compare(_sInspector,    Qt::CaseInsensitive)) val = (*pInspector->pMergedFeatures)[key2];
+                else if (0 == key1.compare("host_service", Qt::CaseInsensitive)) val = pInspector->hostService.feature(key2);
+                else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) val = pInspector->host().feature(key2);
+                else if (0 == key1.compare(_sService,      Qt::CaseInsensitive)) val = pInspector->service()->feature(key2);
+            }
+            if (val.isEmpty()) {
+                st = QObject::tr("Unknown feature name %1.").arg(key);
+                return false;
+            }
+            QStringList sl = val.split(sep);
+            while (!sl.isEmpty()) tokens.prepend(sl.takeLast());
+            continue;
+        }
+        enum eTokens { T_NULL, UT_NEG, UT_DROP, UT_DUP, UT_NOP, BT_SWAP };
+#define UNARYTOK(s)     { #s, UT_##s, 1 }
+#define BINARYTOK(s)    { #s, BT_##s, 2 }
+        struct tTokens { QString name; int key; int ops; }
+                       tokens[] = {
+            UNARYTOK(NEG), UNARYTOK(DROP), UNARYTOK(DROP), UNARYTOK(DUP), UNARYTOK(NOP),
+            BINARYTOK(SWAP),
+            { "",  T_NULL, 0 }
+        };
+        tTokens *pTok;
+        for (pTok = tokens; pTok->key != T_NULL; ++pTok) {
+            if (pTok->name.compare(token, Qt::CaseInsensitive)) {
+                break;
+            }
+        }
+        if (pTok->key != T_NULL) {
+            st = QObject::tr("Invalid tokan %1.").arg(token);
+            return false;
+        }
+        if (pTok->ops < n) {
+            st = QObject::tr("There is not enough operand (%1 instead of just %2) for the %3 token.").arg(pTok->ops).arg(n).arg(token);
+            return false;
+        }
+        switch (pTok->key) {
+        case UT_NEG:    stack.top() = - stack.top();    break;
+        case UT_DROP:   stack.pop();                    break;
+        case UT_DUP:    stack.push(stack.top());        break;
+        case BT_SWAP:   _v = stack.pop(); std::swap(_v, stack.top()); stack.push(_v);    break;
+        case UT_NOP:    break;
+        }
+    }
+    if (stack.isEmpty()) {
+        st = QObject::tr("No return value.");
+        return false;
+    }
+    _v = stack.top();
+    return true;
+}
+
 
