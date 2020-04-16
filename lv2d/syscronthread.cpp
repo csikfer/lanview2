@@ -44,7 +44,7 @@ void cSysInspector::timerEvent(QTimerEvent *e)
     dbCron();
     mailCron();
     smsCron();
-    hostService.setState(*pq, notifSwitch(state), statMsg, lastRun.elapsed());
+    setState(*pq, notifSwitch(state), statMsg);
     internalStat = IS_SUSPENDED;
 }
 

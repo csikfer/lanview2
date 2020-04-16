@@ -221,7 +221,7 @@ bool cPortStat::postInit(QSqlQuery& q)
     cHostService& vhs = pPortVars->hostService;
     // Record exists ?
     int n = vhs.completion(q);      // Fetch
-    if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());                     // Incredible, multiple readed record
+    if (n  > 1) EXCEPTION(AMBIGUOUS, n, pPortVars->name());  // Incredible, multiple record
     if (n == 0) {                       // Not found, create if port type is ethernet
         if (cIfType::ifTypeId(_sEthernet) == pInterface->getId(_sIfTypeId)) {
             vhs.setId(_sServiceId, parent->pSrvPortVars->getId());
@@ -258,6 +258,7 @@ bool cPortStat::postInit(QSqlQuery& q)
         }
     }
     if (pPortVars != nullptr) {
+        pPortVars->features();  // nem volt postInit()!, pMergedFeature == nullptr
         // service variables
         pPortVars->pVars = pPortVars->fetchVars(q);  // Fetch variables
         if (pPortVars->pVars == nullptr) {

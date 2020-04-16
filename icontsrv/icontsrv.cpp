@@ -919,10 +919,10 @@ int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
     if (r == RS_ON) {
         r = query(*pGate, q, runMsg);
         pGate->close();
-        pGate->hostService.setState(q, _sOn, runMsg, lastRun.elapsed());
+        pGate->setState(q, _sOn, runMsg);
     }
     else {
-        pGate->hostService.setState(q, notifSwitch(r), runMsg, lastRun.elapsed());
+        pGate->setState(q, notifSwitch(r), runMsg);
     }
     DBGFNL();
     return r;
@@ -985,7 +985,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
 
         cAttached   *pa = (cAttached *)pSubordinates->at(i);
         if (pa == nullptr) continue;
-        pa->hostService.setState(q, sst, nos, lastRun.elapsed(), g.parentId());
+        pa->setState(q, sst, nos, g.parentId());
     }
 //    if (conf) sets(qs);
     return RS_ON;

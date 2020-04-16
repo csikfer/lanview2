@@ -180,11 +180,12 @@ public:
     /// Egyébként üres konstruktor.
     cInspector(cInspector *_par = nullptr);
     /// Konstruktor
+    /// A hostService adattagban csak a megadott objektumok ID-jét írja be, nem olvassa be a többi mezőt, nem ellenörzi a létezését.
+    /// Az inspectorType adattagot IT_TIMING_PASSIVE -re állítja
     /// @param __par    Pointer of parent object.
     /// @param pN   Host object pointer, the created object releases it.
     /// @param pS   Service object pointer, the created object releases it.
     /// @param pP   Port object pointer or NULL, the created object releases it.
-    /// A hostService adattagban csak a megadott objektumok ID-jét írja be, nem olvassa be a többi mezőt, nem ellenörzi a létezését.
     cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP = nullptr);
     /// Az objektumot mint saját szolgálltatás tölti fel
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája.
@@ -490,7 +491,6 @@ public:
         }
         return &pInspectorThread->acceptor;
     }
-protected:
     void setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Az időzítés módosítása
     void toRetryInterval();

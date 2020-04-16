@@ -2039,6 +2039,12 @@ void cInspectorVar::_init()
 bool cInspectorVar::postInit(QSqlQuery& _q)
 {
     if (_isNull()) return false;
+    if (pInspector == nullptr) {
+        EXCEPTION(EPROGFAIL, 0, tr("pInspector is NULL."));
+    }
+    if (pInspector->pMergedFeatures == nullptr) {
+        EXCEPTION(EPROGFAIL, 0, tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
+    }
     if (isNullId()) {   // create?
         insert(_q);
     }
