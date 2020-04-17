@@ -240,8 +240,11 @@ BEGIN
                 aldo := 'remove'::reasons;
                 DELETE FROM alarms WHERE alarm_id = alid;
                 -- RAISE INFO 'Disable alarm, remove (alarm_id = %)', alid;
+                hs.act_alarm_log_id := NULL;
+                IF alid = hs.last_alarm_log_id THEN
+                    hs.last_alarm_log_id := NULL;
+                END If;
                 alid := NULL;
-                hs.last_alarm_log_id := NULL;
             ELSIF old_hs.host_service_state <> state THEN
                 UPDATE alarms SET
                         max_status  = greatest(hs.host_service_state, max_status),

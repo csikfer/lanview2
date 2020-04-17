@@ -221,10 +221,12 @@ int cHostService::setStateMaxTry = NULL_IX;
 
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
 {
-    tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
-    QString readBackFields;
-    if (setStateMaxTry < 0) {
-        setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
+    static tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
+    static QString readBackFields;
+    if (readBackFieldIxs.isEmpty()) {
+        if (setStateMaxTry < 0) {
+            setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
+        }
         // Visszaolvasandó mezők indexek feltöltése:
         readBackFieldIxs
                 << toIndex(_sDisabled)  // Ha esetleg letiltották
@@ -235,8 +237,8 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
         }
         readBackFields.chop(_sCommaSp.size());
     }
-    static const QString _sHostServiceId2Name = "host_service_id2name";
     if (sFulName.isEmpty()) {
+        static const QString _sHostServiceId2Name = "host_service_id2name";
         sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
         if (sFulName.isEmpty()) {   // Törölték?
             APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
@@ -274,7 +276,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             QString s = le.databaseText().split('\n').first();  // első sor
             cnt++;
             // deadlock ?
-            if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= setStateMaxTry) {
+            if (s.contains("deadlock", Qt::CaseInsensitive) && cnt <= setStateMaxTry) {
                 DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.nativeErrorCode()).arg(cnt)
                     << tr("driverText   : ") << le.driverText() << "\n"
                     << tr("databaseText : ") << le.databaseText() << endl;

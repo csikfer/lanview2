@@ -1774,8 +1774,10 @@ void cInspector::drop(eEx __ex)
 void cInspector::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
 {
     hostService.setState(__q, __st, __note, __did, _resetIfDeleted);
-    int dumy;
-    pRunTimeVar->setValue(__q, QVariant(lastRun.elapsed()), dumy);
+    if (pRunTimeVar != nullptr) {
+        int dumy;
+        pRunTimeVar->setValue(__q, QVariant(lastRun.elapsed()), dumy);
+    }
 }
 
 void cInspector::toRetryInterval()
