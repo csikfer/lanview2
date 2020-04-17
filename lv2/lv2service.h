@@ -23,7 +23,7 @@ enum eInternalStat {
     IS_DOWN,        ///< Internal status down
     IS_RUN,         ///< Internal status runing (inited)
     IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
-    IS_OMITTED,     ///< Felföggestve, időintervallumon (timeperiod) kívül.
+    IS_OMITTED,     ///< Felfüggestve, időintervallumon (timeperiod) kívül.
     IS_STOPPED,     ///< Lefutott
     IS_ERROR        ///< Hiba miatt leállt
 };

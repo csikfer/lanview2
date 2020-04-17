@@ -225,7 +225,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     PDEB(VVERBOSE) << "START : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ") << "; and wait ..." << endl;
-    if (stopTo == 0) {
+    if (stopTo == 0) {  // No wait for terminate
         PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
         connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
         connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
@@ -235,7 +235,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     if (!waitForStarted(startTo)) {
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
         inspector.setState(*inspector.pq, _sDown, msg);
-        inspector.internalStat = IS_STOPPED;
+        inspector.internalStat = IS_ERROR;
         return -1;
     }
     switch (state()) {
@@ -252,7 +252,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
             inspector.setState(*inspector.pq, _sUnreachable, msg);
-            inspector.internalStat = IS_STOPPED;
+            inspector.internalStat = IS_ERROR;
             return -1;
         }
         break;              // EXITED
@@ -267,7 +267,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
         return exitCode();
     }
     // Error
-    inspector.internalStat = IS_STOPPED;
+    inspector.internalStat = IS_ERROR;
     msg = tr("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
     inspector.setState(*inspector.pq, _sCritical, msg);
@@ -533,6 +533,9 @@ void cInspector::down()
     }
     pDelete(pVars);
     inspectorType = IT_CUSTOM;
+    if (pParent == nullptr) {
+        exit(0);
+    }
 }
 
 void cInspector::dropSubs()
@@ -1171,7 +1174,10 @@ int cInspector::getCheckCmd(QSqlQuery& q)
 void cInspector::timerEvent(QTimerEvent *)
 {
     // Check state
-    if (internalStat != IS_SUSPENDED && internalStat != IS_STOPPED && internalStat != IS_OMITTED) {
+    if (internalStat == IS_DOWN || internalStat == IS_STOPPED) {
+        return;
+    }
+    if (internalStat != IS_SUSPENDED && internalStat != IS_OMITTED) {
         QString msg = tr("%1  skip %2, internalStat = %3").arg( __PRETTY_FUNCTION__, name(), internalStatName());
         PDEB(WARNING) << msg << endl;
         APPMEMO(*pq, msg, RS_WARNING);
@@ -1211,15 +1217,18 @@ void cInspector::timerEvent(QTimerEvent *)
             foreach (cInspector * pSub, *pSubordinates) {
                 if (pSub != nullptr
                  && (pSub->internalStat == IS_RUN           // Éppen fut
-                  || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
-                  || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
+                  || pSub->internalStat == IS_SUSPENDED     // várakozik: timer
+                  || pSub->internalStat == IS_OMITTED)) {   // várakozik: timeperiod
                     ++n;
                     int state = int(pSub->hostService.getId(_sHostServiceState));
                     if (minState < state) minState = state;
                     if (maxState > state) maxState = state;
                 }
             }
-            if (!n) EXCEPTION(NOTODO, 1, tr("No runing any (%1) sub services. Abort.").arg(n));
+            if (!n) {
+                down();
+                return;
+            }
             QString msg = tr("Runing sub services : %1/%2; states : %3 - %4")
                     .arg(n).arg(pSubordinates->size())
                     .arg(notifSwitch(maxState), notifSwitch(minState));
@@ -1748,6 +1757,10 @@ void cInspector::drop(eEx __ex)
             DWAR() << m << endl;
         }
         timerStat = TS_STOP;
+    }
+    else if (timerId > 0) {
+        killTimer(timerId);
+        timerId = -1;
     }
     if (inspectorType & IT_METHOD_PARSER) {
         if (pQparser == nullptr) {
