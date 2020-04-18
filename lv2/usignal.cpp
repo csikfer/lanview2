@@ -6,6 +6,7 @@
 #include "signal.h"
 #include "cdebug.h"
 #include "cerror.h"
+// #include <QCoreApplication>
 
 #include "usignal.h"
 
@@ -66,6 +67,13 @@ void cXSignal::unixSignalHandler(int __i)
     pInstance->xHandler(__i);
 }
 
+void cXSignal::unixSigErrHandler(int __i)
+{
+    static cError *pError = nullptr;
+    if (pError == nullptr) pError = NEWCERROR(EPROGFAIL, __i);
+    QCoreApplication::exit(pError->mErrorCode);
+}
+
 void cXSignal::setupUnixSignalHandlers()
 {
     struct sigaction siga;
@@ -78,6 +86,11 @@ void cXSignal::setupUnixSignalHandlers()
     if (sigaction(SIGHUP, &siga, 0) > 0
      || sigaction(SIGINT, &siga, 0) > 0
      || sigaction(SIGALRM, &siga, 0) > 0)
+        EXCEPTION(EPROGFAIL);
+    siga.sa_handler = cXSignal::unixSigErrHandler;
+    if (sigaction(SIGSEGV, &siga, 0) > 0
+     || sigaction(SIGABRT, &siga, 0) > 0
+     || sigaction(SIGILL,  &siga, 0) > 0)
         EXCEPTION(EPROGFAIL);
 }
 #endif  // MUST_USIGNAL

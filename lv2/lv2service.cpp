@@ -68,7 +68,7 @@ cInspectorThread::~cInspectorThread()
         if (isRunning()) {
             QString msg = tr("%1 thread is run. Exit app.").arg(inspector.name());
             QAPPMEMO(msg, RS_CRITICAL);
-            exit(1);
+            QCoreApplication::exit(1);
         }
     }
 }
@@ -508,7 +508,7 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 
 void cInspector::down()
 {
-    _DBGFN() << name() << endl;
+    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     drop(EX_IGNORE);
     if (pInspectorThread != nullptr) {
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
@@ -1590,7 +1590,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
 
 void cInspector::start()
 {
-    _DBGFN() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
+    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     // Check
     if (internalStat != IS_INIT) {
         EXCEPTION(EDATA, internalStat, QObject::tr("%1 nem megfelelő belső állapot").arg(name()));
@@ -1715,7 +1715,7 @@ void cInspector::startSubs()
 
 void cInspector::drop(eEx __ex)
 {
-    _DBGFN() << name() << endl;
+    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
 
     internalStat = IS_DOWN;
     if (isThread()) {

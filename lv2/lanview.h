@@ -252,11 +252,13 @@ public:
         }
         T *p = new T(*pQuery, appName); // Saját (fő) inspector objektum
         pSelfInspector = p;
+        PDEB(INFO) << "Setup self inspector : " << p->name() << endl;
         p->postInit(*pQuery);           // init
         if (p->passive() && (p->pSubordinates == nullptr || p->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
         if (setupTransactionFlag) {
             sqlCommit(*pQuery, tn);
         }
+        PDEB(INFO) << "Startp self inspector : " << p->name() << " ..." << endl;
         p->start();                         // és start
     }
     /// Törli a pSelfInspector -t, ha nem NULL

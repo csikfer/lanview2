@@ -41,6 +41,7 @@ public:
      static void setupUnixSignalHandlers();
 private:
     static void unixSignalHandler(int __i);
+    static void unixSigErrHandler(int __i);
     /// Ezen a socket páron keresztűl adja át az i paramétert az xHandler() a qsignal()-nak. Ill. ez váltja ki a signált.
     int sigFd[2];
     ///
