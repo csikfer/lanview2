@@ -2778,21 +2778,14 @@ eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlongl
 }
 
 bool   cInspectorVar::skeep() {
+    if (getId(_ixVarState) >= RS_UNREACHABLE) return false;
     --skeepCnt;
     bool r = skeepCnt > 0;
-    int rarefaction = int(getId(_ixRarefaction));
-    if (r) {
-        QDateTime last = get(_sLastTime).toDateTime();
-        r = last.isValid();
-        if (r) {
-
-        }
-    }
     if (!r) {
-        skeepCnt = int(rarefaction);
+        skeepCnt = rarefaction;
     }
     else {
-        PDEB(VERBOSE) << "Skeep" << endl;
+        PDEB(VERBOSE) << "Skeep " << pInspector->name() << " : " << getName() << endl;
     }
     return r;
 }
