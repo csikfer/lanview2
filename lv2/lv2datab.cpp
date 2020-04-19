@@ -3438,6 +3438,13 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
         if (rbMask.count(true)) {
             sql += " RETURNING " + recDescr.columnNamesQ(rbMask);
         }
+        break;
+    case RB_MASK:
+        rbMask = _readBackMask;
+        if (rbMask.count(true)) {
+            sql += " RETURNING " + recDescr.columnNamesQ(rbMask);
+        }
+        break;
     }
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     int i = 0;  // Nem null mezők indexe
@@ -3828,6 +3835,12 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         sql += " RETURNING " + descr().columnNameQ(idIx);
         rbMask[idIx] = true;
         break;
+    case RB_MASK:
+        rbMask = _readBackMask;
+        if (rbMask.count(true)) {
+            sql += " RETURNING " + descr().columnNamesQ(rbMask);
+        }
+        break;
     }
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     for (j = i = 0; i < bset.size(); i++) {
@@ -3988,6 +4001,11 @@ bool cRecord::removeById(QSqlQuery& __q, qlonglong __id)
     case RB_YES:
         sql += " RETURNING *";
         break;
+    case RB_MASK:
+        if (_readBackMask.count(true)) {
+            sql += " RETURNING " + descr().columnNamesQ(_readBackMask);
+        }
+        break;
     default:
         break;
     }
@@ -4009,6 +4027,10 @@ bool cRecord::removeById(QSqlQuery& __q, qlonglong __id)
     case RB_ID:
         setId(__id);
         break;
+    case RB_MASK:
+        if (_readBackMask.count(true) > 0) {
+            readBack(__q, _readBackMask);
+        }
     default:
         break;
     }

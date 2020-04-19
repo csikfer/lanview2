@@ -981,7 +981,8 @@ enum eToReadBack {
     RB_YES,         ///< full read back
     RB_NO,          ///< no read back
     RB_NO_ONCE,     ///< no read back once only
-    RB_ID           ///< read back only ID
+    RB_ID,          ///< read back only ID
+    RB_MASK         ///< read back bit mask
 };
 /*!
 @class cRecord
@@ -1162,6 +1163,8 @@ public:
     eToReadBack _toReadBack;
     /// The way to read the record when writing the record default value
     eToReadBack _toReadBackDefault;
+    /// Read back mask
+    QBitArray    _readBackMask;
     /// Konstruktor.
     cRecord();
     /// Destruktor

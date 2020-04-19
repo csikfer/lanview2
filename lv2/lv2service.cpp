@@ -62,12 +62,12 @@ cInspectorThread::~cInspectorThread()
 {
     if (isRunning()) {
         QString msg = tr("%1 thread is run. Wait 30 sec.").arg(inspector.name());
-        QAPPMEMO(msg, RS_WARNING);
+        QAPPMEMO(msg, RS_WARNING)
         terminate();
         wait(30000);
         if (isRunning()) {
             QString msg = tr("%1 thread is run. Exit app.").arg(inspector.name());
-            QAPPMEMO(msg, RS_CRITICAL);
+            QAPPMEMO(msg, RS_CRITICAL)
             QCoreApplication::exit(1);
         }
     }
@@ -1986,7 +1986,8 @@ QString internalStatName(eInternalStat is)
 
 /* *************************************************************************************** */
 
-QBitArray                   cInspectorVar::updateMask;
+QBitArray cInspectorVar::updateMask;
+QBitArray cInspectorVar::readBackMask;
 QString cInspectorVar::sInvalidValue;
 QString cInspectorVar::sNotCredible;
 QString cInspectorVar::sFirstValue;
@@ -2044,11 +2045,16 @@ void cInspectorVar::_init()
     if (updateMask.isEmpty()) {
         updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
                    | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
+        readBackMask = _descr_cServiceVar().mask(_ixLastTime)
+                   | _descr_cServiceVar().mask(_sDisabled);
         sInvalidValue = tr("Value is invalid : %1");
         sNotCredible  = tr("Data is not credible.");
         sFirstValue   = tr("First value, no data.");
         sRawIsNull    = tr("Raw value is NULL");
     }
+    // Csak a releváns mezők visszaolvasása az update hívásnál
+    _toReadBack   = RB_MASK;
+    _readBackMask = readBackMask;
 }
 
 bool cInspectorVar::postInit(QSqlQuery& _q)
@@ -2777,8 +2783,31 @@ eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlongl
 
 }
 
-bool   cInspectorVar::skeep() {
+bool   cInspectorVar::skeep()
+{
+    static const int ixDisabled = toIndex(_sDisabled);
+    if (getBool(ixDisabled)) {
+        PDEB(VERBOSE) << "Disabled " << pInspector->name() << " : " << getName() << endl;
+        return true;
+    }
+
     if (getId(_ixVarState) >= RS_UNREACHABLE) return false;
+
+    int svt = int(pVarType->getId(_sServiceVarType));
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         if (!lastTime.isValid()) return false;
+    }
+
+    if (!lastTime.isValid()) lastTime = get(_ixLastTime).toDateTime();
+    if (!lastTime.isValid()) return false;
+    QDateTime now = QDateTime::currentDateTime();
+    qlonglong dt = lastTime.msecsTo(now);
+    if (dt > (heartbeat / 2)) return false;
+
     --skeepCnt;
     bool r = skeepCnt > 0;
     if (!r) {

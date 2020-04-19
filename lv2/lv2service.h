@@ -636,6 +636,7 @@ protected:
     QStringList * pEnumVals;    ///< enum type value set
     const cInspector *pInspector;
     static QBitArray updateMask;
+    static QBitArray readBackMask;
     int    skeepCnt;
     bool   skeep();
 public:
