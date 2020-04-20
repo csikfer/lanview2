@@ -31,11 +31,10 @@
 
 cBackTrace::cBackTrace(size_t _size)
 {
-    void ** buffer;
 #if defined(Q_CC_GNU)
     int     size;
     char ** symbols;
-    buffer = new void *[_size];
+    void * buffer[_size];
     size   = backtrace(buffer, int(_size));
     symbols= backtrace_symbols(buffer, size);
     if (symbols == nullptr) {
@@ -47,12 +46,11 @@ cBackTrace::cBackTrace(size_t _size)
         }
         free(symbols);
     }
-    delete buffer;
 #elif 0 && defined(Q_CC_MSVC)
     unsigned short frames;
     SYMBOL_INFO    symbol;
     HANDLE         process;
-    buffer = new void *[_size];
+    void * buffer[_size];
     process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE );
     frames = CaptureStackBackTrace( 0, (DWORD)_size, buffer, NULL );
@@ -61,9 +59,7 @@ cBackTrace::cBackTrace(size_t _size)
         *this << QString(symbol.Name);
     }
     SymCleanup(process);
-    delet buffer;
 #else
-    (void)buffer;
     (void)_size;
 #endif
 }
