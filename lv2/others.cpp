@@ -80,15 +80,15 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
 int removeAll(QStringList& sl, const QString& s)
 {
     int r = 0;
-    int i = 0, n = sl.size();
-    while (i < n) {
-        if (0 == sl.at(i).compare(s, Qt::CaseInsensitive)) {
-            sl.removeAt(i);
-            n--;
+    QStringList::iterator i = sl.begin();
+    QStringList::iterator e = sl.end();
+    while (i < e) {
+        if (0 == i->compare(s, Qt::CaseInsensitive)) {
+            i = sl.erase(i);
+            e = sl.end();
             ++r;
         }
-        else
-        {
+        else {
             i++;
         }
     }
