@@ -4,7 +4,7 @@ ALTER SEQUENCE alarms_alarm_id_seq RESTART WITH 1;
 DELETE FROM app_errs;
 ALTER SEQUENCE app_errs_applog_id_seq RESTART WITH 1;
 TRUNCATE app_memos RESTART IDENTITY;
-TRUNCATE arp_logs RESTART IDENTITY;
+-- TRUNCATE arp_logs RESTART IDENTITY;
 TRUNCATE db_errs RESTART IDENTITY;
 TRUNCATE host_service_logs RESTART IDENTITY;
 TRUNCATE host_service_noalarms RESTART IDENTITY;
@@ -32,6 +32,6 @@ UPDATE interfaces SET
 	port_ostat = 'unknown',
 	port_astat = 'unknown',
 	port_stat = 'unknown';
-TRUNCATE mactab_logs RESTART IDENTITY;
+--TRUNCATE mactab_logs RESTART IDENTITY;
 TRUNCATE ip_address_logs RESTART IDENTITY;
 TRUNCATE dyn_ipaddress_logs RESTART IDENTITY;

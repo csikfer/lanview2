@@ -38,11 +38,16 @@ cBackTrace::cBackTrace(size_t _size)
     buffer = new void *[_size];
     size   = backtrace(buffer, int(_size));
     symbols= backtrace_symbols(buffer, size);
-    for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
-        *this << QString(symbols[i]);
+    if (symbols == nullptr) {
+        *this << QObject::tr("backtrace_symbols(...) failed.");
+    }
+    else {
+        for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
+            *this << QString(symbols[i]);
+        }
+        free(symbols);
     }
     delete buffer;
-    free(symbols);
 #elif 0 && defined(Q_CC_MSVC)
     unsigned short frames;
     SYMBOL_INFO    symbol;
