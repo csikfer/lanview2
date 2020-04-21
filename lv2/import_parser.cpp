@@ -120,11 +120,14 @@ void	cImportParseThread::run()
     if (pSrc == nullptr) {     // Fordítás a queue-n keresztül
         importFileNm = "[queue]";
         importParse(IPS_THREAD);
+        PDEB(VERBOSE) << QObject::tr("Stop parser (thread/queue) ...") << endl;
         if (parseReady.available() == 0) parseReady.release();
+        else EXCEPTION(EPROGFAIL);
     }
     else {
         importFileNm = "[stream]";
         pImportInputStream = new QTextStream(pSrc);
+        PDEB(VERBOSE) << QObject::tr("Stop parser (thread/stream) ...") << endl;
         importParse(IPS_THREAD);
     }
     downImportParser();
@@ -142,13 +145,15 @@ int cImportParseThread::push(const QString& src, cError *& pe)
     _DBGFN() << src << endl;
     int r;
     if (isRunning()) {
-        int i = parseReady.available();
-        if (i) parseReady.tryAcquire(i);    // Nyit, ha kész a parser
+        if (parseReady.available() > 0) parseReady.acquire(parseReady.available());
         queueAccess.acquire();              // puffer hazzáférés foglalt
         queue.enqueue(src);                 // küld
         dataReady.release();                // pufferben adat
         queueAccess.release();              // puffer hazzáférés szabad
-        if (parseReady.tryAcquire(1, IPT_SHORT_WAIT)) {    // Megváruk, hogy végezzen a parser
+        PDEB(VVERBOSE) << "parseReady.tryAcquire() ..." << endl;
+        bool b = parseReady.tryAcquire(1, IPT_SHORT_WAIT);
+        PDEB(VVERBOSE) << "parseReady.tryAcquire() return " << b << endl;
+        if (b) {
             pe = importGetLastError();
             r = pe == nullptr ? REASON_OK : R_ERROR;
         }
@@ -172,7 +177,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
         }
     }
     if (pe == nullptr) {
-        DBGFNL();
+        _DBGFNL() << r << endl;
     }
     else {
         _DBGFNL() << "LAST ERROR : " << pe->msg() << endl;
@@ -183,17 +188,22 @@ int cImportParseThread::push(const QString& src, cError *& pe)
 QString cImportParseThread::pop()
 {
     QString r;
-    if (parseReady.available() == 0) parseReady.release();
+    DBGFN();
+    if (parseReady.available() == 0) {
+        PDEB(VERBOSE) << "parseReady.release() ..." << endl;
+        parseReady.release();
+    }
     dataReady.acquire();
     queueAccess.acquire();
     if (!queue.isEmpty()) r = queue.dequeue();
     queueAccess.release();
+    _DBGFNL() << _sSpace << quotedString(r) << endl;
     return r;
 }
 
 int cImportParseThread::startParser(cError *&pe, QString *_pSrc)
 {
-    DBGFN();
+    PDEB(INFO) << "Start parser ..._pSrc = " << (_pSrc == nullptr ? _sNULL : quotedString(*_pSrc)) << endl;
     pSrc = _pSrc;
     int r;
     start();
@@ -210,6 +220,7 @@ int cImportParseThread::startParser(cError *&pe, QString *_pSrc)
 
 int cImportParseThread::reStartParser(cError *&pe)
 {
+    PDEB(INFO) << "Restart parser ..." << endl;
     stopParser();
     return startParser(pe);
 }

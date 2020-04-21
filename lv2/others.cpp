@@ -514,6 +514,7 @@ QString getSysError(int eCode)
 void appReStart()
 {
     QProcess::startDetached(QCoreApplication::applicationFilePath(), qApp->arguments());
+    printf(" -- appReStart(): EXIT 123\n");
     exit(123);
 }
 

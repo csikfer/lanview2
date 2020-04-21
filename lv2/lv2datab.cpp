@@ -159,6 +159,12 @@ cColEnumType::cColEnumType(const cColEnumType& _o)
     ;
 }
 
+cColEnumType::~cColEnumType()
+{
+
+}
+
+
 QString cColEnumType::toString() const
 {
     return "Enum " + dQuoted(QString(*this)) + " #" + QString::number(typeId)

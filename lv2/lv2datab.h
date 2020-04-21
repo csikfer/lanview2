@@ -144,6 +144,7 @@ protected:
     cColEnumType(qlonglong id, const QString& name, const QStringList& values);
 public:
     cColEnumType(const cColEnumType& _o);
+    virtual ~cColEnumType();
     static const cColEnumType *fetchOrGet(QSqlQuery& q, const QString& name, enum eEx __ex = EX_ERROR);
     QString     toString() const;
     const qlonglong   typeId;

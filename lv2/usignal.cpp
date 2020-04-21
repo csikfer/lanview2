@@ -71,6 +71,7 @@ void cXSignal::unixSigErrHandler(int __i)
 {
     static cError *pError = nullptr;
     if (pError == nullptr) pError = NEWCERROR(EPROGFAIL, __i);
+    printf(" -- unixSigErrHandler(%d): EXIT\n", __i);
     QCoreApplication::exit(pError->mErrorCode);
 }
 

@@ -68,6 +68,7 @@ cInspectorThread::~cInspectorThread()
         if (isRunning()) {
             QString msg = tr("%1 thread is run. Exit app.").arg(inspector.name());
             QAPPMEMO(msg, RS_CRITICAL)
+            printf(" -- ~cInspectorThread(): EXIT \1n");
             QCoreApplication::exit(1);
         }
     }
@@ -486,7 +487,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
 
 cInspector::~cInspector()
 {
-    QString n = name();
+   QString n = name();
     _DBGFN() << n << endl;
     down();
     _DBGFNL() << n << endl;
@@ -534,7 +535,8 @@ void cInspector::down()
     pDelete(pVars);
     inspectorType = IT_CUSTOM;
     if (pParent == nullptr) {
-        exit(0);
+        printf(" -- down(): EXIT 0\n");
+        QCoreApplication::exit(0);
     }
 }
 
@@ -2083,7 +2085,8 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
     if (heartbeat <= 0) heartbeat = pInspector->interval * 2;
     if (heartbeat <= 0) {
         const cInspector *pParInsp = pInspector->pParent;
-        if (pParInsp != nullptr) {
+        // Parent is not NULL, and cInspector object is not temporary
+        if (pParInsp != nullptr && pParInsp != pInspector) {
             heartbeat = pParInsp->hostService.getId(_sHeartbeatTime);
             if (heartbeat <= 0) heartbeat = pParInsp->interval * 2;
         }
@@ -2338,10 +2341,11 @@ int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _nam
 int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals)
 {
     cInspector insp(q, hsid);
+    insp.pParent = &insp;       // Indicates a temporary object. If pParent is NULL, the destructor calls the exit () method.
     insp.splitFeature();
     int n = _names.size();
     n = std::min(n, vals.size());
-    int r = RS_ON, st, dummy;
+    int r = RS_ON, st, dummy = RS_UNKNOWN;
     for (int i = 0; i < n; ++i) {
         cInspectorVar var(q, &insp, _names.at(i));
         var.postInit(q);
