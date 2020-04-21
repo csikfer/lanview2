@@ -223,7 +223,7 @@ QString cError::msg() const
 {
     QString r;
     if (!mThreadName.isEmpty()) r = QChar('{') + mThreadName + QChar('}');
-    r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7")
+    r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7)")
         .arg(mSrcName)
         .arg(mSrcLine)
         .arg(mFuncName)
@@ -256,7 +256,7 @@ QString cError::msg() const
         }
     }
     if (!slBackTrace.isEmpty()) {
-        r += QString("\n") +  slBackTrace.join("\n");
+        r += QString("\n\nBackTrace:\n") +  slBackTrace.join("\n");
     }
     return r;
 }

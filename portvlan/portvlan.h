@@ -19,7 +19,8 @@ class cPortVLans : public cInspector {
 public:
     cPortVLans(QSqlQuery& q, const QString& __sn);
     ~cPortVLans();
-    virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
+    virtual void postInit(QSqlQuery &q, const QString &qs = QString()) override;
+    virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid) override;
     cOId dot1qVlanCurrentEgressPorts;
     cOId dot1qVlanCurrentUntaggedPorts;
     cOId dot1qVlanStaticEgressPorts;

@@ -509,7 +509,37 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 
 void cInspector::down()
 {
-    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
+    const QString myName = name();
+    // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
+    if (pParent == nullptr) { // root object ?
+        lanView * lanView = lanView::getInstance();
+        cError *lastError = lanView->lastError;
+        if (lanView->setSelfStateF && lastError != nullptr) {
+            if (lastError->mErrorCode != eError::EOK) { // Error
+                try {
+                    setState(*pq, _sCritical, lastError->msg(), NULL_ID, false);
+                } catch(...) {
+                    DERR() << tr("!!!! Failed write %1 exit error state.").arg(myName) << endl;
+                }
+            }
+            else {
+                try {
+                    int rs = RS_DOWN;
+                    QString n;
+                    rs = int(lastError->mErrorSubCode); // Ide kéne rakni a kiírandó statust
+                    n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
+                    if ((rs & RS_STAT_SETTED) == 0) {   // Jelezheti, hogy már megvolt a kiírás!
+                        setState(*pq, notifSwitch(rs), n, NULL_ID, false);
+                    }
+                } catch(...) {
+                    DERR() << tr("!!!! Failed write %1 exit state.").arg(myName) << endl;
+                }
+            }
+        }
+    }
+
+
+    PDEB(INFO) << QChar(' ') << myName << " internalStat = " << internalStatName() << endl;
     drop(EX_IGNORE);
     if (pInspectorThread != nullptr) {
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
@@ -519,7 +549,7 @@ void cInspector::down()
     }
     pDelete(pProcess);
     if (inspectorType & IT_METHOD_PARSER) {
-        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser), 0, 16) << endl;
+        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(myName).arg(qlonglong(pQparser), 0, 16) << endl;
         pDelete(pQparser);
     }
     else pQparser = nullptr;
@@ -831,7 +861,7 @@ int cInspector::getInspectorTiming(const QString& value)
     if (!on) goto getFunc_error_label;
     CONT_ONE(_sThread,  IT_TIMING_THREAD)
     if (vl.isEmpty()) {
-        PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
+        PDEB(VVERBOSE) << name() << VDEB(value) << QString(" timing = %1").arg(r,0,16) << endl;
         return r;
     }
 getFunc_error_label:
@@ -900,7 +930,7 @@ int cInspector::getInspectorMethod(const QString &value)
     CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED))
     CONT_ONE_ONE(_sJson,     IT_METHOD_JSON)
     if (vl.isEmpty()) {
-        PDEB(VERBOSE) << name() << VDEB(value) << " method = " << r << endl;
+        PDEB(VERBOSE) << name() << VDEB(value) << QString(" method = %1").arg(r,0,16) << endl;
         return r;
     }
 getFunc_error_label:
@@ -989,7 +1019,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         break;
     default: EXCEPTION(EPROGFAIL, r, name());
     }
-    _DBGFNL() << name() << VDEB(inspectorType) << endl;
+    _DBGFNL() << name() << VDEBHEX(inspectorType) << endl;
     return inspectorType;
 }
 
