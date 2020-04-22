@@ -368,6 +368,12 @@ public:
     bool    flag;
     /// Változók, ha vannak, vagy NULL.
     QList<cInspectorVar *>    *pVars;
+    /// A változók konténer referenciája, ha pVars nullptr, akkor létrehozza.
+    QList<cInspectorVar *>& vars() {
+        if (pVars == nullptr) pVars = new QList<cInspectorVar *>;
+        return *pVars;
+    }
+    /// A runtime változó objektum pointere, vagy nullptr
     cInspectorVar *pRunTimeVar;
     /// A "variables" featue változó kifejtve, ha van
     QMap<QString, QStringList>  varsListMap;

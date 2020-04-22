@@ -562,7 +562,6 @@ void cInspector::down()
         delete pVars;
         pVars = nullptr;
     }
-    pDelete(pVars);
     inspectorType = IT_CUSTOM;
     if (pParent == nullptr) {
         printf(" -- down(): EXIT 0\n");
@@ -719,10 +718,7 @@ void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _nam
     if (pVar == nullptr) {  // If missing, then create
         pVar = new cInspectorVar(q, this, _name, stid);
         pVar->postInit(q);
-        if (pVars == nullptr) {
-            pVars = new QList<cInspectorVar *>;
-        }
-        (*pVars) << pVar;
+        vars() << pVar;
     }
 }
 
@@ -1667,7 +1663,7 @@ void cInspector::start()
         if (pRunTimeVar == nullptr) {
             pRunTimeVar = new cInspectorVar(*pq, this, _sRuntime, cServiceVarType::srvartype(*pq, _sRuntime)->getId());
             pRunTimeVar->postInit(*pq);
-            *pVars << pRunTimeVar;
+            vars() << pRunTimeVar;
         }
         internalStat = IS_SUSPENDED;
         qlonglong t = firstDelay();
@@ -2054,7 +2050,7 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
             _set(_descr_cServiceVar());
             _fields[_descr_cServiceVar().nameIndex()] = __name;
             _fields[_descr_cServiceVar().toIndex(_sHostServiceId)] = hsid;
-            _fields[_descr_cServiceVar().toIndex(_sServiceTypeId)] = _stid;
+            _fields[_descr_cServiceVar().toIndex(_sServiceVarTypeId)] = _stid;
         }
     }
 }
@@ -2099,7 +2095,9 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
         EXCEPTION(EPROGFAIL, 0, tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
     }
     if (isNullId()) {   // create?
+        _toReadBack = RB_YES;
         insert(_q);
+        _toReadBack = RB_MASK;
     }
     pDelete(pVarType);
     pVarType = new cServiceVarType(varType(_q));
