@@ -32,6 +32,10 @@ UPDATE interfaces SET
 	port_ostat = 'unknown',
 	port_astat = 'unknown',
 	port_stat = 'unknown';
+<<<<<<< HEAD
 -- TRUNCATE mactab_logs RESTART IDENTITY;
+=======
+--TRUNCATE mactab_logs RESTART IDENTITY;
+>>>>>>> 9e129f10ea2645184198ea6a54e2e4e14cad5fa5
 TRUNCATE ip_address_logs RESTART IDENTITY;
 TRUNCATE dyn_ipaddress_logs RESTART IDENTITY;

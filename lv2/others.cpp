@@ -83,8 +83,14 @@ int removeAll(QStringList& sl, const QString& s)
     QStringList::iterator i = sl.begin();
     QStringList::iterator e = sl.end();
     while (i < e) {
-        if (0 == i->compare(s, Qt::CaseInsensitive)) { i = sl.erase(i); ++r; }
-        else                                         { i++; }
+        if (0 == i->compare(s, Qt::CaseInsensitive)) {
+            i = sl.erase(i);
+            e = sl.end();
+            ++r;
+        }
+        else {
+            i++;
+        }
     }
     return r;
 }
@@ -508,6 +514,7 @@ QString getSysError(int eCode)
 void appReStart()
 {
     QProcess::startDetached(QCoreApplication::applicationFilePath(), qApp->arguments());
+    printf(" -- appReStart(): EXIT 123\n");
     exit(123);
 }
 

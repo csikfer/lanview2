@@ -73,7 +73,7 @@ const QString cPortVLans::sClientLimit2 = "ClientLimit2";
 static inline void setOid(cOId& o, const QString& s)
 {
     o = cOId(s);
-    if (!o) EXCEPTION(ESNMP, o.status, o.emsg);
+    if (!o) EXCEPTION(ESNMP, o.status, "OID : \"" + s + "\"; " + o.emsg);
 }
 
 /// Az SNMP-n keresztül lekérdezi a VLAN beállításokat OID objektumok:
@@ -134,6 +134,18 @@ static inline void setOid(cOId& o, const QString& s)
 cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
+
+}
+
+cPortVLans::~cPortVLans()
+{
+    ;
+}
+
+void cPortVLans::postInit(QSqlQuery &q, const QString &qs)
+{
+    cInspector::postInit(q, qs);
+
     // Current VLAN settings (dynamic)
     setOid(dot1qVlanCurrentEgressPorts,             "SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
     setOid(dot1qVlanCurrentUntaggedPorts,           "SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
@@ -154,11 +166,7 @@ cPortVLans::cPortVLans(QSqlQuery& q, const QString& __sn)
     hpicfDot1xAuthConfigTable << hpicfDot1xAuthAuthVid << hpicfDot1xAuthUnauthVid << hpicfDot1xAuthUnauthPeriod
                               << hpicfDot1xAuthClientLimit << hpicfDot1xAuthLogoffPeriod << hpicfDot1xAuthClientLimit2;
     headerAuthConfigTable << _sAuth << _sUnauth << sUnauthPeriod << sClientLimit << sLogoffPeriod << sClientLimit2;
-}
 
-cPortVLans::~cPortVLans()
-{
-    ;
 }
 
 cInspector * cPortVLans::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)

@@ -317,9 +317,10 @@ public:
     enum eInternalStat  internalStat;
     /// Az időzítés statusa
     enum eTimerStat     timerStat;
-    /// A parent szolgáltatás pointere, vagy NULL
+    /// The parent service pointer, or NULL.
+    /// If the pointer is pointing to itself, it is a temporary object that we created for cInspectorVar.
     cInspector         *pParent;
-    /// A konkrét lekérdzést azonosító host_services rekord objektum
+    /// The host_services object that describes the specific query
     cHostService        hostService;
     /// A node rekord objektum pointere (node, host, snmpdevice)
     cNode              *pNode;
@@ -331,17 +332,17 @@ public:
     int                 interval;
     /// Hiba esetén az időzítés
     int                 retryInt;
-    /// Start TimeOut
+    /// Process start TimeOut
     unsigned long       startTimeOut;
-    /// Stop TimeOut
+    /// Process stop TimeOut
     unsigned long       stopTimeOut;
     /// Az időzítő QTimer azonosítója
     int                 timerId;
-    /// Timeperiod
+    /// Timeperiod object
     cTimePeriod         timeperiod;
-    /// Objektum a futási idő mérésére
+    /// The object that measures runtime
     QElapsedTimer       lastRun;
-    /// Az előző két run metódus hívás között eltelt idő ms-ben
+    /// Az előző két run metódus hívás között eltelt idő ms-ben (?)
     qlonglong           lastElapsedTime;
     /// Ha ő egy thread, akkor a QThread objektumra mutat, egyébként NULL
     cInspectorThread   *pInspectorThread;
@@ -367,6 +368,12 @@ public:
     bool    flag;
     /// Változók, ha vannak, vagy NULL.
     QList<cInspectorVar *>    *pVars;
+    /// A változók konténer referenciája, ha pVars nullptr, akkor létrehozza.
+    QList<cInspectorVar *>& vars() {
+        if (pVars == nullptr) pVars = new QList<cInspectorVar *>;
+        return *pVars;
+    }
+    /// A runtime változó objektum pointere, vagy nullptr
     cInspectorVar *pRunTimeVar;
     /// A "variables" featue változó kifejtve, ha van
     QMap<QString, QStringList>  varsListMap;

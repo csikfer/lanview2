@@ -219,7 +219,7 @@ static cTemplateMapMap  templates;
 static qlonglong        actVlanId = -1;
 static QString          actVlanName;
 static QString          actVlanNote;
-static int              netType = ENUM_INVALID; // firstSubNet = ;
+static int              netType = ENUM_INVALID;
 static cPatch *         pPatch = nullptr;
 static cImage *         pImage = nullptr;
 static cPlace *         pPlace = nullptr;
@@ -398,16 +398,14 @@ void initImportParser()
     globalPlaceId = NULL_ID;
     globalSuperiorId = NULL_ID;
     actVlanId = -1;
-    netType = ENUM_INVALID; // firstSubNet = ;
+    netType = ENUM_INVALID;
     alertServiceId = NULL_ID;
 
     pDelete(pImportLastError);
     importLineNo = 0;
-    // c_yyFile::clear();
     if (c_yyFile::size() > 0) EXCEPTION(EPROGFAIL);
     isReplace = false;
-    QSqlQuery q = getQuery();
-    globalReplaceFlag = cSysParam::getBoolSysParam(q, "global_replace_flag", false);
+    globalReplaceFlag = cSysParam::getBoolSysParam(*piq, "global_replace_flag", false);
 }
 
 void downImportParser()

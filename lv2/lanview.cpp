@@ -372,42 +372,7 @@ lanView::~lanView()
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError != nullptr && lastError->mErrorCode != eError::EOK) {    // Hiba volt
         PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
-        qlonglong eid = sendError(lastError, this);
-        // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
-        if (eid != NULL_ID && setSelfStateF) {
-            if (pSelfHostService != nullptr && pQuery != nullptr) {
-                try {
-                    pSelfHostService->setState(*pQuery, _sCritical, lastError->msg(), NULL_ID, false);
-                } catch(...) {
-                    DERR() << "!!!!" << endl;
-                }
-            }
-            else {
-                if (pSelfHostService == nullptr) DERR() << tr("A pSelfHostService pointer értéke NULL.") << endl;
-                if (pQuery           == nullptr) DERR() << tr("A pQuery pointer értéke NULL.") << endl;
-            }
-        }
-        setSelfStateF = false;
-    }
-    else if (setSelfStateF) {
-        if (pSelfHostService != nullptr && pQuery != nullptr) {
-            try {
-                int rs = RS_ON;
-                QString n;
-                if (lastError != nullptr) {
-                    rs = int(lastError->mErrorSubCode); // Ide kéne rakni a kiírandó staust
-                    n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
-                }
-                if ((rs & RS_STAT_SETTED) == 0) {       // Jelezheti, hogy már megvolt a kiírás!
-                    pSelfHostService->setState(*pQuery, notifSwitch(rs), n, NULL_ID, false);
-                }
-            } catch(...) {
-                DERR() << "!!!!" << endl;
-            }
-        }
-        else {
-            DERR() << tr("A pSefHostService vagy a pQuery pointer értéke NULL.") << endl;
-        }
+        sendError(lastError, this);
     }
     pDelete(lastError);
     int en = cError::errCount();
@@ -727,7 +692,10 @@ void lanView::reSet()
         setSelfObjects();
         setup();
     } CATCHS(lastError)
-    if (lastError != nullptr) QCoreApplication::exit(lastError->mErrorCode);
+    if (lastError != nullptr) {
+        QCoreApplication::exit(lastError->mErrorCode);
+        printf(" -- reSet(): EXIT %d\n", int(lastError->mErrorCode));
+    }
 }
 
 void lanView::setup(eTristate _tr)
@@ -800,7 +768,8 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         else if (0 == QString(_sExit).compare(cmd,  Qt::CaseInsensitive)) {
             PDEB(WARNING) << tr("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
             down();
-            exit(0);
+            printf(" -- dbNotif(...): EXIT %d\n", int(lastError->mErrorCode));
+            QCoreApplication::exit(0);
         }
     }
     // command to cInspector object, sub services ?
@@ -1027,6 +996,7 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
     cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ *-el
     lanView::getInstance()->lastError = lastError;
     DERR() << lastError->msg() << endl;
+    printf(" -- notify(): EXIT %d\n", int(lastError->mErrorCode));
     QCoreApplication::exit(lastError->mErrorCode);  // kilépünk.
     return false;
 }

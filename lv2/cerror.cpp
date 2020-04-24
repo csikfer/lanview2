@@ -31,23 +31,26 @@
 
 cBackTrace::cBackTrace(size_t _size)
 {
-    void ** buffer;
 #if defined(Q_CC_GNU)
     int     size;
     char ** symbols;
-    buffer = new void *[_size];
+    void * buffer[_size];
     size   = backtrace(buffer, int(_size));
     symbols= backtrace_symbols(buffer, size);
-    for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
-        *this << QString(symbols[i]);
+    if (symbols == nullptr) {
+        *this << QObject::tr("backtrace_symbols(...) failed.");
     }
-    delete buffer;
-    free(symbols);
+    else {
+        for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
+            *this << QString(symbols[i]);
+        }
+        free(symbols);
+    }
 #elif 0 && defined(Q_CC_MSVC)
     unsigned short frames;
     SYMBOL_INFO    symbol;
     HANDLE         process;
-    buffer = new void *[_size];
+    void * buffer[_size];
     process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE );
     frames = CaptureStackBackTrace( 0, (DWORD)_size, buffer, NULL );
@@ -56,9 +59,7 @@ cBackTrace::cBackTrace(size_t _size)
         *this << QString(symbol.Name);
     }
     SymCleanup(process);
-    delet buffer;
 #else
-    (void)buffer;
     (void)_size;
 #endif
 }
@@ -222,7 +223,7 @@ QString cError::msg() const
 {
     QString r;
     if (!mThreadName.isEmpty()) r = QChar('{') + mThreadName + QChar('}');
-    r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7")
+    r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7)")
         .arg(mSrcName)
         .arg(mSrcLine)
         .arg(mFuncName)
@@ -255,7 +256,7 @@ QString cError::msg() const
         }
     }
     if (!slBackTrace.isEmpty()) {
-        r += QString("\n") +  slBackTrace.join("\n");
+        r += QString("\n\nBackTrace:\n") +  slBackTrace.join("\n");
     }
     return r;
 }

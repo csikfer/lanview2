@@ -68,6 +68,7 @@ cInspectorThread::~cInspectorThread()
         if (isRunning()) {
             QString msg = tr("%1 thread is run. Exit app.").arg(inspector.name());
             QAPPMEMO(msg, RS_CRITICAL)
+            printf(" -- ~cInspectorThread(): EXIT \1n");
             QCoreApplication::exit(1);
         }
     }
@@ -486,7 +487,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
 
 cInspector::~cInspector()
 {
-    QString n = name();
+   QString n = name();
     _DBGFN() << n << endl;
     down();
     _DBGFNL() << n << endl;
@@ -508,7 +509,37 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 
 void cInspector::down()
 {
-    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
+    const QString myName = name();
+    // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
+    if (pParent == nullptr) { // root object ?
+        lanView * lanView = lanView::getInstance();
+        cError *lastError = lanView->lastError;
+        if (lanView->setSelfStateF && lastError != nullptr) {
+            if (lastError->mErrorCode != eError::EOK) { // Error
+                try {
+                    setState(*pq, _sCritical, lastError->msg(), NULL_ID, false);
+                } catch(...) {
+                    DERR() << tr("!!!! Failed write %1 exit error state.").arg(myName) << endl;
+                }
+            }
+            else {
+                try {
+                    int rs = RS_DOWN;
+                    QString n;
+                    rs = int(lastError->mErrorSubCode); // Ide kéne rakni a kiírandó statust
+                    n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
+                    if ((rs & RS_STAT_SETTED) == 0) {   // Jelezheti, hogy már megvolt a kiírás!
+                        setState(*pq, notifSwitch(rs), n, NULL_ID, false);
+                    }
+                } catch(...) {
+                    DERR() << tr("!!!! Failed write %1 exit state.").arg(myName) << endl;
+                }
+            }
+        }
+    }
+
+
+    PDEB(INFO) << QChar(' ') << myName << " internalStat = " << internalStatName() << endl;
     drop(EX_IGNORE);
     if (pInspectorThread != nullptr) {
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
@@ -518,7 +549,7 @@ void cInspector::down()
     }
     pDelete(pProcess);
     if (inspectorType & IT_METHOD_PARSER) {
-        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser), 0, 16) << endl;
+        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(myName).arg(qlonglong(pQparser), 0, 16) << endl;
         pDelete(pQparser);
     }
     else pQparser = nullptr;
@@ -531,10 +562,10 @@ void cInspector::down()
         delete pVars;
         pVars = nullptr;
     }
-    pDelete(pVars);
     inspectorType = IT_CUSTOM;
     if (pParent == nullptr) {
-        exit(0);
+        printf(" -- down(): EXIT 0\n");
+        QCoreApplication::exit(0);
     }
 }
 
@@ -687,10 +718,7 @@ void cInspector::variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _nam
     if (pVar == nullptr) {  // If missing, then create
         pVar = new cInspectorVar(q, this, _name, stid);
         pVar->postInit(q);
-        if (pVars == nullptr) {
-            pVars = new QList<cInspectorVar *>;
-        }
-        (*pVars) << pVar;
+        vars() << pVar;
     }
 }
 
@@ -829,7 +857,7 @@ int cInspector::getInspectorTiming(const QString& value)
     if (!on) goto getFunc_error_label;
     CONT_ONE(_sThread,  IT_TIMING_THREAD)
     if (vl.isEmpty()) {
-        PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
+        PDEB(VVERBOSE) << name() << VDEB(value) << QString(" timing = %1").arg(r,0,16) << endl;
         return r;
     }
 getFunc_error_label:
@@ -898,7 +926,7 @@ int cInspector::getInspectorMethod(const QString &value)
     CONT_ONE_COL(_sNagios,   IT_METHOD_NAGIOS, r & (IT_METHOD_CARRIED))
     CONT_ONE_ONE(_sJson,     IT_METHOD_JSON)
     if (vl.isEmpty()) {
-        PDEB(VERBOSE) << name() << VDEB(value) << " method = " << r << endl;
+        PDEB(VERBOSE) << name() << VDEB(value) << QString(" method = %1").arg(r,0,16) << endl;
         return r;
     }
 getFunc_error_label:
@@ -987,7 +1015,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         break;
     default: EXCEPTION(EPROGFAIL, r, name());
     }
-    _DBGFNL() << name() << VDEB(inspectorType) << endl;
+    _DBGFNL() << name() << VDEBHEX(inspectorType) << endl;
     return inspectorType;
 }
 
@@ -1635,7 +1663,7 @@ void cInspector::start()
         if (pRunTimeVar == nullptr) {
             pRunTimeVar = new cInspectorVar(*pq, this, _sRuntime, cServiceVarType::srvartype(*pq, _sRuntime)->getId());
             pRunTimeVar->postInit(*pq);
-            *pVars << pRunTimeVar;
+            vars() << pRunTimeVar;
         }
         internalStat = IS_SUSPENDED;
         qlonglong t = firstDelay();
@@ -2022,7 +2050,7 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
             _set(_descr_cServiceVar());
             _fields[_descr_cServiceVar().nameIndex()] = __name;
             _fields[_descr_cServiceVar().toIndex(_sHostServiceId)] = hsid;
-            _fields[_descr_cServiceVar().toIndex(_sServiceTypeId)] = _stid;
+            _fields[_descr_cServiceVar().toIndex(_sServiceVarTypeId)] = _stid;
         }
     }
 }
@@ -2067,7 +2095,9 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
         EXCEPTION(EPROGFAIL, 0, tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
     }
     if (isNullId()) {   // create?
+        _toReadBack = RB_YES;
         insert(_q);
+        _toReadBack = RB_MASK;
     }
     pDelete(pVarType);
     pVarType = new cServiceVarType(varType(_q));
@@ -2083,7 +2113,8 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
     if (heartbeat <= 0) heartbeat = pInspector->interval * 2;
     if (heartbeat <= 0) {
         const cInspector *pParInsp = pInspector->pParent;
-        if (pParInsp != nullptr) {
+        // Parent is not NULL, and cInspector object is not temporary
+        if (pParInsp != nullptr && pParInsp != pInspector) {
             heartbeat = pParInsp->hostService.getId(_sHeartbeatTime);
             if (heartbeat <= 0) heartbeat = pParInsp->interval * 2;
         }
@@ -2338,10 +2369,11 @@ int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _nam
 int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals)
 {
     cInspector insp(q, hsid);
+    insp.pParent = &insp;       // Indicates a temporary object. If pParent is NULL, the destructor calls the exit () method.
     insp.splitFeature();
     int n = _names.size();
     n = std::min(n, vals.size());
-    int r = RS_ON, st, dummy;
+    int r = RS_ON, st, dummy = RS_UNKNOWN;
     for (int i = 0; i < n; ++i) {
         cInspectorVar var(q, &insp, _names.at(i));
         var.postInit(q);
