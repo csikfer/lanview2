@@ -519,11 +519,11 @@ public:
 };
 
 
-class LV2SHARED_EXPORT cInspectorVar : public cServiceVar {
+class LV2SHARED_EXPORT cInspectorVar {
 public:
     /// Konstruktor
     /// A beolvasott cServiceVar rekordot a _q objektum tartalmazza
-    cInspectorVar(QSqlQuery &_q, cInspector * pParent);
+    cInspectorVar(QSqlQuery &_q, qlonglong _id, cInspector * pParent);
     /// Konstruktor
     /// Megkísérli beolvasni a megadott szervíz változót.
     /// Ha nem adtuk meg a stid paramétert, és nem létezik a változó, akkor hibát dob.
@@ -564,7 +564,9 @@ public:
     /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
     int setValue(QSqlQuery& q, qlonglong val, int& state, eTristate rawChg = TS_NULL);
     int setUnreachable(QSqlQuery q, const QString &msg = QString());
+    cServiceVar * pSrvVar;
     cFeatures   *pMergedFeatures;
+    const cFeatures& features() { if (pMergedFeatures == nullptr) EXCEPTION(EPROGFAIL); return *pMergedFeatures; }
     const QStringList * enumVals();
     static int setValue(QSqlQuery& q, cInspector *pInsp, const QString& _name, const QVariant& val, int &state);
     static int setValues(QSqlQuery& q, cInspector *pInsp, const QStringList& _names, const QVariantList& vals, int &state);
@@ -630,9 +632,9 @@ protected:
     eTristate checkEnumValue(int ix, const QStringList &evals, qlonglong ft, const QString& _p1, const QString& _p2, bool _inverse);
     /// String hozzáadása a state_msg mezőhöz.
     void addMsg(const QString& _msg) {
-        QString msg = getName(_ixStateMsg);
+        QString msg = pSrvVar->getName(pSrvVar->ixStateMsg());
         if (!msg.isEmpty()) msg += "\n";
-        setName(_ixStateMsg, msg + _msg);
+        pSrvVar->setName(pSrvVar->ixStateMsg(), msg + _msg);
     }
     cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték

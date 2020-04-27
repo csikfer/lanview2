@@ -266,7 +266,7 @@ bool cPortStat::postInit(QSqlQuery& q)
         }
         else {
             foreach (cInspectorVar *p, *pPortVars->pVars) {
-                p->setFlag();
+                p->pSrvVar->setFlag();
             }
         }
         bool resetRarefaction = cSysParam::getBoolSysParam(q, "reset_rarefaction", false);
@@ -277,38 +277,35 @@ bool cPortStat::postInit(QSqlQuery& q)
             cInspectorVar *pVar = pPortVars->getInspectorVar(name, EX_IGNORE);
             if (pVar == nullptr) {      // If not exists, create
                 pVar = new cInspectorVar(q, pPortVars, name, parent->vTypes.at(i));
-                pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
+                pVar->pSrvVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
                 pVar->postInit(q);
                 *(pPortVars->pVars) << pVar;
-                pVar->_toReadBack = RB_NO;
             }
             else {
-                pVar->_toReadBack = RB_NO;
-                if (pVar->getBool(_sDisabled)) {    // If disabled then dropp for list
-                    if (pVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
-                        pVar->setName(cServiceVar::ixVarState(), _sUnknown);
-                        pVar->_toReadBack = RB_NO;
-                        pVar->update(q, false, pVar->mask(cServiceVar::ixVarState()));
+                if (pVar->pSrvVar->getBool(_sDisabled)) {    // If disabled then dropp for list
+                    if (pVar->pSrvVar->getId(cServiceVar::ixVarState()) != RS_UNKNOWN) {
+                        pVar->pSrvVar->setName(cServiceVar::ixVarState(), _sUnknown);
+                        pVar->pSrvVar->update(q, false, pVar->pSrvVar->mask(cServiceVar::ixVarState()));
                     }
                     pPortVars->pVars->removeAll(pVar);
                     delete pVar;
                     continue;
                 }
                 else if (resetRarefaction) {
-                    if (pVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
-                        pVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
-                        pVar->update(q, false, pVar->mask(cServiceVar::ixRarefaction()), pVar->primaryKey());
+                    if (pVar->pSrvVar->getId(cServiceVar::ixRarefaction()) != parent->vRarefactions.at(i)) {
+                        pVar->pSrvVar->setId(cServiceVar::ixRarefaction(), parent->vRarefactions.at(i));
+                        pVar->pSrvVar->update(q, false, pVar->pSrvVar->mask(cServiceVar::ixRarefaction()), pVar->pSrvVar->primaryKey());
                         pVar->postInit(q);
                     }
                 }
             }
-            pVar->setFlag(false);   // unmarked
+            pVar->pSrvVar->setFlag(false);   // unmarked
             pVar->initSkeepCnt(parent->delayCounter);
         }
         n = pPortVars->pVars->size();
         foreach (cInspectorVar *pVar, *pPortVars->pVars) {
-            if (pVar->getBool(_sFlag)) {
-                pVar->remove(q);                    // delete from database
+            if (pVar->pSrvVar->getBool(_sFlag)) {
+                pVar->pSrvVar->remove(q);           // delete from database
                 pPortVars->pVars->removeAll(pVar);  // delete from list,
                 delete pVar;                        // and delete object from memory
             }
@@ -594,11 +591,11 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 if (psv == nullptr) continue;                   // not found, next
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
-                if (psv->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
-                msg = psv->getName(_sStateMsg);
-                QString val = psv->getName(_sServiceVarValue);
+                if (psv->pSrvVar->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
+                msg = psv->pSrvVar->getName(_sStateMsg);
+                QString val = psv->pSrvVar->getName(_sServiceVarValue);
                 QString srs = notifSwitch(rs, EX_IGNORE);
-                QString vst = psv->getName(_sVarState);
+                QString vst = psv->pSrvVar->getName(_sVarState);
                 if (msg.isEmpty() && srs.isEmpty()) {   // skipping (rarefaction)
                     msg = tr("Var %1 ( = '%2'/'%3') is skipped.").arg(vname, val, vst);
                 }

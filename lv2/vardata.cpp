@@ -197,10 +197,49 @@ const cServiceVarType& cServiceVar::varType(QSqlQuery& q)
     return *cServiceVarType::srvartype(q, getId(ixServiceVarTypeId()), EX_ERROR);
 }
 
+cServiceVar *cServiceVar::getVarObjectById(QSqlQuery& q, qlonglong _id)
+{
+    cServiceVar *r = nullptr;
+    cServiceVar v;
+    qlonglong tableoid = v.setId(_id).fetchTableOId(q);
+    if (tableoid == v.tableoid()) r = new cServiceVar;
+    else                          r = new cServiceRrdVar;
+    r->setById(q, _id);
+    return r;
+}
+
+cServiceVar *cServiceVar::getVarObjectByName(QSqlQuery& q, const QString& _name, qlonglong _hsid, eEx __ex)
+{
+    cServiceVar *r = nullptr;
+    cServiceVar v;
+    static const int ixHostServiceId = v.toIndex(_sHostServiceId);
+    v.setName(_name);
+    v.setId(ixHostServiceId, _hsid);
+    qlonglong tableoid = v.fetchTableOId(q);
+    if (tableoid == v.tableoid()) r = new cServiceVar;
+    else                          r = new cServiceRrdVar;
+    r->setName(_name);
+    r->setId(ixHostServiceId, _hsid);
+    int n = r->completion(q);
+    switch (n) {
+    case 0: // Not found
+        if (__ex != EX_IGNORE) {
+            EXCEPTION(EFOUND, _hsid, _name);
+        }
+        pDelete(r);
+        break;
+    case 1: // Fund
+        break;
+    default:// Incredible
+        EXCEPTION(EDBDATA, n, r->identifying());
+    }
+    return r;
+}
+
 /* ---------------------------------------------------------------------------- */
 
 cServiceRrdVar::cServiceRrdVar()
-    : cServiceVar ()
+    : cServiceVar()
 {
     _set(cServiceRrdVar::descr());
 }
@@ -209,7 +248,14 @@ cServiceRrdVar::cServiceRrdVar(const cServiceRrdVar& __o)
 {
     _cp(__o);
 }
-CRECDDCR(cServiceRrdVar, _sServiceRrdVars)
+
 CRECDEFD(cServiceRrdVar)
 
+const cRecStaticDescr&  cServiceRrdVar::descr() const
+{
+    if (initPDescr<cServiceRrdVar>(_sServiceRrdVars)) {
+
+    }
+    return *_pRecordDescr;
+}
 /* ---------------------------------------------------------------------------- */

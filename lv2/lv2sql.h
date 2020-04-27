@@ -350,6 +350,8 @@ EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1
 EXT_ bool sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload = QString());
 
 EXT_ int getListFromQuery(QSqlQuery q, QStringList& list, int __ix = 0);
+EXT_ int getListFromQuery(QSqlQuery q, QList<qlonglong>& list, int __ix = 0);
+
 
 inline qlonglong getId(QSqlQuery q, int ix) {
     QVariant v = q.value(ix);

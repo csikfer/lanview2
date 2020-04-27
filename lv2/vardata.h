@@ -78,6 +78,8 @@ public:
     const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q).getId(cServiceVarType::ixRawParamTypeId())); }
     QString  valToString(QSqlQuery& q, const QVariant& val)  { return dataType(q).paramToString(val); }
     QString  rawValToString(QSqlQuery& q, const QVariant& val)  { return rawDataType(q).paramToString(val); }
+    static cServiceVar *getVarObjectById(QSqlQuery& q, qlonglong _id);
+    static cServiceVar *getVarObjectByName(QSqlQuery& q, const QString& _name, qlonglong _hsid, eEx __ex = EX_ERROR);
 
     STATICIX(cServiceVar, ServiceVarTypeId)
     STATICIX(cServiceVar, ServiceVarValue)
@@ -96,9 +98,6 @@ class LV2SHARED_EXPORT cServiceRrdVar : public cServiceVar {
     CRECORD(cServiceRrdVar);
 public:
 };
-
-EXT_ double rpn_calc(double _v, const QString _expr, const cFeatures _f, QString& st);
-
 
 #if 0
 /*!
@@ -121,7 +120,7 @@ class LV2SHARED_EXPORT cSrvDiagramType : public cRecord {
     FEATURES(cSrvDiagramType)
     STATICIX(cSrvDiagramType, ServiceId)
 public:
-    tOwnRecords<cSrvDiagramType, cSrvDiagramType>    vars;
+    tOwnRecords<cSrvDiagramTypeVar, cSrvDiagramType>    vars;
 
 };
 

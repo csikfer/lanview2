@@ -657,7 +657,7 @@ template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>
 
 
 /// cRecoed típusú objektum részobjektumait tároló konténer.
-/// A konténer C típusú objektumokat táro, és a rulajdonos objektum tíousa O.
+/// A konténer C típusú objektumokat táro, és a tulajdonos objektum tíousa O.
 /// A QList ösnek nem minden metódusa lett újra implementálva!
 template <class C, class O>
         class tOwnRecords : public tRecordList<C>

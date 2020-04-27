@@ -724,10 +724,12 @@ int _execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVarian
 bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     if (!v1.isValid()) {
-        EXECSQL(q, sql);
+        EXECSQL(q, sql)
     }
     else {
-        if (!q.prepare(sql)) SQLPREPERR(q, sql);
+        if (!q.prepare(sql)) {
+            SQLPREPERR(q, sql)
+        }
         q.bindValue(0,v1);
         if (v2.isValid()) {
             q.bindValue(1,v2);
@@ -741,7 +743,7 @@ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVarian
                 }
             }
         }
-        _EXECSQL(q);
+        _EXECSQL(q)
     }
     return q.first();
 }
@@ -749,16 +751,18 @@ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVarian
 bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
 {
     if (vl.isEmpty()) {
-        EXECSQL(q, sql);
+        EXECSQL(q, sql)
     }
     else {
-        if (!q.prepare(sql)) SQLPREPERR(q, sql);
+        if (!q.prepare(sql)) {
+            SQLPREPERR(q, sql)
+        }
         int i = 0;
         foreach (QVariant v, vl) {
             q.bindValue(i, v);
             ++i;
         }
-        _EXECSQL(q);
+        _EXECSQL(q)
     }
     return q.first();
 }
@@ -833,6 +837,16 @@ int getListFromQuery(QSqlQuery q, QStringList& list, int __ix)
     if (q.first()) do {
         ++n;
         list << q.value(__ix).toString();
+    } while (q.next());
+    return n;
+}
+
+int getListFromQuery(QSqlQuery q, QList<qlonglong>& list, int __ix)
+{
+    int n = 0;
+    if (q.first()) do {
+        ++n;
+        list << q.value(__ix).toLongLong();
     } while (q.next());
     return n;
 }

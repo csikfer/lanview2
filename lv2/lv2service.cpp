@@ -785,18 +785,18 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 QList<cInspectorVar *> * cInspector::fetchVars(QSqlQuery& _q)
 {
     static const QString sql =
-            "SELECT *"
+            "SELECT service_var_id"
             " FROM service_vars"
             " WHERE host_service_id = ?";
+    QList<qlonglong> ids;
     QList<cInspectorVar *> *pl = nullptr;
-    if (execSql(_q, sql, hostServiceId())) {
+    if (execSql(_q, sql, hostServiceId()) && getListFromQuery(_q, ids)) {
         pl = new QList<cInspectorVar *>;
-        QSqlQuery q = getQuery();
-        do {
-            cInspectorVar * pv = new cInspectorVar(_q, this);
-            pv->postInit(q);
+        foreach (qlonglong id, ids) {
+            cInspectorVar * pv = new cInspectorVar(_q, id, this);
+            pv->postInit(_q);
             *pl << pv;
-        } while (_q.next());
+        }
     }
     return pl;
 }
@@ -1984,7 +1984,7 @@ cInspectorVar *cInspector::getInspectorVar(const QString& _name, eEx __ex)
     cInspectorVar *r = nullptr;
     if (pVars != nullptr && !pVars->isEmpty()) {
         foreach (cInspectorVar *p, *pVars) {
-            if (p->getName() == _name) {
+            if (p->pSrvVar->getName() == _name) {
                 r = p;
                 break;
             }
@@ -2021,11 +2021,14 @@ QString cInspectorVar::sNotCredible;
 QString cInspectorVar::sFirstValue;
 QString cInspectorVar::sRawIsNull;
 
-cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent)
+cInspectorVar::cInspectorVar(QSqlQuery& _q, qlonglong _id, cInspector * pParent)
 {
     _init();
     pInspector = pParent;
-    _set(_q.record(), _descr_cServiceVar());
+    pSrvVar    = cServiceVar::getVarObjectById(_q, _id);
+    // Csak a releváns mezők visszaolvasása az update hívásnál
+    pSrvVar->_toReadBack   = RB_MASK;
+    pSrvVar->_readBackMask = readBackMask;
 }
 
 cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString& __name, qlonglong _stid, eEx __ex)
@@ -2033,30 +2036,38 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
     _init();
     pInspector = pParent;
     qlonglong hsid = pInspector->hostServiceId();
-    static const QString sql = "SELECT * FROM service_vars WHERE host_service_id = ? AND service_var_name = ?";
-    if (execSql(_q, sql, hsid, __name)) {
-        _set(_q.record(), _descr_cServiceVar());
-        qlonglong stid = _fields[_descr_cServiceVar().toIndex(_sServiceVarTypeId)].toLongLong();
+    pSrvVar = cServiceVar::getVarObjectByName(_q, __name, hsid, EX_IGNORE);
+    if (pSrvVar != nullptr) {
+        qlonglong stid = pSrvVar->getId(_sServiceVarTypeId);
         if (_stid != NULL_ID && stid != _stid) {
-            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Different type ID (%1 - %2), for %1 variable.").arg(stid).arg(_stid).arg(__name));
-            _clear();
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, QObject::tr("Different type ID (%1 - %2), for %1 variable.").arg(stid).arg(_stid).arg(__name));
+            pDelete(pSrvVar);
         }
     }
     else {  // Not found. Create by postInit()
         if (_stid == NULL_ID) {
-            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, tr("Missing type ID, for %1 variable.").arg(__name));
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, QObject::tr("Missing type ID, for %1 variable.").arg(__name));
+            pDelete(pSrvVar);
         }
         else {
-            _set(_descr_cServiceVar());
-            _fields[_descr_cServiceVar().nameIndex()] = __name;
-            _fields[_descr_cServiceVar().toIndex(_sHostServiceId)] = hsid;
-            _fields[_descr_cServiceVar().toIndex(_sServiceVarTypeId)] = _stid;
+            // A post init kreálja meg a rekordot.
+            // Automatikusan mindíg a cServiceVar jön létre, később konvertálható.
+            pSrvVar = new cServiceVar;
+            pSrvVar->setName(__name);
+            pSrvVar->setId(_sHostServiceId, hsid);
+            pSrvVar->setId(_sServiceTypeId, _stid);
         }
+    }
+    if (pSrvVar != nullptr) {
+        // Csak a releváns mezők visszaolvasása az update hívásnál
+        pSrvVar->_toReadBack   = RB_MASK;
+        pSrvVar->_readBackMask = readBackMask;
     }
 }
 
 cInspectorVar::~cInspectorVar()
 {
+    pDelete(pSrvVar);
     pDelete(pEnumVals);
     pDelete(pMergedFeatures);
     pDelete(pVarType);
@@ -2069,44 +2080,42 @@ void cInspectorVar::_init()
     pVarType = nullptr;
     lastCount = 0;
     skeepCnt = 0;
+    pSrvVar  = nullptr;
     pVarType = nullptr;
     if (updateMask.isEmpty()) {
-        updateMask = _descr_cServiceVar().mask(_ixLastTime, _ixRawValue)
-                   | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
-        readBackMask = _descr_cServiceVar().mask(_ixLastTime)
-                   | _descr_cServiceVar().mask(_sDisabled);
-        sInvalidValue = tr("Value is invalid : %1");
-        sNotCredible  = tr("Data is not credible.");
-        sFirstValue   = tr("First value, no data.");
-        sRawIsNull    = tr("Raw value is NULL");
+        cServiceVar o;
+        updateMask = o.mask(o.ixLastTime(), o.ixRawValue())
+                   | o.mask(o.ixVarState(), o.ixServiceVarValue(), o.ixStateMsg());
+        readBackMask = o.mask(o.ixLastTime()) | o.mask(_sDisabled);
+        sInvalidValue = QObject::tr("Value is invalid : %1");
+        sNotCredible  = QObject::tr("Data is not credible.");
+        sFirstValue   = QObject::tr("First value, no data.");
+        sRawIsNull    = QObject::tr("Raw value is NULL");
     }
-    // Csak a releváns mezők visszaolvasása az update hívásnál
-    _toReadBack   = RB_MASK;
-    _readBackMask = readBackMask;
 }
 
 bool cInspectorVar::postInit(QSqlQuery& _q)
 {
-    if (_isNull()) return false;
+    if (pSrvVar == nullptr) EXCEPTION(EPROGFAIL);
     if (pInspector == nullptr) {
-        EXCEPTION(EPROGFAIL, 0, tr("pInspector is NULL."));
+        EXCEPTION(EPROGFAIL, 0, QObject::tr("pInspector is NULL."));
     }
     if (pInspector->pMergedFeatures == nullptr) {
-        EXCEPTION(EPROGFAIL, 0, tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
+        EXCEPTION(EPROGFAIL, 0, QObject::tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
     }
-    if (isNullId()) {   // create?
-        _toReadBack = RB_YES;
-        insert(_q);
-        _toReadBack = RB_MASK;
+    if (pSrvVar->isNullId()) {   // create?
+        pSrvVar->_toReadBack = RB_YES;
+        pSrvVar->insert(_q);
+        pSrvVar->_toReadBack = RB_MASK;
     }
     pDelete(pVarType);
-    pVarType = new cServiceVarType(varType(_q));
+    pVarType = new cServiceVarType(pSrvVar->varType(_q));
 
     // feature, merge
     pDelete(pMergedFeatures);
     pMergedFeatures = new cFeatures(pVarType->features());
-    pMergedFeatures->merge(features());
-    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + "." + getName());
+    pMergedFeatures->merge(pSrvVar->features());
+    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + "." + pSrvVar->getName());
     pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + ".*");
     //
     heartbeat = pInspector->hostService.getId(_sHeartbeatTime);
@@ -2121,7 +2130,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
     }
     bool ok;
     rarefaction = (*pMergedFeatures)[_sRarefaction].toInt(&ok);
-    if (!ok || rarefaction <= 0) rarefaction = int(getId(ixRarefaction()));
+    if (!ok || rarefaction <= 0) rarefaction = int(pSrvVar->getId(pSrvVar->ixRarefaction()));
     if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
     skeepCnt = 0;
     return true;
@@ -2131,7 +2140,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
 int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
-    eParamType ptRaw = eParamType(rawDataType(q).getId(cParamType::ixParamTypeType()));
+    eParamType ptRaw = eParamType(pSrvVar->rawDataType(q).getId(cParamType::ixParamTypeType()));
     eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
     if (rawChanged == TS_NULL) return RS_UNREACHABLE;
     bool ok = true;
@@ -2165,12 +2174,12 @@ int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
     }
     int rs;
     if (rawChanged == TS_TRUE) {
-        eParamType ptVal = eParamType(dataType(q).getId(cParamType::ixParamTypeType()));
+        eParamType ptVal = eParamType(pSrvVar->dataType(q).getId(cParamType::ixParamTypeType()));
         rs = postSetValue(q, ptVal, _rawVal, RS_ON, state);
     }
     else {
-        touch(q);
-        rs = int(getId(_ixVarState));
+        pSrvVar->touch(q);
+        rs = int(pSrvVar->getId(pSrvVar->ixVarState()));
     }
     return rs;
 }
@@ -2178,13 +2187,13 @@ int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawChg)
 {
     if (skeep()) return ENUM_INVALID;
-    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    int rpt = int(pSrvVar->rawDataType(q).getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_INTEGER || rpt == PT_INTERVAL) {
         return setValue(q, qlonglong(val + 0.5), state, rawChg);
     }
     if (rpt != PT_REAL) {    // supported types
-        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        addMsg(QObject::tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
         noValue(q, state);
         return RS_UNREACHABLE;
     }
@@ -2209,9 +2218,9 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
     case SVT_DDERIVE:
          return setDerive(q, val, state);
     }
-    int rs = int(getId(_sVarState));
+    int rs = int(pSrvVar->getId(_sVarState));
     if (changed == TS_FALSE && rs != RS_UNKNOWN) {
-        touch(q);
+        pSrvVar->touch(q);
         return rs;
     }
     rs = RS_INVALID;
@@ -2224,12 +2233,12 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
     if (!rpn.isEmpty()) {
         QString err;
         if (!rpn_calc(val, rpn, err)) {
-            addMsg(tr("RPN error : %1").arg(err));
+            addMsg(QObject::tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
         }
     }
-    int vpt = int(dataType(q).getId(_sParamTypeType));
+    int vpt = int(pSrvVar->dataType(q).getId(_sParamTypeType));
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
@@ -2239,14 +2248,14 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
         case PT_REAL:       rs = updateVar(q, val,                  state);   break;
         case PT_INTERVAL:   rs = updateIntervalVar(q, qlonglong(val), state); break;
         default:
-            addMsg(tr("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+            addMsg(QObject::tr("Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
             return rs;
         }
     }   break;
     default:
-        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        addMsg(QObject::tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }
@@ -2256,13 +2265,13 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
 int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate rawChg)
 {
     if (skeep()) return ENUM_INVALID;
-    int rpt = int(rawDataType(q).getId(_sParamTypeType));
+    int rpt = int(pSrvVar->rawDataType(q).getId(_sParamTypeType));
     // Check raw type
     if (rpt == PT_REAL) {
         return setValue(q, double(val), state, rawChg);
     }
     if (rpt != PT_INTEGER && rpt != PT_INTERVAL) {    // supported types
-        addMsg(tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
+        addMsg(QObject::tr("Invalid context : Non numeric raw data type %1.").arg(paramTypeType(rpt)));
         noValue(q, state);
         return RS_UNREACHABLE;
     }
@@ -2286,9 +2295,9 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
     case SVT_DDERIVE:
          return setCounter(q, val, int(svt), state);
     }
-    int rs = int(getId(_sVarState));
+    int rs = int(pSrvVar->getId(_sVarState));
     if (changed == TS_FALSE && rs != RS_UNKNOWN) {
-        touch(q);
+        pSrvVar->touch(q);
         return rs;
     }
     rs = RS_INVALID;
@@ -2303,14 +2312,14 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
     if (!rpn.isEmpty()){
         QString err;
         if (!rpn_calc(d, rpn, err)) {
-            addMsg(tr("RPN error : %1").arg(err));
+            addMsg(QObject::tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
             return rs;
         }
         val = qlonglong(d + 0.5);
     }
-    const cParamType& pt = dataType(q);
+    const cParamType& pt = pSrvVar->dataType(q);
     int vpt = int(pt.getId(cParamType::ixParamTypeType()));
 //    int vpt = int(dataType(q).getId(_sParamTypeType));
     switch (svt) {
@@ -2326,12 +2335,12 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
                 return updateEnumVar(q, val, state);
             }
         }
-        addMsg(tr("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
+        addMsg(QObject::tr("Invalid context. Unsupported service Variable data type : %1").arg(paramTypeType(rpt)));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }   break;
     default:
-        addMsg(tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
+        addMsg(QObject::tr("Unsupported service Variable type : %1").arg(serviceVarType(int(svt))));
         rs = RS_UNKNOWN;
         postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
     }
@@ -2340,10 +2349,11 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
 
 int cInspectorVar::setUnreachable(QSqlQuery q, const QString& msg)
 {
-    setName(_ixVarState, _sUnreachable);
-    setName(_ixLastTime, _sNOW);
-    setName(_ixStateMsg, msg);
-    return update(q, false, mask(_ixVarState, _ixLastTime));
+    static QBitArray aSet = pSrvVar->mask(pSrvVar->ixVarState(), pSrvVar->ixLastTime(), pSrvVar->ixStateMsg());
+    pSrvVar->setName(pSrvVar->ixVarState(), _sUnreachable);
+    pSrvVar->setName(pSrvVar->ixLastTime(), _sNOW);
+    pSrvVar->setName(pSrvVar->ixStateMsg(), msg);
+    return pSrvVar->update(q, false, aSet);
 }
 
 const QStringList * cInspectorVar::enumVals()
@@ -2361,7 +2371,7 @@ int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _nam
     int r;
     cInspectorVar *p = pInsp->getInspectorVar(_name);
     r = p->setValue(q, val, rs);
-    if (p->getBool(_sDelegateServiceState) && state < rs) state = rs;
+    if (p->pSrvVar->getBool(_sDelegateServiceState) && state < rs) state = rs;
     if (rs > state) state = rs;
     return r;
 }
@@ -2398,38 +2408,38 @@ int cInspectorVar::setValues(QSqlQuery& q, cInspector *pInsp, const QStringList&
 eTristate cInspectorVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& rawVal, int& state)
 {
     now = QDateTime::currentDateTime();
-    clear(_ixStateMsg);
+    pSrvVar->clear(pSrvVar->ixStateMsg());
     if (rawVal.isNull()) {
-        addMsg(tr("Raw data is NULL."));
+        addMsg(QObject::tr("Raw data is NULL."));
         noValue(q, state);
         return TS_NULL;
     }
     bool ok;
     QString s = cParamType::paramToString(eParamType(ptRaw), rawVal, EX_IGNORE, &ok);
     if (!ok) {
-        addMsg(tr("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
+        addMsg(QObject::tr("Conversion of raw data (%1) failed.").arg(debVariantToString(ptRaw)));
         postSetValue(q, ENUM_INVALID, QVariant(), RS_UNREACHABLE, state);
         return TS_NULL;
     }
-    bool changed = s.compare(getName(_ixRawValue));
-    if (changed) setName(_ixRawValue, s);
-    lastLast = get(_ixLastTime).toDateTime();
-    set(_ixLastTime, now);
+    bool changed = s.compare(pSrvVar->getName(pSrvVar->ixRawValue()));
+    if (changed) pSrvVar->setName(pSrvVar->ixRawValue(), s);
+    lastLast = pSrvVar->get(pSrvVar->ixLastTime()).toDateTime();
+    pSrvVar->set(pSrvVar->ixLastTime(), now);
     return bool2ts(changed); // Raw value is changed ?
 }
 
 bool cInspectorVar::postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state)
 {
     bool ok = true;
-    if (ptVal == ENUM_INVALID || val.isNull()) clear(_ixServiceVarValue);
-    else setName(_ixServiceVarValue, cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
+    if (ptVal == ENUM_INVALID || val.isNull()) pSrvVar->clear(pSrvVar->ixServiceVarValue());
+    else pSrvVar->setName(pSrvVar->ixServiceVarValue(), cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
     if (!ok) {
         rs = RS_UNREACHABLE;
-        addMsg(tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+        addMsg(QObject::tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
     }
-    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_ixVarState, rs);
-    return 1 == update(q, false, updateMask);
+    if (pSrvVar->getBool(_sDelegateServiceState) && state < rs) state = rs;
+    pSrvVar->setId(pSrvVar->ixVarState(), rs);
+    return 1 == pSrvVar->update(q, false, updateMask);
 }
 
 int cInspectorVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
@@ -2445,12 +2455,12 @@ int cInspectorVar::setCounter(QSqlQuery& q, qlonglong val, int svt, int &state)
     case SVT_COUNTER:
     case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
         if (lastCount > val) {
-            addMsg(tr("A számláló túlcsordult."));
+            addMsg(QObject::tr("A számláló túlcsordult."));
             delta = val + 0x100000000LL - lastCount;
             if (delta > 0x100000000LL) {
                 lastCount = val;
                 lastTime  = now;
-                addMsg(tr("Többszörös túlcsordulás?"));
+                addMsg(QObject::tr("Többszörös túlcsordulás?"));
                 return noValue(q, state);
             }
             break;
@@ -2567,13 +2577,13 @@ int cInspectorVar::noValue(QSqlQuery& q, int &state, int _st)
         qlonglong dt  = lastLast.msecsTo(QDateTime::currentDateTime());
         if (heartbeat < dt) {
             _st = RS_UNREACHABLE;
-            setId(_ixVarState, _st);
-            clear(_ixServiceVarValue);
-            QString msg = getName(_ixStateMsg);
-            msgAppend(&msg, getName(_ixStateMsg) + tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(heartbeat)));
-            setName(_ixStateMsg, msg);
-            update(q, false, updateMask);
-            if (getBool(_sDelegateServiceState)) state = _st;
+            pSrvVar->setId(pSrvVar->ixVarState(), _st);
+            pSrvVar->clear(pSrvVar->ixServiceVarValue());
+            QString msg = pSrvVar->getName(pSrvVar->ixStateMsg());
+            msgAppend(&msg, QObject::tr("Time out (%1 > %2).").arg(intervalToStr(dt), intervalToStr(heartbeat)));
+            pSrvVar->setName(pSrvVar->ixStateMsg(), msg);
+            pSrvVar->update(q, false, updateMask);
+            if (pSrvVar->getBool(_sDelegateServiceState)) state = _st;
         }
     }
     // Ha nincs adat, és türelmi idő nem járt le (nincs türelmi idő, első alkalom) akkor nem csinálunk semmit
@@ -2605,10 +2615,10 @@ eTristate cInspectorVar::checkIntValue(qlonglong val, qlonglong ft, const QStrin
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -2629,7 +2639,7 @@ eTristate cInspectorVar::checkIntValue(qlonglong val, qlonglong ft, const QStrin
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(tr("Invalid filter %1(%2) for integer type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(QObject::tr("Invalid filter %1(%2) for integer type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -2656,10 +2666,10 @@ eTristate cInspectorVar::checkRealValue(double val, qlonglong ft, const QString 
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -2674,7 +2684,7 @@ eTristate cInspectorVar::checkRealValue(double val, qlonglong ft, const QString 
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(tr("Invalid filter %1(%2) for real numeric type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(QObject::tr("Invalid filter %1(%2) for real numeric type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -2715,10 +2725,10 @@ eTristate cInspectorVar::checkIntervalValue(qlonglong val, qlonglong ft, const Q
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -2739,7 +2749,7 @@ eTristate cInspectorVar::checkIntervalValue(qlonglong val, qlonglong ft, const Q
             r = (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(QObject::tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -2783,10 +2793,10 @@ eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlongl
     }
     // Check parameter(s)
     if (!ok1) {
-        addMsg(tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param1 data %1 for %2 filter.").arg(_p1, filterType(int(ft))));
     }
     if (!ok2) {
-        addMsg(tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
+        addMsg(QObject::tr("Invalid param2 data %1 for %2 filter.").arg(_p2, filterType(int(ft))));
     }
     // Check rules, if all parameters is OK.
     if (ok1 && ok2) {
@@ -2807,7 +2817,7 @@ eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlongl
             r = (ix > p1 && ix < p2) ? TS_TRUE : TS_FALSE;
             break;
         default:
-            addMsg(tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
+            addMsg(QObject::tr("Invalid filter %1(%2) for interval type.").arg(filterType(int(ft), EX_IGNORE)).arg(ft));
             break;
         }
     }
@@ -2817,13 +2827,13 @@ eTristate cInspectorVar::checkEnumValue(int ix, const QStringList& evals, qlongl
 
 bool   cInspectorVar::skeep()
 {
-    static const int ixDisabled = toIndex(_sDisabled);
-    if (getBool(ixDisabled)) {
-        PDEB(VERBOSE) << "Disabled " << pInspector->name() << " : " << getName() << endl;
+    static const int ixDisabled = pSrvVar->toIndex(_sDisabled);
+    if (pSrvVar->getBool(ixDisabled)) {
+        PDEB(VERBOSE) << "Disabled " << pInspector->name() << " : " << pSrvVar->getName() << endl;
         return true;
     }
 
-    if (getId(_ixVarState) >= RS_UNREACHABLE) return false;
+    if (pSrvVar->getId(pSrvVar->ixVarState()) >= RS_UNREACHABLE) return false;
 
     int svt = int(pVarType->getId(_sServiceVarType));
     switch (svt) {
@@ -2834,7 +2844,7 @@ bool   cInspectorVar::skeep()
          if (!lastTime.isValid()) return false;
     }
 
-    if (!lastTime.isValid()) lastTime = get(_ixLastTime).toDateTime();
+    if (!lastTime.isValid()) lastTime = pSrvVar->get(pSrvVar->ixLastTime()).toDateTime();
     if (!lastTime.isValid()) return false;
     QDateTime now = QDateTime::currentDateTime();
     qlonglong dt = lastTime.msecsTo(now);
@@ -2846,7 +2856,7 @@ bool   cInspectorVar::skeep()
         skeepCnt = rarefaction;
     }
     else {
-        PDEB(VERBOSE) << "Skeep " << pInspector->name() << " : " << getName() << endl;
+        PDEB(VERBOSE) << "Skeep " << pInspector->name() << " : " << pSrvVar->getName() << endl;
     }
     return r;
 }

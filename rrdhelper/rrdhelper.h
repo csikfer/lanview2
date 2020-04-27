@@ -19,6 +19,9 @@ public:
     bool    enabled;
     QString fileName;
     QString varName;
+    QString lastErrorMsg;
+    void addErrorMsg(const QString& msg) { msgAppend(&lastErrorMsg, msg); }
+    QString getErrorMsg() { QString r = lastErrorMsg; lastErrorMsg.clear(); return r; }
     static int  cntAll; ///< All object number
     static int  cntEna; ///< Enabled object number
 };
@@ -35,6 +38,7 @@ public:
     virtual int run(QSqlQuery& q, QString &runMsg);
     void execRrd(const QString& rrdCmd);
     bool createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator i);
+    QString getErrorMessages();
     QDir    baseDir;
     QMap<qlonglong, cRrdFile>    rrdFileMap;    ///< cRrdFile index by service_var_id
     int cntOk, cntFail;

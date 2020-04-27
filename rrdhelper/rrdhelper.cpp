@@ -19,7 +19,7 @@ int main (int argc, char * argv[])
 {
     cLv2QApp app(argc, argv);
 
-    SETAPP();
+    SETAPP()
     lanView::snmpNeeded = false;
     lanView::sqlNeeded  = SN_SQL_NEED;
 
@@ -36,7 +36,6 @@ int main (int argc, char * argv[])
 
 lv2rrdHelper::lv2rrdHelper() : lanView()
 {
-    pSelfInspector = nullptr;  // Main service == APPNAME, standard init
     if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
@@ -92,7 +91,7 @@ cRrdHelper::cRrdHelper(QSqlQuery& q, const QString& __sn)
 
 cRrdHelper::~cRrdHelper()
 {
-    ;
+
 }
 
 inline void dirCat(QDir& dir, const QString& _to) { dir.setPath(dir.filePath(_to)); }
@@ -111,7 +110,7 @@ void cRrdHelper::postInit(QSqlQuery &q, const QString &qs)
     // Base dir ...
     static const QString _sBaseDir = "base_dir";    // Feature OR sys_param name
     QString sBaseDir = feature(_sBaseDir);          // base dir in feature?
-    QString sSubDir  = "rrd";;
+    QString sSubDir  = "rrd";
     if (accesType == RAT_REAMOTE_BY_DAEMON) {
         // No check base directory
         if (sBaseDir.isEmpty()) {                       // no feature, get sys_param or home dir
@@ -162,11 +161,13 @@ int cRrdHelper::run(QSqlQuery& q, QString &runMsg)
     if (cntFail != 0) {
         r = RS_WARNING;
     }
+    msgAppend(&runMsg, getErrorMessages());
     PDEB(VERBOSE) << runMsg << tr("State : %1").arg(notifSwitch(r, EX_IGNORE)) << endl;
     cntOk = cntFail = 0;
     return r;
 }
 
+/// Notify parameter inxdexes
 enum ixRRDPar { RP_RRD, RP_HELPER_ID_IX, RP_TIMESTAMP_IX, RP_VALUE_IX, RP_SERVICE_VAR_ID_IX, RP_FIELD_NUM };
 void cRrdHelper::execRrd(const QString& payload)
 {
@@ -262,8 +263,8 @@ void cRrdHelper::execRrd(const QString& payload)
     int r = startProcessAndWait(sRrdTool, args, &msg);
     if (r != 0) {
         msgAppend(&msg, tr("I can't update the %1 RRD file.").arg(i.value().fileName));
-        APPMEMO(q, msg, RS_CRITICAL);
-        PDEB(WARNING) << msg << endl;
+        i->addErrorMsg(msg);
+        PDEB(DERROR) << msg << endl;
     }
     else {
         msgAppend(&msg, tr("Updated the %1 RRD file.\n %2").arg(i.value().fileName));
@@ -345,4 +346,14 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
         return false;
     }
     return true;
+}
+
+QString cRrdHelper::getErrorMessages()
+{
+    QString r;
+    QList<qlonglong> keys = rrdFileMap.keys();
+    foreach (qlonglong key, keys) {
+        msgAppend(&r, rrdFileMap[key].getErrorMsg());
+    }
+    return r;
 }
