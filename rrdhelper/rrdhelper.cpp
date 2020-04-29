@@ -113,7 +113,7 @@ void cRrdHelper::postInit(QSqlQuery &q, const QString &qs)
     QString sSubDir  = "rrd";
     if (accesType == RAT_REAMOTE_BY_DAEMON) {
         // No check base directory
-        if (sBaseDir.isEmpty()) {                       // no feature, get sys_param or home dir
+        if (sBaseDir.isEmpty()) {                   // no feature, get sys_param or home dir
             sBaseDir = cSysParam::getTextSysParam(q, _sBaseDir, lanView::getInstance()->homeDir);
             baseDir.setPath(sBaseDir);
             dirCat(baseDir, sSubDir);
@@ -149,7 +149,7 @@ void cRrdHelper::postInit(QSqlQuery &q, const QString &qs)
 int cRrdHelper::run(QSqlQuery& q, QString &runMsg)
 {
     (void)q;
-    runMsg = tr("Enabled object %1/%2, update reauest %3, %4 Failed.")
+    runMsg = tr("Enabled object %1/%2, update request %3 Ok, %4 Failed.")
             .arg(cRrdFile::cntEna)
             .arg(cRrdFile::cntAll)
             .arg(cntOk)
@@ -267,7 +267,7 @@ void cRrdHelper::execRrd(const QString& payload)
         PDEB(DERROR) << msg << endl;
     }
     else {
-        msgAppend(&msg, tr("Updated the %1 RRD file.\n %2").arg(i.value().fileName));
+        msgAppend(&msg, tr("Updated the %1 RRD file.").arg(i.value().fileName));
         PDEB(VERBOSE) << msg << endl;
         --cntFail;
         ++cntOk;

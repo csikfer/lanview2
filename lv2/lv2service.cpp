@@ -978,7 +978,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
             EXCEPTION(EDATA, inspectorType, tr("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
         }
         break;
-    case  1:        // Program hívása, a hívó applikációban
+    case  1:        // Calling a program, we are the caller
         PDEB(VERBOSE) << tr("A '%1' program hívása").arg(checkCmd + " " + checkCmdArgs.join(" ")) << endl;
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
@@ -999,8 +999,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
                 tr("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
         break;
-    case -1:        // Van Check Cmd, de éppen a hívot app mi vagyunk
-        PDEB(VERBOSE) << tr("A hívott alprogramban...") << endl;
+    case -1:        // We have Check Cmd, but we are in the program to be called
+        PDEB(VERBOSE) << tr("We're in the called program.") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
@@ -2915,7 +2915,7 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
                 return false;
             }
             QString val = (*pMergedFeatures)[key];
-            if (val.isEmpty() && key.contains(QChar('.'))) {
+            if (key.contains(QChar('.'))) {
                 QStringList keys = key.split(QChar('.'));
                 QString key1 = keys.takeFirst();
                 QString key2 = keys.join(QChar('.'));
