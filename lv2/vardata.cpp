@@ -215,7 +215,8 @@ cServiceVar *cServiceVar::getVarObjectByName(QSqlQuery& q, const QString& _name,
     static const int ixHostServiceId = v.toIndex(_sHostServiceId);
     v.setName(_name);
     v.setId(ixHostServiceId, _hsid);
-    qlonglong tableoid = v.fetchTableOId(q);
+    qlonglong tableoid = v.fetchTableOId(q, __ex);
+    if (tableoid == NULL_ID) return r;      // not found and __ex is EX_IGNORE
     if (tableoid == v.tableoid()) r = new cServiceVar;
     else                          r = new cServiceRrdVar;
     r->setName(_name);

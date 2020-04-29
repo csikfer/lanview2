@@ -767,7 +767,9 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             if (pe->mErrorCode != eError::EOK) {
                 cHostService hs;
                 QSqlQuery q3 = getQuery();
-                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId(), false);
+                if (hs.fetchById(q3, hsid)) {
+                    hs.setState(q3, _sCritical, pe->msg(), hostServiceId(), false);
+                }
             }
             pDelete(p);
             delete pe;
@@ -2055,7 +2057,7 @@ cInspectorVar::cInspectorVar(QSqlQuery& _q, cInspector * pParent, const QString&
             pSrvVar = new cServiceVar;
             pSrvVar->setName(__name);
             pSrvVar->setId(_sHostServiceId, hsid);
-            pSrvVar->setId(_sServiceTypeId, _stid);
+            pSrvVar->setId(_sServiceVarTypeId, _stid);
         }
     }
     if (pSrvVar != nullptr) {
