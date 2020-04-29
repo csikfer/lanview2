@@ -2923,7 +2923,10 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
                 QString key2 = keys.join(QChar('.'));
                 if      (0 == key1.compare(_sInspector,    Qt::CaseInsensitive)) val = (*pInspector->pMergedFeatures)[key2];
                 else if (0 == key1.compare("host_service", Qt::CaseInsensitive)) val = pInspector->hostService.feature(key2);
-                else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) val = pInspector->host().feature(key2);
+                else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) {
+                    const cFeatures& f = pInspector->host().features();
+                    val = f.value(key2);
+                }
                 else if (0 == key1.compare(_sService,      Qt::CaseInsensitive)) val = pInspector->service()->feature(key2);
             }
             if (val.isEmpty()) {
