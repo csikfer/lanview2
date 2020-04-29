@@ -2220,12 +2220,14 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
     case SVT_DDERIVE:
          return setDerive(q, val, state);
     }
+    /* Ez több bajt okoz, nem jó ötlet
     int rs = int(pSrvVar->getId(_sVarState));
     if (changed == TS_FALSE && rs != RS_UNKNOWN) {
         pSrvVar->touch(q);
         return rs;
     }
-    rs = RS_INVALID;
+    */
+    int rs = RS_INVALID;
     if (svt == SVT_ABSOLUTE) {
         if (val < 0) {
             val = - val;
@@ -2298,12 +2300,14 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
     case SVT_DDERIVE:
          return setCounter(q, val, int(svt), state);
     }
+    /* Ez több bajt okoz, nem jó ötlet
     int rs = int(pSrvVar->getId(_sVarState));
     if (changed == TS_FALSE && rs != RS_UNKNOWN) {
         pSrvVar->touch(q);
         return rs;
     }
-    rs = RS_INVALID;
+    */
+    int rs = RS_INVALID;
     double d = val;
     if (svt == SVT_ABSOLUTE) {
         if (val < 0) {
@@ -2424,6 +2428,7 @@ eTristate cInspectorVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& ra
         postSetValue(q, ENUM_INVALID, QVariant(), RS_UNREACHABLE, state);
         return TS_NULL;
     }
+    // a változásra nem kellene vizsgálni, csak a NULL-ra,
     bool changed = s.compare(pSrvVar->getName(pSrvVar->ixRawValue()));
     if (changed) pSrvVar->setName(pSrvVar->ixRawValue(), s);
     lastLast = pSrvVar->get(pSrvVar->ixLastTime()).toDateTime();
