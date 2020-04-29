@@ -2238,6 +2238,7 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
             addMsg(QObject::tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
+            return rs;
         }
     }
     int vpt = int(pSrvVar->dataType(q).getId(_sParamTypeType));
@@ -2930,7 +2931,7 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
                 else if (0 == key1.compare("host_service", Qt::CaseInsensitive)) v = pInspector->hostService.feature(key2);
                 else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) v = pInspector->host().feature(key2);
                 else if (0 == key1.compare(_sService,      Qt::CaseInsensitive)) v = pInspector->service()->feature(key2);
-                /*if (!v.isEmpty())*/ val = v;
+                if (!v.isEmpty()) val = v;
             }
             if (val.isEmpty()) {
                 st = QObject::tr("Unknown feature name %1.").arg(key);
