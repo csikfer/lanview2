@@ -2432,12 +2432,16 @@ eTristate cInspectorVar::preSetValue(QSqlQuery& q, int ptRaw, const QVariant& ra
 
 bool cInspectorVar::postSetValue(QSqlQuery& q, int ptVal, const QVariant& val, int rs, int& state)
 {
-    bool ok = true;
-    if (ptVal == ENUM_INVALID || val.isNull()) pSrvVar->clear(pSrvVar->ixServiceVarValue());
-    else pSrvVar->setName(pSrvVar->ixServiceVarValue(), cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
-    if (!ok) {
-        rs = RS_UNREACHABLE;
-        addMsg(QObject::tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+    if (ptVal == ENUM_INVALID || val.isNull()) {
+        pSrvVar->clear(pSrvVar->ixServiceVarValue());
+    }
+    else {
+        bool ok = true;
+        pSrvVar->setName(pSrvVar->ixServiceVarValue(), cParamType::paramToString(eParamType(ptVal), val, EX_IGNORE, &ok));
+        if (!ok) {
+            rs = RS_UNREACHABLE;
+            addMsg(QObject::tr("Conversion of target data (%1) failed.").arg(debVariantToString(ptVal)));
+        }
     }
     if (pSrvVar->getBool(_sDelegateServiceState) && state < rs) state = rs;
     pSrvVar->setId(pSrvVar->ixVarState(), rs);
@@ -2921,13 +2925,12 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
                 QStringList keys = key.split(QChar('.'));
                 QString key1 = keys.takeFirst();
                 QString key2 = keys.join(QChar('.'));
-                if      (0 == key1.compare(_sInspector,    Qt::CaseInsensitive)) val = (*pInspector->pMergedFeatures)[key2];
-                else if (0 == key1.compare("host_service", Qt::CaseInsensitive)) val = pInspector->hostService.feature(key2);
-                else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) {
-                    const cFeatures& f = pInspector->host().features();
-                    val = f.value(key2);
-                }
-                else if (0 == key1.compare(_sService,      Qt::CaseInsensitive)) val = pInspector->service()->feature(key2);
+                QString v;
+                if      (0 == key1.compare(_sInspector,    Qt::CaseInsensitive)) v = (*pInspector->pMergedFeatures)[key2];
+                else if (0 == key1.compare("host_service", Qt::CaseInsensitive)) v = pInspector->hostService.feature(key2);
+                else if (0 == key1.compare(_sHost,         Qt::CaseInsensitive)) v = pInspector->host().feature(key2);
+                else if (0 == key1.compare(_sService,      Qt::CaseInsensitive)) v = pInspector->service()->feature(key2);
+                /*if (!v.isEmpty())*/ val = v;
             }
             if (val.isEmpty()) {
                 st = QObject::tr("Unknown feature name %1.").arg(key);
