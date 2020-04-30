@@ -92,8 +92,9 @@ cTable& cTable::operator<<(const QString& __cn)
 
 QString cTable::toString(void) const
 {
-    int     nr = rows(), i;
     QStringList keylst = keys();
+    if (keylst.isEmpty()) return _sEmpty;
+    int     nr = rows(), i;
     QString     r, key;
     foreach (key, keylst) {
         r += key + QChar(',');
@@ -812,7 +813,7 @@ int cSnmp::checkTableColumns(const cOIdVector& Ids, QBitArray& result)
 
 int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& result, oid _maxRowIndex)
 {
-    _DBGFN() << "@(" << Ids.toString() << ", [" << columns.join(",") << ", [[" << result.toString() << "]], " << _maxRowIndex << ")" << endl;
+    _DBGFN() << "@([" << Ids.toString() << ", " << columns.join(",") << ", [[" << result.toString() << "]], " << _maxRowIndex << ")" << endl;
     int ncol = columns.size();      // Table column number
     if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);
     if (getNext(Ids)) return status;

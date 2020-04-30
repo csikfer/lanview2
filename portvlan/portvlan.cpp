@@ -198,6 +198,8 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     else {  // Csak az SNMP lekérdezés támogatott (egyelőre)
         EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
+    hpicfDot1xAuthenticator = mTrunkByMembers = mNoUntaggedBitmap = mNoPVID = false;
+    ctVlan = ctUnchg = ctMod = ctNew = ctIns = ctUnkn = ctRm = ctErr = 0;
 }
 
 cDevicePV::~cDevicePV()
