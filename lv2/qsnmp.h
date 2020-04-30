@@ -232,7 +232,7 @@ class LV2SHARED_EXPORT cOIdVector : public QVector<cOId> {
     cOIdVector() : QVector<cOId>() {  }
     cOIdVector(int n) : QVector<cOId>(n) {  }
     cOIdVector(const QStringList& __sl);
-    QString toString();
+    QString toString() const;
 };
 
 /*!
@@ -344,7 +344,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @param result Cél objektum.
     /// @param _maxRowIndex Ha megadjuk, akkor csak addig kérdezi le a sorokat, amig el nem érjük a meximális megadott indexet
     /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
-    ///         Hiba esetén az első hibás lejérdezés státusa.
+    ///         Hiba esetén az első hibás lekérdezés státusa.
     int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result, oid _maxRowIndex = INT_MAX);
     /// Egy kereszt index tábla lekérdezése
     /// A visszaadott táblázatban lessz egy plussz oszlop, ami az indexeket tartalmazza, neve az sSnmpTableIndex adattagban.

@@ -195,7 +195,7 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     if (protoServiceId() == pSrvSnmp->getId()) {
         snmpDev().open(__q, snmp);
     }
-    else {  // Csak az SNMP lekérdezés támogatott (egyenlőre)
+    else {  // Csak az SNMP lekérdezés támogatott (egyelőre)
         EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
 }
@@ -425,6 +425,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(q, sql, nodeId());
     if (hpicfDot1xAuthenticator) {
+        PDEB(VERBOSE) << "SNMP Query : hpicfDot1xAuthenticator " << endl;
         cTable table;
         r = snmp.getTable(hpicfDot1xAuthConfigTable, headerAuthConfigTable, table);
         if (0 != r) {

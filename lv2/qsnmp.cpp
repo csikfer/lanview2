@@ -447,7 +447,7 @@ cOIdVector::cOIdVector(const QStringList& __sl) : QVector<cOId>(__sl.size())
     }
 }
 
-QString cOIdVector::toString()
+QString cOIdVector::toString() const
 {
     QString r = "[";
     for (int i = 0; i < size(); i++) {
@@ -812,14 +812,18 @@ int cSnmp::checkTableColumns(const cOIdVector& Ids, QBitArray& result)
 
 int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& result, oid _maxRowIndex)
 {
+    _DBGFN() << "@(" << Ids.toString() << ", [" << columns.join(",") << ", [[" << result.toString() << "]], " << _maxRowIndex << ")" << endl;
     int ncol = columns.size();      // Table column number
     if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);
-    if (getNext(Ids)) return 1;
+    if (getNext(Ids)) return status;
     int over = 0;               // Overruns counter
     oid row = 0;                // Row SNMP index
     result.clear();
     tVariantVector& ix  = result[sSnmpTableIndex];
-    first();
+    if (!first()) {
+        PDEB(VERBOSE) << "first() is NULL." << endl;
+        return 1;
+    }
     while (true) {                          // ROWS
         for (int i = 0; i < ncol; ++i) {    // Columns
             if (actVar == nullptr) EXCEPTION(EPROGFAIL);
