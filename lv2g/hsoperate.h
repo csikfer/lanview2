@@ -117,6 +117,7 @@ protected:
     qlonglong minIntervalMs;
     QDateTime now;
     cRecordTable *pSrvVarsTable;
+    cRecordTable *pSrvLogsTable;
 protected slots:
     void refresh();
     /// Al példányok megjelenítése

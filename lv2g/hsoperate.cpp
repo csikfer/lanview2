@@ -358,7 +358,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
 {
     pq  = newQuery();
-    pSrvVarsTable = nullptr;
+    pSrvLogsTable = pSrvVarsTable = nullptr;
     minIntervalMs = cSysParam::getIntervalSysParam(*pq, _sMinInterval, 1800000LL);  // default 1800sec (30m)
     pq2 = newQuery();
     pUi = new Ui::hostServiceOp;
@@ -515,12 +515,20 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
 
     // Service variables table
-    cTableShape *pts = new cTableShape;
-    pts->fetchByName(*pq, _sServiceRrdVars);
-    pts->setId(_sTableShapeType, ENUM2SET2(TS_BARE, TS_READ_ONLY));
-    pts->setName(_sRefine, _sFalse);    // Empty table
-    pSrvVarsTable = new cRecordTable(pts, pUi->widgetSrvVars);
+    cTableShape *ptsv = new cTableShape;
+    ptsv->fetchByName(*pq, _sServiceRrdVars);
+    ptsv->setId(_sTableShapeType, ENUM2SET2(TS_BARE, TS_READ_ONLY));
+    ptsv->setName(_sRefine, _sFalse);    // Empty table
+    pSrvVarsTable = new cRecordTable(ptsv, pUi->widgetSrvVars);
     pSrvVarsTable->init();
+
+    // Service logs table
+    cTableShape *ptsl = new cTableShape;
+    ptsl->fetchByName(*pq, "host_service_logs");
+    ptsl->setId(_sTableShapeType, ENUM2SET2(TS_BARE, TS_READ_ONLY));
+    ptsl->setName(_sRefine, _sFalse);    // Empty table
+    pSrvLogsTable = new cRecordTable(ptsl, pUi->widgetSrvLogs);
+    pSrvLogsTable->init();
 }
 
 
@@ -1336,4 +1344,6 @@ void cHSOperate::on_tableWidget_itemSelectionChanged()
     }
     pSrvVarsTable->pTableShape->setName(_sRefine, refine);
     pSrvVarsTable->refresh(true);
+    pSrvLogsTable->pTableShape->setName(_sRefine, refine);
+    pSrvLogsTable->refresh(true);
 }

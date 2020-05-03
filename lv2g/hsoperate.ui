@@ -213,13 +213,6 @@
      </property>
      <widget class="QWidget" name="layoutWidget">
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="labelTable">
-         <property name="text">
-          <string>Szolgáltatás példány találatok :</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QTableWidget" name="tableWidget">
          <property name="editTriggers">
@@ -635,28 +628,35 @@
          </item>
         </layout>
        </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelTable">
+         <property name="text">
+          <string>Szolgáltatás példány találatok :</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="verticalLayoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayoutJustify" stretch="0,1">
+      <layout class="QVBoxLayout" name="verticalLayoutJustify" stretch="0">
        <property name="leftMargin">
         <number>0</number>
        </property>
        <item>
-        <widget class="QLabel" name="labelSrvVar">
-         <property name="text">
-          <string>Szervíz változók</string>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="currentIndex">
+          <number>0</number>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QWidget" name="widgetSrvVars" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
+         <widget class="QWidget" name="widgetSrvVars" native="true">
+          <attribute name="title">
+           <string>Változók</string>
+          </attribute>
+         </widget>
+         <widget class="QWidget" name="widgetSrvLogs" native="true">
+          <attribute name="title">
+           <string>Log</string>
+          </attribute>
+         </widget>
         </widget>
        </item>
       </layout>
