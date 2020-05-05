@@ -19,7 +19,7 @@ const QString& notifSwitch(int _ns, eEx __ex)
     case RS_UNREACHABLE:    return _sUnreachable;
     case RS_FLAPPING:       return _sFlapping;
     case RS_UNKNOWN:        return _sUnknown;
-    default:                if (__ex)EXCEPTION(EDATA, (int)_ns);
+    default:                if (__ex)EXCEPTION(EDATA, _ns);
     }
     return _sNul;
 }
@@ -3461,11 +3461,16 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
     return false;
 }
 
-int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
+int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg)
 {
 #ifdef SNMP_IS_EXISTS
-    QList<QHostAddress> la = fetchAllIpAddress(q);
+    int r = -1;
+    QString comn = getName(_sCommunityRd);
+    int     ver  = snmpVersion();
     QString lastMsg;
+#if 0
+    // Open and test, probe IP addresses
+    QList<QHostAddress> la = fetchAllIpAddress(q);
     if (la.isEmpty()) {
         lastMsg = tr("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, lastMsg);
@@ -3473,9 +3478,6 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
         if (pEMsg != nullptr) *pEMsg = lastMsg;
         return -1;
     }
-    QString comn = getName(_sCommunityRd);
-    int     ver  = snmpVersion();
-    int r = -1;
     foreach (QHostAddress a, la) {
         r = snmp.open(a.toString(), comn, ver);
         if (r != 0) continue;
@@ -3488,7 +3490,20 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
     }
     if (__ex && r) EXCEPTION(ESNMP, r, lastMsg);
     if (pEMsg != nullptr) *pEMsg = lastMsg;
+#else
+    // Open only, by prefered IP address
+    QHostAddress a = getIpAddress(q);
+    if (a.isNull()) {
+        lastMsg = tr("A %1 SNMP eszköznek nincs IP címe").arg(getName());
+        if (__ex) EXCEPTION(EDATA, -1, lastMsg);
+        DERR() << lastMsg << endl;
+        if (pEMsg != nullptr) *pEMsg = lastMsg;
+    }
+    else {
+        r = snmp.open(a.toString(), comn, ver);
+    }
     return r;
+#endif
 #else // SNMP_IS_EXISTS
     (void)snmp;
     (void)q;
