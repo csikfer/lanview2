@@ -102,7 +102,7 @@ cOId    *cDevicePMac::pOIdx = nullptr;
 
 cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
-    , snmp()
+    , snmp(), ports()
 {
     _DBGFN() << hostService.fullName(__q, EX_IGNORE) << endl;
     QString msg;
@@ -119,20 +119,43 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     }
     // Beolvassuk a portokat is
     host().fetchPorts(__q, 0);  // IP cím VLAN nem kell
-    // host().fetchParams(__q);
+}
+
+cDevicePMac::~cDevicePMac()
+{
+
+}
+
+void cDevicePMac::postInit(QSqlQuery &q, const QString&)
+{
+    DBGFN();
+    cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)
+    snmpDev().open(q, snmp);
+}
+
+cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par)
+{
+     cRightMac *p = new cRightMac(_q, _hsid, _toid, _par);
+     if (p->flag) return p; // Ha nem volt hiba
+     delete p;              // Ha valami nem OK, töröljük, a statust a konstruktor beállította.
+     return nullptr;        // Ez az elem nem kerül a listába
+}
+
+int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
+{
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
     QMap<int,int>   rxix;   // Kereszt index tábla, a lekérdezésnél használlt indexekre konvertáláshoz
-    snmpDev().open(__q, snmp);
     int r = snmp.getXIndex(*pOIdx, rxix, true);
     if (r) {
-        EXCEPTION(ESNMP, r, tr("A kereszt index tábla lekérdezése sikertelen : %1").arg(name()));
+        msgAppend(&runMsg, tr("%1 : A kereszt index tábla lekérdezése sikertelen : %2").arg(name(), snmp.emsg));
+        return RS_UNREACHABLE;
     }
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
         int ix = -1;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
-        np.fetchParams(__q);
+        np.fetchParams(q);
         // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
         eTristate queryFlag = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
@@ -147,7 +170,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
             cLldpLink lldp;
-            if (NULL_ID != lldp.getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített link
+            if (NULL_ID != lldp.getLinked(q, np.getId())) { // Ez egy LLDP-vel felderített link
                 // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére (bármi legyen is) lekérdezzük
                 if (queryFlag == TS_TRUE) {
                     PDEB(INFO) << tr("Force query %1 port.").arg(np.getName()) << endl;
@@ -160,15 +183,15 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                             " FROM nports AS p"
                             " JOIN host_services AS hs USING(node_id)"
                             " WHERE p.port_id = ? AND hs.service_id = ?";
-                    bool ok = execSql(__q, sql, linkedPortId, pSrvPMac->getId());
+                    bool ok = execSql(q, sql, linkedPortId, pSrvPMac->getId());
                     int n = 1;
-                    if (ok) n = __q.value(0).toInt(&ok);
+                    if (ok) n = q.value(0).toInt(&ok);
                     if (!ok) EXCEPTION(EDATA, 0, sql);
                     if (n > 0) {
-                        PDEB(INFO) << tr("Port %1, is uplink to %2, disabled.").arg(np.getName(), np.getFullNameById(__q, linkedPortId));
+                        PDEB(INFO) << tr("Port %1, is uplink to %2, disabled.").arg(np.getName(), np.getFullNameById(q, linkedPortId));
                         continue;    // Uplink, kihagyjuk
                     }
-                    PDEB(INFO) << tr("Port %1, is no uplink to %2.").arg(np.getName(), np.getFullNameById(__q, linkedPortId));
+                    PDEB(INFO) << tr("Port %1, is no uplink to %2.").arg(np.getName(), np.getFullNameById(q, linkedPortId));
                 }
             }
             // mehet a ports konténerbe az indexe
@@ -176,6 +199,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         else if (ifTypeName == _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
             ix = -1;
+            QString msg;
             // Erre a node-ra megy a link (ha marad NULL_ID, akkor nincs uplink)
             qlonglong linkedNodeId = NULL_ID;
             while (true) {
@@ -185,26 +209,26 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 if (ix < 0) {
                     if (st == 0 && appMemoOn) {  // Empty trunk
                         msg = tr("A %1:%2 trunk-nek nincs egyetlen tagja sem.").arg(host().getName(), np.getName());
-                        APPMEMO(__q, msg, RS_ON);
+                        APPMEMO(q, msg, RS_ON);
                     }
                     break;  // Nincs, vagy nincs több
                 }
                 // port ID
                 qlonglong pid = host().ports[ix]->getId();
-                qlonglong pid_lldp = cLldpLink().getLinked(__q, pid);   // LLDP-vel felfedezett link
-                qlonglong pid_log  = cLogLink(). getLinked(__q, pid);   // Logikai (manuálisan rögzített) link
+                qlonglong pid_lldp = cLldpLink().getLinked(q, pid);   // LLDP-vel felfedezett link
+                qlonglong pid_log  = cLogLink(). getLinked(q, pid);   // Logikai (manuálisan rögzített) link
                 // host ID
                 qlonglong hid = NULL_ID;
                 cNPort    lp;
                 if (pid_lldp != NULL_ID && pid_log != NULL_ID && pid_lldp != pid_log) { // Antagonism.
                     msg = tr("A %1:%2 trunk %3 tagjáhozrendelt linkek ellentmondásosak: LLDP : %4; Logikai : %5")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName()
-                                 , cNPort::getFullNameById(__q, pid_lldp), cNPort::getFullNameById(__q, pid_log));
-                    APPMEMO(__q, msg, RS_CRITICAL);
+                                 , cNPort::getFullNameById(q, pid_lldp), cNPort::getFullNameById(q, pid_log));
+                    APPMEMO(q, msg, RS_CRITICAL);
                     pid_log = NULL_ID;  // Az LLDP-t hisszük el.
                 }
                 if (pid_lldp != NULL_ID || pid_log != NULL_ID) {                        // Agreement.
-                    hid = lp.setById(__q, pid_lldp == NULL_ID ? pid_log : pid_lldp).getId(_sNodeId);
+                    hid = lp.setById(q, pid_lldp == NULL_ID ? pid_log : pid_lldp).getId(_sNodeId);
                 }
                 else {                                                                  // No information about LLDP
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
@@ -212,7 +236,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     if (f == TS_TRUE) continue;
                     msg = tr("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());
-                    APPMEMO(__q, msg, RS_WARNING);
+                    APPMEMO(q, msg, RS_WARNING);
                     continue;
                 }
                 if (linkedNodeId == NULL_ID) {  // There is no reference link (first)
@@ -222,8 +246,8 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     if (linkedNodeId != hid) {
                         msg = tr("A %1:%2 trunk %3 tagja %4 -el, előző tagja %5 -al van linkben.")
                                 .arg(host().getName(), np.getName(), host().ports[ix]->getName())
-                                .arg(cNode().getNameById(__q, hid, EX_IGNORE), lp.getFullName(__q, EX_IGNORE));
-                        cAlarm::ticket(__q, RS_CRITICAL, msg, hostServiceId());
+                                .arg(cNode().getNameById(q, hid, EX_IGNORE), lp.getFullName(q, EX_IGNORE));
+                        cAlarm::ticket(q, RS_CRITICAL, msg, hostServiceId());
                     }
                 }
             }
@@ -244,26 +268,13 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             PDEB(VERBOSE) << tr("No set query %1 port, inex %2 not found.").arg(np.getName()).arg(ix) << endl;
         }
     }
-}
-
-cDevicePMac::~cDevicePMac()
-{
-    ;
-}
-
-void cDevicePMac::postInit(QSqlQuery &q, const QString&)
-{
-    DBGFN();
-    cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)
-    // snmpDev().open(q, snmp);
-}
-
-cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par)
-{
-     cRightMac *p = new cRightMac(_q, _hsid, _toid, _par);
-     if (p->flag) return p; // Ha nem volt hiba
-     delete p;              // Ha valami nem OK, töröljük, a statust a konstruktor beállította.
-     return nullptr;        // Ez az elem nem kerül a listába
+    if (ports.isEmpty()) {
+        msgAppend(&runMsg, tr("Nincs lekérdezendő port! A példány le lesz tiltva!"));
+        hostService.setOn(_sDisabled);
+        hostService.update(q, true, hostService.mask(_sDisabled));
+        return RS_UNREACHABLE;
+    }
+    return RS_ON;
 }
 
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
@@ -272,8 +283,13 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));
     }
-    QMap<cMac, int> macs;
     enum eNotifSwitch r;
+    if (ports.isEmpty()) {
+        r = eNotifSwitch(initQuery(q, runMsg));
+        if (r != RS_ON) return r;
+    }
+
+    QMap<cMac, int> macs;
 
     if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) {
         return r;   // Az index nem feltétlenül az eredeti port index!
