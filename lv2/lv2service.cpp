@@ -947,13 +947,13 @@ int cInspector::getInspectorType(QSqlQuery& q)
     quint64 to;
     QString sto, stod;
     stod = feature(_sTimeout);
-    sto  = feature("startTimeout");
+    sto  = feature("start_timeout");
     if (sto.isEmpty()) sto = stod;
     if (!sto.isEmpty()) {
         to = sto.toULongLong(&ok);
         if (ok) startTimeOut = to;
     }
-    sto  = feature("stopTimeout");
+    sto  = feature("stop_timeout");
     if (sto.isEmpty()) sto = stod;
     if (!sto.isEmpty()) {
         to = sto.toULongLong(&ok);

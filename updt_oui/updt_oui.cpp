@@ -92,7 +92,9 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
             cOui    oui;
             cMac    mac(mac_i << 24);
             if (mac.isValid() == false) {
-                EXCEPTION(EPROGFAIL, mac_i, QString::number(mac_i, 16));
+                // Lehet nulla (xerox), de a cMac objektumnál ez nem valid MAC, inkább eldobjuk.
+                continue;
+                // EXCEPTION(EPROGFAIL, mac_i, QString::number(mac_i, 16));
             }
             oui.setMac(_sOui, mac);
             QString name = pat1.cap(4).simplified();
@@ -109,7 +111,7 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
             int r = oui.replace(*pq);
             PDEB(VVERBOSE) << "Result : " << reasons(r) << endl;
         }
-    } CATCHS(lanView::getInstance()->lastError);
+    } CATCHS(lanView::getInstance()->lastError)
     return lanView::getInstance()->lastError == nullptr;
     DBGFNL();
 }

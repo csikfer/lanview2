@@ -2869,7 +2869,7 @@ void cRecordTable::groupDialog(bool __add)
     QModelIndexList mil = selectedRows();   // Selected records to be managed
     if (mil.isEmpty()) return;  // We have nothing to do
     cTableShape *pDialogTableShape = new cTableShape(pRightTables->first()->tableShape());
-    pDialogTableShape->setId(_sTableShapeType, ENUM2SET2(TS_BARE , TS_READ_ONLY));    // Simple read only table
+    pDialogTableShape->setId(_sTableShapeType, ENUM2SET(TS_BARE));    // Simple table
     QDialog *pDialog = new QDialog;
     cRecordTable * pRecordTable = dynamic_cast<cRecordTable *>(cRecordsViewBase::newRecordView(pDialogTableShape));
     if (pRecordTable == nullptr) EXCEPTION(EDATA);
@@ -2904,15 +2904,15 @@ void cRecordTable::groupDialog(bool __add)
             qlonglong type = pTableShape->getId(_sTableShapeType);
             if      (type & ENUM2SET(TS_MEMBER)) {  // Add selected members to selected groups in the dialog
                 memberTable = this;
-                memberMap  = pTableModel()->index2map(mil);
-                groupTable = pRecordTable;
-                groupMap   = groupTable->pTableModel()->index2map(dmil);
+                memberMap   = pTableModel()->index2map(mil);
+                groupTable  = pRecordTable;
+                groupMap    = groupTable->pTableModel()->index2map(dmil);
             }
             else {                                  // Add selected groups to the members selected in the dialog
                 groupTable  = this;
                 groupMap    = pTableModel()->index2map(mil);
                 memberTable = pRecordTable;
-                memberMap   = groupTable->pTableModel()->index2map(dmil);
+                memberMap   = memberTable->pTableModel()->index2map(dmil);
             }
             cRecord *pM = nullptr;
             cRecord *pG = nullptr;

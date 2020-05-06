@@ -2732,7 +2732,7 @@ cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    connect(pTimeEdit, SIGNAL(TimeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
+    connect(pTimeEdit, SIGNAL(timeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
     connect(pFirstButton, SIGNAL(clicked()), this, SLOT(setFirst()));
     connect(pLastButton, SIGNAL(clicked()), this, SLOT(setLast()));
 }
