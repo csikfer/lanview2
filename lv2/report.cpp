@@ -300,10 +300,6 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     QString title;
     cPatch *po   = nodeToOrigin(q, &_node);
     cPatch& node = *(po == nullptr ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
-    if (po != nullptr) {
-        if (flags &  CV_PORTS)       node.fetchPorts(q);
-        if (flags &  CV_NODE_PARAMS) node.fetchParams(q);
-    }
     QString tablename = node.tableName();
     bool isPatch = tablename == _sPatchs;
     title = _sTitle;
@@ -366,181 +362,255 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     }
     /* -- PORTS -- */
     if (flags & CV_PORTS) {
-        if ((node.containerValid & CV_PORTS) == 0) node.fetchPorts(q);
-        text += htmlInfo(QObject::tr("Portok :"));
-        node.sortPortsByIndex();
-        // Table header
-        text += sHtmlTabBeg + sHtmlRowBeg;
-        text += sHtmlTh.arg(QObject::tr("#"));
-        text += sHtmlTh.arg(QObject::tr("Port"));
-        text += sHtmlTh.arg(QObject::tr("Cimke"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::tr("Típus"));
-        text += sHtmlTh.arg(isPatch ? QObject::tr("Shared") : QObject::tr("MAC"));
-        text += sHtmlTh.arg(isPatch ? QObject::tr("S.p.")   : QObject::tr("IP cím(ek)"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::tr("DNS név"));
-        if (isPatch) {
-            text += sHtmlTh.arg(QObject::tr("Előlapi link(ek)"));
-            text += sHtmlTh.arg(QObject::tr("Hátlapi link"));
+        if ((node.containerValid & CV_PORTS) == 0) node.fetchPorts(q, flags);
+        if (node.ports.isEmpty()) {
+            text += sHtmlBr + sHtmlBr + QObject::tr("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
         }
         else {
-            text += sHtmlTh.arg(QObject::tr("Fizikai link"));
-            text += sHtmlTh.arg(QObject::tr("Logikai link"));
-            text += sHtmlTh.arg(QObject::tr("LLDP link"));
-            text += sHtmlTh.arg(QObject::tr("MAC in mactab"));
-        }
-        text += sHtmlRowEnd;
-        // Table data
-        QListIterator<cNPort *> li(node.ports);
-        while (li.hasNext()) {
-            cNPort * p = li.next();
-            cInterface *pInterface = nullptr;
-            cPPort *pPatchPort = nullptr;
-            text += sHtmlRowBeg;
-            text += sHtmlTd.arg(p->getName(_sPortIndex));   // #
-            text += sHtmlTd.arg(p->getName());              // Port (name)
-            text += sHtmlTd.arg(p->getName(_sPortTag));     // Cimke (tag)
-            if (!isPatch) text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));   // Típus (type)
-            // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
-            if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
-                QString ips, dns;
-                pInterface = p->reconvert<cInterface>();
-                QListIterator<cIpAddress *> ii(pInterface->addresses);
-                while (ii.hasNext()) {
-                    cIpAddress * ia = ii.next();
-                    ips += sHtmlBold.arg(ia->view(q, _sAddress)) + "/" + ia->getName(_sIpAddressType) + _sCommaSp;
-                    QHostInfo hi = QHostInfo::fromName(ia->address().toString());
-                    dns += hi.hostName() + _sCommaSp;
-                }
-                ips.chop(_sCommaSp.size());
-                dns.chop(_sCommaSp.size());
-                text += sHtmlTd.arg(pInterface->mac().toString());
-                text += sHtmlTd.arg(ips);
-                text += sHtmlTd.arg(dns);
+            text += htmlInfo(QObject::tr("Portok :"));
+            node.sortPortsByIndex();
+            // Table header
+            text += sHtmlTabBeg + sHtmlRowBeg;
+            text += sHtmlTh.arg(QObject::tr("#"));
+            text += sHtmlTh.arg(QObject::tr("Port"));
+            text += sHtmlTh.arg(QObject::tr("Cimke"));
+            if (!isPatch) {
+                text += sHtmlTh.arg(QObject::tr("Típus"));
+                text += sHtmlTh.arg(QObject::tr("Trk."));
             }
-            else if (isPatch) {                                 // PPort
-                pPatchPort = p->reconvert<cPPort>();
-                text += sHtmlTd.arg(pPatchPort->getName(_sSharedCable));    // Shared
-                qlonglong spid = pPatchPort->getId(_sSharedPortId);
-                if (spid == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);// S.p.
-                else {
-                    int ix = node.ports.indexOf(spid);
-                    if (ix < 0) text += sHtmlTd.arg(htmlError("!?"));
-                    else        text += sHtmlTd.arg(node.ports.at(ix)->getName());
-                }
-            }
-            else {                                              // NPort
-                 text += sHtmlTd.arg(sHtmlVoid);
-                 text += sHtmlTd.arg(sHtmlVoid);
-                 text += sHtmlTd.arg(sHtmlVoid);
-            }
-            qlonglong pid = p->getId();
-            /// Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
+            text += sHtmlTh.arg(isPatch ? QObject::tr("Shared") : QObject::tr("MAC"));
+            text += sHtmlTh.arg(isPatch ? QObject::tr("S.p.")   : QObject::tr("IP cím(ek)"));
+            if (!isPatch) text += sHtmlTh.arg(QObject::tr("DNS név"));
             if (isPatch) {
-                cPhsLink pl;
-                // Front link(s)
-                pl.setId(_sPortId1, pid);
-                pl.setId(_sPhsLinkType1, LT_FRONT);
-                int n = pl.completion(q, pl.iTab(_sPortShared));
-                QStringList sl;
-                if (n > 0) {
-                    tRecordList<cPhsLink>   list;
-                    list.set(q);
-                    while (1) {
-                        cPhsLink *ppl = list.pop_front(EX_IGNORE);
-                        if (ppl == nullptr) break;
-                        QString sh = ppl->getName(_sPortShared);
-                        QString sp = cNPort::getFullNameById(q, ppl->getId(_sPortId2));
-                        sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
-                    }
-                }
-                text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
-                // Back link
-                pl.clear();
-                pl.setId(_sPortId1, pid);
-                pl.setId(_sPhsLinkType1, LT_BACK);
-                n = pl.completion(q);
-                sl.clear();
-                QSqlQuery q2 = getQuery();
-                if (n > 0) {
-                    do {
-                        qlonglong pid2 = pl.getId(_sPortId2);
-                        QString sh;
-                        cPPort pp;
-                        if (pp.fetchById(q2, pid2)) {
-                            sh = pp.getName(_sSharedCable);
-                            if (!sh.isEmpty()) sh += ":";
-                        }
-                        QString sp = cNPort::getFullNameById(q2, pid2);
-                        sl << (sh + sp);
-                    } while (pl.next(q));
-                    if (n == 1) text += sHtmlTd.arg(sl.join(sHtmlBr));
-                    else        text += sHtmlTd.arg(htmlError(sl.join(QChar('\n')), true));
-                }
-                else {
-                    QString cel = sHtmlVoid;
-                    qlonglong spid = pPatchPort->getId(_sSharedPortId);
-                    if (spid != NULL_ID) {
-                        static const QString sql =
-                                "SELECT pp2.shared_cable || ':' || port_id2full_name(pp2.port_id)"
-                                " FROM phs_links JOIN pports AS pp2 ON (pp2.shared_port_id = port_id2) "
-                                " WHERE port_id1 = ? AND pp2.shared_cable = ?";
-                        if (execSql(q, sql, spid, pPatchPort->getName(_sSharedCable))) {
-                            cel =  sHtmlItalic.arg(q.value(0).toString());
-                        }
-                    }
-                    text += sHtmlTd.arg(cel);
-                }
+                text += sHtmlTh.arg(QObject::tr("Előlapi link(ek)"));
+                text += sHtmlTh.arg(QObject::tr("Hátlapi link"));
             }
             else {
-                qlonglong plp = LinkGetLinked<cPhsLink>(q, pid);    // -> phisical link
-                qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
-                qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
-                qlonglong mtp = NULL_ID;                            // -> port ID: MAC in MacTab
-                if (pInterface != nullptr) {  // Interface ?
-                    cMacTab mt;
-                    mt.setMac(_sHwAddress, pInterface->getMac(_sHwAddress));
-                    if (mt.completion(q)) {
-                        mtp = mt.getId(_sPortId);
-                    }
-                }
-                // phisical
-                text += sHtmlTd.arg(plp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, plp));
-                // logical
-                if (llp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
-                else {
-                    QString n = cNPort::getFullNameById(q, llp);
-                    if (mtp != NULL_ID) {
-                        if (mtp != llp) n = sHtmlBRed.arg(n);
-                        else            n = sHtmlBGreen.arg(n);
-                    }
-                    text += sHtmlTd.arg(n);
-                }
-                // lldp
-                if (ldp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
-                else {
-                    QString n = cNPort::getFullNameById(q, ldp);
-                    if (llp != NULL_ID) {
-                        if (llp != ldp) n = sHtmlBRed.arg(n);
-                        else            n = sHtmlBGreen.arg(n);
-                    }
-                    text += sHtmlTd.arg(n);
-                }
-                // mac tab
-                if (mtp != NULL_ID) {
-                    QString n = cNPort::getFullNameById(q, mtp);
-                    if (llp != NULL_ID) {
-                        if (mtp != llp) n = sHtmlBRed.arg(n);
-                        else            n = sHtmlBGreen.arg(n);
-                    }
-                    text += sHtmlTd.arg(n);
-                }
+                text += sHtmlTh.arg(QObject::tr("Fizikai link"));
+                text += sHtmlTh.arg(QObject::tr("Logikai link"));
+                text += sHtmlTh.arg(QObject::tr("LLDP link"));
+                text += sHtmlTh.arg(QObject::tr("MAC in mactab"));
             }
             text += sHtmlRowEnd;
+            // Table data
+            QListIterator<cNPort *> li(node.ports);
+            while (li.hasNext()) {
+                cNPort * p = li.next();
+                cInterface *pInterface = nullptr;
+                if (!isPatch && p->descr() == cInterface::_descr_cInterface()) {  // Interface
+                    pInterface = p->reconvert<cInterface>();
+                }
+                cPPort *pPatchPort = nullptr;
+                text += sHtmlRowBeg;
+                text += sHtmlTd.arg(p->getName(_sPortIndex));   // #
+                text += sHtmlTd.arg(p->getName());              // Port (name)
+                text += sHtmlTd.arg(p->getName(_sPortTag));     // Cimke (tag)
+                if (!isPatch) {
+                    text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));   // Típus (type)
+                    if (pInterface != nullptr && !pInterface->isNull(_sPortStapleId)) {
+                        qlonglong psid = pInterface->getId(_sPortStapleId);
+                        text += sHtmlTd.arg(node.ports.get(psid)->getName());
+                    }
+                    else {
+                        text += sHtmlTd.arg(sHtmlVoid);
+                    }
+                }
+                // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
+                if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
+                    QString ips, dns;
+                    QListIterator<cIpAddress *> ii(pInterface->addresses);
+                    while (ii.hasNext()) {
+                        cIpAddress * ia = ii.next();
+                        ips += sHtmlBold.arg(ia->view(q, _sAddress)) + "/" + ia->getName(_sIpAddressType) + _sCommaSp;
+                        QHostInfo hi = QHostInfo::fromName(ia->address().toString());
+                        dns += hi.hostName() + _sCommaSp;
+                    }
+                    ips.chop(_sCommaSp.size());
+                    dns.chop(_sCommaSp.size());
+                    text += sHtmlTd.arg(pInterface->mac().toString());
+                    text += sHtmlTd.arg(ips);
+                    text += sHtmlTd.arg(dns);
+                }
+                else if (isPatch) {                                 // PPort
+                    pPatchPort = p->reconvert<cPPort>();
+                    text += sHtmlTd.arg(pPatchPort->getName(_sSharedCable));    // Shared
+                    qlonglong spid = pPatchPort->getId(_sSharedPortId);
+                    if (spid == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);// S.p.
+                    else {
+                        int ix = node.ports.indexOf(spid);
+                        if (ix < 0) text += sHtmlTd.arg(htmlError("!?"));
+                        else        text += sHtmlTd.arg(node.ports.at(ix)->getName());
+                    }
+                }
+                else {                                              // NPort
+                     text += sHtmlTd.arg(sHtmlVoid);
+                     text += sHtmlTd.arg(sHtmlVoid);
+                     text += sHtmlTd.arg(sHtmlVoid);
+                }
+                qlonglong pid = p->getId();
+                /// Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
+                if (isPatch) {
+                    cPhsLink pl;
+                    // Front link(s)
+                    pl.setId(_sPortId1, pid);
+                    pl.setId(_sPhsLinkType1, LT_FRONT);
+                    int n = pl.completion(q, pl.iTab(_sPortShared));
+                    QStringList sl;
+                    if (n > 0) {
+                        tRecordList<cPhsLink>   list;
+                        list.set(q);
+                        while (1) {
+                            cPhsLink *ppl = list.pop_front(EX_IGNORE);
+                            if (ppl == nullptr) break;
+                            QString sh = ppl->getName(_sPortShared);
+                            QString sp = cNPort::getFullNameById(q, ppl->getId(_sPortId2));
+                            sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
+                        }
+                    }
+                    text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
+                    // Back link
+                    pl.clear();
+                    pl.setId(_sPortId1, pid);
+                    pl.setId(_sPhsLinkType1, LT_BACK);
+                    n = pl.completion(q);
+                    sl.clear();
+                    QSqlQuery q2 = getQuery();
+                    if (n > 0) {
+                        do {
+                            qlonglong pid2 = pl.getId(_sPortId2);
+                            QString sh;
+                            cPPort pp;
+                            if (pp.fetchById(q2, pid2)) {
+                                sh = pp.getName(_sSharedCable);
+                                if (!sh.isEmpty()) sh += ":";
+                            }
+                            QString sp = cNPort::getFullNameById(q2, pid2);
+                            sl << (sh + sp);
+                        } while (pl.next(q));
+                        if (n == 1) text += sHtmlTd.arg(sl.join(sHtmlBr));
+                        else        text += sHtmlTd.arg(htmlError(sl.join(QChar('\n')), true));
+                    }
+                    else {
+                        QString cel = sHtmlVoid;
+                        qlonglong spid = pPatchPort->getId(_sSharedPortId);
+                        if (spid != NULL_ID) {
+                            static const QString sql =
+                                    "SELECT pp2.shared_cable || ':' || port_id2full_name(pp2.port_id)"
+                                    " FROM phs_links JOIN pports AS pp2 ON (pp2.shared_port_id = port_id2) "
+                                    " WHERE port_id1 = ? AND pp2.shared_cable = ?";
+                            if (execSql(q, sql, spid, pPatchPort->getName(_sSharedCable))) {
+                                cel =  sHtmlItalic.arg(q.value(0).toString());
+                            }
+                        }
+                        text += sHtmlTd.arg(cel);
+                    }
+                }
+                else {
+                    qlonglong plp = LinkGetLinked<cPhsLink>(q, pid);    // -> phisical link
+                    qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
+                    qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
+                    qlonglong mtp = NULL_ID;                            // -> port ID: MAC in MacTab
+                    if (pInterface != nullptr) {  // Interface ?
+                        cMacTab mt;
+                        mt.setMac(_sHwAddress, pInterface->getMac(_sHwAddress));
+                        if (mt.completion(q)) {
+                            mtp = mt.getId(_sPortId);
+                        }
+                    }
+                    // phisical
+                    text += sHtmlTd.arg(plp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, plp));
+                    // logical
+                    if (llp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                    else {
+                        QString n = cNPort::getFullNameById(q, llp);
+                        if (mtp != NULL_ID) {
+                            if (mtp != llp) n = sHtmlBRed.arg(n);
+                            else            n = sHtmlBGreen.arg(n);
+                        }
+                        text += sHtmlTd.arg(n);
+                    }
+                    // lldp
+                    if (ldp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                    else {
+                        QString n = cNPort::getFullNameById(q, ldp);
+                        if (llp != NULL_ID) {
+                            if (llp != ldp) n = sHtmlBRed.arg(n);
+                            else            n = sHtmlBGreen.arg(n);
+                        }
+                        text += sHtmlTd.arg(n);
+                    }
+                    // mac tab
+                    if (mtp != NULL_ID) {
+                        QString n = cNPort::getFullNameById(q, mtp);
+                        if (llp != NULL_ID) {
+                            if (mtp != llp) n = sHtmlBRed.arg(n);
+                            else            n = sHtmlBGreen.arg(n);
+                        }
+                        text += sHtmlTd.arg(n);
+                    }
+                }
+                text += sHtmlRowEnd;
+            }
+            text += sHtmlTabEnd;
         }
-        text += sHtmlTabEnd;
     }
-    else if (flags) {
-        text += sHtmlBr + sHtmlBr + QObject::tr("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
+    // Port - VLANs
+    if (flags & CV_PORT_VLANS && !isPatch) {
+        static const QString sql =
+                "SELECT vlan_id, vlan_name"
+                " FROM vlan_list_by_host"
+                " WHERE node_id = ?"
+                " ORDER BY vlan_id ASC";
+        QString vlans;
+        QStringList head;
+        QStringList emptyLine;
+        QList<QStringList> matrix;
+        QList<int>  vlanIds;
+        head      << toHtml(QObject::tr("Port \\ VLAN ID"));
+        emptyLine << _sNul;
+        if (execSql(q, sql, node.getId())) {
+            do {
+                vlans += QString("%2(%1), ").arg(q.value(0).toInt()).arg(q.value(1).toString());
+                head    << q.value(0).toString();
+                vlanIds << q.value(0).toInt();
+                emptyLine << _sNul;
+            } while (q.next());
+            vlans.chop(2);
+            text += htmlInfo(QObject::tr("VLAN-ok : ") + vlans);
+
+            if ((node.containerValid & CV_PORTS) == 0) node.fetchPorts(q, flags);
+            foreach (cNPort *p, node.ports.list()) {
+                if (cInterface::_descr_cInterface() == p->descr()) {
+                    cInterface *pi = p->reconvert<cInterface>();
+                    if ((pi->containerValid & CV_PORT_VLANS) == 0) pi->fetchVlans(q);
+                    if (pi->vlans.isEmpty()) {
+                        PDEB(VERBOSE) << "VLAN table : " << p->getName() << " no any VLAN, drop." << endl;
+                        continue;
+                    }
+                    matrix << emptyLine;
+                    matrix.last()[0] = toHtml(p->getName());
+                    foreach (cPortVlan *pv, pi->vlans.list()) {
+                        int vid = int(pv->getId(_sVlanId));
+                        int col = vlanIds.indexOf(vid);
+                        if (col < 0) {
+                            PDEB(DERROR) << "VLAN table : " << p->getName() << " not found " << vid <<", drop." << endl;
+                            continue;
+                        }
+                        int e = int(pv->getId(_sVlanType));
+                        const cEnumVal& ev = cEnumVal::enumVal("vlantype", e);
+                        QString s = ev.getText(cEnumVal::LTX_VIEW_SHORT, vlanType(e));
+                        matrix.last()[col + 1] = htmlEnumDecoration(s, ev);
+                    }
+                }
+                else {
+                    PDEB(VERBOSE) << "VLAN table : " << p->getName() << " is not interface, drop." << endl;
+                }
+            }
+            text += htmlTable(head, matrix, false);
+        }
+        else {
+            text += sHtmlBr + sHtmlBr + QObject::tr("Nincs egyetlen VLAN-sem hozzárendelve az eszközhöz.") + "</b>";
+        }
     }
     pDelete(po);
     return tStringPair(title, text);

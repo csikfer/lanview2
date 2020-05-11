@@ -1099,6 +1099,7 @@ void cEnumVal::fetchEnumVals()
     QSqlQuery q2 = getQuery();
     // All enum records, sorted by type name
     if (ev.fetch(q, false, ba, ev.iTab(_sEnumTypeName))) do {
+        ev.fetchText(q2);
         QString typeName = ev.getName(ev.ixEnumTypeName());     // type name
         QString val      = ev.getName(ev.ixEnumValName());      // value name
         bool    isType   = ev.isNull(ev.ixEnumValName());       // Not value, is type
