@@ -78,17 +78,23 @@ QString htmlEnumDecoration(const QString text, const cEnumVal& eval, int m, bool
         if (fa & ENUM2SET(FA_UNDERLINE)) r = toHtmlUnderline(    r, false, false);
     }
     QString s, style;
-    s = eval.getName(cEnumVal::ixFgColor());
-    if (m & EDM_FONT_COLOR && !s.isEmpty()) {
-        style  = " \"color:%1\" ";
+    if (m & EDM_FONT_COLOR) {
+        s = eval.getName(cEnumVal::ixFgColor());
+        if (!s.isEmpty()) {
+            style  = QString(" \"color:%1\" ").arg(s);
+        }
     }
-    s = eval.getName(cEnumVal::ixBgColor());
-    if (m & EDM_BACKGROUND_COLOR && !s.isEmpty()) {
-        style += " \"background-color:%1\" ";
+    if (m & EDM_BACKGROUND_COLOR) {
+        s = eval.getName(cEnumVal::ixBgColor());
+        if (!s.isEmpty()) {
+            style += QString(" \"background-color:%1\" ").arg(s);
+        }
     }
-    s = eval.getName(cEnumVal::ixFontFamily());
-    if (m & EDM_FONT_FAMILY && !s.isEmpty()) {
-        style += " \"font-family:%1\" ";
+    if (m & EDM_FONT_FAMILY) {
+        s = eval.getName(cEnumVal::ixFontFamily());
+        if (!s.isEmpty()) {
+            style += QString(" \"font-family:%1\" ").arg(s);
+        }
     }
     if (!style.isEmpty()) {
         r = "<span style=" + style + ">" + r + "</span>";
@@ -448,7 +454,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                      text += sHtmlTd.arg(sHtmlVoid);
                 }
                 qlonglong pid = p->getId();
-                /// Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
+                // Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
                 if (isPatch) {
                     cPhsLink pl;
                     // Front link(s)
@@ -506,7 +512,8 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                     }
                 }
                 else {
-                    qlonglong plp = LinkGetLinked<cPhsLink>(q, pid);    // -> phisical link
+                    cPhsLink pl;
+                    qlonglong plp = LinkGetLinked(q, pl, pid);          // -> phisical link
                     qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
                     qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
                     qlonglong mtp = NULL_ID;                            // -> port ID: MAC in MacTab
@@ -517,9 +524,31 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                             mtp = mt.getId(_sPortId);
                         }
                     }
-                    // phisical
-                    text += sHtmlTd.arg(plp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, plp));
-                    // logical
+                    // phisical link
+                    if (plp == NULL_ID) {
+                        text += sHtmlTd.arg(sHtmlVoid);
+                    }
+                    else {
+                        QString s = cNPort::getFullNameById(q, plp);
+                        ePortShare sh = ePortShare(pl.getId(_sPortShared));
+                        if (sh != ES_) {
+                            s += "/" + portShare(sh);
+                        }
+                        ePhsLinkType plt = ePhsLinkType(pl.getId(_sPhsLinkType2));
+                        if (plt != LT_TERM) {
+                            s += "/" + phsLinkType(plt);
+                        }
+                        if (sh == ES_) {
+                            const cEnumVal& e = cEnumVal::enumVal("phslinktype", plt);
+                            s = htmlEnumDecoration(s, e);
+                        }
+                        else {
+                            const cEnumVal& e = cEnumVal::enumVal("portshare", sh);
+                            s = htmlEnumDecoration(s, e);
+                        }
+                        text += sHtmlTd.arg(s);
+                    }
+                    // logical link
                     if (llp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
                     else {
                         QString n = cNPort::getFullNameById(q, llp);
