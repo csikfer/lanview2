@@ -120,7 +120,7 @@ void cSnmpDevQPort::trunkItem()
         }
         pComboBoxTrunk->setCurrentIndex(lastTrunkIx);
         pTableWidget->setCellWidget(row, PTI_TRUNK, pComboBoxTrunk);
-        connect(pComboBoxTrunk, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxTrunk_currentIndexChenged()));
+        connect(pComboBoxTrunk, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxTrunk_currentIndexChenged(int)));
     }
     else {
         pTableWidget->removeCellWidget(row, PTI_TRUNK);
