@@ -377,16 +377,19 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
     QBitArray   rb = index2map(mil);
     if (rb.count(true) == 0) return;
     QString text = tr("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable;
-    text += tr("\nTörlésre kijelölt objektu(mok) :");
+    QString detailedText = tr("\nTörlésre kijelölt objektu(mok) :");
     int s = rb.size();    // Az összes rekord száma
     for (int i = 0; i < s; ++i) {   // végigszaladunk a sorokon
         if (rb[i]) {
             cRecord * p = _records.at(i);
-            text += tr("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
+            detailedText += tr("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
         }
     }
-
-    if (!cMsgBox::yes(text, recordView.pWidget())) return;
+    if (mil.size() < 10) {
+        text += detailedText;
+        detailedText = _sNul;
+    }
+    if (!cMsgBox::yes(text, recordView.pWidget(), detailedText)) return;
     for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
         if (rb[i]) removeRec(index(i, 0));
     }

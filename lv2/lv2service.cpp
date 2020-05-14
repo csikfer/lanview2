@@ -49,8 +49,17 @@ void cThreadAcceptor::on_timer_timeout()
     _DBGFNL() << inspector.name() << endl;
 }
 
+void cThreadAcceptor::on_thread_finished()
+{
+    if (inspector.internalStat == IS_ERROR) {
+        _DBGFN() << "down : " << inspector.name() << endl;
+        inspector.down();
+    }
+}
+
+
 cInspectorThread::cInspectorThread(cInspector *pp)
-    : QThread(pp), inspector(*pp), acceptor(this)
+    : QThread(), inspector(*pp), acceptor(this)
 {
     _DBGFN() << inspector.name() << endl;
     pLastError = nullptr;
@@ -77,14 +86,19 @@ cInspectorThread::~cInspectorThread()
 void cInspectorThread::run()
 {
     pDelete(pLastError);
+    enum eInternalStat  internalStat = inspector.internalStat;
     try {
-        _DBGFN() << inspector.name() << inspector.internalStat << endl;
-        switch (inspector.internalStat) {
+        _DBGFN() << inspector.name() << internalStat << endl;
+        switch (internalStat) {
         case IS_INIT:   doInit();   break;
-        case IS_RUN:    doRun();    break;
         case IS_DOWN:   doDown();   break;
+        case IS_RUN:
+            connect(this, SIGNAL(finished()), &inspector, SLOT(on_thread_finished()));
+            doRun();
+            disconnect(this, SIGNAL(finished()), &inspector, SLOT(on_thread_finished()));
+            break;
         default:
-            EXCEPTION(EPROGFAIL, inspector.internalStat, internalStatName(inspector.internalStat));
+            EXCEPTION(EPROGFAIL, internalStat, internalStatName(internalStat));
         }
     } CATCHS(pLastError)
     if (pLastError) {
@@ -275,7 +289,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     return -1;
 }
 
-void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exitStatus)
+void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
 {
     _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << ", program : " << inspector.checkCmd << endl;
     if (inspector.internalStat != IS_RUN && inspector.internalStat != IS_STOPPED) {
@@ -284,35 +298,41 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
     }
     lastElapsed = lastStart.isValid() ? lastStart.elapsed() : NULL_ID;
     if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
-        if (lastElapsed > errCntClearTime) reStartCnt = 0;
-        QString msg;
-        if (exitStatus ==  QProcess::CrashExit) {
-            msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
-        }
-        else {
-            msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
-        }
-        if (!inspector.hostService.fetchById(*inspector.pq) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
-            if (!inspector.hostService.isNull()) {
-                inspector.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Letíltva.");
+        QString msg = "?";
+        while (true) {
+            if (lastElapsed > errCntClearTime) reStartCnt = 0;
+            switch (exitStatus) {
+            case QProcess::CrashExit:
+                msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
+                break;
+            case QProcess::NormalExit:
+                msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
+                break;
             }
-            inspector.internalStat = IS_STOPPED;
-            return;
-        }
-        if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
-            ++reStartCnt;
-            if (reStartCnt > reStartMax) {
-                inspector.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás. Túl sok úgraindítási kísérlet.");
+            if (!inspector.hostService.fetchById(*inspector.pq) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
+                if (!inspector.hostService.isNull()) {
+                    inspector.setState(*inspector.pq, _sDown, msg + tr(" Nincs újraindítás. Letíltva."));
+                }
                 inspector.internalStat = IS_STOPPED;
-                return;
+                break;
             }
-            else {
-                inspector.setState(*inspector.pq, _sWarning, msg + "Újraindítási kíérlet.");
+            if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
+                ++reStartCnt;
+                if (reStartCnt > reStartMax) {
+                    inspector.setState(*inspector.pq, _sDown, msg + tr(" Nincs újraindítás. Túl sok (%1 > %2) úgraindítási kísérlet.").arg(reStartCnt).arg(reStartMax));
+                    inspector.internalStat = IS_STOPPED;
+                    break;;
+                }
+                else {
+                    inspector.setState(*inspector.pq, _sWarning, msg + tr("Újraindítási kíérlet (#%1).").arg(reStartCnt));
+                    PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
+                    inspector.internalStat = IS_RUN;
+                    int r = startProcess(int(inspector.startTimeOut), 0);
+                    if (r == 0) break;
+                    msg = tr("A %1 program újraindítása sikertelen.").arg(inspector.checkCmd);
+                }
             }
         }
-        PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
-        inspector.internalStat = IS_RUN;
-        startProcess(int(inspector.startTimeOut));
     }
     else {  // ?! Nem szabadna itt lennünk.
         EXCEPTION(EPROGFAIL, inspector.inspectorType, inspector.name());
@@ -648,16 +668,15 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         pInspectorThread = newThread();     //
         pInspectorThread->start();          // Init, Init után leáll
         if (!pInspectorThread->wait(startTimeOut)) {   // Az init még szinkron, megvárjuk a végét
-
             EXCEPTION(ETO, 0, tr("%1 thread init.").arg(name()));
         }
-        if (pInspectorThread->pLastError != nullptr) {
+        if (pInspectorThread->pLastError != nullptr) {  // Nem sikerült az init
             cError *pe = pInspectorThread->pLastError;
             pInspectorThread->pLastError = nullptr;
             pe->exception();
         }
     }
-    // Van superior. (Thread-nél ezt a thread-ben kell)
+    // Ha superior. (Thread-nél ezt a thread-ben kell elintézni)
     else if (inspectorType & IT_SUPERIOR) {
         // process-nél a mi dolgunk ?
         bool f = pProcess == nullptr;
@@ -1773,7 +1792,7 @@ void cInspector::drop(eEx __ex)
                 if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
             }
             else if (pInspectorThread != nullptr) {
-                pInspectorThread->start();  // status down-ban, ráadjuk a vezérlést, hogy le tudjon állni
+                pInspectorThread->start();  // status down-ban, rátadjuk a vezérlést, hogy le tudjon állni
                 pInspectorThread->wait(stopTimeOut);
             }
         }

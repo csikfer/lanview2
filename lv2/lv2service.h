@@ -111,10 +111,11 @@ protected:
     QTimer *    pTimer;
 protected slots:
     void on_timer_timeout();
+    void on_thread_finished();
 };
 
 /// @class cInspectorThread
-/// Időzített thread
+/// Az Inspector thread objektum
 class LV2SHARED_EXPORT cInspectorThread : public QThread {
     friend class cInspector;
     Q_OBJECT
@@ -150,7 +151,7 @@ public:
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
 protected slots:
-    virtual void processFinished(int _exitCode, QProcess::ExitStatus exitStatus);
+    virtual void processFinished(int _exitCode, int exitStatus);
     virtual void processReadyRead();
 protected:
     int         reStartCnt;         ///< Hiba számláló

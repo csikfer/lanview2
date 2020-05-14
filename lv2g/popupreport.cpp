@@ -162,10 +162,11 @@ bool cMsgBox::yesno(const QString& _m, QWidget *par)
     return r == QMessageBox::Yes;
 
 }
-bool cMsgBox::yes(const QString& _m, QWidget *par)
+bool cMsgBox::yes(const QString& _m, QWidget *par, const QString& _dt)
 {
     cMsgBox o(DC_QUESTION, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.setDetailedText(_dt);
     o.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
     int r = o.exec();
     return r == QMessageBox::Yes;

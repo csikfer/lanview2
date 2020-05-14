@@ -44,7 +44,7 @@ public:
     static void info(const QString& _m, QWidget *par = nullptr);
     static void warning(const QString& _m, QWidget *par = nullptr);
     static void error(const QString& _m, QWidget *par = nullptr);
-    static bool yes(const QString& _m, QWidget *par);
+    static bool yes(const QString& _m, QWidget *par, const QString &_dt = _sNul);
     static bool yesno(const QString& _m, QWidget *par = nullptr);
     static eTristate tristate(const QString& _m, QWidget *par = nullptr);
     /**/
