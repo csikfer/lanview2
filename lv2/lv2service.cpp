@@ -330,6 +330,7 @@ void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
                     int r = startProcess(int(inspector.startTimeOut), 0);
                     if (r == 0) break;
                     msg = tr("A %1 program újraindítása sikertelen.").arg(inspector.checkCmd);
+                    exitStatus = -1;
                 }
             }
         }
@@ -1380,7 +1381,10 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
-        if (ec == -1) return RS_STAT_SETTED;    // Already sended: RS_CRITICAL
+        if (ec == -1) {
+            if (internalStat == IS_ERROR) down();
+            return RS_STAT_SETTED;    // Already sended: RS_CRITICAL
+        }
         return parse(ec, *pProcess, runMsg);
     }
     else {

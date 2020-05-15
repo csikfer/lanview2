@@ -41,12 +41,13 @@ _GEX cPopupReportWindow* popupReportByMAC(QWidget *par, QSqlQuery& q, const QStr
 class LV2GSHARED_EXPORT cMsgBox : public QMessageBox {
 public:
     cMsgBox(eDataCharacter _dc, QWidget *par = nullptr);
-    static void info(const QString& _m, QWidget *par = nullptr);
-    static void warning(const QString& _m, QWidget *par = nullptr);
-    static void error(const QString& _m, QWidget *par = nullptr);
-    static bool yes(const QString& _m, QWidget *par, const QString &_dt = _sNul);
-    static bool yesno(const QString& _m, QWidget *par = nullptr);
-    static eTristate tristate(const QString& _m, QWidget *par = nullptr);
+    void settingDetailedText(const QString& _dt);
+    static void info(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
+    static void warning(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
+    static void error(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
+    static bool yes(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
+    static bool yesno(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
+    static eTristate tristate(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
     /**/
     static bool tryOpenRead(QFile& f, QWidget *par = nullptr);
     static bool tryOpenWrite(QFile& f, QWidget *par = nullptr);
@@ -55,7 +56,6 @@ public:
     static const QString sNotFRead;
     static const QString sNotFWrite;
     static const QString sNotFRdWr;
-
 protected:
     void setStandardIcon(eDataCharacter _dc);
 };

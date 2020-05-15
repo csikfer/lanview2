@@ -134,29 +134,49 @@ cMsgBox::cMsgBox(eDataCharacter _dc, QWidget *par)
     }
 }
 
-void cMsgBox::info(const QString& _m, QWidget *par)
+void cMsgBox::settingDetailedText(const QString &_dt)
+{
+    setDetailedText(_dt);
+    QTextDocument doc;
+    doc.setPlainText(_dt);
+    QSizeF sf = doc.size();
+    int w = int(sf.width());
+    QGridLayout* grid = (QGridLayout*)layout();
+    w += 16;
+    int screenWidth = QApplication::screens().first()->size().width();
+    screenWidth *= 7; screenWidth /= 10;    // 70%
+    w = std::min(w, screenWidth);
+    QSpacerItem* horizontalSpacer = new QSpacerItem(w, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    grid->addItem(horizontalSpacer, grid->rowCount(), 0, 1, grid->columnCount());
+}
+
+void cMsgBox::info(const QString& _m, QWidget *par, const QString &_dt)
 {
     cMsgBox o(DC_INFO, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.exec();
 }
 
-void cMsgBox::warning(const QString& _m, QWidget *par)
+void cMsgBox::warning(const QString& _m, QWidget *par, const QString &_dt)
 {
     cMsgBox o(DC_WARNING, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.exec();
 }
-void cMsgBox::error(const QString& _m, QWidget *par)
+void cMsgBox::error(const QString& _m, QWidget *par, const QString &_dt)
 {
     cMsgBox o(DC_ERROR, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.exec();
 }
-bool cMsgBox::yesno(const QString& _m, QWidget *par)
+bool cMsgBox::yesno(const QString& _m, QWidget *par, const QString &_dt)
 {
     cMsgBox o(DC_QUESTION, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     int r = o.exec();
     return r == QMessageBox::Yes;
@@ -166,16 +186,17 @@ bool cMsgBox::yes(const QString& _m, QWidget *par, const QString& _dt)
 {
     cMsgBox o(DC_QUESTION, par);
     o.setText(_m);
-    if (!_dt.isEmpty()) o.setDetailedText(_dt);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
     int r = o.exec();
     return r == QMessageBox::Yes;
 
 }
-eTristate tristate(const QString& _m, QWidget *par)
+eTristate cMsgBox::tristate(const QString& _m, QWidget *par, const QString& _dt)
 {
     cMsgBox o(DC_QUESTION, par);
     o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
     o.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
     int r = o.exec();
     if (r == QMessageBox::Yes) return TS_TRUE;
