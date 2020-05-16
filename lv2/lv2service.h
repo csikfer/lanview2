@@ -222,7 +222,7 @@ public:
     virtual int run(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
-    virtual enum eNotifSwitch parse(int _ec, QIODevice &_text, QString &runMsg);
+    virtual int parse(int _ec, QIODevice &_text, QString &runMsg);
     /// Futás időzítés indítása
     virtual void start();
     int firstDelay();

@@ -649,7 +649,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         EXCEPTION(NOTODO);
 //      break;
     default:
-        timeperiod.setById(q);
+        timeperiod.setById(q, tpid);
         break;
     }
     // Ha még nincs meg a típus
@@ -1395,20 +1395,27 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     return RS_UNREACHABLE;
 }
 
-enum eNotifSwitch cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
+int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
 {
     _DBGFN() <<  name() << endl;
-    enum eNotifSwitch r = RS_INVALID;
-    int method = inspectorType & IT_METHOD_MASK;
-    QByteArray bytes = _text.readAll();
-    QString text = QString::fromUtf8(bytes);
-    if (method & IT_METHOD_SAVE_TEXT)  r = save_text(_ec, text);
-    if (method & IT_METHOD_PARSE_TEXT) r = parse_text(_ec, text, runMsg);
-    switch (method & IT_METHODE_TEXT_DATA) {
-    case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text, runMsg);    break;
-    case IT_METHOD_JSON:    r = parse_json(_ec, bytes, runMsg);     break;
+    int r = RS_INVALID;
+    if (inspectorType & IT_METHOD_CARRIED) {
+        r = RS_STAT_SETTED;
+        if (_ec != 0) r |= RS_SET_RETRY;
+        return r;
     }
-    if (method & IT_METHOD_QPARSE) r = parse_qparse(_ec, text);
+    QByteArray bytes = _text.readAll();
+    int method = inspectorType & IT_METHOD_MASK;
+    if (method != 0) {
+        QString text = QString::fromUtf8(bytes);
+        if (method & IT_METHOD_SAVE_TEXT)  r = save_text(_ec, text);
+        if (method & IT_METHOD_PARSE_TEXT) r = parse_text(_ec, text, runMsg);
+        switch (method & IT_METHODE_TEXT_DATA) {
+        case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text, runMsg);    break;
+        case IT_METHOD_JSON:    r = parse_json(_ec, bytes, runMsg);     break;
+        }
+        if (method & IT_METHOD_QPARSE) r = parse_qparse(_ec, text);
+    }
     return r;
 }
 

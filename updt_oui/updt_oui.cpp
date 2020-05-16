@@ -29,7 +29,10 @@ int main(int argc, char *argv[])
 
     mo.d.doDownload();
 
-    return a.exec();
+    int r = a.exec();
+
+    if (r != 0) return r;
+    return mo.success ? 0 : 127;
 
 }
 
@@ -38,6 +41,7 @@ lv2UpdateOui::lv2UpdateOui()
     , pq(newQuery())
     , d(urlQueue, pq, this)
 {
+    success = false;
     if (lastError == nullptr) {
         try {
 
@@ -176,4 +180,5 @@ void Downloader::prelude()
             "UPDATE mactab SET mactab_state = array_append(mactab_state, 'oui'::mactabstate)"
             "   WHERE 'oui'::mactabstate <> ALL (mactab_state) AND is_content_oui(hwaddress)";
     execSql(*pq, sql);
+    static_cast<lv2UpdateOui *>(lanView::getInstance())->success = true;
 }

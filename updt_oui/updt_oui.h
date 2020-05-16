@@ -43,6 +43,7 @@ public:
     QQueue<QUrl>    urlQueue;
     QSqlQuery      *pq;
     Downloader      d;
+    bool            success;
 protected slots:
 };
 
