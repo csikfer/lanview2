@@ -25,6 +25,7 @@ int main (int argc, char * argv[])
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
     // A továbbiakban a timer ütemében történnek az események
+    PDEB(INFO) << QObject::tr("Start event loop ...") << endl;
     int r = app.exec();
     PDEB(INFO) << QObject::tr("Event loop is exited.") << endl;
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);

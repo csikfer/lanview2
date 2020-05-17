@@ -1276,12 +1276,14 @@ void cInspector::timerEvent(QTimerEvent *)
                 }
             }
             if (!n) {
+                PDEB(INFO) << tr("Passive sevice down : no any subservice.") << endl;
                 down();
                 return;
             }
             QString msg = tr("Runing sub services : %1/%2; states : %3 - %4")
                     .arg(n).arg(pSubordinates->size())
                     .arg(notifSwitch(maxState), notifSwitch(minState));
+            PDEB(INFO) << tr("Passive sevice touch : ") << msg << endl;
             hostService.setState(*pq, _sOn, msg);
         }
         internalStat = IS_SUSPENDED;

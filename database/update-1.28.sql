@@ -1,7 +1,7 @@
 -- Hibajavítás
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Figyelmeztetés !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 -- A következő két utasítás mellékhatása, hogy a features mező indexe a nodes, és az snmpdevices táblában nem lessz azonos.
--- A LanView2 API ezt nbem tolerálja, ki kel menteni a teljes adatbázist, és visszatölteni, ezután az indexek helyreállnak.
+-- A LanView2 API ezt nem tolerálja, ki kel menteni a teljes adatbázist, és visszatölteni, ezután a mező sorrendek helyreállnak.
 ALTER TABLE patchs DROP COLUMN IF EXISTS features CASCADE;
 ALTER TABLE nodes ADD COLUMN IF NOT EXISTS features text DEFAULT NULL;
 
@@ -291,6 +291,95 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION set_service_stat(bigint, notifswitch, text, bigint, boolean) OWNER TO lanview2;
+
+-- csak a felesleges INFO-k lettek kikommentezve.
+CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hsid bigint DEFAULT NULL, excl boolean DEFAULT false, snid bigint DEFAULT NULL) RETURNS reasons AS $$
+DECLARE
+    brec dyn_addr_ranges;
+    erec dyn_addr_ranges;
+    bcol  boolean;
+    ecol  boolean;
+    r     reasons;
+    snid2 bigint;
+BEGIN
+    IF snid IS NULL THEN 
+        BEGIN       -- kezdő cím subnet-je
+            SELECT subnet_id INTO STRICT snid FROM subnets WHERE netaddr >> baddr;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN     -- nem találtunk
+                    RETURN 'notfound';
+                WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
+                    RETURN 'ambiguous';
+        END;
+        BEGIN       -- vég cím subnet-je
+            SELECT subnet_id INTO STRICT snid2 FROM subnets WHERE netaddr >> eaddr;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN     -- nem találtunk
+                    RETURN 'notfound';
+                WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
+                    RETURN 'ambiguous';
+        END;
+        IF snid <> snid2 THEN
+            RETURN 'caveat';
+        END IF;
+    END IF;
+    
+    SELECT * INTO brec FROM dyn_addr_ranges WHERE begin_address <= baddr AND baddr <= end_address AND exclude = excl;
+    bcol := FOUND;
+    SELECT * INTO erec FROM dyn_addr_ranges WHERE begin_address <= eaddr AND eaddr <= end_address AND exclude = excl;
+    ecol := FOUND;
+    IF bcol AND ecol AND brec.dyn_addr_range_id = erec.dyn_addr_range_id AND baddr = brec.begin_address AND brec.end_address = eaddr THEN
+        -- RAISE INFO '1: % < % ; % = %', baddr, eaddr, brec, erec; 
+        UPDATE dyn_addr_ranges
+            SET
+                last_time = CURRENT_TIMESTAMP,
+                host_service_id = hsid,
+                flag = false
+            WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
+        RETURN 'update';
+    END IF;
+    IF bcol AND ecol THEN
+        -- RAISE INFO '2: % < % ; % <> %', baddr, eaddr, brec, erec;
+        if brec.dyn_addr_range_id <> erec.dyn_addr_range_id THEN
+            DELETE FROM dyn_addr_ranges WHERE dyn_addr_range_id = erec.dyn_addr_range_id;
+            r := 'remove';
+        ELSE
+            r := 'modify';
+        END IF;
+        UPDATE dyn_addr_ranges
+            SET
+                begin_address = baddr,
+                end_address = eaddr,
+                subnet_id = snid,
+                last_time = CURRENT_TIMESTAMP,
+                host_service_id = hsid,
+                flag = false
+            WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
+        RETURN r;
+    END IF;
+    IF bcol OR ecol THEN
+        if ecol THEN
+            -- RAISE INFO '3: % < % ; ecol %', baddr, eaddr, erec;
+            brec := erec;
+        -- ELSE
+            -- RAISE INFO '3: % < % ; bcol %', baddr, eaddr, brec;
+        END IF;
+        UPDATE dyn_addr_ranges
+            SET
+                begin_address = baddr,
+                end_address = eaddr,
+                subnet_id = snid,
+                last_time = CURRENT_TIMESTAMP,
+                host_service_id = hsid,
+                flag = false
+            WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
+        RETURN 'modify';
+    END IF;
+    -- RAISE INFO '4: % < % ', baddr, eaddr;
+    INSERT INTO dyn_addr_ranges (begin_address, end_address, exclude, subnet_id, host_service_id) VALUES(baddr, eaddr, excl, snid, hsid);
+    return 'insert';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!! Nem biztos, hogy végleges !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
