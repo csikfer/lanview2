@@ -174,6 +174,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
 
     reStartCnt = 0;
     lastElapsed = NULL_ID;
+    bProcessFinished = bProcessReadyRead = false;
 
     _DBGFN() << inspector.name() << endl;
 
@@ -240,10 +241,18 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     PDEB(VVERBOSE) << "START : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ") << "; and wait ..." << endl;
-    if (stopTo == 0) {  // No wait for terminate
-        PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
-        connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
-        connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
+    if (stopTo == 0) {  // No wait for terminate, asyncron call
+        if (!bProcessFinished) {
+            // connect(this, SIGNAL(finished(int, ExitStatus)), this, SLOT(processFinished(int, ExitStatus))); // Ez nem működik !?
+            bProcessFinished = connect(this, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this, &cInspectorProcess::processFinished);
+        }
+        if (!bProcessReadyRead) {
+            PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
+            bProcessReadyRead = connect(this, SIGNAL(readyRead()), this, SLOT(processReadyRead()));
+        }
+        if (!bProcessFinished || !bProcessReadyRead) {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     lastStart.invalidate();
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
@@ -291,8 +300,9 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
 
 #define RESTART_FAILURE -1
 
-void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
+void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exitStatus)
 {
+    int exitStatus = _exitStatus;
     _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << ", program : " << inspector.checkCmd << endl;
     if (inspector.internalStat != IS_RUN && inspector.internalStat != IS_STOPPED) {
         DERR() << tr("Invalid event, internalStat = %1").arg(internalStatName(inspector.internalStat)) << endl;
@@ -475,7 +485,7 @@ cInspector::cInspector(QSqlQuery& q, const QString &sn)
 cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
     : QObject(nullptr), hostService(), lastRun()
 {
-    _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << (__par == nullptr ? "NULL" : __par->name()) << endl;
+    _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << "; parent : " << (__par == nullptr ? "NULL" : __par->name()) << endl;
     _init(__par);
     // Megallokáljuk a megfelelő típusú node objektumot
     if      (__tableoid == nodeOId
@@ -1077,7 +1087,7 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
 int cInspector::getCheckCmd(QSqlQuery& q)
 {
     QString val;
-    int ixCheckCmd = cService::_descr_cService().toIndex(_sCheckCmd);
+    static const int ixCheckCmd = cService::_descr_cService().toIndex(_sCheckCmd);
 
     checkCmdArgs.clear();
     if (pProtoService != nullptr) checkCmd = pProtoService->getName(ixCheckCmd);
@@ -1183,44 +1193,56 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     }
     checkCmd = checkCmdArgs.takeFirst();    // Split command and arguments
 
+    QString myBase = QFileInfo(QCoreApplication::arguments().at(0)).baseName();
+    QString ccBase = QFileInfo(checkCmd).baseName();
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
     enum Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #else
     enum Qt::CaseSensitivity cs = Qt::CaseInsensitive;
 #endif
-    QString myBase = QFileInfo(QCoreApplication::arguments().at(0)).baseName();
-    QString ccBase = QFileInfo(checkCmd).baseName();
     if (0 == myBase.compare(ccBase, cs)) {
-        // Önmagunk hívása nem jó ötlet
+        // Önmagunk hívása lenne!
         checkCmd.clear();
         checkCmdArgs.clear();
         return -1;
     }
 
-#ifdef Q_OS_WIN
-    if (!checkCmd.contains(QChar('.'))) checkCmd += ".exe";
-#endif
-    QFileInfo   fcmd(checkCmd);
-    if (fcmd.isExecutable()) {
-        ; // OK
-    }
-    else {    // A saját nevén (ha full path) ill. az aktuális mappában nincs.
-        QString pathEnv = qgetenv("PATH");
-        QStringList path;
-#ifdef Q_OS_WIN
-        QChar   sep(';');
+    bool isFullPath;
+#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
+    isFullPath = checkCmd.startsWith(QChar('/'));
 #else
-        QChar   sep(':');
+    QRegExp fpp("[a-z,A-Z]:\\\\");
+    isFullPath = 0 == fpp.indexIn(checkCmd);
 #endif
-        path << lanView::getInstance()->binPath.split(sep) << pathEnv.split(sep);    // saját path, és a PATH -ban lévő path-ok
-        foreach (QString dir, path) {
-            QDir d(dir);
-            fcmd.setFile(d, checkCmd);
-            if (fcmd.isExecutable()) break;      // megtaláltuk
+    if (isFullPath) {
+        QFileInfo   fcmd(checkCmd);
+        if (!fcmd.isExecutable()) {
+            EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));
         }
-        if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));  // nem volt a path-on sem
     }
-    checkCmd = fcmd.absoluteFilePath();
+    else {
+#ifdef Q_OS_WIN
+        if (!checkCmd.endsWith(".exe", Qt::CaseInsensitive)) checkCmd += ".exe";
+#endif
+        QFileInfo   fcmd(checkCmd);
+        if (!fcmd.isExecutable()) { // A saját nevén ill. az aktuális mappában nincs.
+            QString pathEnv = qgetenv("PATH");
+            QStringList path;
+#ifdef Q_OS_WIN
+            QChar   sep(';');
+#else
+            QChar   sep(':');
+#endif
+            path << lanView::getInstance()->binPath.split(sep) << pathEnv.split(sep);    // saját path, és a PATH -ban lévő path-ok
+            foreach (QString dir, path) {
+                QDir d(dir);
+                fcmd.setFile(d, checkCmd);
+                if (fcmd.isExecutable()) break;      // megtaláltuk
+            }
+            if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));  // nem volt a path-on sem
+        }
+        checkCmd = fcmd.absoluteFilePath();
+    }
     _DBGFNL() << "checkCmd = " << quotedString(checkCmd) <<
                  (checkCmdArgs.isEmpty() ? " ARGS()"
                                          : " ARGS(\"" + checkCmdArgs.join("\", \"") + "\")")

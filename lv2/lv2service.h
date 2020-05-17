@@ -151,7 +151,7 @@ public:
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
 protected slots:
-    virtual void processFinished(int _exitCode, int exitStatus);
+    virtual void processFinished(int _exitCode, ExitStatus _exitStatus);
     virtual void processReadyRead();
 protected:
     int         reStartCnt;         ///< Hiba számláló
@@ -163,6 +163,8 @@ protected:
     int         maxLogSize;
     int         logNull;
     QFile       actLogFile;
+    bool        bProcessFinished;   ///< processFinished slot is connected
+    bool        bProcessReadyRead;  ///< processReadyRead slot is connected
 };
 
 class cInspectorVar;

@@ -150,7 +150,7 @@ template <class T> QString debPToString(T *p) {
     if (p == nullptr) return "[NULL]";
     return quotedString(p->toString());
 }
-inline static QString debPString(QString *p) { return p == nullptr ? "[NULL]" : quotedString(*p); }
+inline QString debPString(QString *p) { return p == nullptr ? "[NULL]" : quotedString(*p); }
 
 /// @def VDEBPTOSTR(n)
 /// Kiíratásnál használható makró, egy pointer változó nevének és értékének a kiíratásához.
