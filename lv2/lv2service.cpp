@@ -289,6 +289,8 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     return -1;
 }
 
+#define RESTART_FAILURE -1
+
 void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
 {
     _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << ", program : " << inspector.checkCmd << endl;
@@ -301,13 +303,16 @@ void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
         QString msg = "?";
         while (true) {
             if (lastElapsed > errCntClearTime) reStartCnt = 0;
-            switch (exitStatus) {
-            case QProcess::CrashExit:
-                msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
-                break;
-            case QProcess::NormalExit:
-                msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
-                break;
+            if (exitStatus != RESTART_FAILURE) {
+                processReadyRead();
+                switch (exitStatus) {
+                case QProcess::CrashExit:
+                    msg = tr("A %1 program összeomlott.").arg(inspector.checkCmd);
+                    break;
+                case QProcess::NormalExit:
+                    msg = tr("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
+                    break;
+                }
             }
             if (!inspector.hostService.fetchById(*inspector.pq) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
                 if (!inspector.hostService.isNull()) {
@@ -319,18 +324,20 @@ void cInspectorProcess::processFinished(int _exitCode, int exitStatus)
             if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
                 ++reStartCnt;
                 if (reStartCnt > reStartMax) {
-                    inspector.setState(*inspector.pq, _sDown, msg + tr(" Nincs újraindítás. Túl sok (%1 > %2) úgraindítási kísérlet.").arg(reStartCnt).arg(reStartMax));
+                    msg += tr(" Nincs újraindítás. Túl sok (%1 > %2) úgraindítási kísérlet.").arg(reStartCnt).arg(reStartMax);
+                    inspector.setState(*inspector.pq, _sDown, msg);
                     inspector.internalStat = IS_STOPPED;
-                    break;;
+                    PDEB(INFO) << msg << endl;
+                    break;
                 }
                 else {
                     inspector.setState(*inspector.pq, _sWarning, msg + tr("Újraindítási kíérlet (#%1).").arg(reStartCnt));
-                    PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
+                    PDEB(INFO) << "ReStart : " << inspector.checkCmd << endl;
                     inspector.internalStat = IS_RUN;
                     int r = startProcess(int(inspector.startTimeOut), 0);
                     if (r == 0) break;
                     msg = tr("A %1 program újraindítása sikertelen.").arg(inspector.checkCmd);
-                    exitStatus = -1;
+                    exitStatus = RESTART_FAILURE;
                 }
             }
         }
