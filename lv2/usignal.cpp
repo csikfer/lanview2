@@ -26,7 +26,9 @@ cXSignal::cXSignal(QObject *parent) : QObject(parent)
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigFd))
         EXCEPTION(EFOPEN, -1, "Couldn't create socketpair");
     sn = new QSocketNotifier(sigFd[1], QSocketNotifier::Read, this);
-    connect(sn, SIGNAL(activated(int)), this, SLOT(qhandle(int)), Qt::QueuedConnection);
+    if (!connect(sn, SIGNAL(activated(int)), this, SLOT(qhandle(int)), Qt::QueuedConnection)) {
+        EXCEPTION(EPROGFAIL);
+    }
 }
 cXSignal::~cXSignal()
 {

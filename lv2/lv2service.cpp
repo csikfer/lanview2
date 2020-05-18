@@ -32,7 +32,9 @@ void cThreadAcceptor::timer(int ms, eTimerStat tst)
     }
     if (pTimer == nullptr) {
         pTimer = new QTimer(this);
-        connect(pTimer, SIGNAL(timeout()), this, SLOT(on_timer_timeout()));
+        if (!connect(pTimer, SIGNAL(timeout()), this, SLOT(on_timer_timeout()))) {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     inspector.timerId = 0;
     pTimer->start(ms);
@@ -59,7 +61,7 @@ void cThreadAcceptor::on_thread_finished()
 
 
 cInspectorThread::cInspectorThread(cInspector *pp)
-    : QThread(), inspector(*pp), acceptor(this)
+    : QThread(), inspector(*pp), pAcceptor(new cThreadAcceptor(this))
 {
     _DBGFN() << inspector.name() << endl;
     pLastError = nullptr;
@@ -81,6 +83,7 @@ cInspectorThread::~cInspectorThread()
             QCoreApplication::exit(1);
         }
     }
+    delete pAcceptor;
 }
 
 void cInspectorThread::run()
@@ -93,9 +96,11 @@ void cInspectorThread::run()
         case IS_INIT:   doInit();   break;
         case IS_DOWN:   doDown();   break;
         case IS_RUN:
-            connect(this, SIGNAL(finished()), &inspector, SLOT(on_thread_finished()));
+            if (!connect(this, &QThread::finished, pAcceptor, &cThreadAcceptor::on_thread_finished)) {
+                EXCEPTION(EPROGFAIL);
+            }
             doRun();
-            disconnect(this, SIGNAL(finished()), &inspector, SLOT(on_thread_finished()));
+            disconnect(this, &QThread::finished, pAcceptor, &cThreadAcceptor::on_thread_finished);
             break;
         default:
             EXCEPTION(EPROGFAIL, internalStat, internalStatName(internalStat));
@@ -157,7 +162,7 @@ void cInspectorThread::doDown()
 
 void cInspectorThread::timer(int ms, eTimerStat tst)
 {
-    acceptor.timer(ms, tst);
+    pAcceptor->timer(ms, tst);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

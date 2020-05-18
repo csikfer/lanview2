@@ -350,8 +350,10 @@ debugStream::debugStream(debugStream *pMain, QObject *pThread)
     pFILE = nullptr;
     oFile = nullptr;
     stream.setString(&buff, QIODevice::WriteOnly);
-    connect(this,    SIGNAL(redyLineFromThread()), pMain, SLOT(sRedyLineFromThread()), Qt::QueuedConnection);
-    connect(pThread, SIGNAL(destroyed(QObject*)),  this,  SLOT(sDestroyThread(QObject*)));
+    if (!connect(this,    SIGNAL(redyLineFromThread()), pMain, SLOT(sRedyLineFromThread()), Qt::QueuedConnection)
+     || !connect(pThread, SIGNAL(destroyed(QObject*)),  this,  SLOT(sDestroyThread(QObject*)))) {
+        EXCEPTION(EPROGFAIL);
+    }
 }
 
 debugStream::debugStream(QFile *__f)

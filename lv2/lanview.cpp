@@ -267,7 +267,9 @@ lanView::lanView()
 #ifdef MUST_USIGNAL
         unixSignals = new cXSignal(this);
         cXSignal::setupUnixSignalHandlers();
-        connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)));
+        if (!connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)))) {
+            EXCEPTION(EPROGFAIL);
+        }
 #endif // MUST_USIGNAL
         if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::tr("A lanView objektumból csak egy példány lehet."));
         instance = this;

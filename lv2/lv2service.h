@@ -126,8 +126,8 @@ public:
     cInspector& inspector;
     /// Az utolsó hiba objektum vagy NULL.
     cError     *pLastError;
-    /// A szálon bellüli objektumok tulajdonosa
-    cThreadAcceptor acceptor;
+    /// A fő szál tulajdona, közvetítő objektum
+    cThreadAcceptor *pAcceptor;
 protected:
     virtual void run();
     virtual void doInit();
@@ -499,7 +499,7 @@ public:
         if (pInspectorThread == nullptr || (QThread *)pInspectorThread != QThread::currentThread()) {
             EXCEPTION(EPROGFAIL, 0, name());
         }
-        return &pInspectorThread->acceptor;
+        return pInspectorThread->pAcceptor;
     }
     void setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Az időzítés módosítása
