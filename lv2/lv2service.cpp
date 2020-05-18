@@ -248,7 +248,8 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
         }
         if (!bProcessReadyRead) {
             PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
-            bProcessReadyRead = connect(this, SIGNAL(readyRead()), this, SLOT(processReadyRead()));
+            // bProcessReadyRead = connect(this, SIGNAL(readyRead()), this, SLOT(processReadyRead()));
+            bProcessReadyRead = connect(this, &QProcess::readyRead, this, &cInspectorProcess::processReadyRead);
         }
         if (!bProcessFinished || !bProcessReadyRead) {
             EXCEPTION(EPROGFAIL);

@@ -161,7 +161,7 @@ protected:
     qlonglong   lastElapsed;        ///< Utoljára mért program futási ideje mSec
     int         maxArcLog;
     int         maxLogSize;
-    int         logNull;
+    bool        logNull;
     QFile       actLogFile;
     bool        bProcessFinished;   ///< processFinished slot is connected
     bool        bProcessReadyRead;  ///< processReadyRead slot is connected

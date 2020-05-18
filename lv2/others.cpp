@@ -589,6 +589,7 @@ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args
 
 void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc)
 {
+    if (__data.isEmpty()) return;
     __log.write(__data);
     if (__size == 0) return;
     qint64 pos = __log.pos();
@@ -609,6 +610,9 @@ void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int 
         if (!__log.open(QIODevice::Append | QIODevice::WriteOnly)) {
             EXCEPTION(EFOPEN, -1, __log.fileName());
         }
+    }
+    else {
+        __log.flush();
     }
 }
 
