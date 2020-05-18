@@ -53,7 +53,7 @@ void cThreadAcceptor::on_thread_finished()
 {
     if (inspector.internalStat == IS_ERROR) {
         _DBGFN() << "down : " << inspector.name() << endl;
-        inspector.down();
+        inspector.deleteLater();
     }
 }
 
@@ -240,6 +240,11 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
+    if (state() == QProcess::Running) {
+        msg = tr("Service %1 : Process %2 already runing, skeep.").arg(inspector.name(), inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "));
+        inspector.setState(*inspector.pq, _sUnreachable, msg);
+        return -1;
+    }
     PDEB(VVERBOSE) << "START : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ") << "; and wait ..." << endl;
     if (stopTo == 0) {  // No wait for terminate, asyncron call
         if (!bProcessFinished) {
@@ -259,8 +264,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
-        inspector.setState(*inspector.pq, _sDown, msg);
-        inspector.internalStat = IS_ERROR;
+        inspector.setState(*inspector.pq, _sUnreachable, msg);
         return -1;
     }
     switch (state()) {
@@ -277,7 +281,6 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
             inspector.setState(*inspector.pq, _sUnreachable, msg);
-            inspector.internalStat = IS_ERROR;
             return -1;
         }
         break;              // EXITED
@@ -1307,7 +1310,7 @@ void cInspector::timerEvent(QTimerEvent *)
             }
             if (!n) {
                 PDEB(INFO) << tr("Passive sevice down : no any subservice.") << endl;
-                down();
+                deleteLater();
                 return;
             }
             QString msg = tr("Runing sub services : %1/%2; states : %3 - %4")
@@ -1414,7 +1417,6 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
         if (ec == -1) {
-            if (internalStat == IS_ERROR) down();
             return RS_STAT_SETTED;    // Already sended: RS_CRITICAL
         }
         return parse(ec, *pProcess, runMsg);
