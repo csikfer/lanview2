@@ -741,12 +741,12 @@ void cLink::replace(QString * __note, QStringList * __srv)
         else {
             DWAR() << "iftype = " << it << " not supported." << endl;
         }
-        lnk.insert(qq());
+        lnk.replace(qq());
         hose.insert(qq());
         delete __srv;
     }
     else {
-        lnk.insert(qq());
+        lnk.replace(qq());
     }
     share.clear();
     portId1 = portId2 = NULL_ID;
