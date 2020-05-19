@@ -1585,10 +1585,10 @@ enum eNotifSwitch cInspector::parse_text(int _ec, const QString &text, QString &
         QString sRegexp;
         QStringList values;
         if (!sSeparator.isEmpty()) {
-            values = text.split(sSeparator);
+            values = text.split(sSeparator, QString::SkipEmptyParts);
         }
         else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
-            values = text.split(QRegExp(sRegexp));
+            values = text.split(QRegExp(sRegexp), QString::SkipEmptyParts);
         }
         else if (!(sRegexp = feature("regexp")).isEmpty()) {
             QRegExp regexp(sRegexp);

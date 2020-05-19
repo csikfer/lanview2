@@ -385,7 +385,7 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
             detailedText += tr("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
         }
     }
-    if (mil.size() < 10) {
+     if (mil.size() < 10) {
         text += detailedText;
         detailedText = _sNul;
     }
