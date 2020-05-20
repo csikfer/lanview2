@@ -46,7 +46,7 @@ enum eInspectorType {
     IT_PROCESS_POLLING      = 0x0030,   ///< A programot start() indítja, lefut és kilép
     IT_PROCESS_MASK_NOTIME  = 0x0030,   ///< Maszk: Időzítés nélküli indítás
     IT_PROCESS_TIMED        = 0x0040,   ///< A programot időzítve kell indítani
-    IT_PROCESS_CARRIED      = 0x0080,   ///< A hívott program beállítja a status-t  ?????
+    IT_PROCESS_ASYNC        = 0x0080,   ///< Aszinkron program hívás
     IT_PROCESS_MASK         = 0x00F0,   ///< Maszk: önálló processz indítása
 
     IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
@@ -228,9 +228,6 @@ public:
     /// Futás időzítés indítása
     virtual void start();
     int firstDelay();
-    /// Futás/időzítés leállítása, ha időzített, de nem volt időzítés, és __ex = EX_ERROR, akkor dob egy kizárást.
-    /// Csak az aktuális objektumot stoppolja le, a sub objektumokat törli: dropSubs() -al.
-    virtual void drop(enum eEx __ex = EX_ERROR);
     /// Egy alárendelt szolgáltatás objektum létrehozása. Alapértelmezetten egy cInspector objektumot hoz létre.
     /// Az alapőértelmezett setSubs() metódus hívja a gyerek objektumok létrehozásához, ha azt akarjuk,
     /// hogy ijenkkor egy cIspector leszármazott jöjjön létre, akkor a metódus fellüldefiniálandü.
@@ -508,8 +505,6 @@ public:
     void toNormalInterval();
     /// Törli a pSubordinates pointert, és a konténer elemeit, az összes pointert felszabadítja
     void dropSubs();
-    ///
-    void down();
     ///
     void startSubs();
 private:

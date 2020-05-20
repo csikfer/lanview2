@@ -534,32 +534,16 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
 
 cInspector::~cInspector()
 {
-   QString n = name();
-    _DBGFN() << n << endl;
-    down();
-    _DBGFNL() << n << endl;
-}
-
-qlonglong cInspector::rnd(qlonglong i, qlonglong m)
-{
-    static time_t t = 0;
-    if (t == 0) {
-        t = time(nullptr);
-        srand(uint(t));
-    }
-    double r = i;
-    r *= rand();
-    r /= RAND_MAX;
-    if (r < m) return m;
-    return qlonglong(r);
-}
-
-void cInspector::down()
-{
     const QString myName = name();
+    internalStat = IS_DOWN;
+    PDEB(INFO) << myName << " state is DOWN" << endl;
+
+    dropSubs();
+
+    // Ha ez a root objektum, akkor
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (pParent == nullptr) { // root object ?
-        lanView * lanView = lanView::getInstance();
+        lanView *lanView = lanView::getInstance();
         cError *lastError = lanView->lastError;
         if (lanView->setSelfStateF && lastError != nullptr) {
             if (lastError->mErrorCode != eError::EOK) { // Error
@@ -587,19 +571,42 @@ void cInspector::down()
 
 
     PDEB(INFO) << QChar(' ') << myName << " internalStat = " << internalStatName() << endl;
-    drop(EX_IGNORE);
-    if (pInspectorThread != nullptr) {
+
+    if (isThread()) {
+        if (pInspectorThread != nullptr && pInspectorThread->isRunning()) {
+            PDEB(VERBOSE) << "Stop " << pInspectorThread->objectName() << " thread..." << endl;
+            pInspectorThread->quit();
+            pInspectorThread->wait(std::min(2000UL, stopTimeOut));
+            if (pInspectorThread->isRunning()) {
+                DWAR() << "Thread " << pInspectorThread->objectName() << " quit time out" << endl;
+                pInspectorThread->terminate();
+            }
+            else {
+                DWAR() << "Thread " << pInspectorThread->objectName() << " is not running." << endl;
+            }
+        }
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
-        if (!pInspectorThread->wait(stopTimeOut)) pInspectorThread->terminate();
+        if (!pInspectorThread->wait(std::min(2000UL, stopTimeOut))) pInspectorThread->terminate();
         dropThreadDb(pInspectorThread->objectName(), EX_IGNORE);
-        pDelete( pInspectorThread);
+        pDelete(pInspectorThread);
     }
-    pDelete(pProcess);
-    if (inspectorType & IT_METHOD_PARSER) {
-        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(myName).arg(qlonglong(pQparser), 0, 16) << endl;
+
+    if (timerId > 0) {
+        killTimer(timerId);
+        timerId = -1;
+        timerStat = TS_STOP;
+    }
+
+    if (inspectorType & IT_METHOD_PARSER && pQparser != nullptr) {
+        cError *pe = nullptr;
+        pQparser->post(pe);
+        if (pe != nullptr) DERR() << pe->msg() << endl;
+        PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser),0 , 16) << endl;
         pDelete(pQparser);
     }
     else pQparser = nullptr;
+
+    pDelete(pProcess);
     pDelete(pq);
     pDelete(pPort);
     pDelete(pNode);
@@ -609,11 +616,25 @@ void cInspector::down()
         delete pVars;
         pVars = nullptr;
     }
-    inspectorType = IT_CUSTOM;
+
     if (pParent == nullptr) {
-        printf(" -- down(): EXIT 0\n");
+        printf(" -- root inspector object called destructor: EXIT 0\n");
         QCoreApplication::exit(0);
     }
+}
+
+qlonglong cInspector::rnd(qlonglong i, qlonglong m)
+{
+    static time_t t = 0;
+    if (t == 0) {
+        t = time(nullptr);
+        srand(uint(t));
+    }
+    double r = i;
+    r *= rand();
+    r /= RAND_MAX;
+    if (r < m) return m;
+    return qlonglong(r);
 }
 
 void cInspector::dropSubs()
@@ -924,10 +945,11 @@ int cInspector::getInspectorProcess(const QString &value)
     bool on = false;
     QStringList vl;
     if (!value.isEmpty()) {
-        vl = value.split(QRegExp("\\s*,\\s*"));
+        vl = value.split(QRegExp("\\s*,\\s*"), QString::SkipEmptyParts);
         CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING)
         CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED)
-        CONT_ONE(    _sCarried,  IT_PROCESS_CARRIED)   // ????
+        CONT_ONE(    _sCarried,  IT_METHOD_CARRIED)
+        CONT_ONE(    "async",    IT_PROCESS_ASYNC)
         CONT_ONE_ONE(_sRespawn,  IT_PROCESS_RESPAWN)
         CONT_ONE_ONE(_sContinue, IT_PROCESS_CONTINUE)
     }
@@ -1038,7 +1060,6 @@ int cInspector::getInspectorType(QSqlQuery& q)
             break;
         }
         // Check...
-        r &= ~IT_PROCESS_CARRIED;   // ellenörzés szempontjából érdektelen
         r |= getInspectorTiming(feature(_sTiming));
         switch (r) {
         case IT_CUSTOM:
@@ -1762,7 +1783,7 @@ void cInspector::start()
         internalStat = IS_STOPPED;
     }
     startSubs();
-    if (inspectorType & IT_TIMING_POLLING) drop();
+    if (inspectorType & IT_TIMING_POLLING) deleteLater();
     _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     return;
 }
@@ -1810,77 +1831,6 @@ void cInspector::startSubs()
             }
         }
     }
-}
-
-void cInspector::drop(eEx __ex)
-{
-    PDEB(INFO) << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
-
-    internalStat = IS_DOWN;
-    if (isThread()) {
-        if (pInspectorThread == nullptr) {
-            QString m = QObject::tr("%1 pThread egy NULL pointer.").arg(name());
-            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, -1, m);
-            DWAR() << m << endl;
-        }
-        else if (pInspectorThread->isRunning()) {
-            PDEB(VVERBOSE) << "Stop " << pInspectorThread->objectName() << " thread..." << endl;
-            pInspectorThread->quit();
-            pInspectorThread->wait(stopTimeOut);
-            if (pInspectorThread->isRunning()) {
-                DWAR() << "Thread " << pInspectorThread->objectName() << " quit time out" << endl;
-                pInspectorThread->terminate();
-            }
-            else {
-                DWAR() << "Thread " << pInspectorThread->objectName() << " is not running." << endl;
-            }
-        }
-    }
-    if (isTimed()) {
-        if (timerId <= 0) {
-            if (!isThread()) {
-                if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
-            }
-            else if (pInspectorThread != nullptr) {
-                pInspectorThread->start();  // status down-ban, rátadjuk a vezérlést, hogy le tudjon állni
-                pInspectorThread->wait(stopTimeOut);
-            }
-        }
-        else if (timerId > 0) {
-            killTimer(timerId);
-            timerId = -1;
-        }
-        else if (__ex != EX_IGNORE) {
-            QString m = QObject::tr("El sem indított %1 óra leállítása.").arg(name());
-            if(__ex != EX_IGNORE) EXCEPTION(EDATA, -1, m);
-            DWAR() << m << endl;
-        }
-        timerStat = TS_STOP;
-    }
-    else if (timerId > 0) {
-        killTimer(timerId);
-        timerId = -1;
-    }
-    if (inspectorType & IT_METHOD_PARSER) {
-        if (pQparser == nullptr) {
-            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, 0, name());
-        }
-        else {
-            cError *pe = nullptr;
-            pQparser->post(pe);
-            if (pe != nullptr) DERR() << pe->msg() << endl;
-            PDEB(VVERBOSE) << tr("%1: Free QParser : %2").arg(name()).arg(qlonglong(pQparser),0 , 16) << endl;
-            pDelete(pQparser);
-            if (pSubordinates != nullptr) {
-                // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
-                foreach (cInspector *pi, *pSubordinates) {
-                    pi->pQparser = nullptr;
-                }
-            }
-        }
-    }
-    if (!thread()) dropSubs();
-    _DBGFNL() << name() << endl;
 }
 
 void cInspector::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
