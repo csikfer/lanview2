@@ -64,6 +64,7 @@ enum eInspectorType {
     IT_METHOD_JSON        = 0x030000L,   ///< JSON output
 
     IT_METHOD_MASK        = 0x0FFF00L,
+    IT_METHOD_MASK_PROCESS= 0x0F2D00L,
 
     IT_SUPERIOR           = 0x100000L,   ///< Alárendelt funkciók vannak
     IT_MAIN               = 0x200000L,   ///< Fő folyamat, nincs parent
@@ -78,10 +79,15 @@ enum eTimerStat {
     TS_RETRY,   ///< Hiba miatt gyorsabb időzítés (retry_interval)
     TS_FIRST,   ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
     TS_OMMIT    ///< Timeperiod alapján felfüggesztve
+
 };
 
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
 EXT_ QString internalStatName(eInternalStat is);
+
+/// Timer stat
+EXT_ QString timerStat(int ts);
+
 
 /// Nagios pluginek visszatérési kódjai
 enum eNagiosPluginRetcode {
@@ -138,6 +144,7 @@ protected:
 };
 
 class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
+    friend class cInspector;
     Q_OBJECT
 public:
     cInspectorProcess(cInspector *pp);
@@ -165,6 +172,8 @@ protected:
     QFile       actLogFile;
     bool        bProcessFinished;   ///< processFinished slot is connected
     bool        bProcessReadyRead;  ///< processReadyRead slot is connected
+    bool        isAsync;            ///< Aszinkron mód
+    eInternalStat internalStat;
 };
 
 class cInspectorVar;
@@ -216,6 +225,7 @@ public:
     /// Végrehajtja a run() virtuális metódust. A visszatérési érték és futási idő alapján állítja a szolgáltatás
     /// példány állpotát. A run() metüdust egy try blokba, és SQL tranzakció blokkban hívja.
     virtual bool doRun(bool __timed);
+    void manageInterval(bool retry, int offset = 0);
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
     /// A alap objektumban a metódus ha pProcess = NULL, akkor nem csinál semmit (egy debug üzenet feltételes kiírásán túl),
     /// csak visszatér egy RS_UNREACHABLE értékkel.
@@ -500,9 +510,9 @@ public:
     }
     void setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Az időzítés módosítása
-    void toRetryInterval();
+    void toRetryInterval(int offset = 0);
     /// Az időzítés módosítása
-    void toNormalInterval();
+    void toNormalInterval(int offset = 0);
     /// Törli a pSubordinates pointert, és a konténer elemeit, az összes pointert felszabadítja
     void dropSubs();
     ///

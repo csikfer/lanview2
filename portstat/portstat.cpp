@@ -172,9 +172,11 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
 
 int cDevPortStat::queryInit(QSqlQuery &_q, QString& msg)
 {
+    DBGFN();
     maxPortIndex = 0;
     if (0 != checkAvailableVars(_q)) {
         msg = tr("queryInit() : checkAvailableVars() : SNMP error : ") + snmp.emsg;
+        DWAR() << msg << endl;
         return RS_UNREACHABLE;
     }
 
