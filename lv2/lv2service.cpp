@@ -999,18 +999,19 @@ int cInspector::getInspectorTiming(const QString& value)
 {
     int r = 0; // IT_TIMING_CUSTOM
     QStringList vl = value.split(QRegExp("\\s*,\\s*"), QString::SkipEmptyParts);
+    if (vl.isEmpty()) return r;
     bool on = false;
     int n;
     if (vl.contains(_sCustom, Qt::CaseInsensitive)) {
         if (vl.size() == 1) return r;
         goto getFunc_error_label;
     }
-    if (interval > 0 && vl.contains(_sTimed, Qt::CaseInsensitive) && vl.contains(_sPassive, Qt::CaseInsensitive)) {
+    if (interval > 0 && !vl.contains(_sTimed, Qt::CaseInsensitive) && vl.contains(_sPassive, Qt::CaseInsensitive)) {
         vl << _sTimed;
     }
     CONT_ONE_ONE(_sTimed,   IT_TIMING_TIMED)
-    CONT_ONE_ONE(_sPassive, IT_TIMING_PASSIVE)
     CONT_ONE_ONE(_sPolling, IT_TIMING_POLLING)
+    CONT_ONE(_sPassive, IT_TIMING_PASSIVE)
     if (!on) goto getFunc_error_label;
     CONT_ONE(_sThread,  IT_TIMING_THREAD)
     if (vl.isEmpty()) {
