@@ -355,7 +355,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     if (isAsync) {
         if (internalStat == IS_RUN) {
             internalStat = IS_SUSPENDED;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
             setCurrentReadChannel(QProcess::StandardOutput);
+#endif
             QString tn = "process_" + toSqlName(inspector.name());
             QString statMsg;
             int  retStat = RS_UNREACHABLE;  // A lekérdezés alapértelmezett státusza
