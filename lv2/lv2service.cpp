@@ -204,15 +204,19 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     maxLogSize  = 10 * 1024 * 1204; // 10MiByte
     logNull     = false;
     isAsync = 0 != (inspector.inspectorType & IT_PROCESS_ASYNC);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
     if (isAsync) {
         // stderr --> log
         // stdout --> text output
         setCurrentReadChannel(QProcess::StandardError); // Log
     }
     else {
+#endif
         // stderr + stdout ==> stdout
         setProcessChannelMode(QProcess::MergedChannels);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
     }
+#endif
 
     bool nolog = inspector.method() != IT_METHOD_INSPECTOR  || inspector.isFeature(_sLognull);
     if (nolog) {
