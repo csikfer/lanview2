@@ -126,7 +126,7 @@ cDevicePMac::~cDevicePMac()
 
 }
 
-void cDevicePMac::postInit(QSqlQuery &q, const QString&)
+void cDevicePMac::postInit(QSqlQuery &q)
 {
     DBGFN();
     cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)

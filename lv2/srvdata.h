@@ -95,7 +95,7 @@ public:
     ///         Ha (már) nem létezik a megadott szolgáltzatás példány, akkor nem dob kizárást, hanem a 'deleted' mezőt true-ra állítja,
     ///         ezzel is jelezve, hogy a példány már nem létezik.
     /// @exception Bármilyen egyéb hiba esetén dob egy kizázást cError * -al.
-    cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
+    cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID, bool _resetIfDeleted = true, bool forced = false);
     /// Törli az aktuális rekord (ID alapján) állapot mezőit.
     /// Az adatbázisból nem olvassa vissza a rekordok tartalmát.
     cHostService& clearState(QSqlQuery& __q);
@@ -215,6 +215,10 @@ public:
 protected:
     static int setStateMaxTry;
     QString sFulName;
+private:
+    // setState
+    static tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
+    static QString readBackFields;
 };
 
 /* ---------------------------------------------------------------- */

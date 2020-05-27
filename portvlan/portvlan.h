@@ -19,7 +19,7 @@ class cPortVLans : public cInspector {
 public:
     cPortVLans(QSqlQuery& q, const QString& __sn);
     ~cPortVLans();
-    virtual void postInit(QSqlQuery &q, const QString &qs = QString()) override;
+    virtual void postInit(QSqlQuery &q) override;
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid) override;
     cOId dot1qVlanCurrentEgressPorts;
     cOId dot1qVlanCurrentUntaggedPorts;
@@ -50,7 +50,7 @@ public:
     cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cDevicePV();
-    virtual void postInit(QSqlQuery& q, const QString& qs = QString());
+    virtual void postInit(QSqlQuery& q);
     /// A lekérdezést végző virtuális metódus.
     /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     /// @param runMsg A lekérdezés szöveges eredménye

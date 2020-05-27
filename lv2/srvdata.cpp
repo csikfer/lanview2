@@ -137,6 +137,11 @@ const QString& noalarmtype(int _e, enum eEx __ex)
     return _sNul;
 }
 
+static const QString _sHostServiceId2Name = "host_service_id2name";
+
+int cHostService::setStateMaxTry = NULL_IX;
+tIntVector cHostService::readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei a setState() met.
+QString    cHostService::readBackFields;
 
 cHostService::cHostService() : cRecord()
 {
@@ -146,12 +151,13 @@ cHostService::cHostService() : cRecord()
 
 cHostService::cHostService(const cHostService& __o) : cRecord()
 {
+    _pFeatures = nullptr;
     (*this) = __o;
 }
 
 cHostService::~cHostService()
 {
-    pDelete(_pFeatures);
+
 }
 
 cHostService::cHostService(QSqlQuery& q, const QString& __h, const QString& __p, const QString& __s, const QString& __n)
@@ -181,6 +187,18 @@ const cRecStaticDescr&  cHostService::descr() const
         // Ez egy SWITCH tábla kell legyen ...
         if (_descr_cHostService().tableType() != TT_SWITCH_TABLE) EXCEPTION(EPROGFAIL, _descr_cHostService().tableType(), _descr_cHostService().toString());
         _ixFeatures = _descr_cHostService().toIndex(_sFeatures);
+        // --
+        QSqlQuery q = getQuery();
+        setStateMaxTry = int(cSysParam::getIntegerSysParam(q, "set_service_state_max_try", 5));
+        // Visszaolvasandó mezők indexek feltöltése:
+        readBackFieldIxs
+                << toIndex(_sDisabled)  // Ha esetleg letiltották
+                << toIndex(_sHostServiceState) << toIndex(_sHardState)  // Új statusok (soft_state = __st)
+                << toIndex(_sCheckAttempts) << toIndex(_sLastChanged) << toIndex(_sLastTouched); // Csak a log. miatt
+        foreach (int ix, readBackFieldIxs) {
+            readBackFields += columnNameQ(ix) + _sCommaSp;
+        }
+        readBackFields.chop(_sCommaSp.size());
     }
     return *_pRecordDescr;
 }
@@ -217,53 +235,43 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
     return R_ERROR;
 }
 
-int cHostService::setStateMaxTry = NULL_IX;
-
-cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
+cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted, bool forced)
 {
-    static tIntVector readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei
-    static QString readBackFields;
-    if (readBackFieldIxs.isEmpty()) {
-        if (setStateMaxTry < 0) {
-            setStateMaxTry = int(cSysParam::getIntegerSysParam(__q, "set_service_state_max_try", 5));
-        }
-        // Visszaolvasandó mezők indexek feltöltése:
-        readBackFieldIxs
-                << toIndex(_sDisabled)  // Ha esetleg letiltották
-                << toIndex(_sHostServiceState) << toIndex(_sHardState)  // Új statusok (soft_state = __st)
-                << toIndex(_sCheckAttempts) << toIndex(_sLastChanged) << toIndex(_sLastTouched); // Csak a log. miatt
-        foreach (int ix, readBackFieldIxs) {
-            readBackFields += columnNameQ(ix) + _sCommaSp;
-        }
-        readBackFields.chop(_sCommaSp.size());
-    }
     if (sFulName.isEmpty()) {
-        static const QString _sHostServiceId2Name = "host_service_id2name";
         sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
         if (sFulName.isEmpty()) {   // Törölték?
             APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
             setBool(_sDeleted, true);
-            if (_resetIfDeleted) lanView::getInstance()->reSet();
+            if (_resetIfDeleted) emitReset();
             return *this;
         }
     }
     _DBGFN() << sFulName << VDEB(__st) << VDEB(__note) << endl;
-    QVariant did;
-    QString sql;
-    if (__did != NULL_ID) {
-        did = __did;
-        sql = QString("SELECT %1 FROM %2(?,?,?,?)");
+    QVariantList vl;
+    QString sql = "SELECT " + readBackFields + " FROM " + _sSetServiceStat + "(?,?,?";
+    vl << get(idIndex()) << QVariant(__st) << QVariant(__note);
+    if (__did == NULL_ID && !forced) {          // Nincs további argumentum
+        sql += ")";
     }
-    else {
-        sql = QString("SELECT %1 FROM %2(?,?,?)");
+    else if (__did != NULL_ID && forced) {     // Minden argumentum megadva
+        sql += ",?,?)";
+        vl << QVariant(__did) << QVariant(forced ? _sTrue : _sFalse);
     }
-    sql = sql.arg(readBackFields).arg(_sSetServiceStat);
+    else if (__did != NULL_ID) {                // Csak a __did van megadva
+        sql += ",?)";
+        vl << QVariant(__did);
+    }
+    else {                                      // Csak a forced van
+        sql += ",NULL,?)";
+        vl << QVariant(forced ? _sTrue : _sFalse);
+
+    }
     bool tf = trFlag(TS_NULL) == TS_TRUE;
     QString sTrFulName = toSqlName(sFulName);
     int cnt = 0;
     while (true) {
         if (tf) sqlBegin(__q, sTrFulName);
-        int r = _execSql(__q, sql, getId(), __st, __note, did);
+        int r = _execSql(__q, sql, vl);
         if (r == 0) {   // Nincs adat ?!
             if (tf) sqlRollback(__q, sTrFulName, EX_IGNORE);
             EXCEPTION(EENODATA, 0, tr("SQL függvény: %1(%2,%3,%4,%5)")
@@ -292,7 +300,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             }
             if (tf) sqlCommit(__q, sTrFulName);
             _DBGFNL() << toString() << endl;
-            if (getBool(_sDisabled) && _resetIfDeleted) lanView::getInstance()->reSet();
+            if (getBool(_sDisabled) && _resetIfDeleted) emitReset();
             break;
         }
         else {

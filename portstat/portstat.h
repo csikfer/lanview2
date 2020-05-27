@@ -25,7 +25,7 @@ public:
     /// Destruktor
     ~cDevPortStat();
     ///
-    virtual void postInit(QSqlQuery &_q, const QString &qs = QString());
+    virtual void postInit(QSqlQuery &_q);
     int  queryInit(QSqlQuery &_q, QString& msg);
     int checkAvailableVars(QSqlQuery &q);
     /// Mthode of query.

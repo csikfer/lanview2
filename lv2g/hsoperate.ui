@@ -237,10 +237,22 @@
           <property name="text">
            <string>ID</string>
           </property>
+          <property name="toolTip">
+           <string>A szolgáltatás példány egyedi azonosítója.</string>
+          </property>
+          <property name="whatsThis">
+           <string/>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Hoszt</string>
+          </property>
+          <property name="toolTip">
+           <string>Eszköz hivatkozás a szolgáltatás példányban.</string>
+          </property>
+          <property name="whatsThis">
+           <string/>
           </property>
          </column>
          <column>
@@ -250,6 +262,9 @@
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatásvagy tevékenység neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="whatsThis">
+           <string/>
+          </property>
          </column>
          <column>
           <property name="text">
@@ -258,13 +273,19 @@
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatáshoz rendelt opcionális port neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
+          <property name="whatsThis">
+           <string/>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Ext.</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, és/vagy matódust azonosító opcionális szolgáltatások neve(i).&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes szolgáltatás példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, és/vagy matódust azonosító opcionális szolgáltatások neve(i). Ezek a szolgáltatás típusú objektumok módosítják, ill. kiegészítik a példány működését további paraméterekkel, vagy protokollal.&lt;/p&gt;&lt;p&gt;A két érték kettösponttal van elválasztva, a kettőspont előtt a protokol, utána a mód azonosító. A 'nil' nincs megjelenítve.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes szolgáltatás példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="whatsThis">
+           <string/>
           </property>
          </column>
          <column>
@@ -358,7 +379,22 @@
          </column>
          <column>
           <property name="text">
+           <string/>
+          </property>
+          <property name="toolTip">
+           <string>A szolgáltatás példány állapota továbbitásra kerül az eszköz állapotába.</string>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
+          </property>
+         </column>
+         <column>
+          <property name="text">
            <string>Időp.</string>
+          </property>
+          <property name="toolTip">
+           <string>A legutolsó állapot frissítés időpontja.</string>
           </property>
          </column>
          <column>
@@ -401,6 +437,9 @@
           <property name="text">
            <string/>
           </property>
+          <property name="toolTip">
+           <string>A szülő (superior) példány teljes neve.</string>
+          </property>
           <property name="icon">
            <iconset resource="lv2g.qrc">
             <normaloff>:/icons/up.ico</normaloff>:/icons/up.ico</iconset>
@@ -411,7 +450,7 @@
            <string>Parancs</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás/lekérdezés újraindítása, ha ez táűmogatott.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parancs a szolgálltatás példánynak:&lt;/p&gt;&lt;p&gt;tick	Egy óra trigger.&lt;/p&gt;&lt;p&gt;reset	Újraindítás.&lt;/p&gt;&lt;p&gt;exit	Kilépés,&lt;/p&gt;&lt;p&gt;Adott példány esetén, a példány működési módja szerint nem minden parancs adható ki, ill. hatékony.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
         </widget>
@@ -647,12 +686,12 @@
          <property name="currentIndex">
           <number>0</number>
          </property>
-         <widget class="QWidget" name="widgetSrvVars" native="true">
+         <widget class="QWidget" name="widgetSrvVars">
           <attribute name="title">
            <string>Változók</string>
           </attribute>
          </widget>
-         <widget class="QWidget" name="widgetSrvLogs" native="true">
+         <widget class="QWidget" name="widgetSrvLogs">
           <attribute name="title">
            <string>Log</string>
           </attribute>
@@ -672,6 +711,16 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0,1,0,0,0">
+     <item row="2" column="6">
+      <widget class="QCheckBox" name="checkBoxOn">
+       <property name="text">
+        <string>Riasztás permanensen tiltva</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
@@ -707,6 +756,33 @@
        </item>
       </layout>
      </item>
+     <item row="1" column="2">
+      <widget class="QCheckBox" name="checkBoxStatLog">
+       <property name="text">
+        <string>Állapot követő logok</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="checkBoxDisable">
+       <property name="toolTip">
+        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Három állapotú jelölő négyzet (check-box):&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; - Semleges (szürke) : A tiltási állapot nem változik&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Kijelölve : A kijelölt példányok le lesznek tiltva&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Nincs kijelölve : A kijelölt pédányok nem lesznek letiltva.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>A példány(ok) teljes letiltás</string>
+       </property>
+       <property name="tristate">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="4">
       <widget class="QPushButton" name="pushButtonAutoRefresh">
        <property name="enabled">
@@ -717,6 +793,13 @@
        </property>
       </widget>
      </item>
+     <item row="5" column="1">
+      <widget class="QDateTimeEdit" name="dateTimeEditTo">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="4">
       <widget class="QLabel" name="labelRefresh">
        <property name="text">
@@ -724,112 +807,13 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="4">
-      <widget class="QSpinBox" name="spinBoxRefresh"/>
-     </item>
-     <item row="3" column="4">
-      <widget class="QProgressBar" name="progressBarRefresh">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="5">
-      <widget class="QLabel" name="label_5">
+     <item row="4" column="5">
+      <widget class="QCheckBox" name="checkBoxSEna">
        <property name="text">
-        <string>További szűrések a szolgáltatás tiltás alapján</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QCheckBox" name="checkBoxMemo">
-       <property name="text">
-        <string>Esemény napló (memos)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="6">
-      <widget class="QCheckBox" name="checkBoxFrom">
-       <property name="text">
-        <string>Riasztás tiltva egy magdott időponttól</string>
+        <string>A szolgáltatás nincs letiltva</string>
        </property>
        <property name="checked">
         <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="6">
-      <widget class="QCheckBox" name="checkBoxFromTo">
-       <property name="text">
-        <string>Riasztás tiltva megadott időpontok között.</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Log rekordok törlése</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QCheckBox" name="checkBoxStatLog">
-       <property name="text">
-        <string>Állapot követő logok</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QCheckBox" name="checkBoxAlarm">
-       <property name="text">
-        <string>Riasztások</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="checkBoxDisable">
-       <property name="text">
-        <string>A példány(ok) teljes letiltás</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="6">
-      <widget class="QCheckBox" name="checkBoxOff">
-       <property name="text">
-        <string>Nincs tiltás</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QCheckBox" name="checkBoxEnable">
-       <property name="text">
-        <string>Teljes letiltás megszüntetése</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="6">
-      <widget class="QCheckBox" name="checkBoxOn">
-       <property name="text">
-        <string>Riasztás permanensen tiltva</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QCheckBox" name="checkBoxClrStat">
-       <property name="text">
-        <string>Állapot mezők törlése</string>
        </property>
       </widget>
      </item>
@@ -840,13 +824,6 @@
        </property>
        <property name="checked">
         <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Beállítandó állapot</string>
        </property>
       </widget>
      </item>
@@ -863,17 +840,54 @@
        </property>
       </spacer>
      </item>
-     <item row="0" column="6">
-      <widget class="QLabel" name="label_2">
+     <item row="1" column="6">
+      <widget class="QCheckBox" name="checkBoxOff">
        <property name="text">
-        <string>További szűrés, a riasztás tiltására alapján</string>
+        <string>Nincs tiltás</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="1" column="5">
-      <widget class="QCheckBox" name="checkBoxHsDisa">
+     <item row="3" column="1">
+      <widget class="QDateTimeEdit" name="dateTimeEditFrom">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="4">
+      <widget class="QSpinBox" name="spinBoxRefresh"/>
+     </item>
+     <item row="4" column="6">
+      <widget class="QCheckBox" name="checkBoxFrom">
        <property name="text">
-        <string>A szolgáltatás példány letiltva</string>
+        <string>Riasztás tiltva egy magdott időponttól</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Beállítandó állapot</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QCheckBox" name="checkBoxMemo">
+       <property name="text">
+        <string>Esemény napló (memos)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="6">
+      <widget class="QCheckBox" name="checkBoxFromTo">
+       <property name="text">
+        <string>Riasztás tiltva megadott időpontok között.</string>
        </property>
        <property name="checked">
         <bool>true</bool>
@@ -890,48 +904,13 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="5">
-      <widget class="QCheckBox" name="checkBoxSDisa">
-       <property name="text">
-        <string>A szolgáltatás letiltva</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="5">
-      <widget class="QCheckBox" name="checkBoxSEna">
-       <property name="text">
-        <string>A szolgáltatás nincs letiltva</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QCheckBox" name="checkBoxAlarmOff">
-       <property name="text">
-        <string>Riasztás permanens tiltása</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QCheckBox" name="checkBoxAlarmOn">
-       <property name="text">
-        <string>Riasztás engedélyezése</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QDateTimeEdit" name="dateTimeEditFrom">
+     <item row="3" column="4">
+      <widget class="QProgressBar" name="progressBarRefresh">
        <property name="enabled">
         <bool>false</bool>
        </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QDateTimeEdit" name="dateTimeEditTo">
-       <property name="enabled">
-        <bool>false</bool>
+       <property name="value">
+        <number>0</number>
        </property>
       </widget>
      </item>
@@ -941,6 +920,59 @@
         <string>Riasztás tiltása</string>
        </property>
       </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>További szűrések a szolgáltatás tiltás alapján</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="6">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>További szűrés, a riasztás tiltására alapján</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="checkBoxAlarm">
+       <property name="text">
+        <string>Riasztások</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="5">
+      <widget class="QCheckBox" name="checkBoxSDisa">
+       <property name="text">
+        <string>A szolgáltatás letiltva</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QCheckBox" name="checkBoxSetInterval">
+         <property name="text">
+          <string>Idő inervallumban</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButtonIntervalDef">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/go-first-3.ico</normaloff>:/icons/go-first-3.ico</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item row="4" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -977,30 +1009,56 @@
        </item>
       </layout>
      </item>
-     <item row="1" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <widget class="QCheckBox" name="checkBoxSetInterval">
-         <property name="text">
-          <string>Idő inervallumban</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="toolButtonIntervalDef">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/go-first-3.ico</normaloff>:/icons/go-first-3.ico</iconset>
-         </property>
-        </widget>
-       </item>
-      </layout>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Log rekordok törlése</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="5">
+      <widget class="QCheckBox" name="checkBoxHsDisa">
+       <property name="text">
+        <string>A szolgáltatás példány letiltva</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="checkBoxClrStat">
+       <property name="text">
+        <string>Állapot mezők törlése</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QCheckBox" name="checkBoxAlarmOff">
+       <property name="text">
+        <string>Riasztás permanens tiltása</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="checkBoxAlarmOn">
+       <property name="text">
+        <string>Riasztás engedélyezése</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QCheckBox" name="checkBoxDelegate">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Három állapotú jelölő négyzet (check-box):&lt;/p&gt;&lt;p&gt; - Semleges (szürke) : Az állpot továbbítás változatlan&lt;/p&gt;&lt;p&gt;- Kijelölve : A kijelölt példányok állpota továbbítva lesz az eszköz felé&lt;/p&gt;&lt;p&gt;- Nincs kijelölve : A kijelölt példányok állpota nem lesz továbbítva az eszköz felé&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Állapot továbbítás</string>
+       </property>
+       <property name="tristate">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

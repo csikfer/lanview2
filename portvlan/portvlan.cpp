@@ -142,9 +142,9 @@ cPortVLans::~cPortVLans()
     ;
 }
 
-void cPortVLans::postInit(QSqlQuery &q, const QString &qs)
+void cPortVLans::postInit(QSqlQuery &q)
 {
-    cInspector::postInit(q, qs);
+    cInspector::postInit(q);
 
     // Current VLAN settings (dynamic)
     setOid(dot1qVlanCurrentEgressPorts,             "SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
@@ -207,9 +207,9 @@ cDevicePV::~cDevicePV()
     ;
 }
 
-void cDevicePV::postInit(QSqlQuery& q, const QString& qs)
+void cDevicePV::postInit(QSqlQuery& q)
 {
-    cInspector::postInit(q, qs);
+    cInspector::postInit(q);
     node().fetchPorts(q);
 
     /* Features */

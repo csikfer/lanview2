@@ -715,11 +715,24 @@ int _execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVarian
                 }
             }
         }
-        PDEB(SQL) << dQuoted(q.lastQuery()) << endl; \
+        PDEB(SQL) << dQuoted(q.lastQuery()) << endl;
         if (!q.exec()) return -1;
     }
     return q.first() ? 1 : 0;
 }
+
+int _execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
+{
+    if (!q.prepare(sql)) return -1;
+    int cnt = 0;
+    foreach (QVariant v, vl) {
+        q.bindValue(cnt++, v);
+    }
+    PDEB(SQL) << dQuoted(q.lastQuery()) << endl; \
+    if (!q.exec()) return -1;
+    return q.first() ? 1 : 0;
+}
+
 
 bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {

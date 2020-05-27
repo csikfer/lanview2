@@ -121,7 +121,7 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         if (*pPSSsh == protoService()) {
             pRemoteUser = new QString();
             *pRemoteUser = feature(_sUser);
-            host().fetchPorts(*pq);
+            host().fetchPorts(*pQuery());
         }
     }
 }

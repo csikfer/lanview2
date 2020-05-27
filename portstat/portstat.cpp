@@ -127,7 +127,7 @@ cDevPortStat::~cDevPortStat()
 
 }
 
-void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
+void cDevPortStat::postInit(QSqlQuery &_q)
 {
     DBGFN();
     cInspector::postInit(_q);
@@ -165,8 +165,8 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     }
     pSnmpElapsed = getInspectorVar(sSnmpElapsed);
     if (pSnmpElapsed == nullptr) {
-        pSnmpElapsed = new cInspectorVar(*pq, this, sSnmpElapsed, cServiceVarType::srvartype(*pq, _sRuntime)->getId());
-        pSnmpElapsed->postInit(*pq);
+        pSnmpElapsed = new cInspectorVar(*pQuery(), this, sSnmpElapsed, cServiceVarType::srvartype(*pQuery(), _sRuntime)->getId());
+        pSnmpElapsed->postInit(*pQuery());
     }
 }
 

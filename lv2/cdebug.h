@@ -17,14 +17,14 @@ Nyomkövetést segítő objektumok, függvények és makrók.
 Megvizsgálja, hogy a fő szálban (main thread) vagyunk-e
 @return Ha a fő szálból hívtuk meg, akkor true, egyébként false.
  */
-inline static bool isMainThread()
+inline bool isMainThread()
 {
     QThread *pCurrent = QThread::currentThread();
     QThread *pMainThr = QCoreApplication::instance()->thread();
     return pMainThr == pCurrent;
 }
 
-inline static QString threadName(QThread *p)
+inline QString threadName(QThread *p)
 {
     QString r = p->objectName();
     return r.isEmpty() ? (QCoreApplication::instance()->thread() == p ? _sMainThread : _sAnonimousThread) : r;
@@ -34,7 +34,7 @@ inline static QString threadName(QThread *p)
 Az aktuális thread nevével tér vissza, feltételezi, hogy minden szál kapott nevet (QObject::setObjectName()). Ha az aktuális QThread objektumnak nincs neve
 (akkor, ha az a main thread, a "mainThread", ha nem, az "anonimousThread" stringgel tér vissza.
  */
-inline static QString currentThreadName()
+inline QString currentThreadName()
 {
     return threadName(QThread::currentThread());
 }

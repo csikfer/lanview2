@@ -133,8 +133,7 @@ protected slots:
     void subAll();
     void subNone();
     void zoneChanged(int ix);
-    void disable(bool f);
-    void enable(bool f);
+    void on_checkBox_stateChanged(int);
     void clrStat(bool f);
     void setAlarmButtons(int id);
     void changePlacePattern(const QString& text);

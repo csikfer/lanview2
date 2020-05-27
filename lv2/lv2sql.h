@@ -274,6 +274,8 @@ EXT_ QString toSqlName(const QString& _n);
 ///         -1: a prepare() hibát jelzett, -2 az exec() hibát jelzett
 EXT_ int _execSql(QSqlQuery& q, const QString& sql, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
+EXT_ int _execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl);
+
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param sql Az SQL query string.

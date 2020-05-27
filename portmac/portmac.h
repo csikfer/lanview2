@@ -52,7 +52,7 @@ public:
     /// Destruktor
     ~cDevicePMac();
     ///
-    virtual void postInit(QSqlQuery &q, const QString &qs);
+    virtual void postInit(QSqlQuery &q);
     virtual cInspector *newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.

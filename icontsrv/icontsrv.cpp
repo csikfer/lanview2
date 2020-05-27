@@ -120,7 +120,7 @@ cGateway::~cGateway()
     ;
 }
 
-void cGateway::setSubs(QSqlQuery &q, const QString &)
+void cGateway::setSubs(QSqlQuery &q)
 {
     _DBGFN() << name() << endl;
     if (pSubordinates == nullptr) EXCEPTION(EPROGFAIL);
@@ -173,11 +173,6 @@ void cGateway::setSubs(QSqlQuery &q, const QString &)
 }
 
 void cGateway::_init()
-{
-    ;
-}
-
-void cGateway::threadPreInit()
 {
     ;
 }
@@ -248,7 +243,7 @@ void cGateway::getSerialParams()
     QString s = pPort->getName();
     const static QString devdir = "/dev/";
     if (s.indexOf("/dev/") != 0) s = devdir + s;
-    pSerio = new QSerialPort(s, useParent());
+    pSerio = new QSerialPort(s, usedAsParent());
     s = feature(_sSerial);                  // A serial port beállításai
     if (s.isEmpty()) s = sSerialDefault;    // Az alapértelmezés
     QStringList sl = s.split(QChar(' '));
@@ -344,7 +339,7 @@ void cGateway::getSocketParams()
         sockAddr = h.getIpAddress();
     }
     if (sockAddr.isNull()) EXCEPTION(EDATA, -1, QObject::tr("Invalid host address, or address not found."));
-    QObject *p = useParent();
+    QObject *p = usedAsParent();
     QString m = tr("%1(%2) : current %3").arg(p2string(p), p2string(p->thread()), p2string(QThread::currentThread()));
     PDEB(VVERBOSE) << m << endl;
     pSock = new QTcpSocket(p);
@@ -809,7 +804,7 @@ cIndAlarmIf::cIndAlarmIf(QSqlQuery& q, qlonglong shid, qlonglong hoid, cInspecto
     _DBGFNL() << name() << endl;
 }
 
-void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
+void cIndAlarmIf::postInit(QSqlQuery &q)
 {
     _DBGFN() << " / " << name() << endl;
     if (pSubordinates != nullptr) EXCEPTION(EDATA);
@@ -981,7 +976,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
         fromKStat(ks, sst, nos, ost, ast);
         if (pPrt->getName(_sPortAStat) != ast) pPrt->setName(_sPortAStat, ast);
         if (pPrt->getName(_sPortOStat) != ost) pPrt->setName(_sPortOStat, ost);
-        if (pPrt->isModify_()) pPrt->update(*pq, false, pPrt->mask(_sPortAStat, _sPortOStat));
+        if (pPrt->isModify_()) pPrt->update(*pQuery(), false, pPrt->mask(_sPortAStat, _sPortOStat));
 
         cAttached   *pa = (cAttached *)pSubordinates->at(i);
         if (pa == nullptr) continue;
@@ -1083,7 +1078,7 @@ enum eNotifSwitch  cIndAlarmIf::sets(cGateway &g, QSqlQuery &q)
 // -----------------------------------------------------------------------------------------
 
 
-void cAttached::postInit(QSqlQuery &q, const QString &)
+void cAttached::postInit(QSqlQuery &q)
 {
     cInspector::postInit(q);
     setting = 0;

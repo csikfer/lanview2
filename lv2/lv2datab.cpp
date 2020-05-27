@@ -729,7 +729,7 @@ QVariant  cColStaticDescrBool::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrBool::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::tr("Data is NULL"));
-    if (_f.userType() == QMetaType::Bool) return QVariant(QString(_f.toBool() ? "true":"false"));
+    if (_f.userType() == QMetaType::Bool) return QVariant(QString(_f.toBool() ? _sTrue : _sFalse));
     bool ok;
     qlonglong i = _f.toLongLong(&ok);
     if (!ok) EXCEPTION(EDATA,-1,QObject::tr("Az adat nem értelmezhető."));
@@ -2888,6 +2888,7 @@ cRecord::~cRecord()
 {
     // _DBGFN() << QChar(' ') << VDEBPTR(this)
     pDelete(pTextList);
+    deleteFeaturesContainer();
 }
 
 cRecord& cRecord::_clear()

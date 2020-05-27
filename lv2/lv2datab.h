@@ -1170,6 +1170,9 @@ public:
     cRecord();
     /// Destruktor
     virtual ~cRecord();
+    /// A feature konténer pointere, ha van, egyébként nullptr.
+    /// A bázisobjetum esetén nullptr-el tér vissza
+    virtual void deleteFeaturesContainer() { ; }
     // Tisztán virtuális függvények
     /// A táblát leíró statikus objektum referenciájával tér vissza
     /// Tisztán virtuális függvény, konstruktorból nem hívható.
@@ -3035,6 +3038,7 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
 protected: \
     cFeatures *_pFeatures; \
 public: \
+    virtual void deleteFeaturesContainer() { pDelete(_pFeatures); } \
     cFeatures&  splitFeature(eEx __ex = EX_ERROR) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
     const cFeatures&  features(eEx __ex = EX_ERROR) const { if (_pFeatures == nullptr) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
     cFeatures&  features(eEx __ex = EX_ERROR) { if (_pFeatures == nullptr) this->splitFeature(__ex); return *_pFeatures; } \

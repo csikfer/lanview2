@@ -96,9 +96,9 @@ cDeviceSV::~cDeviceSV()
     ;
 }
 
-void cDeviceSV::postInit(QSqlQuery &q, const QString &qs)
+void cDeviceSV::postInit(QSqlQuery &q)
 {
-    cInspector::postInit(q, qs);
+    cInspector::postInit(q);
     snmpDev().open(q, snmp);
 }
 

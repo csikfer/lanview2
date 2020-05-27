@@ -9,6 +9,7 @@ class cSysInspector : public cInspector {
 public:
     cSysInspector(QSqlQuery &q, const QString& sn);
     cSysInspector(QSqlQuery& q, qlonglong __host_service_id = NULL_ID, qlonglong __tableoid = NULL_ID, cInspector * __par = NULL);
+    ~cSysInspector();
 
     virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = NULL);
     virtual void timerEvent(QTimerEvent *);

@@ -73,7 +73,12 @@ void cXSignal::unixSigErrHandler(int __i)
 {
     static cError *pError = nullptr;
     if (pError == nullptr) pError = NEWCERROR(EPROGFAIL, __i);
+    else {
+        printf("Repeated exception in void cXSignal::unixSigErrHandler(%d) , sory.", __i);
+        exit(127);
+    }
     printf(" -- unixSigErrHandler(%d): EXIT\n", __i);
+    puts(cBackTrace().join("\n").toStdString().c_str());
     QCoreApplication::exit(pError->mErrorCode);
 }
 

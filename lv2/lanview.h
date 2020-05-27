@@ -31,6 +31,21 @@
     setAppHelp(); \
 }
 
+/// cInspect és leszármazottai objektum belső status
+/// Ugyan ez a appStat is
+enum eInternalStat {
+    IS_INIT,        ///< Internal status init
+    IS_DOWN,        ///< Internal status down
+    IS_RUN,         ///< Internal status runing (inited)
+    IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
+    IS_OMITTED,     ///< Felfüggestve, időintervallumon (timeperiod) kívül.
+    IS_STOPPED,     ///< Lefutott
+    IS_ERROR,       ///< Hiba miatt leállt
+    // (appStat)
+    IS_EXIT,        ///< Kilép
+    IS_RESTART      ///< újraindítás
+};
+
 /// A paraméter listában megkeresi a megadott profram kapcsoló pozicióját
 /// @param __c A program kapcsoló egy karakteres változata (feltételezzük, hogy egy '-' karakter előzi meg
 /// @param __s A program kapcsoló string változata (feltételezzük, hogy egy '--' karakterpár előzi meg.
@@ -227,8 +242,6 @@ public:
     /// Windows esetén egy üres függvény.
     virtual bool uSigRecv(int __i);
 #endif
-    /// Minden adat újraolvasása, az alap metódus csak a
-    virtual void reSet();
     /// A fő inspector objektum betöltése, inicializálása, és elindítása.
     /// Az objektumot csak akkor allokálja meg, ha a pSelfInspector pointer értéke NULL,
     /// ekkor feltételezi, hogy a servíz név azonos az applikáció nevével.
@@ -240,6 +253,7 @@ public:
     /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
     template <class T> void tSetup(eTristate _tr)
     {
+        appStat = IS_INIT;
         switch (_tr) {
         case TS_NULL:                                 break;
         case TS_FALSE:  setupTransactionFlag = false; break;
@@ -259,6 +273,7 @@ public:
             sqlCommit(*pQuery, tn);
         }
         PDEB(INFO) << "Startp self inspector : " << p->name() << " ..." << endl;
+        appStat = IS_RUN;
         p->start();                         // és start
     }
     /// Törli a pSelfInspector -t, ha nem NULL
@@ -343,6 +358,7 @@ public:
     static bool isAuthorized(const QString& pl);
     /// Az api könynvtér által gyorstárazott adatokat újra tülti,
     static void resetCacheData();
+    static eInternalStat appStat;
     /// A könyvtár neve, statikus konstans string, a LIBNAME makró által definiált: "lv2lib"
     const QString   libName;
     qlonglong       debug;      ///< Debug level
@@ -435,6 +451,10 @@ protected slots:
 #ifdef MUST_USIGNAL
     void            uSigSlot(int __i);
 #endif
+public slots:
+    /// Minden adat újraolvasása, az alap metódus csak a
+    virtual void reSet();
+
 };
 
 #define INSERROR(ec, ...) { \
@@ -449,6 +469,19 @@ EXT_ int IPV4Pol(const QString& n, enum eEx __ex = EX_ERROR);
 
 EXT_ const QString& IPV6Pol(int e, enum eEx __ex = EX_ERROR);
 EXT_ int IPV6Pol(const QString& n, enum eEx __ex = EX_ERROR);
+
+inline void emitReset()
+{
+    lanView *p = lanView::getInstance();
+    if (p != nullptr) {
+        if (!QMetaObject::invokeMethod(p, &lanView::reSet)) {
+            DERR() << "Unsuccesfull invoke lanView::reSet() ." << endl;
+        }
+    }
+    else {
+        DERR() << "Instance is NULL, skip invoke lanView::reSet()" << endl;
+    }
+}
 
 /// @class cLv2QApp
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)

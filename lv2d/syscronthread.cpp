@@ -18,6 +18,9 @@ cSysInspector::cSysInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglon
     ;
 }
 
+cSysInspector::~cSysInspector()
+{
+}
 
 cInspector *cSysInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong _toid, cInspector * _par)
 {
@@ -44,7 +47,7 @@ void cSysInspector::timerEvent(QTimerEvent *e)
     dbCron();
     mailCron();
     smsCron();
-    setState(*pq, notifSwitch(state), statMsg);
+    setState(*pQuery(), notifSwitch(state), statMsg);
     internalStat = IS_SUSPENDED;
 }
 
@@ -54,7 +57,7 @@ void cSysInspector::dbCron()
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     cError *pe = nullptr;
     try {
-        execSqlFunction(*pq, "service_cron", hostServiceId());
+        execSqlFunction(*pQuery(), "service_cron", hostServiceId());
     } CATCHS(pe);
     if (pe != nullptr) {
         state = RS_CRITICAL;
@@ -74,7 +77,7 @@ void cSysInspector::mailCron()
 {
     DBGFN();
     bool r = true;
-    QSqlQuery& q = *pq;
+    QSqlQuery& q = *pQuery();
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     // alrms, and user events
     cUserEvent e;

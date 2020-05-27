@@ -34,7 +34,7 @@ class cRrdHelper : public cInspector {
 public:
     cRrdHelper(QSqlQuery& q, const QString& __sn);
     ~cRrdHelper();
-    virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    virtual void postInit(QSqlQuery &q);
     virtual int run(QSqlQuery& q, QString &runMsg);
     void execRrd(const QString& rrdCmd);
     bool createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator i);

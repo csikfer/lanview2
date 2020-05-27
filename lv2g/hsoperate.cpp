@@ -18,8 +18,8 @@ enum eFieldIx {
     RX_ID,
     RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
     RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
-    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_SOFT_STATE, RX_NSUB,
-    RX_SUPERIOR_ID, RX_SUPERIOR_NAME,
+    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_SOFT_STATE, RX_DELEGATE,
+    RX_NSUB, RX_SUPERIOR_ID, RX_SUPERIOR_NAME,
     RX_LAST_TOUCHED
 };
 
@@ -47,6 +47,7 @@ const QString cHSOperate::_sql =
             " s.disabled AS sd,"            // RX_SRV_DISABLED
             " hs.host_service_state, "      // RX_STATE
             " hs.soft_state, "              // RX_SOFT_STATE
+            " hs.delegate_host_state, "     // RX_DELEGATE
             " (SELECT COUNT(*) FROM host_services AS shs WHERE shs.superior_host_service_id = hs.host_service_id), "    // RX_NSUB
             " hs.superior_host_service_id, "// RX_SUPERIOR_ID
             " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
@@ -146,8 +147,9 @@ QWidget* cHSORow::getButtonCmd()
     pLayout->addWidget(pToolButtonCmd);
     pWidget->setLayout(pLayout);
     connect(pToolButtonCmd, SIGNAL(clicked()), this, SLOT(pressCmd()));
-    connect(pComboBoxCmd, SIGNAL(currentTextChanged(QString)), this, SLOT(changedCmd(QString)));
-    changedCmd(inspectorCommands.first());
+//  Ideiglenesen ? Nincs command tiltás.
+//    connect(pComboBoxCmd, SIGNAL(currentTextChanged(QString)), this, SLOT(changedCmd(QString)));
+//    changedCmd(inspectorCommands.first());
     return pWidget;
 }
 
@@ -341,6 +343,7 @@ enum eTableColumnIx {
     TC_DISABLED_SRV,
     TC_STATE,
     TC_SOFT_STATE,
+    TC_DELEGATE,
     TC_LAST_TM,
     TC_CBOX_SEL,
     TC_NSUB,
@@ -420,6 +423,9 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pButtonGroupAlarm->addButton(pUi->checkBoxSetFrom,     NAT_FROM);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetInterval, NAT_FROM_TO);
 
+    pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
+    pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
+
     pZoneModel = new cZoneListModel(this);
     pUi->comboBoxZone->setModel(pZoneModel);
     pZoneModel->setFilter();
@@ -441,11 +447,13 @@ cHSOperate::cHSOperate(QMdiArea *par)
         pUi->pushButtonNone->setDisabled(true);
         pUi->tableWidget->hideColumn(TC_CBOX_SEL);
         pUi->checkBoxDisable->setDisabled(true);
-        pUi->checkBoxEnable->setDisabled(true);
+        pUi->checkBoxDelegate->setDisabled(true);
         pUi->checkBoxClrStat->setDisabled(true);
         pUi->checkBoxAlarm->setDisabled(true);
         pUi->checkBoxStatLog->setDisabled(true);
         pUi->checkBoxMemo->setDisabled(true);
+        pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
+        pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
     }
     else {
         connect(pButtonGroupAlarm,      SIGNAL(buttonClicked(int)), this, SLOT(setAlarmButtons(int)));
@@ -454,16 +462,18 @@ cHSOperate::cHSOperate(QMdiArea *par)
         connect(pUi->pushButtonNone,    SIGNAL(clicked()),          this, SLOT(none()));
         if (permit == PERMIT_PART) {
             pUi->checkBoxDisable->setDisabled(true);
-            pUi->checkBoxEnable->setDisabled(true);
+            pUi->checkBoxDelegate->setDisabled(true);
             pUi->checkBoxClrStat->setDisabled(true);
             pUi->checkBoxAlarm->setDisabled(true);
             pUi->checkBoxStatLog->setDisabled(true);
             pUi->checkBoxMemo->setDisabled(true);
+            pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
+            pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
         }
         else {
-            connect(pUi->checkBoxDisable, SIGNAL(toggled(bool)), this, SLOT(disable(bool)));
-            connect(pUi->checkBoxEnable,  SIGNAL(toggled(bool)), this, SLOT(enable(bool)));
             connect(pUi->checkBoxClrStat, SIGNAL(toggled(bool)), this, SLOT(clrStat(bool)));
+            connect(pUi->checkBoxDisable, SIGNAL(stateChanged(int)), this, SLOT(on_checkBox_stateChanged(int)));
+            connect(pUi->checkBoxDelegate,SIGNAL(stateChanged(int)), this, SLOT(on_checkBox_stateChanged(int)));
         }
         pUi->dateTimeEditFrom->setDisplayFormat(lanView::sDateTimeForm);
         pUi->dateTimeEditTo->setDisplayFormat(lanView::sDateTimeForm);
@@ -592,6 +602,7 @@ void cHSOperate::refreshTable()
         setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
         setCell(row, TC_STATE,   pRow->item(RX_STATE, cHSORow::pNotifSwitch));
         setCell(row, TC_SOFT_STATE,pRow->item(RX_SOFT_STATE, cHSORow::pNotifSwitch));
+        setCell(row, TC_DELEGATE,pRow->boolItem(RX_DELEGATE, _sHostServices, _sDelegateHostState));
         setCell(row, TC_LAST_TM, pRow->item(RX_LAST_TOUCHED));
         setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
@@ -800,18 +811,19 @@ void cHSOperate::set()
     cHostService hs;
     QBitArray um_disabled = hs.mask(_sDisabled);
     QBitArray um_noalarm  = hs.mask(_sNoalarmFlag, _sNoalarmFrom, _sNoalarmTo);
+    QBitArray um_delegate = hs.mask(_sDelegateHostState);
     QStringList csf;
     csf << _sHostServiceState << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts
         << _sLastChanged  << _sLastTouched << _sActAlarmLogId;
     QBitArray um_ClrState = hs.mask(csf);
-    bool disable = pUi->checkBoxDisable->isChecked();
-    bool enable  = pUi->checkBoxEnable->isChecked();
+    int disable  = pUi->checkBoxDisable->checkState();
+    int delegate = pUi->checkBoxDelegate->checkState();
     bool clrStat = pUi->checkBoxClrStat->isChecked();
     bool statLog = pUi->checkBoxStatLog->isChecked();
     bool alarm   = pUi->checkBoxAlarm->isChecked();
     bool memo    = pUi->checkBoxMemo->isChecked();
     if (permit != PERMIT_ALL) {
-        if (disable || enable || clrStat || statLog || alarm || memo) EXCEPTION(EPROGFAIL);
+        if (disable != Qt::PartiallyChecked || delegate != Qt::PartiallyChecked || clrStat || statLog || alarm || memo) EXCEPTION(EPROGFAIL);
     }
     cError *pe = nullptr;
     sqlBegin(*pq2, tn);
@@ -823,15 +835,17 @@ void cHSOperate::set()
                 hs.clear();
                 QBitArray um(hs.cols());
                 qlonglong id = pRow->id;
-                if (disable) {
-                    hs.setBool(_sDisabled, true);
+                if (disable != Qt::PartiallyChecked) {
+                    bool v = disable == Qt::Checked;
+                    hs.setBool(_sDisabled, v);
                     um |= um_disabled;
-                    rec.setValue(RX_DISABLED, true);
+                    rec.setValue(RX_DISABLED, v);
                 }
-                else if (enable) {
-                    hs.setBool(_sDisabled, false);
-                    um |= um_disabled;
-                    rec.setValue(RX_DISABLED, false);
+                if (delegate != Qt::PartiallyChecked) {
+                    bool v = delegate == Qt::Checked;
+                    hs.setBool(_sDelegateHostState, v);
+                    um |= um_delegate;
+                    rec.setValue(RX_DELEGATE, v);
                 }
                 if (lastAlramButtonId != -1) {
                     QString sNoAl = noalarmtype(lastAlramButtonId);
@@ -876,6 +890,7 @@ void cHSOperate::set()
                     hs.setId(_sCheckAttempts, 0);
                     um |= um_ClrState;
                     rec.setValue(RX_STATE, _sUnknown);
+                    rec.setValue(RX_SOFT_STATE, _sUnknown);
                 }
                 if (um.count(true) > 0) {
                     hs.setId(id);
@@ -940,8 +955,8 @@ void cHSOperate::setButton()
     }
     bool f = false;
     if (permit == PERMIT_ALL) {
-        f = pUi->checkBoxDisable->isChecked()
-         || pUi->checkBoxEnable->isChecked()
+        f = pUi->checkBoxDisable ->checkState() != Qt::PartiallyChecked
+         || pUi->checkBoxDelegate->checkState() != Qt::PartiallyChecked
          || pUi->checkBoxClrStat->isChecked();
     }
     else {
@@ -1032,21 +1047,8 @@ void cHSOperate::zoneChanged(int ix)
     pPlaceModel->setZone(pZoneModel->atId(ix));
 }
 
-void cHSOperate::disable(bool f)
+void cHSOperate::on_checkBox_stateChanged(int)
 {
-    if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
-    if (f) {
-        pUi->checkBoxEnable->setChecked(false);
-    }
-    setButton();
-}
-
-void cHSOperate::enable(bool f)
-{
-    if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
-    if (f) {
-        pUi->checkBoxDisable->setChecked(false);
-    }
     setButton();
 }
 

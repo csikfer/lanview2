@@ -34,7 +34,7 @@ class cAttached : public cInspector {
 public:
     /// Konstruktor.
     cAttached(cInspector * par) : cInspector(par) { ; }
-    virtual void postInit(QSqlQuery &q, const QString &qs = _sNul);
+    virtual void postInit(QSqlQuery &q);
     char            setting;    ///< Senzor port settings (indalarmif1 reported)
     char            state;      ///< Senzor port status (indalarmif1 reported)
 };
@@ -53,7 +53,7 @@ public:
     /// Az ős metódus hívása után feltölti a pSubordinates-t (superior=custom) a linkek alapján,
     /// A linkelt eszközöknél ha nem létezik az attached szolgáltatás, vagy más a superior,
     /// akkor korrigálja az adatbázist is.
-    virtual void postInit(QSqlQuery &q, const QString &qs = _sNul);
+    virtual void postInit(QSqlQuery &q);
     /// A lekérdezést végző virtuális metódus.
     /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);
@@ -83,9 +83,8 @@ public:
     cGateway(QSqlQuery& q, qlonglong hsid, qlonglong hoid, cInspector * par);
     ~cGateway();
     /// Lekérdező objektumok (cIndAlarmIf) beolvasása / pSubordinates feltöltése
-    virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
+    virtual void setSubs(QSqlQuery& q);
     virtual void _init();
-    virtual void threadPreInit();
     virtual int run(QSqlQuery &q, QString &runMsg);
     int open(QSqlQuery& q, QString &msg, int to);
     void close();

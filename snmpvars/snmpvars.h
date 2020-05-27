@@ -29,7 +29,7 @@ public:
     cDeviceSV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cDeviceSV();
-    virtual void postInit(QSqlQuery &q, const QString &qs = QString()) override;
+    virtual void postInit(QSqlQuery &q) override;
     virtual void variablesPostInit(QSqlQuery &q) override;
     int queryInit(QSqlQuery &_q, QString& msg);
     /// A lekérdezést végző virtuális metódus.

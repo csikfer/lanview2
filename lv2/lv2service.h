@@ -17,17 +17,6 @@ enum eTmStat {
 };*/
 
 
-/// cInspect és leszármazottai objektum belső status
-enum eInternalStat {
-    IS_INIT,        ///< Internal status init
-    IS_DOWN,        ///< Internal status down
-    IS_RUN,         ///< Internal status runing (inited)
-    IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
-    IS_OMITTED,     ///< Felfüggestve, időintervallumon (timeperiod) kívül.
-    IS_STOPPED,     ///< Lefutott
-    IS_ERROR        ///< Hiba miatt leállt
-};
-
 /// Az ellenörző eljárás típusa
 enum eInspectorType {
     IT_CUSTOM               = 0,        ///< Egyedi
@@ -99,31 +88,19 @@ enum eNagiosPluginRetcode {
 
 class cInspector;
 class cInspectorThread;
+class cInspectorThreadThread;
+
 
 /// Ha a megadott objektum az aktuális szálhoz tartozik, akkor true-vel tér vissza
 inline bool isCurrentThread(QObject *po) {
     return po->thread() == QThread::currentThread();
 }
 
-/// @class cThreadAcceptor
-class LV2SHARED_EXPORT cThreadAcceptor : public QObject {
-    friend class cInspectorThread;
-    Q_OBJECT
-protected:
-    cThreadAcceptor(cInspectorThread *pThread);
-    ~cThreadAcceptor();
-    void timer(int ms, eTimerStat tst);
-    cInspector& inspector;
-    QTimer *    pTimer;
-protected slots:
-    void on_timer_timeout();
-    void on_thread_finished();
-};
-
 /// @class cInspectorThread
 /// Az Inspector thread objektum
-class LV2SHARED_EXPORT cInspectorThread : public QThread {
+class LV2SHARED_EXPORT cInspectorThread : public QObject {
     friend class cInspector;
+    friend class cInspectorThreadThread;
     Q_OBJECT
 public:
     cInspectorThread(cInspector * pp);
@@ -132,16 +109,22 @@ public:
     cInspector& inspector;
     /// Az utolsó hiba objektum vagy NULL.
     cError     *pLastError;
-    /// A fő szál tulajdona, közvetítő objektum
-    cThreadAcceptor *pAcceptor;
+    virtual void timerEvent(QTimerEvent *event);
 protected:
-    virtual void run();
     virtual void doInit();
     virtual void doRun();
     virtual void doDown();
-
-    void timer(int ms, eTimerStat tst);
+    void chkAbort();
+    QThread *pThread;
+    enum eInternalStat  internalStat;
+    bool abortFlag;
+public slots:
+    void run();
+    void do_timerEvent();
+    void on_thread_killTimer();
+    void do_reset_sub(cInspector *psi, bool _start);
 };
+
 
 class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
     friend class cInspector;
@@ -237,6 +220,14 @@ public:
     virtual int parse(int _ec, QIODevice &_text, QString &runMsg);
     /// Futás időzítés indítása
     virtual void start();
+    /// Futás időzítés leállítása
+    virtual void stop();
+    /// A timer leállítása, ha volt.
+    /// @param find Ha igaz, akkor a szülő objektumokban rekorzívan keresi a thread.
+    /// @return Ha a megfelelő szálban vagyunk, és közvetlenül tiltható, akkor a tulajdonos QObject pointer, egyébként nullptr.
+    QObject *stopTimer();
+    /// Időzített indítás első alakalom
+    /// @return msec
     int firstDelay();
     /// Egy alárendelt szolgáltatás objektum létrehozása. Alapértelmezetten egy cInspector objektumot hoz létre.
     /// Az alapőértelmezett setSubs() metódus hívja a gyerek objektumok létrehozásához, ha azt akarjuk,
@@ -245,20 +236,17 @@ public:
     /// @param _toid A node objektum típusát azonosító tableoid
     /// @param _par A parent objekrum
     virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = nullptr);
-    /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
-    /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread (Win: not supported).
-    virtual cInspectorThread *newThread();
     virtual cInspectorProcess *newProcess();
     /// Feltölti a subordinates konténert. Hiba esetén dob egy kizárást, de ha nincs mivel feltölteni a subordinatest, az nem hiba.
     /// At új objektum típusa a newSubordinate() virtuális metódus által meghatározott.
     /// @param q az adabázis művelethez használlható objektum.
     /// @param qs Opcionális query string, A stringben a %1 karakter a hostServiceId-vel helyettesítődik.
-    virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
+    virtual void setSubs(QSqlQuery& q);
     /// A pHost, pService és hostService adattagok feltöltése után az inicializálás befejezése
     /// Logikailag a konstruktor része lenne, de a virtuális metódusok miatt külön kell hívni a konstruktor után.
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
-    virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    virtual void postInit(QSqlQuery &q);
     /// A 'variables' nevű features paraméter feldolgozása.
     /// A variables features paraméter egy list map típusú paraméter. Ahhol a kulcs a szervíz változó neve,
     /// Az érték pedig egy két elemű lista, aminek az első eleme egy tevákenységtől függő paraméter,
@@ -271,9 +259,6 @@ public:
     virtual bool variablesListFeature(QSqlQuery &q, const QString& _name);
     virtual void variablesListCreateOrCheck(QSqlQuery &q);
     virtual void variablePostInitCreateOrCheck(QSqlQuery &q, const QString& _name);
-    /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
-    /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
-    virtual void threadPreInit();
     /// Db Notification
     /// @param cmd Command string
     virtual void dbNotif(const QString& cmd);
@@ -299,6 +284,7 @@ public:
     QString feature(const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).value(__nm); }
     /// Ha létezik ez a kulcs vagy paraméter akkor igaz értékkel tér vissza
     bool isFeature( const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).contains(__nm); }
+    void getTimeouts(ulong defaultStart, ulong defaultStop);
     ///
     int getInspectorType(QSqlQuery &q);
     /// Saját adatok beállítása. Hiba esetén dob egy kizárást.
@@ -354,8 +340,6 @@ public:
     QElapsedTimer       lastRun;
     /// Az előző két run metódus hívás között eltelt idő ms-ben (?)
     qlonglong           lastElapsedTime;
-    /// Ha ő egy thread, akkor a QThread objektumra mutat, egyébként NULL
-    cInspectorThread   *pInspectorThread;
     /// Opcionális parancs
     QString             checkCmd;
     /// Opcionális parancs argumentumok
@@ -364,8 +348,12 @@ public:
     cInspectorProcess  *pProcess;
     /// Parancs kimenetet értelmező objektum, ha van
     cQueryParser       *pQparser;
-    /// Adatbázis műveletekhez használt objektum
-    QSqlQuery          *pq;
+    /// Adatbázis műveletekhez használt objektum, a fő szálban
+    QSqlQuery          *pQMain;
+    /// Adatbázis műveletekhez használt objektum, a thread-ben
+    QSqlQuery          *pQThread;
+    ///
+    QSqlQuery          *pQuery();
     /// Ha superior szolgálltatásról van szó, akkor az alárendeltek listájára mutató pointer, egyébként NULL.
     QList<cInspector*> *pSubordinates;
     /// Ha van proto_service_id, akkor a protocol service objektumra mutat, egyébként NULL.
@@ -480,13 +468,11 @@ public:
     QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = nullptr);
 
     ///
-    int timing() const { return inspectorType & IT_TIMING_MASK; }
-    int process() const{ return inspectorType & IT_PROCESS_MASK; }
-    int method() const { return inspectorType & IT_METHOD_MASK; }
+    int timingType() const { return inspectorType & IT_TIMING_MASK; }
+    int processType() const{ return inspectorType & IT_PROCESS_MASK; }
+    int methodType() const { return inspectorType & IT_METHOD_MASK; }
     /// Ha az objektum időzített.
-    bool isTimed() const { return inspectorType & (IT_TIMING_TIMED | IT_PROCESS_TIMED) ; }
-    /// Ha az objektum önálló szálon fut
-    bool isThread() const { return inspectorType & IT_TIMING_THREAD; }
+    bool isTimedType() const { return inspectorType & (IT_TIMING_TIMED | IT_PROCESS_TIMED) ; }
     /// Ha a lekérdezést passzív
     bool passive() const { return inspectorType & IT_TIMING_PASSIVE; }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
@@ -497,17 +483,6 @@ public:
     static qlonglong nodeOId;
     static qlonglong sdevOId;
     static qlonglong syscronId;
-    /// Az aktuálisan használandó parent pointerét adja meg.
-    /// Normál esetben ez a this pointer.
-    /// Ha a cInspoector objektum saját szálat indított, akkor viszont a pInspectorThread pointerrel tér vissza.
-    /// Hiba esetén kozárást dob: A checkThread(this) false-val tért vissza, de a pInspectorThread pointer NULL, vagy nem az aktuális thread
-    QObject *useParent() {
-        if (isCurrentThread(this)) return this;
-        if (pInspectorThread == nullptr || (QThread *)pInspectorThread != QThread::currentThread()) {
-            EXCEPTION(EPROGFAIL, 0, name());
-        }
-        return pInspectorThread->pAcceptor;
-    }
     void setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// Az időzítés módosítása
     void toRetryInterval(int offset = 0);
@@ -524,6 +499,46 @@ private:
     QString typeErrMsg(QSqlQuery &q);
 public:
     static qlonglong rnd(qlonglong i, qlonglong m = 1000);
+// *** Thread ***
+public:
+    /// Ha az objektum önálló szálon fut
+    bool isThreadType() const { return inspectorType & IT_TIMING_THREAD; }
+    /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
+    /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread (Win: not supported).
+    virtual cInspectorThread *newThread();
+    /// Inicializálja a szálat.
+    /// Áthelyezi a saját szálba az objektumot, és csatlakoztatja a slot-okat
+    void threadInit(cInspectorThread *p);
+    /// Indítja a szálat, ellenöriz.
+    void emitStartThread(int s);
+    /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
+    /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
+    virtual void threadPostInit();
+    /// Az aktuálisan használandó parent pointerét adja meg.
+    /// Normál esetben ez a this pointer.
+    /// Ha a cInspoector objektum saját szálat indított, akkor viszont a pInspectorThread pointerrel tér vissza.
+    QObject *usedAsParent() {
+        if (isCurrentThread(this)) return this;
+        if (pInspectorThread == nullptr || pInspectorThread->pThread != QThread::currentThread()) {
+            EXCEPTION(EPROGFAIL, 0, name());
+        }
+        return pInspectorThread;
+    }
+    void threadChkAbort();
+    /// Ha ő egy thread, akkor a cInspectorThread objektumra mutat, egyébként NULL
+    cInspectorThread   *pInspectorThread;
+protected slots:
+    void do_killTimer();
+    void on_thread_finished();
+    void do_timerEvent();
+    /// A megadott al példány resetelése, vagy leállítása. Mindkét esetben türli a magadott objektumot, és újra allokálja.
+    /// Ha _start hamis, csak újraallokálja a cInspector objektumot, de nem halytja végre a postInit() és start() metódusokat.
+    /// Ha _start hamis, akkor a szolgáltatás példány állapota kikacsolt lessz.
+    /// @param psi A leállítandó példány pointere
+    /// @param _start Reset esetén (ha el kell indítani), akkor igaz
+    void do_reset_sub(cInspector *psi, bool _start);
+signals:
+    void setThreadInterval(int t);
 };
 
 

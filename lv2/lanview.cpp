@@ -75,6 +75,7 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 #define DEFDEB cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::MODMASK
 #endif
 
+eInternalStat lanView::appStat = IS_INIT;
 /// Default debug level
 qlonglong lanView::debugDefault = DEFDEB;
 lanView  *lanView::instance     = nullptr;
@@ -194,6 +195,7 @@ lanView::lanView()
     : QObject(), libName(LIBNAME), debFile("-"), homeDir(), binPath(), args(), dbThreadMap(), threadMutex()
 {
     // DBGFN();
+    appStat     = IS_INIT;
     debug       = debugDefault;
     pSet        = nullptr;
     lastError   = nullptr;
@@ -367,6 +369,7 @@ static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
 
 lanView::~lanView()
 {
+    appStat = IS_EXIT;
     instance = nullptr;    // "Kifelé" már nincs objektum
     PDEB(OBJECT) << QObject::tr("delete (lanView *)%1").arg(qulonglong(this), 0, 16) << endl;
     // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
@@ -679,7 +682,7 @@ bool lanView::uSigRecv(int __i)
 {
     if (__i == SIGHUP) {
         PDEB(INFO) << tr("Esemény : SIGHUP; reset ...") << endl;
-        reSet();
+        emitReset();
         return false;
     }
     return true;
@@ -688,8 +691,10 @@ bool lanView::uSigRecv(int __i)
 
 void lanView::reSet()
 {
+    PDEB(INFO) << endl;
     try {
         down();
+        appStat = IS_RESTART;
         resetCacheData();
         setSelfObjects();
         setup();
@@ -707,10 +712,13 @@ void lanView::setup(eTristate _tr)
 
 void lanView::down()
 {
+    appStat = IS_DOWN;
+    PDEB(INFO) << "Self inspector :" << (pSelfInspector != nullptr ? pSelfInspector->name() : _sNULL) << endl;
+    if (pSelfInspector != nullptr) pSelfInspector->stop();
+    pDelete(pSelfInspector);
+    pDelete(pSelfHostService);
     pDelete(pSelfNode);
     pSelfService = nullptr;    // cache!
-    pDelete(pSelfHostService);
-    pDelete(pSelfInspector);
 }
 
 #ifdef MUST_USIGNAL
@@ -766,12 +774,14 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         if (0 == _sReset.compare(cmd,  Qt::CaseInsensitive)) {
             PDEB(WARNING) << tr("NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
             reSet();
+            return;
         }
         else if (0 == QString(_sExit).compare(cmd,  Qt::CaseInsensitive)) {
             PDEB(WARNING) << tr("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
             down();
-            printf(" -- dbNotif(...): EXIT %d\n", int(lastError->mErrorCode));
+            printf(" -- dbNotif(...): EXIT 0\n");
             QCoreApplication::exit(0);
+            return;
         }
     }
     // command to cInspector object, sub services ?

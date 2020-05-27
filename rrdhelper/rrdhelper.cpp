@@ -96,9 +96,9 @@ cRrdHelper::~cRrdHelper()
 
 inline void dirCat(QDir& dir, const QString& _to) { dir.setPath(dir.filePath(_to)); }
 
-void cRrdHelper::postInit(QSqlQuery &q, const QString &qs)
+void cRrdHelper::postInit(QSqlQuery &q)
 {
-    cInspector::postInit(q, qs);
+    cInspector::postInit(q);
     // RRD access: Local or by daemon
     QString daemon = feature("daemon");
     if (!daemon.isEmpty()) {
