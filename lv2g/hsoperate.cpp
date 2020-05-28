@@ -129,17 +129,15 @@ QWidget * cHSORow::getWidgetSub()
     return pWidget;
 }
 
-static const QStringList    inspectorCommands = { _sTick };
-static const QStringList    appCommands = { _sReset, _sExit };
-
 QWidget* cHSORow::getButtonCmd()
 {
+    QStringList cmds = pService->features().slValue("control");
+    if (cmds.isEmpty()) return nullptr;
     QWidget *pWidget = new QWidget;
     QHBoxLayout *pLayout = new QHBoxLayout;
     pComboBoxCmd = new QComboBox;
     pToolButtonCmd = new QToolButton();
-    pComboBoxCmd->addItems(inspectorCommands);
-    pComboBoxCmd->addItems(appCommands);
+    pComboBoxCmd->addItems(cmds);
     pComboBoxCmd->setCurrentIndex(0);
     pToolButtonCmd->setIcon(QIcon("://icons/control.png"));
     pLayout->setMargin(0);
@@ -147,9 +145,6 @@ QWidget* cHSORow::getButtonCmd()
     pLayout->addWidget(pToolButtonCmd);
     pWidget->setLayout(pLayout);
     connect(pToolButtonCmd, SIGNAL(clicked()), this, SLOT(pressCmd()));
-//  Ideiglenesen ? Nincs command tiltás.
-//    connect(pComboBoxCmd, SIGNAL(currentTextChanged(QString)), this, SLOT(changedCmd(QString)));
-//    changedCmd(inspectorCommands.first());
     return pWidget;
 }
 
@@ -275,16 +270,6 @@ void cHSORow::pressCmd()
         QMessageBox::information(nullptr, dcViewLong(DC_INFO), msg);
     }
 }
-
-void cHSORow::changedCmd(const QString& cmd)
-{
-    bool f = true;
-    if (appCommands.contains(cmd)) {
-        f = _serviceIsApp;
-    }
-    pToolButtonCmd->setEnabled(f);
-}
-
 
 cHSOState::cHSOState(QSqlQuery& q, const QString& _sql, const QVariantList _binds, cHSOperate *par)
     : QObject(par), sql(_sql), binds(_binds)

@@ -50,7 +50,6 @@ protected slots:
     void togleSub(bool f) { sub = f; }
     void goSub();
     void pressCmd();
-    void changedCmd(const QString& cmd);
 };
 
 
