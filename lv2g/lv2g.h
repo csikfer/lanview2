@@ -159,6 +159,7 @@ class lv2g;
 class cMainWindow;
 
 class LV2GSHARED_EXPORT lv2g : public lanView {
+    Q_OBJECT
 public:
     lv2g();
     ~lv2g();
@@ -189,6 +190,8 @@ public:
 
     static QIcon        iconNull;
     static QIcon        iconDefault;
+protected slots:
+    void dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload) override;
 };
 
 // Icon from resouce

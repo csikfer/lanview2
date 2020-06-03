@@ -4,6 +4,7 @@
 #include "logon.h"
 #include "QInputDialog"
 #include "QFileDialog"
+#include "popupreport.h"
 
 cMainWindow *    lv2g::pMainWindow = nullptr;
 QSplashScreen *  lv2g::pSplash = nullptr;
@@ -37,6 +38,7 @@ lv2g::lv2g() :
         zoneId = NULL_ID;
         #include "errcodes.h"
         if (dbIsOpen()) {
+            subsDbNotif(appName);
             splashMessage(QObject::tr("Logon..."));
             eLogOnResult lor = cLogOn::logOn(zoneNeeded ? &zoneId : nullptr, pMainWindow);
             if (lor != LR_OK) {
@@ -118,6 +120,32 @@ void lv2g::splashMessage(const QString& msg)
         // Windows-on megjelenik a splash, Ubuntu 16.04-en nem, csak a két ezutáni sorral, de akkor sem biztos.
         // QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
         // QApplication::processEvents(QEventLoop::AllEvents);
+    }
+}
+
+void lv2g::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
+{
+    if (ONDB(INFO)) {
+        QString src;
+        switch (source) {
+        case QSqlDriver::SelfSource:    src = _sSelf;       break;
+        case QSqlDriver::OtherSource:   src = _sOther;      break;
+        case QSqlDriver::UnknownSource:
+     /* default:  */                    src = _sUnknown;    break;
+        }
+        cDebug::cout() << HEAD() << QObject::tr("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+    }
+    QString sPayload = payload.toString();
+    static const QString mm = "Message :";
+    if (sPayload.isNull()) return;
+    if (0 == sPayload.compare(_sExit, Qt::CaseInsensitive)) QApplication::exit();
+    else if (sPayload.startsWith(mm)) {
+        QString msg = sPayload.mid(mm.size());
+        QString title = tr("Message by database notify :");
+        popupTextWindow(pMainWindow, msg, title);
+    }
+    else {
+        DWAR() << "Invalid payload : " << sPayload << endl;
     }
 }
 
