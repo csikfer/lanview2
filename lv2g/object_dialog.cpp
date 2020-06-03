@@ -707,7 +707,7 @@ void cIpEditWidget::set(const QHostAddress &a)
 
 cIpAddress *cIpEditWidget::get(cIpAddress *po) const
 {
-    po->setAddress(actAddress, pUi->comboBoxIpType->currentText());
+    po->setAddress(actAddress, pModelIpType->currentName());
     po->setId(_sSubNetId, pSelectSubNet->currentId());
     po->set(po->noteIndex(), pEditNote->get());
     return po;

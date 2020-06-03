@@ -423,4 +423,14 @@ _GEX QVariant dcRole(int id, int role);
 
 _GEX QString condAddJoker(const QString& pat);
 
+inline eTristate checkBoxState2tristate(Qt::CheckState s) {
+    eTristate r = TS_NULL;
+    switch (s) {
+    case Qt::Checked:           r = TS_TRUE;    break;
+    case Qt::Unchecked:         r = TS_FALSE;   break;
+    default:                                    break;
+    }
+    return r;
+}
+
 #endif // LV2G_H

@@ -217,7 +217,7 @@ private:
 
 /// Model: QStringListModel leszármazottja. Egy megadott rekord típus neveinek a listája.
 /// A model lekérdezi és tárolja a rekord ID-ket is. A megadott rekord típusnak
-/// rendelkeznie kell id és név mezővel is.
+/// rendelkeznie kell id mezővel és név mezővel vagy a név mező hiányában név konverziós függvénnyel az ID-ből.
 class LV2GSHARED_EXPORT cRecordListModel : public QStringListModel {
     Q_OBJECT
 public:
@@ -300,6 +300,8 @@ public:
     /// Ha a modelhez csatolva van QComboBox objektum, akkor visszaállítja az aktuálisan kiválasztott értéket.
     /// @return true, ha az aktuális érték változatlan.
     bool refresh();
+    // Ha nem üres, akkor a tábla lekérdezésénél a tábla alias neve (FROM <table-name> AS <sTableAlias>)
+    QString             sTableAlias;
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
     bool                nullable;
@@ -427,9 +429,20 @@ public:
     QString at(int ix) const;
     int indexOf(int e) const;
     int indexOf(const QString& s) const;
+    /// Csak akkor hívható, ha hozzácsatoltuk a QComboBox objektumot (aminek a modelje) a joinWith() metódussal.
+    /// @return Az aktuális enumerációs értékkel (numerikus) tér vissza.
     int currentInt();
-    QString current();
+    /// Csak akkor hívható, ha hozzácsatoltuk a QComboBox objektumot (aminek a modelje) a joinWith() metódussal.
+    /// @return Az aktuális megjelenített névvel tér vissza. Az aktuális enumeráció nyelv szerint rövid neve.
+    QString currentView();
+    /// Csak akkor hívható, ha hozzácsatoltuk a QComboBox objektumot (aminek a modelje) a joinWith() metódussal.
+    /// @return Az aktuális enumerációs értékkel tér vissza.
+    QString currentName();
+    /// Csak akkor hívható, ha hozzácsatoltuk a QComboBox objektumot (aminek a modelje) a joinWith() metódussal.
+    /// A megadott enumerációs értéket választja ki aktuálisnak
     int setCurrent(const QString& s);
+    /// Csak akkor hívható, ha hozzácsatoltuk a QComboBox objektumot (aminek a modelje) a joinWith() metódussal.
+    /// A megadott enumerációs értéket választja ki aktuálisnak
     int setCurrent(int e);
 protected:
     QSqlQuery *         pq;

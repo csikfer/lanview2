@@ -52,7 +52,8 @@ const QString cHSOperate::_sql =
             " hs.superior_host_service_id, "// RX_SUPERIOR_ID
             " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
                  " ELSE host_service_id2name(hs.superior_host_service_id)"
-                 " END,"                    // RX_SUPERIOR_NAME
+                 " END"
+                 " AS superior_host_service_name,"  // RX_SUPERIOR_NAME
             "hs.last_touched"               // RX_LAST_TOUCHED
         " FROM host_services AS hs"
         " LEFT JOIN nports AS np ON np.port_id = hs.port_id"
@@ -76,7 +77,7 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par, int _row)
     pService = nullptr;
     pq = par->pq;
     staticInit();
-    set = pDialog->permit == PERMIT_ALL;
+    set = false; // pDialog->permit == PERMIT_ALL;
     sub = false;
     bool ok;
     id  = rec.value(RX_ID).toLongLong(&ok);
@@ -345,6 +346,25 @@ static QString _sMinInterval = "DisableAlarmMinInterval";
 cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
 {
+    pUi = nullptr;
+    pButtonGroupPlace = nullptr;
+    pButtonGroupService = nullptr;
+    pButtonGroupNode = nullptr;
+    pButtonGroupSup = nullptr;
+    pButtonGroupAlarm = nullptr;
+    pZoneModel = nullptr;
+    pPlaceModel = nullptr;
+    pNodeModel = nullptr;
+    pServiceModel = nullptr;
+    pSupModel = nullptr;
+    pq = pq2  = nullptr;
+
+    privilegLevel = lanView::getInstance()->user().privilegeLevel();
+    if (privilegLevel == PL_NONE) {
+        noRightsSetup(this, PL_VIEWER, "");
+        return;
+    }
+
     pq  = newQuery();
     pSrvLogsTable = pSrvVarsTable = nullptr;
     minIntervalMs = cSysParam::getIntervalSysParam(*pq, _sMinInterval, 1800000LL);  // default 1800sec (30m)
@@ -361,10 +381,9 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->setupUi(this);
     if (TC_COUNT != pUi->tableWidget->columnCount()) EXCEPTION(EDATA);
     // Jogosultsági szintek:
-    privilegLevel = lanView::getInstance()->user().privilegeLevel();
     switch (privilegLevel) {
     case PL_NONE:
-        endIt();                // Becsuk, semmijen jogy nincs
+        EXCEPTION(EPROGFAIL);
         break;
     case PL_VIEWER:
     case PL_INDALARM:
@@ -401,6 +420,11 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pButtonGroupNode->addButton(pUi->radioButtonNodeSelect,  FT_SELECT);
     pUi->radioButtonNodePattern->setChecked(true);
 
+    pButtonGroupSup   = new QButtonGroup(this);
+    pButtonGroupSup->addButton(pUi->radioButtonSupPattern, FT_PATTERN);
+    pButtonGroupSup->addButton(pUi->radioButtonSupSelect,  FT_SELECT);
+    pUi->radioButtonSupPattern->setChecked(true);
+
     pButtonGroupAlarm   = new QButtonGroup(this);
     pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOn,     NAT_OFF);
     pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOff,    NAT_ON);
@@ -410,11 +434,6 @@ cHSOperate::cHSOperate(QMdiArea *par)
 
     pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
     pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
-
-    pZoneModel = new cZoneListModel(this);
-    pUi->comboBoxZone->setModel(pZoneModel);
-    pZoneModel->setFilter();
-    pUi->comboBoxZone->setCurrentText(_sAll);
 
     pUi->pushButtonAutoRefresh->setText(sStart);
     if (permit != PERMIT_ALL) {
@@ -468,6 +487,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
         pUi->dateTimeEditTo->setMinimumDateTime(dt);
         pUi->dateTimeEditFrom->setDateTime(now);
         pUi->dateTimeEditTo->setDateTime(dt);
+
+        pUi->checkBoxHsDisa->setCheckState(Qt::PartiallyChecked);
     }
 
     connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)), this, SLOT(zoneChanged(int)));
@@ -480,6 +501,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
     connect(pUi->lineEditPlacePattern,   SIGNAL(textChanged(QString)), this, SLOT(changePlacePattern(QString)));
     connect(pUi->lineEditNodePattern,    SIGNAL(textChanged(QString)), this, SLOT(changeNodePattern(QString)));
     connect(pUi->lineEditServicePattern, SIGNAL(textChanged(QString)), this, SLOT(changeServicePattern(QString)));
+    connect(pUi->lineEditSupPattern, SIGNAL(textChanged(QString)), this, SLOT(changeSupPattern(QString)));
 
     connect(pUi->tableWidget,      SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doubleClickCell(QModelIndex)));
 
@@ -493,11 +515,15 @@ cHSOperate::cHSOperate(QMdiArea *par)
     connect(pUi->spinBoxRefresh,   SIGNAL(valueChanged(int)), this, SLOT(changeRefreshInterval(int)));
     connect(pUi->pushButtonAutoRefresh, SIGNAL(clicked()), this, SLOT(startRefresh()));
 
+    pZoneModel = new cZoneListModel(this);
+    pUi->comboBoxZone->setModel(pZoneModel);
+    pZoneModel->setFilter();
+    pUi->comboBoxZone->setCurrentText(_sAll);
+
     pPlaceModel = new cPlacesInZoneModel();
     pUi->comboBoxPlaceSelect->setModel(pPlaceModel);
     pPlaceModel->setFilter();   // Nincs szűrés, rendezés növekvő sorrendben
     pUi->comboBoxPlaceSelect->setCurrentIndex(0);
-
 
     pNodeModel = new cRecordListModel(cNode().descr(), this);
     pUi->comboBoxNodeSelect->setModel(pNodeModel);
@@ -508,6 +534,15 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->comboBoxServiceSelect->setModel(pServiceModel);
     pServiceModel->setFilter();
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
+
+    pSupModel = new cRecordListModel(cHostService().descr(), this);
+    // Kell egy tábla alias a következő szűréshez
+    pSupModel->sTableAlias = "hs";
+    // Csak azokat listázza, amelyekre mutat tábla mint superior példány
+    pSupModel->setConstFilter("0 < (SELECT COUNT(*) FROM host_services AS hss WHERE hss.superior_host_service_id = hs.host_service_id)", FT_SQL_WHERE);
+    pUi->comboBoxSupSelect->setModel(pSupModel);
+    pSupModel->setFilter();
+    pUi->comboBoxSupSelect->setCurrentIndex(0);
 
     // Service variables table
     cTableShape *ptsv = new cTableShape;
@@ -529,8 +564,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
 
 cHSOperate::~cHSOperate()
 {
-    delete pq;
-    delete pq2;
+    pDelete(pq);
+    pDelete(pq2);
 }
 
 int cHSOperate::queryNodeServices(qlonglong _nid)
@@ -653,10 +688,9 @@ void cHSOperate::fetchByFilter()
 {
     static const QChar j('%');
 
-    bool isHsDis  = pUi->checkBoxHsDisa->isChecked();
-    bool isHsEna  = pUi->checkBoxHsEna->isChecked();
-    bool isSDis   = pUi->checkBoxSDisa->isChecked();
-    bool isSEna   = pUi->checkBoxSEna->isChecked();
+    eTristate isHsDis = checkBoxState2tristate(pUi->checkBoxHsDisa->checkState());
+    eTristate isSDis  = checkBoxState2tristate(pUi->checkBoxSDisa->checkState());
+    eTristate isDeleg = checkBoxState2tristate(pUi->checkBoxFiltDelegate->checkState());
 
     bool isOff    = pUi->checkBoxOff->isChecked();
     bool isOn     = pUi->checkBoxOn->isChecked();
@@ -664,33 +698,73 @@ void cHSOperate::fetchByFilter()
     bool isFrom   = pUi->checkBoxFrom->isChecked();
     bool isFromTo = pUi->checkBoxFromTo->isChecked();
 
+    bool isStateOn     = pUi->checkBoxStateOn->isChecked();
+    bool isRecovered   = pUi->checkBoxRecovered->isChecked();
+    bool isWarning     = pUi->checkBoxWarning->isChecked();
+    bool isCritical    = pUi->checkBoxCritical->isChecked();
+    bool isUnreachable = pUi->checkBoxUnreachable->isChecked();
+    bool isDown        = pUi->checkBoxDown->isChecked();
+    bool isFlapping    = pUi->checkBoxFlapping->isChecked();
+    bool isUnknown     = pUi->checkBoxUnknown->isChecked();
+
     QString         sql = _sql;
     QStringList     where;
     QVariantList    bind;
-    QStringList     wl;
+    QStringList     wOr;
 
     where.clear();
-    if (!(isHsDis == isHsEna)) {
-        if (isHsDis) where << " hs.disabled ";
-        if (isHsEna) where << " NOT hs.disabled ";
+    switch (isHsDis) {
+    case TS_NULL:   break;
+    case TS_TRUE:   where << " hs.disabled ";       break;
+    case TS_FALSE:  where << " NOT hs.disabled ";   break;
     }
 
-    if (!(isSDis == isSEna)) {
-        if (isSDis) where << " s.disabled ";
-        if (isSEna) where << " NOT s.disabled ";
+    switch (isSDis) {
+    case TS_NULL:   break;
+    case TS_TRUE:   where << " s.disabled ";        break;
+    case TS_FALSE:  where << " NOT s.disabled ";    break;
+    }
+
+    switch (isDeleg) {
+    case TS_NULL:   break;
+    case TS_TRUE:   where << " hs.delegate_host_state ";        break;
+    case TS_FALSE:  where << " NOT hs.delegate_host_state ";    break;
     }
 
     if ((isOff || isOn || isTo || isFrom || isFromTo) && !(isOff && isOn && isTo && isFrom && isFromTo)) {
-        wl.clear();
-        if (isOff)  wl << " hs.noalarm_flag = 'off' ";
-        if (isOn)   wl << " hs.noalarm_flag = 'on' ";
-        if (isTo)   wl << " hs.noalarm_flag = 'to' ";
-        if (isFrom) wl << " hs.noalarm_flag = 'from' ";
-        if (isFrom) wl << " hs.noalarm_flag = 'from_to' ";
-        if (!wl.isEmpty()) {
-            QString w = wl.join("OR ");
-            if (wl.size() > 1) w = "(" + w + ") ";
-            where << w;
+        wOr.clear();
+        if (isOff)  wOr << " hs.noalarm_flag = 'off' ";
+        if (isOn)   wOr << " hs.noalarm_flag = 'on' ";
+        if (isTo)   wOr << " hs.noalarm_flag = 'to' ";
+        if (isFrom) wOr << " hs.noalarm_flag = 'from' ";
+        if (isFrom) wOr << " hs.noalarm_flag = 'from_to' ";
+        if (!wOr.isEmpty()) {
+            if (wOr.size() > 1) {
+                where << "(" + wOr.join("OR") + ")";
+            }
+            else {
+                where << wOr;
+            }
+        }
+    }
+
+    if (!(isStateOn && isRecovered && isWarning && isCritical && isUnreachable && isDown  && isFlapping && isUnknown)) {
+        wOr.clear();
+        if (isStateOn)      wOr << " hs.host_service_state = 'on' ";
+        if (isRecovered)    wOr << " hs.host_service_state = 'recovered' ";
+        if (isWarning)      wOr << " hs.host_service_state = 'warning' ";
+        if (isCritical)     wOr << " hs.host_service_state = 'critical' ";
+        if (isUnreachable)  wOr << " hs.host_service_state = 'unreachable' ";
+        if (isDown)         wOr << " hs.host_service_state = 'down' ";
+        if (isFlapping)     wOr << " hs.host_service_state = 'flapping'";
+        if (isUnknown)      wOr << " hs.host_service_state = 'unknown' ";
+        if (!wOr.isEmpty()) {
+            if (wOr.size() > 1) {
+                where << "(" + wOr.join("OR") + ")";
+            }
+            else {
+                where << wOr;
+            }
         }
     }
 
@@ -762,6 +836,27 @@ void cHSOperate::fetchByFilter()
             }
         }
     }
+    // Filter by sup.
+    if (pUi->checkBoxSup->isChecked()) {
+        if (pUi->radioButtonSupPattern->isChecked()) {
+            QString pat = pUi->lineEditSupPattern->text();
+            if (!pat.isEmpty()) {
+                where << " superior_host_service_name LIKE ?";
+                if (pat.indexOf(j) < 0) pat += j;
+                bind  << pat;
+            }
+        }
+        else {
+            int i = pUi->comboBoxSupSelect->currentIndex();
+            qlonglong id = pSupModel->atId(i);
+            if (id == NULL_ID) return;
+            else {
+                where << " hs.superior_host_service_id = ?";
+                bind  << id;
+            }
+        }
+    }
+
     if (!where.isEmpty()) sql += " WHERE" + where.join(" AND");
     sql += _ord;
     fetch(sql, bind);
@@ -1029,6 +1124,7 @@ void cHSOperate::subNone()
 
 void cHSOperate::zoneChanged(int ix)
 {
+    if (pPlaceModel == nullptr) return;
     pPlaceModel->setZone(pZoneModel->atId(ix));
 }
 
@@ -1087,6 +1183,16 @@ void cHSOperate::changeServicePattern(const QString& text)
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
 }
 
+void cHSOperate::changeSupPattern(const QString& text)
+{
+    QString param = text;
+    enum eFilterType ft = FT_SQL_WHERE;
+    if      (text.isEmpty())               ft = FT_NO;
+    else if (text.indexOf(QChar('%')) < 0) param += "%";
+    QString sql = QString("host_service_id2name(host_service_id) LIKE $pattern$%1$pattern$").arg(param);
+    pSupModel->setFilter(sql, OT_DEFAULT, ft);
+}
+
 void cHSOperate::doubleClickCell(const QModelIndex& mi)
 {
     int row = mi.row();
@@ -1100,36 +1206,36 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         s = pi->text();
     }
     switch (mi.column()) {
+    case TC_ID: {
+        cHostService hs;
+        hs.setById(*pq2, actState()->rows.at(row)->id);
+        recordDialog(*pq2, hs.tableName(), this, &hs, permit != PERMIT_ALL, true);
+        break;
+     }
     case TC_HOST: {
         cPatch *pNode = cPatch::getNodeObjByName(*pq2, s);
-        recordDialog(*pq2, pNode->tableName(), this, pNode, true);
+        recordDialog(*pq2, pNode->tableName(), this, pNode, permit != PERMIT_ALL, true);
         pDelete(pNode);
         break;
       }
     case TC_SERVICE: {
         const cService *pSrv = cService().service(*pq2, s);
-        recordDialog(*pq2, _sServices, this, pSrv, true);
+        recordDialog(*pq2, _sServices, this, pSrv, permit != PERMIT_ALL, true);
         break;
       }
     case TC_PORT: {
         QVariant vpid = actState()->rows.at(row)->rec.value(RX_PORT_ID);
         if (vpid.isValid()) {
             cNPort *pPort = cNPort::getPortObjById(*pq2, vpid.toLongLong());
-            recordDialog(*pq2, pPort->tableName(), this, pPort, true);
+            recordDialog(*pq2, pPort->tableName(), this, pPort, permit != PERMIT_ALL, true);
             pDelete(pPort);
         }
         break;
       }
-    case TC_EXT: {
-        cHostService hs;
-        hs.setById(*pq2, actState()->rows.at(row)->id);
-        recordDialog(*pq2, hs.tableName(), this, &hs, true);
-        break;
-     }
     case TC_PLACE: {
         cPlace p;
         p.setByName(*pq2, s);
-        recordDialog(*pq2, p.tableName(), this, &p, true);
+        recordDialog(*pq2, p.tableName(), this, &p, permit != PERMIT_ALL, true);
         break;
      }
     case TC_NSUB: {
@@ -1149,7 +1255,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         cHostService hs;
         hs.setById(*pq2, actState()->rows.at(row)->id);
         hs.setById(*pq2, hs.getId(_sSuperiorHostServiceId));
-        recordDialog(*pq2, hs.tableName(), this, &hs, true);
+        recordDialog(*pq2, hs.tableName(), this, &hs, permit != PERMIT_ALL, true);
         break;
      }
     default:    break;
@@ -1333,4 +1439,64 @@ void cHSOperate::on_tableWidget_itemSelectionChanged()
     pSrvVarsTable->refresh(true);
     pSrvLogsTable->pTableShape->setName(_sRefine, refine);
     pSrvLogsTable->refresh(true);
+}
+
+void cHSOperate::on_toolButtonUnknown_clicked()
+{
+    pUi->checkBoxService->setChecked(false);
+    pUi->checkBoxNode->setChecked(false);
+    pUi->checkBoxSDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+
+    pUi->checkBoxStateOn->setChecked(false);
+    pUi->checkBoxRecovered->setChecked(false);
+    pUi->checkBoxWarning->setChecked(false);
+    pUi->checkBoxCritical->setChecked(false);
+    pUi->checkBoxUnreachable->setChecked(false);
+    pUi->checkBoxDown->setChecked(false);
+    pUi->checkBoxFlapping->setChecked(false);
+    pUi->checkBoxUnknown->setChecked(true);
+
+    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
+}
+
+void cHSOperate::on_toolButtonCritical_clicked()
+{
+    pUi->checkBoxService->setChecked(false);
+    pUi->checkBoxNode->setChecked(false);
+    pUi->checkBoxSDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+
+    pUi->checkBoxStateOn->setChecked(false);
+    pUi->checkBoxRecovered->setChecked(false);
+    pUi->checkBoxWarning->setChecked(false);
+    pUi->checkBoxCritical->setChecked(true);
+    pUi->checkBoxUnreachable->setChecked(true);
+    pUi->checkBoxDown->setChecked(true);
+    pUi->checkBoxFlapping->setChecked(true);
+    pUi->checkBoxUnknown->setChecked(true);
+
+    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
+}
+
+void cHSOperate::on_toolButtonWarning_clicked()
+{
+    pUi->checkBoxService->setChecked(false);
+    pUi->checkBoxNode->setChecked(false);
+    pUi->checkBoxSDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxHsDisa->setChecked(false);
+
+    pUi->checkBoxStateOn->setChecked(false);
+    pUi->checkBoxRecovered->setChecked(false);
+    pUi->checkBoxWarning->setChecked(true);
+    pUi->checkBoxCritical->setChecked(true);
+    pUi->checkBoxUnreachable->setChecked(true);
+    pUi->checkBoxDown->setChecked(true);
+    pUi->checkBoxFlapping->setChecked(true);
+    pUi->checkBoxUnknown->setChecked(true);
+
+    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
 }

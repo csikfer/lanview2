@@ -410,12 +410,21 @@ void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f
                         break;
     default:            EXCEPTION(EPROGFAIL, __f, _par.toString());
     }
-    if (toNameFName.isEmpty()) {
-        nn = pDescr->columnNameQ(pDescr->nameIndex());
+
+    switch (__f) {
+    case FT_NO:
+    case FT_SQL_WHERE:
+        break;      // nn nem kell.
+    default:
+        if (toNameFName.isEmpty()) {
+            nn = pDescr->columnNameQ(pDescr->nameIndex());
+        }
+        else {
+            nn = _sName;
+        }
+        break;
     }
-    else {
-        nn = _sName;
-    }
+
     switch (__f) {
     case FT_NO:         cnstFlt.clear();    break;
     case FT_LIKE:       cnstFlt = nn + " LIKE " +       quoted(pat);           break;
@@ -517,6 +526,11 @@ QString cRecordListModel::select()
             nc,             // Name for column
             view;           // Optional view field
     QString in = pDescr->columnNameQ(pDescr->idIndex());    // ID name
+    if (toNameFName.isNull() && pDescr->nameIndex(EX_IGNORE) < 0) { // Se név konverzió, se név mező ?
+        // Kitalálható ?
+        QSqlQuery q = getQuery();
+        toNameFName = pDescr->checkId2Name(q);
+    }
     if (toNameFName.isEmpty()) {
         se = nc = fe = pDescr->nameName();
         dcData = DC_NAME;
@@ -532,7 +546,8 @@ QString cRecordListModel::select()
         dcData = DC_DERIVED;
     }
     QString sOnly = only ? " ONLY " : _sNul;
-    QString sql = "SELECT " + in + QChar(',') + se + view + " FROM " + sOnly + pDescr->fullTableNameQ();
+    QString sAs   = sTableAlias.isEmpty() ? _sNul : (" AS " + sTableAlias);
+    QString sql = "SELECT " + in + QChar(',') + se + view + " FROM " + sOnly + pDescr->fullTableNameQ() + sAs;
     sql += where(fe);
     sql += _order(nc);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
@@ -947,10 +962,16 @@ int cEnumListModel::currentInt()
     return atInt(pComboBox->currentIndex());
 }
 
-QString cEnumListModel::current()
+QString cEnumListModel::currentView()
 {
     if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
     return at(pComboBox->currentIndex());
+}
+
+QString cEnumListModel::currentName()
+{
+    if (pComboBox == nullptr) EXCEPTION(EPROGFAIL);
+    return atEnumVal(pComboBox->currentIndex())->getName();
 }
 
 int cEnumListModel::setCurrent(const QString& s)

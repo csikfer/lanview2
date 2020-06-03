@@ -85,12 +85,14 @@ protected:
     QButtonGroup   *pButtonGroupPlace;
     QButtonGroup   *pButtonGroupService;
     QButtonGroup   *pButtonGroupNode;
+    QButtonGroup   *pButtonGroupSup;
     QButtonGroup   *pButtonGroupAlarm;
 
     cZoneListModel   *pZoneModel;
     cPlacesInZoneModel*pPlaceModel;
     cRecordListModel *pNodeModel;
     cRecordListModel *pServiceModel;
+    cRecordListModel *pSupModel;
 
     QSqlQuery       *pq;
     QSqlQuery       *pq2;
@@ -138,6 +140,7 @@ protected slots:
     void changePlacePattern(const QString& text);
     void changeNodePattern(const QString& text);
     void changeServicePattern(const QString& text);
+    void changeSupPattern(const QString& text);
     void doubleClickCell(const QModelIndex& mi);
     /// Egyyel visszalépés, az előző lekérdezésre (nem olvassa újra)
     void back();
@@ -162,6 +165,12 @@ private slots:
     void on_toolButtonIntervalDef_clicked();
 
     void on_tableWidget_itemSelectionChanged();
+
+    void on_toolButtonUnknown_clicked();
+
+    void on_toolButtonCritical_clicked();
+
+    void on_toolButtonWarning_clicked();
 
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {

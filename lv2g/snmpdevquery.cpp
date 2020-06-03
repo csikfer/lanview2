@@ -201,7 +201,7 @@ void cSnmpDevQPort::on_checkBoxSave_toggled(bool checkState)
 void cSnmpDevQPort::on_comboBoxIpType_currentIndexChenged(int)
 {
     if (pInterface == nullptr || pInterface->addresses.isEmpty()) return;
-    QString s = pIpTypeModel->current();
+    QString s = pIpTypeModel->currentName();
     pInterface->addresses.first()->setName(_sIpAddressType, s);
 }
 

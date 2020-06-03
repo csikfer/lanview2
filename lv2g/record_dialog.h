@@ -258,7 +258,7 @@ inline QTableWidgetItem * setTableItemText(const QString& text, QTableWidget *pW
     return pItem;
 }
 
-static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, int col)
+inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, int col)
 {
     QWidget *pWidget = pW->cellWidget(row, col);
     if (pWidget == nullptr) return -1;
