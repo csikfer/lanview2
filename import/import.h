@@ -15,10 +15,13 @@ class lv2import : public lanView {
    public:
     lv2import();
     ~lv2import();
+    void initDaemon();
     void abortOldRecords();
     QSqlQuery   *pQuery;
-    QString     fileNm;
-    QFile       in;
+    QString     inFileName;
+    QFile       inFile;
+    QString     outFileName;
+    QFile       outFile;
     bool        daemonMode;
 protected slots:
     virtual void dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);

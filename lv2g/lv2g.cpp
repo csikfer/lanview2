@@ -115,9 +115,8 @@ void lv2g::splashMessage(const QString& msg)
 {
     if (pSplash != nullptr) {
         pSplash->showMessage(msg, Qt::AlignCenter);
-        pSplash->repaint();
         QApplication::processEvents(QEventLoop::AllEvents);
-        // Windows-on megjelenik a splash, Ubuntu 16.04-en nem, csak a két ezutáni sorral, de akkor sem biztos.
+        // Windows-on megjelenik a splash, Ubuntun nem, csak a két ezutáni sorral, de akkor sem biztos.
         // QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
         // QApplication::processEvents(QEventLoop::AllEvents);
     }

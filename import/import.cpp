@@ -15,6 +15,8 @@ void setAppHelp()
     lanView::appHelp += QObject::tr("-i|--input-file <path>      Set input file path\n");
     lanView::appHelp += QObject::tr("-I|--input-stdin            Set input file is stdin\n");
     lanView::appHelp += QObject::tr("-D|--daemon-mode            Set daemon mode\n");
+    lanView::appHelp += QObject::tr("-o|--output-file <path>     Set output file path\n");
+    lanView::appHelp += QObject::tr("-O|--output-stdout          Set input file is stdin\n");
 }
 
 int main (int argc, char * argv[])
@@ -43,9 +45,9 @@ int main (int argc, char * argv[])
         QDir::setCurrent(actDir);
         PDEB(VVERBOSE) << "Restore act dir : " << QDir::currentPath() << endl;
         try {
-            if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fájl!"));
+            if (mo.inFileName.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fájl!"));
             PDEB(VVERBOSE) << "BEGIN transaction ..." << endl;
-            importParseFile(mo.fileNm);
+            importParseFile(mo.inFileName);
         } catch(cError *e) {
             mo.lastError = e;
         } catch(...) {
@@ -138,7 +140,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
 }
 
 
-lv2import::lv2import() : lanView(), fileNm(), in()
+lv2import::lv2import() : lanView()
 {
     daemonMode = false;
     pQuery = nullptr;
@@ -159,18 +161,27 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         args.removeAt(i);
     }
     if (0 < (i = findArg('i', "input-file", args)) && (i + 1) < args.count()) {
-        fileNm = args[i + 1];
+        inFileName = args[i + 1];
         args.removeAt(i);
         args.removeAt(i);
     }
     if (0 < (i = findArg('I', "input-stdin", args))) {
-        fileNm = '-';
+        inFileName = '-';
         args.removeAt(i);
     }
     if (0 < (i = findArg('D', "daemon-mode", args))) {
         args.removeAt(i);;
         PDEB(INFO) << tr("Set daemon mode.") << endl;
         daemonMode = true;
+    }
+    if (0 < (i = findArg('o', "output-file", args)) && (i + 1) < args.count()) {
+        outFileName = args[i + 1];
+        args.removeAt(i);
+        args.removeAt(i);
+    }
+    if (0 < (i = findArg('O', "output-stdout", args))) {
+        inFileName = '-';
+        args.removeAt(i);
     }
     if (args.count() > 1) DWAR() << tr("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
