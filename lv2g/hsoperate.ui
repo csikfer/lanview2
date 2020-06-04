@@ -1284,6 +1284,9 @@ p, li { white-space: pre-wrap; }
        <property name="text">
         <string>Az álapot továbbítás engedélyezve</string>
        </property>
+       <property name="tristate">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
     </layout>

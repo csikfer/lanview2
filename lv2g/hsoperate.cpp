@@ -434,6 +434,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
 
     pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
     pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
+    pUi->checkBoxFiltDelegate->setCheckState(Qt::PartiallyChecked);
 
     pUi->pushButtonAutoRefresh->setText(sStart);
     if (permit != PERMIT_ALL) {
