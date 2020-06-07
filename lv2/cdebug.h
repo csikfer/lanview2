@@ -57,7 +57,7 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// @def HEAD()
 #define _HEAD(fi, li, fu)   fi << "[" << li << "] " << fu << " : "
 /// @def _HEAD()
-#define HEAD()      head << _HEAD(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define HEAD()      ::head << _HEAD(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def PDEB(mask)
 /// Debug üzenet kiíratásához használlt makró.
 /// @param mask Debug üzenet kiírási feltételét definiáló maszk (modul infó nélkül)
@@ -97,7 +97,7 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// @relates cDebug
 #define DBGOBJ()    _DBGOBJ() << endl
 
-#define __DERRH(fi, li, fu) head << QObject::tr("Error in ") << _HEAD(fi, li, fu)
+#define __DERRH(fi, li, fu) ::head << QObject::tr("Error in ") << _HEAD(fi, li, fu)
 #define _DERRH()    __DERRH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def DERR()
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) DERROR, és kiírja az
@@ -113,7 +113,7 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) WARNING, és kiírja az
 /// aktuális forrásfájl nevét abban a sotrszámot, valamint az aktuális függvény teljes nevét is.
 /// @relates cDebug
-#define __DWARH(fi, li, fu) head << QObject::tr("Warning in ") << _HEAD(fi, li, fu)
+#define __DWARH(fi, li, fu) ::head << QObject::tr("Warning in ") << _HEAD(fi, li, fu)
 #define _DWARH()    __DWARH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define DWAR()      _PDEB(WARNING) << _DWARH()
 

@@ -379,6 +379,7 @@ public:
     bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális service példány állapotát.
     cUser          *pUser;              ///< A felhasználót azonosító objektum pointere, vagy NULL
     qlonglong       selfHostServiceId;  ///< Ha megadták a saját gyökér hostService rekord ID-je, vagy null_id;
+    bool            forcedSelfHostService;  ///< Ha a selfHostServiceId program paraméterként lett megadva.
     cInspector     *pSelfInspector;
     QSqlQuery      *pQuery;
     cLanguage      *pLanguage;

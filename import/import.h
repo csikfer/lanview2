@@ -4,7 +4,7 @@
 #include <Qt>
 #include <QPoint>
 #include "lanview.h"
-#include "guidata.h"
+#include "lv2service.h"
 
 #define APPNAME "import"
 #undef  __MODUL_NAME__
@@ -16,15 +16,22 @@ class lv2import : public lanView {
     lv2import();
     ~lv2import();
     void initDaemon();
-    void abortOldRecords();
+    void abortOldRecords(QSqlQuery &q);
+    void fetchAndExec();
+    void execute();
     QSqlQuery   *pQuery;
+    QString     actDir;
     QString     inFileName;
-    QFile       inFile;
     QString     outFileName;
-    QFile       outFile;
     bool        daemonMode;
 protected slots:
     virtual void dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);
+};
+
+class cImportInspector : public cInspector {
+public:
+    cImportInspector() : cInspector() { }
+    virtual int run(QSqlQuery&, QString &);
 };
 
 #endif // IMPORT_H

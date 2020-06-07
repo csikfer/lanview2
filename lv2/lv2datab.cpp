@@ -3796,6 +3796,20 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, eEx __ex) const
     return NULL_ID;
 }
 
+int cRecord::fetchFieldsById(QSqlQuery& q, QBitArray& __map)
+{
+    if (isEmpty()) return -1;
+    int r = 0;
+    QString sql = "SELECT " + descr().columnNamesQ(__map)
+                + " FROM "  + fullTableNameQ()
+                + " WHERE " + QString("%1 = %2").arg(columnNameQ(idIndex())).arg(getId());
+    if (execSql(q, sql)) {
+        readBack(q, __map);
+        r = q.numRowsAffected();
+    }
+    return r;
+}
+
 int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, eEx __ex)
 {
 //    _DBGFN() << "@("

@@ -507,6 +507,7 @@ STRDEF(Services, "services")
  STRDEF(ServiceName, "service_name")
   dnl local
   STRDEF(Nil, "nil")
+  STRDEF(Import, "import")
   STRDEF(Syscron, "syscron")
   STRDEF(Snmp, "snmp")
   STRDEF(TcpRs, "tcp.rs")
@@ -800,6 +801,7 @@ STRDEF(LldpLinks, "lldp_links")
 
 STRDEF(Imports, "imports")
  STRDEF(ImportId, "import_id")
+ STRDEF(TargetId, "target_id")
  STRDEF(DateOf, "date_of")
  dnl user_id
  dnl node_id
@@ -817,6 +819,7 @@ STRDEF(Imports, "imports")
  STRDEF(ResultMsg, "result_msg")
  STRDEF(AppLogId, "applog_id")
  STRDEF(OutMsg, "out_msg")
+ STRDEF(ExpMsg, "exp_msg")
 
 STRDEF(ImportTemplates, "import_templates")
  STRDEF(ImportTemplateId, "import_template_id")
@@ -1055,10 +1058,6 @@ STRDEF(Selects, "selects")
   __SDEF(Linux)
   __SDEF(Empty)
 
-STRDEF(ObjectSyntaxs, "object_syntaxs")
- STRDEF(ObjectSyntaxId, "objects_syntax_id")
- STRDEF(ObjectSyntaxName, "objects_syntax_name")
- STRDEF(Sentence, "sentence")
-dnl SQL function names
+
 STRDEF(SetServiceStat, "set_service_stat")
 

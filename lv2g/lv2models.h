@@ -288,8 +288,6 @@ public:
     /// Az ID alapján adja vissza a nevet a listából
     QString nameOf(qlonglong __id);
     QString atView(int __i) const   { return __i < 0 || __i >= viewList.size() ? QString() : viewList[__i]; }
-    ///
-    cRecordListModel& copy(const cRecordListModel& _o);
     /// Ha a modelhez csatolva van QComboBox objektum, akkor beállítja a kiválasztott értéket az ID szerint.
     /// @return Ha beállította az aktuális értéket.
     bool setCurrent(qlonglong _id);
@@ -300,7 +298,18 @@ public:
     /// Ha a modelhez csatolva van QComboBox objektum, akkor visszaállítja az aktuálisan kiválasztott értéket.
     /// @return true, ha az aktuális érték változatlan.
     bool refresh();
-    // Ha nem üres, akkor a tábla lekérdezésénél a tábla alias neve (FROM <table-name> AS <sTableAlias>)
+    /// A model és egy QComboBox widget összekapcsolása.
+    /// Lehetővé teszi, hogy a widget dekorációt a kiválasztott elem alapján állítsa be a modell.
+    /// Továbbá az aktuális rekordnak egyébb tulajdonságai is lekérdezhetőek a modellen keresztül.
+    void joinWith(QComboBox *_pComboBox);
+    /// A kurrens ID lekérdezése. Csa akkor hívható, ha a modelt a joinWith metódussal összerendeltük egy comboBox-al.
+    qlonglong currendId();
+    /// A kurrens név lekérdezése. Csa akkor hívható, ha a modelt a joinWith metódussal összerendeltük egy comboBox-al.
+    /// Nem feltétlenül azonos a QComboBox-ban megjelenített lista elemmel.
+    QString currendName();
+    ///
+    void    setDecorateByField(const QString& __fn, qlonglong flags);
+    /// Ha nem üres, akkor a tábla lekérdezésénél a tábla alias neve (FROM <table-name> AS <sTableAlias>)
     QString             sTableAlias;
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
@@ -314,20 +323,15 @@ public:
     /// összes rekordot jelenti szűrés nélkül. Ha értéke hamis, akkor nincs egyetlen rekord sem, ami illeszkedik.
     /// false-ra van inicializálva.
     bool                nullIdIsAll;
-    /// Leszármazottak kizárva
-    bool                only;
-    eDataCharacter      dcData;
-    const cRecStaticDescr * pDescr;  ///< A rekord leíró
-    /// A model és egy QComboBox widget összekapcsolása. Lehetővé teszi, hogy a widget dekorációt a kiválasztott elem alapján
-    /// állítsa be a modell.
-    void joinWith(QComboBox *_pComboBox);
-    /// A kurrens ID lekérdezése. Csa akkor hívható, ha a modelt a joinWith metódussal összerendeltük egy comboBox-al.
-    qlonglong currendId();
-    QString currendName();
+    bool                only;       ///< Leszármazottak kizárva, ha igaz, Hamis-ra inicializálva.
+    eDataCharacter      dcData;     ///< A lista elemek dekorációja a típusuk szerint.
+    const cRecStaticDescr * pDescr; ///< A rekord leíró
 protected:
     QString _where(QString s = QString());
     QString where(const QString &nameName);
     QString _order(const QString& nameName);
+    /// Összeállítja az SQL lekérdezést
+    /// @return A Query stringgel tér vissza
     QString select();
     void setPattern(const QVariant& _par);
     enum eOrderType     order;      ///< Az aktuális rendezés típusa
@@ -342,6 +346,10 @@ protected:
     QSqlQuery *         pq;
     QString             toNameFName;///< Név konvertáló SQL függvény neve, ha a rekordban nincs név mező
     QString             viewExpr;   ///< Opc. kifejezés, a megjelenített stringre (ha nincs, akkor a név jelenik meg)
+    int                 decorateByFieldIx;  ///< Dekoráció a rekord egy mezője alapján, a mező indexe
+    QString             decorateByEnum;     ///< Dekoráció a rekord egy mezője alapján, a mező enum típus neve
+    QList<qlonglong>    stateList;          ///< A dekorációt meghatározó mezők értékének a listája.
+    qlonglong           decorateFlags;      ///< dekoráció flag-ek ENUM2SET : FF_BG_COLOR, FF_FG_COLOR, FF_FONT
 public slots:
     /// Hívja a setFilter() metódust, de csak a szűrés paramétere adható meg.
     void setPatternSlot(const QVariant& __pat);

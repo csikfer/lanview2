@@ -210,6 +210,9 @@ cServiceVar *cServiceVar::getVarObjectById(QSqlQuery& q, qlonglong _id)
 
 cServiceVar *cServiceVar::getVarObjectByName(QSqlQuery& q, const QString& _name, qlonglong _hsid, eEx __ex)
 {
+    if (_hsid == NULL_ID) {
+        EXCEPTION(EDBDATA, 0, tr("_hsid is NULL"));
+    }
     cServiceVar *r = nullptr;
     cServiceVar v;
     static const int ixHostServiceId = v.toIndex(_sHostServiceId);

@@ -639,6 +639,8 @@ public:
     static QString checkId2Name(QSqlQuery &q, const QString& _tn, const QString& _sn, enum eEx __ex = EX_ERROR);
     /// Az index alapján vissza adja az oszlop leíró referenciáját.
     const cColStaticDescr& colDescr(int i) const { chkIndex(i); return _columnDescrs[i]; }
+    /// Az név alapján vissza adja az oszlop leíró referenciáját.
+    const cColStaticDescr& colDescr(const QString& __fn) const { return _columnDescrs[toIndex(__fn)]; }
     /// Ha bármelyik mező módosítható az adatbázisban, akkor true-val tér vissza.
     bool isUpdatable() const                    { return _isUpdatable; }
     /// Ha a megadott indexű mező módosítható az adatbázisban, akkor true-val tér vissza.
@@ -1981,6 +1983,8 @@ public:
     bool existByNameKey(QSqlQuery& __q, eEx __ex = EX_ERROR) const;
     /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus
     int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
+    ///
+    int fetchFieldsById(QSqlQuery &q, QBitArray& __map);
     /// Az objektum típusnak (record descriptor) megfelelő tableoid-vel tér vissza.
     /// Ez nem feltétlenül azonos azzal a tableoid-vel, amely táblából beolvastuk a rekordot, ha beolvastuk.
     qlonglong tableoid() const  { return descr().tableoid(); }

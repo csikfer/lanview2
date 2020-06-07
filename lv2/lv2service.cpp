@@ -550,6 +550,7 @@ cInspector::cInspector(cInspector * __par)
     setObjectName(name());
 }
 
+
 cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP)
     : QObject(nullptr), hostService(), lastRun()
 {
@@ -566,6 +567,7 @@ cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort
     if (pPort != nullptr) hostService.setId(_sPortId, pPort->getId());
     setObjectName(name());
 }
+
 
 cInspector::cInspector(QSqlQuery& q, const QString &sn)
     : QObject(nullptr), hostService(), lastRun()
@@ -1365,7 +1367,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         arg += qc;
     }
     checkCmdArgs << arg;                // Utolsó paraméter
-    if (protoService().getName() == _sSsh) {
+    if (pProtoService != nullptr && protoService().getName() == _sSsh) {
         QString sUser = feature(_sUser);
         QString sHost = node().getIpAddress(q).toString();
         if (!sUser.isEmpty()) sHost = sUser + "@" + sHost;

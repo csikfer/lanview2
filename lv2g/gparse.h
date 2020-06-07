@@ -3,6 +3,7 @@
 
 #include "lv2g.h"
 #include "import_parser.h"
+#include "lv2models.h"
 
 #include "lv2g.h"
 #if defined(LV2G_LIBRARY)
@@ -51,13 +52,14 @@ private:
     QSqlQuery   *pq;
     QString fileName;
     QString fileNamePQ;
+    cRecordListModel *pHSListModel;
+    cRecordListModel *pSListModel;
     bool    isRuning;
     cImportParseThread *pLocalParser;
     cError             *pLocalError;
     cExportQueue       *pExportQueue;
     QString            *pLocalParsedStr;
     QStringList         debugLines;
-    QStringList         qParseList;
     tStringMap          params;
 };
 

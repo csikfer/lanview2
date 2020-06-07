@@ -27,7 +27,14 @@ int main(int argc, char * argv[])
     lv2g::pSplash->show();
     app.processEvents();
     lv2g::splashMessage(QObject::tr("Program indítás..."));
+#if defined(Q_OS_LINUX)
+    // Ubuntu alatt valamiért nem midíg jeleni meg a splash, csak később, de akkor már minek
+    QEventLoop loop;
+    QTimer::singleShot(50, &loop, &QEventLoop::quit);
+    loop.exec();
+#else
     app.processEvents();
+#endif
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {
         lv2Gui::_setup = true;

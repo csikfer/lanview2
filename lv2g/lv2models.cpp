@@ -323,6 +323,8 @@ cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
     nullable  = false;
     nullIdIsAll = false;
     only = false;
+    decorateByFieldIx = NULL_IX;
+    decorateFlags = 0;
 }
 
 cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObject * __par)
@@ -337,6 +339,8 @@ cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObje
     nullable  = false;
     nullIdIsAll = false;
     only = false;
+    decorateByFieldIx = NULL_IX;
+    decorateFlags = 0;
 }
 
 cRecordListModel::~cRecordListModel()
@@ -344,16 +348,6 @@ cRecordListModel::~cRecordListModel()
     delete pq;
 }
 
-/*
-void cRecordListModel::changeRecDescr(cRecStaticDescr * _descr)
-{
-    pDescr = _descr;
-    nameList.clear();
-    idList.clear();
-    viewList.clear();
-    setStringList(viewList);
-}
-*/
 QVariant cRecordListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
@@ -362,6 +356,25 @@ QVariant cRecordListModel::data(const QModelIndex &index, int role) const
     }
     if (role == Qt::DisplayRole) {
         return atView(row);
+    }
+    if (isContIx(stateList, row)) {
+        switch (role) {
+        case Qt::TextColorRole:
+            if (decorateFlags & ENUM2SET(FF_FG_COLOR)) {
+                return fgColorByEnum(decorateByEnum, stateList.at(row));
+            }
+            break;
+        case Qt::BackgroundRole:
+            if (decorateFlags & ENUM2SET(FF_BG_COLOR)) {
+                return bgColorByEnum(decorateByEnum, stateList.at(row));
+            }
+            break;
+        case Qt::FontRole:
+            if (decorateFlags & ENUM2SET(FF_FONT)) {
+                return fontByEnum(decorateByEnum, stateList.at(row));
+            }
+            break;
+        }
     }
     return dcRole(dcData, role);
 }
@@ -461,22 +474,29 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     nameList.clear();
     viewList.clear();
     idList.clear();
+    stateList.clear();
     if (nullable) {
-        nameList << _sNul;
-        viewList << dcViewShort(DC_NULL);
-        idList   << NULL_ID;
+        nameList  << _sNul;
+        viewList  << dcViewShort(DC_NULL);
+        idList    << NULL_ID;
+        stateList << NULL_ID;
     }
     QString sql = select();
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();
     if (r) do {
-        idList     << variantToId(pq->value(0));
-        nameList << pq->value(1).toString();
+        int ix = 0;
+        idList   << variantToId(pq->value(ix++));
+        nameList << pq->value(ix++).toString();
         if (viewExpr.isEmpty()) {
             viewList << nameList.last();
         }
         else {
-            viewList << pq->value(2).toString();
+            viewList << pq->value(ix++).toString();
+        }
+        if (decorateByFieldIx > 0) {
+            QVariant f = pDescr->colDescr(decorateByFieldIx).fromSql(pq->value(ix++));
+            stateList << pDescr->colDescr(decorateByFieldIx).toId(f);
         }
     } while (pq->next());
     // Túl nagyok a listák: pl. a szolgáltatás példányok kezelhetetlen, hálózati elemek is túl nagy :( EZT javítani KELL
@@ -521,10 +541,11 @@ QString cRecordListModel::_order(const QString& nameName)
 
 QString cRecordListModel::select()
 {
-    QString se,             // Select fiels: [<exp> AS] <name>
+    QString se,             // Select fields: [<exp> AS] <name>
             fe,             // Name expression
             nc,             // Name for column
-            view;           // Optional view field
+            view,           // Optional view field
+            decor;          // Dekorációs mező, ha van
     QString in = pDescr->columnNameQ(pDescr->idIndex());    // ID name
     if (toNameFName.isNull() && pDescr->nameIndex(EX_IGNORE) < 0) { // Se név konverzió, se név mező ?
         // Kitalálható ?
@@ -545,9 +566,12 @@ QString cRecordListModel::select()
         view = ", " + viewExpr;
         dcData = DC_DERIVED;
     }
+    if (decorateByFieldIx != NULL_IX) {
+        decor = ", " + pDescr->colDescr(decorateByFieldIx).colNameQ();
+    }
     QString sOnly = only ? " ONLY " : _sNul;
     QString sAs   = sTableAlias.isEmpty() ? _sNul : (" AS " + sTableAlias);
-    QString sql = "SELECT " + in + QChar(',') + se + view + " FROM " + sOnly + pDescr->fullTableNameQ() + sAs;
+    QString sql = "SELECT " + in + QChar(',') + se + view + decor + " FROM " + sOnly + pDescr->fullTableNameQ() + sAs;
     sql += where(fe);
     sql += _order(nc);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
@@ -590,29 +614,6 @@ void cRecordListModel::setPatternSlot(const QVariant &__pat)
 {
     PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " __pat = "  << __pat.toString() << endl;
     setFilter(__pat);
-}
-
-cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
-{
-    if (*pDescr != *_o.pDescr) EXCEPTION(EDATA, 0, tr("Copy model type: %1 to %2").arg(pDescr->tableName(), _o.pDescr->tableName()));
-    nullable    = _o.nullable;
-    nullIdIsAll = _o.nullIdIsAll;
-    only        = _o.only;
-
-    order       = _o.order;
-    filter      = _o.filter;
-    pattern     = _o.pattern;
-    cnstFlt     = _o.cnstFlt;
-    ownerFlt    = _o.ownerFlt;
-    sFkeyName   = _o.sFkeyName;
-    sOwnCheck   = _o.sOwnCheck;
-    nameList    = _o.nameList;
-    viewList    = _o.viewList;
-    idList      = _o.idList;
-    toNameFName = _o.toNameFName;
-    viewExpr    = _o.viewExpr;
-    setStringList(viewList);
-    return *this;
 }
 
 bool cRecordListModel::setCurrent(qlonglong _id)
@@ -675,6 +676,12 @@ QString cRecordListModel::currendName()
     return at(ix);
 }
 
+void cRecordListModel::setDecorateByField(const QString& __fn, qlonglong flags)
+{
+    decorateByFieldIx = pDescr->toIndex(__fn);
+    decorateByEnum    = pDescr->colDescr(decorateByFieldIx).enumType();
+    decorateFlags     = flags;
+}
 
 void cRecordListModel::changeCurrentIndex(int i)
 {
@@ -683,8 +690,22 @@ void cRecordListModel::changeCurrentIndex(int i)
         pComboBox->setFont(nullFont);
     }
     else {
-        pComboBox->setPalette(palette);
-        pComboBox->setFont(fontByEnum(_sDatacharacter, dcData));
+        QPalette pal(palette);
+        QFont    fon(fontByEnum(_sDatacharacter, dcData));
+        if (isContIx(stateList, i)) {
+            int e = int(stateList.at(i));
+            if (decorateFlags & ENUM2SET(FF_FG_COLOR)) {
+                pal.setColor(QPalette::ButtonText, fgColorByEnum(decorateByEnum, e));
+            }
+            if (decorateFlags & ENUM2SET(FF_BG_COLOR)) {
+                pal.setColor(QPalette::Button, bgColorByEnum(decorateByEnum, e));
+            }
+            if (decorateFlags & ENUM2SET(FF_FONT)) {
+                fon = fontByEnum(decorateByEnum, e);
+            }
+        }
+        pComboBox->setPalette(pal);
+        pComboBox->setFont(fon);
     }
 }
 

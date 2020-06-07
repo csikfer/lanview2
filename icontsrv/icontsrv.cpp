@@ -935,16 +935,16 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
 
     if (first) {       // Inicializáljuk a kérdés blokkokat, ha most járunk itt előszőr
         // IAIF1x
-        strncpy(qm.beginMark,  "??",   sizeof(qm.beginMark));
+        memcpy(qm.beginMark,  "??",   sizeof(qm.beginMark));
         qm.clrErrSt = 'T';
-        strncpy(qm.clrKontSt,  "FF",   sizeof(qm.clrKontSt));
+        memcpy(qm.clrKontSt,  "FF",   sizeof(qm.clrKontSt));
         strncpy(qm.endMark,    "\r\n", sizeof(qm.endMark));
         // IAIF2
-        strncpy(qm2.beginMark, "??",   sizeof(qm2.beginMark));
+        memcpy(qm2.beginMark, "??",   sizeof(qm2.beginMark));
         qm2.clrErrSt = 'T';
-        strncpy(qm2.clrKontSt, "FFFF", sizeof(qm2.clrKontSt));
-        strncpy(qm2.clrSwSt,   "FF",   sizeof(qm2.clrSwSt));
-        strncpy(qm2.endMark,   "\r\n", sizeof(qm2.endMark));
+        memcpy(qm2.clrKontSt, "FFFF", sizeof(qm2.clrKontSt));
+        memcpy(qm2.clrSwSt,   "FF",   sizeof(qm2.clrSwSt));
+        memcpy(qm2.endMark,   "\r\n", sizeof(qm2.endMark));
         first = false;
     }
     int rep = RS_UNREACHABLE;

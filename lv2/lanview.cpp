@@ -213,6 +213,7 @@ lanView::lanView()
     setSelfStateF = false;
     pSelfInspector = nullptr;
     selfHostServiceId = NULL_ID;
+    forcedSelfHostService = false;
     pQuery = nullptr;
     pLanguage = nullptr;
     pLocale   = nullptr;
@@ -601,8 +602,14 @@ void lanView::parseArg(void)
     if (0 < (i = findArg(QChar('R'), QString(_sHostServiceId).replace(QChar('_'), QChar('-')), args))
      && (i + 1) < args.count()) {
         bool ok;
-        selfHostServiceId = args[i + 1].toLongLong(&ok, 0);
-        if (!ok) DERR() << tr("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
+        qlonglong id = args[i + 1].toLongLong(&ok, 0);
+        if (ok) {
+            selfHostServiceId = id;
+            forcedSelfHostService = true;
+        }
+        else {
+            DERR() << tr("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
+        }
         args.removeAt(i);
         args.removeAt(i);
     }
@@ -1141,8 +1148,12 @@ QString cExportQueue::toText(bool fromInterpret, bool _clr)
         p = _pInstanceByThread();
     }
     staticMutex.unlock();
+
     QString s;
-    if (p != nullptr) {
+    if (p == nullptr) {
+        DERR() << "Export Queue object is NULL" << endl;
+    }
+    else {
         if (!p->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
         s = p->join("\n");
         if (!fromInterpret && _clr) {
@@ -1155,8 +1166,8 @@ QString cExportQueue::toText(bool fromInterpret, bool _clr)
         else {
             p->clear();
         }
+        p->unlock();
     }
-    p->unlock();
     return s;
 }
 

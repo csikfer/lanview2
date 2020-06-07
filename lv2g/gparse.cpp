@@ -23,6 +23,15 @@ cParseWidget::cParseWidget(QMdiArea *par)
     pUi = new Ui::GParseWidget();
     pUi->setupUi(this);
 
+    pHSListModel = new cRecordListModel(cHostService().descr(), this);
+    static const QString whereHS = QString("service_id = %1").arg(cService::service(*pq, _sImport)->getId());
+    pHSListModel->setConstFilter(whereHS, FT_SQL_WHERE);
+    pHSListModel->joinWith(pUi->comboBoxTarget);
+    pHSListModel->setDecorateByField(_sHostServiceState, ENUM2SET(FF_BG_COLOR));
+    pHSListModel->setFilter();  // refresh
+    pUi->comboBoxTarget->setCurrentIndex(0);
+    pUi->radioButtonServer->setCheckable(pHSListModel->rowCount() > 0);
+
     pUi->labelQP->hide();
     pUi->pushButtonClearQP->hide();
     pUi->pushButtonLoadQP->hide();
@@ -32,15 +41,13 @@ cParseWidget::cParseWidget(QMdiArea *par)
     QList<int> sizes;
     sizes << 0 << 100 << 100;
     pUi->splitterMain->setSizes(sizes);
-    static const QString sql =
-            "SELECT DISTINCT(service_name) FROM query_parsers JOIN services USING (service_id) WHERE parse_type = 'parse'";
-    if (execSql(*pq, sql)) {
-        do { qParseList << pq->value(0).toString(); } while (pq->next());
-        pUi->comboBoxQP->addItems(qParseList);
-    }
-    else {
-        pUi->checkBoxQP->setDisabled(true);
-    }
+
+    static const QString whereS = QString("0 < (SELECT COUNT(*) FROM query_parsers WHERE query_parsers.service_id = services.service_id)");
+    pSListModel = new cRecordListModel(cService().descr(), this);
+    pSListModel->setConstFilter(whereS, FT_SQL_WHERE);
+    pSListModel->joinWith(pUi->comboBoxQP);
+    pSListModel->setFilter();
+    pUi->checkBoxQP->setDisabled(pSListModel->rowCount() == 0);
 
     setParams();
 
@@ -151,6 +158,7 @@ void cParseWidget::localParseBreak()
 void cParseWidget::remoteParse(const QString &src)
 {
     cImport imp;
+    imp.setId(_sTargetId, pHSListModel->currendId());
     imp.setName(_sImportText, src);
     imp.setName(_sAppName, lanView::appName);
     imp.setId(_sUserId, lanView::user().getId());
@@ -159,36 +167,28 @@ void cParseWidget::remoteParse(const QString &src)
     imp.setId(_sNodeId, selfNodeId);
 
     imp.insert(*pq);
-    QString msg = tr("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
-    sqlNotify(*pq, "import");
+    QString msg = tr("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...\n").arg(imp.getId());
+    sqlNotify(*pq, "import", QString::number(pHSListModel->currendId()));
     pUi->pushButtonBreak->setEnabled(true);
     int lastStat = ES_WAIT;
+    QBitArray mapStat  = imp.mask(_sExecState);
+    QBitArray mapOther = imp.mask(_sStarted, _sEnded, _sResultMsg, _sAppLogId) | imp.mask(_sOutMsg, _sExpMsg);
+    QEventLoop  *pLoop = new QEventLoop;
+    connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
+        pLoop->exit(1);
+    } );
     while (true) {
         if (msg.isEmpty() == false) {
             pUi->textEditLog->clear();
             pUi->textEditLog->setText(msg);
             msg.clear();
         }
+        QTimer::singleShot(1000, pLoop, &QEventLoop::quit);
+        int r = pLoop->exec();
 
-        QEventLoop  *pLoop = new QEventLoop(this);
-        QTimer      timer;
-        connect(&timer, SIGNAL(timeout()), pLoop, SLOT(quit()));
-        timer.start(1000);  // 1 sec
-        int r;
-#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
-        connect(pUi->pushButtonBreak, SIGNAL(clicked()), pLoop, SLOT(quit()));
-        pLoop->exec();
-        r = timer.isActive();
-#else
-        connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
-            pLoop->exit(1);
-        } );
-        r = pLoop->exec();
-#endif
-        pDelete(pLoop);
-
-        if (!imp.fetchById(*pq)) {
-            msg = tr("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
+        // Polling : Csak az állpotot olvassuk vissza
+        if (!imp.fetchFieldsById(*pq, mapStat)) {
+            msg = tr("A kiírt imports rekord állapotot nem tudom visszaolvasni (ID = %1).\n").arg(imp.getId());
             break;
         }
         int stat = int(imp.getId(_sExecState));
@@ -200,16 +200,22 @@ void cParseWidget::remoteParse(const QString &src)
             if (!imp.isNull(_sStarted)) msg += tr("Kezdete : %1\n").arg(imp.getName(_sStarted));
             if (r == 0) continue;
             // BREAK
-            msg = tr("A válaszra való várakozás megszakítva. Az elküldött forrás szöveg értelmezését ez nem állítja meg.");
+            msg = tr("A válaszra való várakozás megszakítva. Az elküldött forrás szöveg értelmezését ez nem állítja meg.\n");
             break;
         case ES_OK:
         case ES_FAILE:
         case ES_ABORTED:
-            msg = tr("Végrehajtás eredménye : %1\n").arg(execState(stat));
-            if (!imp.isNull(_sStarted)) msg += tr("Kezdete : %1\n").arg(imp.getName(_sStarted));
-            if (!imp.isNull(_sEnded))   msg += tr("Vége : %1\n").arg(imp.getName(_sEnded));
-            if (!imp.isNull(_sResultMsg)) msg += tr("Az értelmező üzenete : %1\n").arg(imp.getName(_sResultMsg));
-            // if (!imp.isNull(_sAppLogId)) ...
+            // Vége, kell a többi adat is
+            if (!imp.fetchFieldsById(*pq, mapOther)) {
+                msg = tr("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).\n").arg(imp.getId());
+            }
+            else {
+                msg = tr("Végrehajtás eredménye : %1\n").arg(execState(stat));
+                if (!imp.isNull(_sStarted))   msg += tr("Kezdete : %1\n").arg(imp.getName(_sStarted));
+                if (!imp.isNull(_sEnded))     msg += tr("Vége : %1\n").arg(imp.getName(_sEnded));
+                if (!imp.isNull(_sResultMsg)) msg += tr("Az értelmező üzenete : %1\n").arg(imp.getName(_sResultMsg));
+                if (!imp.isNull(_sAppLogId))  msg += tr("APP. log ID : /1").arg(imp.getId(_sAppLogId));
+            }
             break;
         case ES_WAIT:       // Elvileg képtelenség
             EXCEPTION(EPROGFAIL);
@@ -219,11 +225,12 @@ void cParseWidget::remoteParse(const QString &src)
         }
         break;
     }
+    pDelete(pLoop);
     pUi->textEditResult->clear();
     //pUi->textEditResult->setText(...);
     pUi->textEditLog->clear();
-    pUi->textEditLog->setText(msg);
-    pUi->textEditResult->setText(imp.getName(_sOutMsg));
+    pUi->textEditLog->setText(msg + imp.getName(_sOutMsg));
+    pUi->textEditResult->setText(imp.getName(_sExpMsg));
     pUi->pushButtonBreak->setEnabled(false);
 }
 
