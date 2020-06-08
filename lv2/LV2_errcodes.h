@@ -48,5 +48,6 @@ ERRCOD( EREDO,       "Ismételten végrehajtott művelet.")
 ERRCOD( EENODATA,    "Nincs adat.")
 ERRCOD( ENESTED,     "Egymásba ágyazott hibák.")
 ERRCOD( ECONTEXT,    "Invalid context.")
+ERRCOD( EPERMISSION, "Permission error.")
 
-#define __LAST_ERROR_CODE__  ECONTEXT
+#define __LAST_ERROR_CODE__  EPERMISSION

@@ -11,8 +11,6 @@
 
 void setAppHelp()
 {
-    lanView::appHelp  = QObject::tr("-u|--user-id <id>           Set user id\n");
-    lanView::appHelp += QObject::tr("-U|--user-name <name>       Set user name\n");
     lanView::appHelp += QObject::tr("-i|--input-file <path>      Set input file path\n");
     lanView::appHelp += QObject::tr("-I|--input-stdin            Set input file is stdin\n");
     lanView::appHelp += QObject::tr("-D|--daemon-mode            Set daemon mode\n");
@@ -20,12 +18,15 @@ void setAppHelp()
     lanView::appHelp += QObject::tr("-O|--output-stdout          Set input file is stdin\n");
 }
 
+QString     lv2import::actDir;
+
 int main (int argc, char * argv[])
 {
     cLv2QApp app(argc, argv);
     SETAPP();
     lanView::snmpNeeded = true;
     lanView::sqlNeeded  = SN_SQL_NEED;
+    lv2import::actDir = QDir::currentPath();
 
     lv2import   mo;
     if (mo.lastError != nullptr) {
@@ -44,26 +45,15 @@ int main (int argc, char * argv[])
 }
 
 lv2import::lv2import() : lanView()
+  , inFileName("-"), outFileName("-")
 {
     daemonMode = forcedSelfHostService; // A -R megadva, akkor nem kell a -D opció.
     pQuery = nullptr;
     if (lastError != nullptr) {
         return;
     }
-    actDir = QDir::currentPath();
     pQuery = newQuery();
     int i;
-    QString   userName;
-    if (0 < (i = findArg('u', "user-id", args)) && (i + 1) < args.count()) {
-        // ???
-        args.removeAt(i);
-        args.removeAt(i);
-    }
-    if (0 < (i = findArg('U', "user-name", args)) && (i + 1) < args.count()) {
-        userName = args[i + 1];
-        args.removeAt(i);
-        args.removeAt(i);
-    }
     if (0 < (i = findArg('i', "input-file", args)) && (i + 1) < args.count()) {
         inFileName = args[i + 1];
         args.removeAt(i);
@@ -84,16 +74,13 @@ lv2import::lv2import() : lanView()
         args.removeAt(i);
     }
     if (0 < (i = findArg('O', "output-stdout", args))) {
-        inFileName = '-';
+        outFileName = '-';
         args.removeAt(i);
     }
     if (args.count() > 1) DWAR() << tr("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
         if (daemonMode) {
             subsDbNotif();
-        }
-        else {
-            if (!userName.isNull()) setUser(userName);
         }
     } CATCHS(lastError)
     if (daemonMode) {
@@ -135,21 +122,9 @@ void lv2import::abortOldRecords(QSqlQuery& q)
     execSql(q, sql, pSelfHostService->get(pSelfHostService->idIndex()));
 }
 
-void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
-{
-    PDEB(INFO) << QString(tr("DB notification : %1, %2, %3.")).arg(name).arg(int(source)).arg(debVariantToString(payload)) << endl;
-    if (name == _sImport) {
-        bool ok;
-        qlonglong id = payload.toLongLong(&ok);
-        if (ok && pSelfHostService->getId() == id) {
-            PDEB(VERBOSE) << "CALL fetchAndExec() by dbNotif(...)" << endl;
-            fetchAndExec();
-        }
-    }
-}
-
 void lv2import::fetchAndExec()
 {
+    debugStream *pDS = cDebug::getInstance()->pCout();
     cImport     *pImp = nullptr;
     cExportQueue::init(true);
     lastError = nullptr;
@@ -166,25 +141,35 @@ void lv2import::fetchAndExec()
             PDEB(INFO) << tr("No waitig imports record, dropp notification.") << endl;
             return;
         }
+        pImp->_toReadBack = RB_NO;
         pImp->setName(_sExecState, _sExecute);
         pImp->set(_sStarted, QVariant(QDateTime::currentDateTime()));
         pImp->setId(_sPid, QCoreApplication::applicationPid());
         pImp->update(*pQuery, false, pImp->mask(_sExecState, _sStarted, _sPid));
+        sDebugLines.clear();
+        if (!connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()))) {
+            EXCEPTION(EPROGFAIL);
+        }
         importParseText(pImp->getName(_sImportText));
     }
     CATCHS(lastError)
     ipe = importGetLastError();
-    const QBitArray ufmask = pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId) | pImp->mask( _sOutMsg);
+    static const QBitArray ufmask = pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId) | pImp->mask( _sOutMsg, _sExpMsg);
     if (ipe != nullptr) {
         if (lastError != nullptr) {    // Többszörös hiba ??!!
-            QString m = lastError->msg() + "\n" + QString(40, QChar('*')) + "\n" + ipe->msg();
+            QString m = sDebugLines
+                    + QString(40, QChar('-')) + "\n"
+                    + lastError->msg() + "\n"
+                    + QString(40, QChar('*')) + "\n"
+                    + ipe->msg();
             delete lastError;
             delete ipe;
             EXCEPTION(ENESTED, 0, m);
         }
         lastError = ipe;
     }
-    pImp->setName(_sOutMsg, cExportQueue::toText(true));
+    pImp->setName(_sExpMsg, cExportQueue::toText(true));
+    pImp->setName(_sOutMsg, sDebugLines);
     if (lastError == nullptr) {    // OK
         pImp->setName(_sExecState, _sOk);
         pImp->setName(_sResultMsg, _sOk);
@@ -210,6 +195,23 @@ void lv2import::fetchAndExec()
 
 void lv2import::execute()
 {
+    PDEB(VVERBOSE) << "Current dir : " << actDir << endl;
+    QDir::setCurrent(actDir);
+    if (parentIsLv2d()) {  // Az lv2d hívta meg
+        setUser(UID_SYSTEM);
+    }
+    else {
+        QString domain, user;
+        cUser *pUser = getOsUser(domain, user);
+        if (pUser == nullptr) {
+            EXCEPTION(EPERMISSION, 0 , tr("Authentication failed (%1@%2).").arg(user, domain));
+        }
+        if (pUser->privilegeLevel() < PL_ADMIN) {
+            EXCEPTION(EPERMISSION, 0 , tr("You do not have sufficient privileges (%1@%2 : %3).").arg(user, domain, pUser->getName()));
+        }
+        setUser(pUser->getId());
+        delete pUser;
+    }
     QString out;
     try {
         if (inFileName.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fájl!"));
@@ -232,14 +234,48 @@ void lv2import::execute()
     }
     else {
         QFile of(outFileName);
-        if (of.open(QIODevice::WriteOnly)) of.write(out.toUtf8());
-        else DERR() << QString("File %1 open error : %2 ").arg(outFileName, of.errorString());
+        if (of.open(QIODevice::WriteOnly)) {
+            of.write(out.toUtf8());
+            of.close();
+        }
+        else {
+            DERR() << QString("File %1 open error : %2 ").arg(outFileName, of.errorString());
+        }
     }
     if (lastError) {
         PDEB(DERROR) << "**** ERROR ****\n" << lastError->msg() << endl;
     }
     else {
         PDEB(DERROR) << "**** OK ****" << endl;
+    }
+}
+
+void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
+{
+    PDEB(INFO) << QString(tr("DB notification : %1, %2, %3.")).arg(name).arg(int(source)).arg(debVariantToString(payload)) << endl;
+    if (name == _sImport) {
+        bool ok;
+        qlonglong id = payload.toLongLong(&ok);
+        if (ok && pSelfHostService->getId() == id) {
+            PDEB(VERBOSE) << "CALL fetchAndExec() by dbNotif(...)" << endl;
+            fetchAndExec();
+        }
+    }
+}
+
+void lv2import::debugLine()
+{
+    QString s = cDebug::getInstance()->dequeue();
+    QRegExp  re("^([\\da-f]{8})\\s(.+)$");
+    if (re.exactMatch(s)) {
+        bool ok;
+        QString sm = re.cap(1);
+        qulonglong m = sm.toULongLong(&ok, 16);
+        if (!ok) EXCEPTION(EPROGFAIL);
+        if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
+            s = re.cap(2).trimmed();
+            sDebugLines += s + "\n";
+        }
     }
 }
 

@@ -472,11 +472,7 @@ void debugStream::sRedyLineFromThread()
     flush();
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 8, 0))
 #define HEAD_DT_FORMAT Qt::ISODateWithMs
-#else
-#define HEAD_DT_FORMAT "yyyy-MM-ddTHH:mm:ss.zzz"
-#endif
 
 debugStream &  head(debugStream & __ds)
 {

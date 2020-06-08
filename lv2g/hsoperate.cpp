@@ -1300,7 +1300,7 @@ void cHSOperate::root()
     pUi->checkBoxPlace->setChecked(false);
     pUi->checkBoxService->setChecked(true);
     pUi->checkBoxNode->setChecked(false);
-    _setCurrentIndex("lv2d", pUi->comboBoxServiceSelect);
+    _setCurrentIndex(_sLv2d, pUi->comboBoxServiceSelect);
     pUi->radioButtonServiceSelect->setChecked(true);
     fetchByFilter();
 }

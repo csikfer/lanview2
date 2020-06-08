@@ -175,6 +175,7 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, _sNul,     icons, QIcon(":/icons/document-properties.ico"), keys, Qt::Key_F2, DBT_REPORT);
         appendCont(buttonNames, tr("Alap."),       icons, QIcon(":/icons/go-home-2.ico"),keys, Qt::Key_Home,  DBT_HOME);
         appendCont(buttonNames, tr("Kiterjeszt"),  icons, QIcon(":/icons/configure-2.ico"),keys, 0,           DBT_EXTENSION);
+        appendCont(buttonNames, _sNul,     icons, QIcon(":/icons/open-in-popup-24.png"),keys, Qt::Key_F2,     DBT_POPUP);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

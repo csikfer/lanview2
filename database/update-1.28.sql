@@ -381,6 +381,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Hibajavítás: 2020.06.08. Egy hibásan megadott fkey (öröklés miatt nem valódi fkey), a target_id-pedig kötelező.
+ALTER TABLE imports DROP CONSTRAINT IF EXISTS imports_node_id_fkey;
+CREATE TRIGGER imports_check_reference_node_id
+  BEFORE INSERT OR UPDATE
+  ON public.imports
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.check_reference_node_id('nodes');
+
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!! Nem biztos, hogy végleges !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 -- Grafikonok

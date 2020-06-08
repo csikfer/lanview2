@@ -19,38 +19,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     _pMyUser = nullptr;
     _needZone = __needZone;
     ui->setupUi(this);
-#if   defined(Q_CC_MSVC)
-#define USER_NAME_MAXSIZE   64
-    char charUserName[USER_NAME_MAXSIZE];
-    DWORD userNameSize = USER_NAME_MAXSIZE;
-    if (GetUserNameExA(NameDnsDomain, charUserName, &userNameSize)) {
-        QString du = QString(charUserName);
-        QStringList sdu = du.split('\\');
-        if (sdu.size() == 2) {
-            _myDomainName = sdu.at(0);
-            _myUserName   = sdu.at(1);
-        }
-    }
-#else
-    uid_t uid = geteuid();
-    struct passwd *pw = getpwuid(uid);
-    if (pw) {
-        _myUserName = pw->pw_name;
-        if (lanView::getInstance()->pSelfNode != nullptr) {
-            _myDomainName = lanView::getInstance()->pSelfNode->getName();
-        }
-    }
-#endif
-    PDEB(INFO) << "My user : " << _myUserName << "; domain : " << _myDomainName << endl;
-    if (!_myUserName.isEmpty() && !_myDomainName.isEmpty()) {
-        QString ud = _myUserName + "@" + _myDomainName;
-        QString sql = "SELECT * FROM users WHERE ? = ANY(domain_users)";
-        QSqlQuery q = getQuery();
-        if (execSql(q, sql, ud)) {
-            _pMyUser = new cUser();
-            _pMyUser->set(q);
-        }
-    }
+    _pMyUser = getOsUser(_myDomainName, _myUserName);
     _changeTxt   = ui->chgPswPB->text();
     _unChangeTxt = tr("Ne legyen jelszócsere");
     _change = true;
@@ -58,12 +27,16 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     _state  = LR_INITED;
     _probes = 0;
 
-    connect(ui->okPB,     SIGNAL(clicked()), this, SLOT(ok()));
-    connect(ui->cancelPB, SIGNAL(clicked()), this, SLOT(cancel()));
-    connect(ui->chgPswPB, SIGNAL(clicked()), this, SLOT(change()));
+    if (!connect(ui->okPB,     SIGNAL(clicked()), this, SLOT(ok()))
+     || !connect(ui->cancelPB, SIGNAL(clicked()), this, SLOT(cancel()))
+     || !connect(ui->chgPswPB, SIGNAL(clicked()), this, SLOT(change()))) {
+        EXCEPTION(EPROGFAIL);
+    }
     if (_needZone) {
-        connect(ui->userLE,   SIGNAL(textEdited(QString)), this, SLOT(userNameEdit(QString)));
-        connect(ui->userLE,   SIGNAL(editingFinished()), this, SLOT(userNameEdited()));
+        if (!connect(ui->userLE,   SIGNAL(textEdited(QString)), this, SLOT(userNameEdit(QString)))
+         || !connect(ui->userLE,   SIGNAL(editingFinished()), this, SLOT(userNameEdited()))) {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     else {
         ui->zoneCB->hide();
@@ -74,7 +47,9 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         _inUser = _pMyUser->getName();
         ui->userLE->setText(_inUser);
         userNameEdited();
-        connect(ui->myUserPB, SIGNAL(clicked()), this, SLOT(myUser()));
+        if (!connect(ui->myUserPB, SIGNAL(clicked()), this, SLOT(myUser()))) {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     else {
         ui->myUserPB->setDisabled(true);

@@ -393,6 +393,5 @@ protected:
 inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSeparatedValues&(*__pf)(cCommaSeparatedValues &))
 { return (*__pf)(__s); }
 
-
 #endif // OTHERS_H
 

@@ -20,12 +20,14 @@ class lv2import : public lanView {
     void fetchAndExec();
     void execute();
     QSqlQuery   *pQuery;
-    QString     actDir;
+    static QString     actDir;
     QString     inFileName;
     QString     outFileName;
     bool        daemonMode;
+    QString     sDebugLines;
 protected slots:
     virtual void dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);
+    void debugLine();
 };
 
 class cImportInspector : public cInspector {

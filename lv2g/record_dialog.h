@@ -43,8 +43,9 @@ enum eDialogButtons {
     DBT_REPORT,         ///< Riport
     DBT_HOME,           ///< Home/default
     DBT_EXTENSION,      ///< Objektum kiterjesztése (convertálás a leszármazott objetummá)
+    DBT_POPUP,          ///< Popup ablak megjelenítése
 //  DBT_LTEXT,          ///< Nyelvi szövegek szerkesztése
-//  DBT_TOOLS,          ///< Segédeszköz, egyedi dalogus megjelenítése
+//  DBT_TOOLS,          ///< Segédeszköz, egyedi dialogus megjelenítése
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer
     DBT_BREAK           ///< Nem nyomógomb, "sortörés"

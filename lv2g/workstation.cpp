@@ -1475,9 +1475,6 @@ void cWorkstation::on_pushButtonFindMac_clicked()
     }
 }
 
-// Lekérdezhető az interfész típusa? Ha igen szűrúnk a típusra, ha nem akkor csak a loopback-et dobjuk ki.
-#define IFTYPE_FILTER  QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-
 void cWorkstation::on_pushButtonLocalhost_clicked()
 {
     cNode *pSelf = cNode::getSelfNodeObjByMac(*pq);
@@ -1491,7 +1488,6 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         while (i.hasNext()) {
             QNetworkInterface &iface = i.next();
             ael = iface.addressEntries();
-#if IFTYPE_FILTER
             switch (iface.type()) {
             case QNetworkInterface::Unknown:
             case QNetworkInterface::Loopback:
@@ -1509,15 +1505,6 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::Ieee802154:
             case QNetworkInterface::SixLoWPAN:
             case QNetworkInterface::Ieee80216:
-#else
-            if (!ael.isEmpty()) {
-                a = ael.first().ip();
-                if (a.isLoopback()) {
-                    i.remove();
-                    continue;
-                }
-            }
-#endif
                 sifaces << iface.name();
                 QMutableListIterator<QNetworkAddressEntry> ii(ael);  // All IP by interface
                 while (ii.hasNext()) {
@@ -1542,10 +1529,8 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
                     return;
                 }
                 ifaddrs << a;
-#if IFTYPE_FILTER
                 break;
             }
-#endif
         }
         if (interfaces.isEmpty()) {
             QString msg = tr("A hálózati interfészek detektálása sikertelen.");

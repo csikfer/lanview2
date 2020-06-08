@@ -507,6 +507,7 @@ STRDEF(Services, "services")
  STRDEF(ServiceName, "service_name")
   dnl local
   STRDEF(Nil, "nil")
+  STRDEF(Lv2d, "lv2d")
   STRDEF(Import, "import")
   STRDEF(Syscron, "syscron")
   STRDEF(Snmp, "snmp")

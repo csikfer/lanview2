@@ -22,6 +22,10 @@ class LV2SHARED_EXPORT cGroup : public cRecord {
 };
 
 /* ******************************  ****************************** */
+#define UID_NOBODY 0
+#define UID_SYSTEM 1
+
+
 class LV2SHARED_EXPORT cUser : public cRecord {
     CRECORD(cUser);
 public:

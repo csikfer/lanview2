@@ -1,5 +1,6 @@
 #include "cerrormessagebox.h"
 #include "record_dialog.h"
+#include "popupreport.h"
 
 
 void cErrorMessageBox::row(const QString& l,const QString& val, Qt::AlignmentFlag a)
@@ -40,7 +41,7 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent, const QString& 
     QVBoxLayout *pVBox = new QVBoxLayout();
     setLayout(pVBox);
 
-    cDialogButtons *pButtons = new cDialogButtons(ENUM2SET2(DBT_COPY, DBT_CLOSE));
+    cDialogButtons *pButtons = new cDialogButtons(ENUM2SET3(DBT_COPY,DBT_POPUP, DBT_CLOSE));
     connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(pushed(int)));
 
     if (!sMainMsg.isEmpty()) {
@@ -95,6 +96,9 @@ void cErrorMessageBox::pushed(int id)
     case DBT_COPY:
         PDEB(INFO) << "Text to clipboard : \n" << text << endl;
         QApplication::clipboard()->setText(text, QClipboard::Clipboard);
+        break;
+    case DBT_POPUP:
+        popupTextWindow(parentWidget(), text, _sError);
         break;
     }
 }

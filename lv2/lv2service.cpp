@@ -197,19 +197,15 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     maxLogSize  = 10 * 1024 * 1204; // 10MiByte
     logNull     = false;
     isAsync = 0 != (inspector.inspectorType & IT_PROCESS_ASYNC);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
     if (isAsync) {
         // stderr --> log
         // stdout --> text output
         setCurrentReadChannel(QProcess::StandardError); // Log
     }
     else {
-#endif
         // stderr + stdout ==> stdout
         setProcessChannelMode(QProcess::MergedChannels);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
     }
-#endif
 
     bool nolog = inspector.methodType() != IT_METHOD_INSPECTOR  || inspector.isFeature(_sLognull);
     if (nolog) {
@@ -348,9 +344,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     if (isAsync) {
         if (internalStat == IS_RUN) {
             internalStat = IS_SUSPENDED;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
             setCurrentReadChannel(QProcess::StandardOutput);
-#endif
             QString tn = "process_" + toSqlName(inspector.name());
             QString statMsg;
             int  retStat = RS_UNREACHABLE;  // A lekérdezés alapértelmezett státusza

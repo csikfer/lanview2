@@ -1247,3 +1247,70 @@ const QString& errtype(int e, eEx __ex)
     }
     return _sNul;
 }
+
+/* ***************************************************************************************************************** */
+
+#if   defined(Q_CC_MSVC)
+#define SECURITY_WIN32
+#include <security.h>
+#include <secext.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
+
+cUser * getOsUser(QString& domain, QString& user)
+{
+    domain.clear();
+    user.clear();
+#if   defined(Q_CC_MSVC)
+#define USER_NAME_MAXSIZE   64
+    char charUserName[USER_NAME_MAXSIZE];
+    DWORD userNameSize = USER_NAME_MAXSIZE;
+    if (GetUserNameExA(NameDnsDomain, charUserName, &userNameSize)) {
+        QString du = QString(charUserName);
+        QStringList sdu = du.split('\\');
+        if (sdu.size() == 2) {
+            domain = sdu.at(0);
+            user   = sdu.at(1);
+        }
+    }
+#else
+    uid_t uid = geteuid();
+    struct passwd *pw = getpwuid(uid);
+    if (pw) {
+        user = pw->pw_name;
+        if (lanView::getInstance()->pSelfNode != nullptr) {
+            domain = lanView::getInstance()->pSelfNode->getName();
+        }
+    }
+#endif
+    cUser *r = nullptr;
+    if (!(domain.isEmpty() || user.isEmpty())) {
+        QString ud = user + "@" + domain;
+        QString sql = "SELECT * FROM users WHERE ? = ANY(domain_users)";
+        QSqlQuery q = getQuery();
+        if (execSql(q, sql, ud)) {
+            r = new cUser();
+            r->set(q);
+        }
+    }
+    return r;
+}
+
+bool parentIsLv2d()
+{
+    bool r = false;
+#if   defined(Q_CC_MSVC)
+#else
+    pid_t ppid = getppid();
+    QFile comm(QString("/proc/%1/comm").arg(int(ppid)));
+    QString parenName;
+    if (comm.open(QIODevice::ReadOnly)) {
+        parenName = QString::fromUtf8(comm.readAll()).trimmed();
+        r = 0 == parenName.compare(_sLv2d);
+    }
+#endif
+    return r;
+}

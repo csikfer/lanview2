@@ -551,4 +551,12 @@ EXT_ const QString sET_Info;
 EXT_ int errtype(const QString& s, eEx __ex);
 EXT_ const QString& errtype(int e, eEx __ex);
 
+/// Lekérdezi az operaciós rendszerbe bejelentkezett felhasználó nevet és
+/// Windows esetén a domain nevet, Linux esetén a gép nevet.
+/// Rákeres a <user>@<domain> alapján (users.domain_users mező) a felhasználóra.
+/// Ha lekérdezte a neveket, és megtalálta az user-t, akkor a cUser objektum pointerével tér vissza
+/// (amit a hívó szabadít fel), egyébb esetekben a visszaadott érték a null.
+EXT_ cUser * getOsUser(QString& domain, QString& user);
+EXT_ bool parentIsLv2d();
+
 #endif // LANVIEW_H
