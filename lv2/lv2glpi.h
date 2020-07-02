@@ -17,15 +17,16 @@ public:
 };
 
 class LV2SHARED_EXPORT cGlpiEntities : public cMyRec {
-public:
     CMYRECORD(cGlpiEntities);
+public:
 };
 
 class LV2SHARED_EXPORT cGlpiLocations : public cMyRec {
-public:
     CMYRECORD(cGlpiLocations);
+public:
     static QString nameToGlpi(const QString& __n);
     static QString nameFromGlpi(const QString& __n);
+    static const QString sLevelSep;
 private:
     static cRegExpConverter convertFromGlpi;
     static cRegExpConverter convertToGlpi;
@@ -34,9 +35,9 @@ private:
 class LV2SHARED_EXPORT cGlpiLocationsTreeItem : public tTreeItem<cMyRec> {
 public:
     cGlpiLocationsTreeItem(cMyRec * __d = nullptr, tTreeItem * __par = nullptr) : tTreeItem(__d, __par) {}
-    static bool setEntity();
-    static QString  entityName;
-    static cGlpiLocationsTreeItem   rootItem;
+    bool setEntity();
+    qlonglong entitiesId() { return pData->getId(); }
+    QString  entityName;
 };
 
 #endif // LV2GLPI_H

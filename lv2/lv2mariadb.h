@@ -165,7 +165,7 @@ public:
     const cColStaticMyDescr& colMyDescr(const QString& __fn) const
     { return dynamic_cast<const cColStaticMyDescr&>(_columnDescrs[toIndex(__fn)]); }
     /// A megadott indexű mező nevével tér vissza. Hasonló a _columnName() metódushoz, de a visszaadott nevet idézőjelek közé teszi
-    QString columnNameQ(int i) const                 { return quoted(columnName(i)); }
+    QString columnNameQ(int i) const                 { return quoted(columnName(i), QChar('`')); }
     /// A tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
     QString fullTableName() const                   { return _tableName; }
     /// A view tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
@@ -178,16 +178,16 @@ public:
     /// @param _c (rövid) mező név
     QString fullColumnName(const QString& _c) const{ return mCat(fullTableName(), _c); }
     /// A tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
-    QString fullTableNameQ() const                   { return quoted(_tableName); }
+    QString fullTableNameQ() const                   { return quoted(_tableName, QChar('`')); }
     /// A view tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
     /// Lásd még a _viewName adattagot.
-    QString fullViewNameQ() const                   { return quoted(_viewName); }
+    QString fullViewNameQ() const                   { return quoted(_viewName, QChar('`')); }
     /// A teljes mező névvel (tábla és ha sükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param i a mező indexe
-    QString fullColumnNameQ(int i) const             { return mCat(fullTableNameQ(), quoted(columnName(i))); }
+    QString fullColumnNameQ(int i) const             { return mCat(fullTableNameQ(), columnNameQ(i)); }
     /// A teljes mező névvel (tábla és ha szükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param _c (rövid) mező név
-    QString fullColumnNameQ(const QString& _c) const { return mCat(fullTableNameQ(), quoted(_c)); }
+    QString fullColumnNameQ(const QString& _c) const { return mCat(fullTableNameQ(), quoted(_c, QChar('`'))); }
 
     /// A megadott nevű mező leírójánask a konstans referenciájával tér vissza.
     /// @exception cError* Ha nincs ilyen mező, akkor dob egy kizárást.

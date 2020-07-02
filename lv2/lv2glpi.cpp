@@ -47,7 +47,7 @@ CMYRECCNTR(cGlpiEntities)
 CRECDEFNCD(cGlpiEntities)
 
 const cRecStaticDescr&  cGlpiEntities::descr() const {
-    if (initPMyDescr<cGlpiEntities>("glpi_entities")) {
+    if (initPMyDescr<cGlpiEntities>(_sGlpiEntities)) {
 
     }
     return *_pRecordDescr;
@@ -71,6 +71,7 @@ static const QStringList patternToGlpi = {
     "(\\w)(\\d)(\\d{2})",                           "$1 épület > $2. emelet > $3. szoba",
 };
 
+const QString cGlpiLocations::sLevelSep = " > ";
 cRegExpConverter cGlpiLocations::convertFromGlpi;
 cRegExpConverter cGlpiLocations::convertToGlpi;
 
@@ -78,7 +79,7 @@ CMYRECCNTR(cGlpiLocations)
 CRECDEFNCD(cGlpiLocations)
 
 const cRecStaticDescr&  cGlpiLocations::descr() const {
-    if (initPMyDescr<cGlpiLocations>("glpi_locations")) {
+    if (initPMyDescr<cGlpiLocations>(_sGlpiLocations)) {
         convertFromGlpi = cRegExpConverter(patternFromGlpi);
         convertToGlpi   = cRegExpConverter(patternToGlpi);
     }
@@ -87,30 +88,70 @@ const cRecStaticDescr&  cGlpiLocations::descr() const {
 
 QString cGlpiLocations::nameToGlpi(const QString& __n)
 {
-
+    return convertToGlpi.compareAndConvert(__n);
 }
 
 QString cGlpiLocations::nameFromGlpi(const QString& __n)
 {
-
+    return convertFromGlpi.compareAndConvert(__n);
 }
 
 
 /* ************************** locations tree ************************** */
-QString  cGlpiLocationsTreeItem::entityName;
-cGlpiLocationsTreeItem   cGlpiLocationsTreeItem::rootItem;
 
 bool cGlpiLocationsTreeItem::setEntity()
 {
-    rootItem.clear();
+    clear();
     QSqlQuery q = getQuery();   // LanView2 database
     entityName = cSysParam::getTextSysParam(q, "glpi_entity");
     if (entityName.isEmpty()) return false;
     q = cMariaDb::getQuery();   // GLPI database
-    rootItem.pData = new cGlpiEntities;
-    int n = rootItem.pData->setName("name", entityName).completion(q);
+    // set root item (entity)
+    pData = new cGlpiEntities;
+    int n = pData->setName("name", entityName).completion(q);
     if (n != 1) return false;
-    // ...
+    // Stack
+    class cStack : public QStack<cGlpiLocationsTreeItem *> {
+    public:
+        cGlpiLocationsTreeItem *par;
+        cStack(cGlpiLocationsTreeItem *p) : QStack<cGlpiLocationsTreeItem *>() {
+            par = p;
+        }
+        bool checkLevel(cGlpiLocations * pLocation)
+        {
+            int parentLevel = isEmpty() ? -1 : int(top()->pData->getId(_sLevel));
+            int actLevel = parentLevel +1;
+            int level = int(pLocation->getId(_sLevel));
+            QString basename;
+            if (!isEmpty()) basename = top()->pData->getName(_sCompletename);
+            QString completename = pLocation->getName(_sCompletename);
+            if (actLevel == level) {
+                QString cname = basename + cGlpiLocations::sLevelSep + pLocation->getName(_sName);
+                if (cname == completename) {
+                    *(isEmpty() ? par : top()) << pLocation;
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else if (actLevel > level) {
+
+            }
+            else { // actlevel < level
+
+            }
+
+        }
+    };
+    cStack stack(this);
+    // read tree
+    cGlpiLocations  location;
+    location.setId(_sEntitiesId, entitiesId());
+    if (location.fetch(q, false, location.mask(_sEntitiesId), location.iTab(_sCompletename))) {
+
+    }
+
     return  true;
 }
 

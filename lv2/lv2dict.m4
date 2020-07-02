@@ -1059,6 +1059,20 @@ STRDEF(Selects, "selects")
   __SDEF(Linux)
   __SDEF(Empty)
 
-
+dnl PLPGSQL functions
 STRDEF(SetServiceStat, "set_service_stat")
 
+dnl GLPI
+STRDEF(GlpiEntities, "glpi_entities")
+ STRDEF(EntitiesId, "entities_id")
+ STRDEF(IsRecursive, "is_recursive")
+ dnl name
+ STRDEF(Completename, "completename")
+ dnl comment
+ STRDEF(Level, "level")
+ STRDEF(AncestorsCache, "ancestors_cache")
+ STRDEF(SonsCache, "sons_cache")
+ dnl ...
+STRDEF(GlpiLocations, "glpi_locations")
+ STRDEF(LocationsId, "locations_id")
+ dnl ...
