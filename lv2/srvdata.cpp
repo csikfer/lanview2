@@ -235,7 +235,7 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
     return R_ERROR;
 }
 
-cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted, bool forced)
+cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted, bool forced)
 {
     if (sFulName.isEmpty()) {
         sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
@@ -243,7 +243,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
             setBool(_sDeleted, true);
             if (_resetIfDeleted) emitReset();
-            return *this;
+            return nullptr;
         }
     }
     _DBGFN() << sFulName << VDEB(__st) << VDEB(__note) << endl;
@@ -282,6 +282,13 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             QSqlError le = __q.lastError();
             if (tf) sqlRollback(__q, sTrFulName);
             QString s = le.databaseText().split('\n').first();  // első sor
+            // deleted ?
+            if (s.contains("IdNotFound", Qt::CaseInsensitive)) {
+                APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
+                setBool(_sDeleted, true);
+                if (_resetIfDeleted) emitReset();
+                return nullptr;
+            }
             cnt++;
             // deadlock ?
             if (s.contains("deadlock", Qt::CaseInsensitive) && cnt <= setStateMaxTry) {
@@ -307,7 +314,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             EXCEPTION(EPROGFAIL);
         }
     }
-    return *this;
+    return this;
 }
 
 cHostService& cHostService::clearState(QSqlQuery& __q)

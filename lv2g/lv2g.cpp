@@ -193,7 +193,7 @@ int defaultDataCharacter(const cRecStaticDescr& __d, int __ix)
     case cColStaticDescr::FT_PROPERTY:
     case cColStaticDescr::FT_OWNER:
     {
-        cRecordAny *pF = cd.pFRec;
+        cRecord *pF = cd.pFRec;
         if (pF == nullptr) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
         bool n = pF->isIndex(pF->nameIndex(EX_IGNORE));
         if (cd.pFRec == nullptr) delete pF;

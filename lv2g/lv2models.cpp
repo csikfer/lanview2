@@ -882,7 +882,7 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, con
     foreach (i, eList) {
         const QString& typeName = *static_cast<const QString *>(pType);
         const cEnumVal& ee = cEnumVal::enumVal(typeName, i, __ex);
-        if (ee.isEmpty_()) {
+        if (ee.isEmptyRec_()) {
             cEnumVal *p = new cEnumVal;
             p->setParent(this);
             const QString& s = pType->enumValues.at(i);

@@ -712,7 +712,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
         QSqlQuery q = getQuery();
         sel.choice(q, "snmp.node_type", node.getName(_sSysDescr));
         const cColEnumType* pnte = cColEnumType::fetchOrGet(q, _sNodetype);
-        if (!sel.isEmpty()) {
+        if (!sel.isEmptyRec()) {
             QString s = sel.getName(_sChoice);
             if (!s.isEmpty()) {
                 QStringList sl = s.split(QRegExp(",\\s*"));
@@ -1793,7 +1793,7 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
             return false;
         }
     }
-    exists = !rHost.isEmpty();
+    exists = !rHost.isEmptyRec();
     if (exists) {
         qlonglong id = rDev.getId();
         if (id == NULL_ID) {
@@ -1830,9 +1830,9 @@ bool cLldpScan::rowProCurveWeb(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo
         IS_MISSING_PNAME(em);
         return false;
     }
-    exists = !rHost.isEmpty();
+    exists = !rHost.isEmptyRec();
     if (exists) {
-        if (rDev.isEmpty()) {
+        if (rDev.isEmptyRec()) {
             IS_NO_SNMPDEV(em);
             return false;
         }
@@ -1871,9 +1871,9 @@ bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         IS_MISSING_PNAME(em);
         return false;
     }
-    exists = !rHost.isEmpty();
+    exists = !rHost.isEmptyRec();
     if (exists) {
-        if (rDev.isEmpty()) {
+        if (rDev.isEmptyRec()) {
             IS_NO_SNMPDEV(em);
             return false;
         }
@@ -1921,9 +1921,9 @@ bool cLldpScan::rowCisco(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
         IS_MISSING_PNAME(em);
         return false;
     }
-    exists = !rHost.isEmpty();
+    exists = !rHost.isEmptyRec();
     if (exists) {
-        if (rDev.isEmpty()) {
+        if (rDev.isEmptyRec()) {
             IS_NO_SNMPDEV(em);
             return false;
         }
@@ -1957,7 +1957,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         IS_MISSING_MAC(em);
         return false;
     }
-    bool exists = !rHost.isEmpty();
+    bool exists = !rHost.isEmptyRec();
     if (exists) {
         if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
             return setRPortFromMac(row, em);
@@ -2013,7 +2013,7 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
         IS_MISSING_MAC(em);
         return false;
     }
-    bool exists = !rHost.isEmpty();
+    bool exists = !rHost.isEmptyRec();
     if (exists) {
         if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
             pp = rHost.ports.get(_sPortName, row.pdescr, EX_IGNORE);
@@ -2310,7 +2310,7 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
                     msg = QObject::tr("Link %1 ==> %2").arg((*it)->getFullName(q), p.getFullName(q));
                     expInfo(msg);
                     qlonglong nid = p.getId(_sNodeId);  // A linkelt eszköz ID
-                    if (dev.isEmpty_()) {               // Még nincs beolvasva
+                    if (dev.isEmptyRec_()) {               // Még nincs beolvasva
                         if (!dev.fetchById(q, nid)) { // A következő lekérdezendő switch
                             msg = QObject::tr("LLDP link nem SNMP eszközre : %1").arg(cNode().getNameById(nid));
                             expWarning(msg);
@@ -2324,7 +2324,7 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
                     }
                 }
             }
-            if (!dev.isEmpty_()) {
+            if (!dev.isEmptyRec_()) {
                 msg = QObject::tr("Következő SNMP eszköz : %1").arg(dev.getName());
                 expInfo(msg);
                 continue;

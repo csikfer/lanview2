@@ -72,6 +72,8 @@ DEFINES += LV2_LIBRARY
 SOURCES += lanview.cpp \
     cdebug.cpp \
     cerror.cpp \
+    lv2glpi.cpp \
+    lv2mariadb.cpp \
     lv2types.cpp \
     lv2sql.cpp \
     lv2datab.cpp \
@@ -93,6 +95,8 @@ SOURCES += lanview.cpp \
 
 HEADERS += lanview.h \
     lv2_global.h \
+    lv2glpi.h \
+    lv2mariadb.h \
     qsnmp.h \
     errcodes.h \
     cerror.h \

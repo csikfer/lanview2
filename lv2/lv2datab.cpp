@@ -147,7 +147,7 @@ cColEnumType::cColEnumType(qlonglong id, const QString &name, const QStringList 
     , typeId(id)
     , enumValues(values)
 {
-    if (find(name) != nullptr) EXCEPTION(EPROGFAIL, id, name);
+    if (findByName(name) != nullptr) EXCEPTION(EPROGFAIL, id, name);
     colEnumTypes.insert(*this);
 }
 
@@ -158,6 +158,7 @@ cColEnumType::cColEnumType(const cColEnumType& _o)
 {
     ;
 }
+
 
 cColEnumType::~cColEnumType()
 {
@@ -174,7 +175,7 @@ QString cColEnumType::toString() const
 const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, eEx __ex)
 {
 
-    const cColEnumType *r = find(name);
+    const cColEnumType *r = findByName(name);
     if (r != nullptr) return r;        // Type is readed, and found
     QString sql = QString(
                 "SELECT pg_enum.enumlabel, pg_enum.enumtypid FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
@@ -186,19 +187,22 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
         do {
             vals << q.value(0).toString();
         } while(q.next());
-        return new cColEnumType(id, name, vals);
+        cColEnumType(id, name, vals);   // Create object, and copy container
+        return & getByName(name);
     }
     if (__ex) EXCEPTION(EDATA, -1, QObject::tr("Unknown enumeration type name: %1").arg(name));
     return nullptr;
 }
 
-bool cColEnumType::check(const QStringList& v) const
+
+bool cColEnumType::containsAllValues(const QStringList& v) const
 {
     foreach (QString s, v) {
-        if (!check(s)) return false;
+        if (!containsValue(s)) return false;
     }
     return true;
 }
+
 
 const QString& cColEnumType::enum2str(qlonglong e, eEx __ex) const
 {
@@ -277,16 +281,16 @@ QStringList cColEnumType::lst2lst(const tIntVector& _lst, enum eEx __ex) const
 }
 
 
-const cColEnumType *cColEnumType::find(const QString& name)
+const cColEnumType *cColEnumType::findByName(const QString& name)
 {
      QSet<cColEnumType>::const_iterator i = colEnumTypes.find(cColEnumType(name));
      if (i == colEnumTypes.constEnd()) return nullptr;
      return &(*i);
 }
 
-const cColEnumType& cColEnumType::get(const QString& name)
+const cColEnumType& cColEnumType::getByName(const QString& name)
 {
-    const cColEnumType *p = find(name);
+    const cColEnumType *p = findByName(name);
     if (p == nullptr) {
         EXCEPTION(EDATA, -1, QObject::tr("Invalid enum type name : %1").arg(name));
     }
@@ -424,6 +428,11 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
     fnToName    = __o.fnToName;
     pFRec       = __o.pFRec;
     return *this;
+}
+
+QString cColStaticDescr::colNameQ() const
+{
+    return dQuoted(colName());
 }
 
 QString cColStaticDescr::toString() const
@@ -586,7 +595,7 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
             // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
             // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
             // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
-            *const_cast<cRecordAny **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
+            *const_cast<cRecord **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
         }
         QString n = pFRec->getNameById(q, id , __ex);
         if (n.isEmpty()) return r;
@@ -784,7 +793,7 @@ QString cColStaticDescrBool::toView(QSqlQuery&, const QVariant& _f) const
 
 void cColStaticDescrBool::init()
 {
-    const cColEnumType *pt = cColEnumType::find(_sBoolean);
+    const cColEnumType *pt = cColEnumType::findByName(_sBoolean);
     if (pt == nullptr) {
         QStringList enumVals;
         enumVals << langBool(false);
@@ -1041,7 +1050,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v, cCol
             if (enumType().checkEnum(v.toInt())) return VC_OK;
             r = VC_INVALID;
         }
-        else if (v.canConvert(QMetaType::QString) && enumType().check(v.toString())) {
+        else if (v.canConvert(QMetaType::QString) && enumType().containsValue(v.toString())) {
             r = VC_OK;
         }
     }
@@ -1084,7 +1093,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
         r  = enumType().enum2str(i, EX_IGNORE);
         ok = enumType().checkEnum(int(i));
     }
-    else if (!r.convert(QMetaType::QString) || !enumType().check(r.toString())) {
+    else if (!r.convert(QMetaType::QString) || !enumType().containsValue(r.toString())) {
         ok = false;
     }
     if (!ok) {
@@ -1129,10 +1138,10 @@ cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v, cColS
             else r = VC_TRUNC;
         }
         if (metaIsString(t)) {
-            if (enumType().check(v.toString())) r = VC_CONVERT;
+            if (enumType().containsValue(v.toString())) r = VC_CONVERT;
         }
         if (v.canConvert(QMetaType::QStringList)) {
-            if (enumType().check(v.toStringList())) r = VC_OK;
+            if (enumType().containsAllValues(v.toStringList())) r = VC_OK;
         }
     }
     return ifExcep(r, acceptable, v);
@@ -1960,23 +1969,16 @@ QString cColStaticDescrList::tableName() const {
 QMap<qlonglong, cRecStaticDescr *>   cRecStaticDescr::_recDescrMap;
 QMutex                               cRecStaticDescr::_mapMutex;
 
-cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
-    : _schemaName()
-    , _tableName()
-    , _viewName()
-    // , _tableRecord()
-    , _columnDescrs(this)
-    , _primaryKeyMask()
-    , _nameKeyMask()
-    , _uniqueMasks()
-    , _autoIncrement()
-    , _parents()
+cRecStaticDescr::cRecStaticDescr()
+    : _columnDescrs(this)
 {
-    _tableType      = UNKNOWN_TABLE;
-    _columnsNum     = 0;
-    _tableOId       = _schemaOId = NULL_ID;
-    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = _flagIndex = _textIdIndex = NULL_IX;
-    _isUpdatable    = false;
+    preInit();
+}
+
+cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
+    : _columnDescrs(this)
+{
+    preInit();
     _set(__t,__s);  // Setting by database
     addMap();
     // Only now can we get it right, or maybe we'll call id-> name conversion functions
@@ -1997,6 +1999,15 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
 cRecStaticDescr::~cRecStaticDescr()
 {
     ;
+}
+
+void cRecStaticDescr::preInit()
+{
+    _tableType      = UNKNOWN_TABLE;
+    _columnsNum     = 0;
+    _tableOId       = _schemaOId = NULL_ID;
+    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = _flagIndex = _textIdIndex = NULL_IX;
+    _isUpdatable    = false;
 }
 
 bool cRecStaticDescr::addMap()
@@ -2056,12 +2067,12 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     pq->bindValue(1, _tableName);
     if (!pq->exec()) SQLQUERYERR(*pq);
     if (!pq->first()) EXCEPTION(EDBDATA, 0, QObject::tr("Table %1.%2 not found.").arg(_schemaName, _tableName));
-    // _tableRecord = pq->record();
     QString n = pq->value(0).toString();    // table_type
     if (pq->next()) EXCEPTION(EDBDATA, 0, QObject::tr("Table : %1,%2.").arg(_schemaName, _tableName));
 
-    if      (n == "BASE TABLE")
+    if      (n == "BASE TABLE") {
         _tableType = TT_BASE_TABLE;
+    }
     else if (n == "VIEW") {
         _tableType = TT_VIEW_TABLE | TT_BASE_TABLE;
         // Ha egy link tábláról van szó, akkor annak itt a view tábláját kell megadni, és ebben az estenben
@@ -2905,13 +2916,13 @@ cRecord& cRecord::_clear(int __ix)
     if (isNull()) return *this;
     if (_fields.size() <= __ix) EXCEPTION(EPROGFAIL, __ix, identifying());
     _fields[__ix].clear();
-    if  (isEmpty()) _stat  = ES_EMPTY;
+    if  (isEmptyRec()) _stat  = ES_EMPTY;
     else            _stat |= ES_MODIFY;
     condDelTextList(__ix);  // If clear text_id
     return *this;
 }
 
-bool cRecord::isEmpty()
+bool cRecord::isEmptyRec()
 {
     if (_fields.size() == 0) {
         _stat = ES_NULL;
@@ -2944,7 +2955,7 @@ bool cRecord::toEnd(int i)
 {
     int nix = descr()._nameIndex;
     if (nix == i) {
-        if (!isEmpty()) setObjectName(getName(nix));
+        if (!isEmptyRec()) setObjectName(getName(nix));
     }
     // _DBGFN() << " @(" << i << ") *** EMPTY ***" << endl;
     // text ??!!??
@@ -3097,8 +3108,9 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
     return *this;
 }
 
-cRecord& cRecord::_readBack(const QSqlQuery& __q, const cRecStaticDescr& __d, const QBitArray& _msk)
+bool cRecord::_readBack(const QSqlQuery& __q, const cRecStaticDescr& __d, const QBitArray& _msk)
 {
+    if (_msk.count(true) == 0) return false;
     int cols = std::min(__d.cols(), _msk.size());
     if (_fields.isEmpty()) _set(__d);
     int ix = 0;
@@ -3108,7 +3120,7 @@ cRecord& cRecord::_readBack(const QSqlQuery& __q, const cRecStaticDescr& __d, co
             ++ix;
         }
     }
-    return *this;
+    return true;
 }
 
 
@@ -3116,7 +3128,7 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
 {
     bool m = false;
     int i;
-    if (__o.isEmpty_()) return false;
+    if (__o.isEmptyRec_()) return false;
     if (isNull()) _set(d);
     int n = __o.cols();    // Mezők száma a forrás rekordban
     for (i = 0; i < n; i++) {
@@ -3192,12 +3204,14 @@ cRecord& cRecord::set(const QSqlRecord& __r, int* _fromp, int __size)
     return *this;
 }
 
-cRecord& cRecord::readBack(const QSqlQuery& __q, const QBitArray& msk)
+bool cRecord::readBack(const QSqlQuery& __q, const QBitArray& msk)
 {
-    _readBack(__q, descr(), msk);
-    toEnd();
-    modified();
-    return *this;
+    bool r = _readBack(__q, descr(), msk);
+    if (r) {
+        toEnd();
+        modified();
+    }
+    return r;
 }
 
 
@@ -3372,7 +3386,7 @@ cRecord& cRecord::setStringList(int __i, const QStringList& __v, eEx __ex)
 cRecord& cRecord::addStringList(int __i, const QStringList &__v, eEx __ex)
 {
     if (isIndex(__i)) {
-        set(__i, getStringList(__i) + __v);
+        setStringList(__i, getStringList(__i) + __v);
     }
     else {
         if (__ex) EXCEPTION(ENOINDEX, __i, toString());
@@ -3385,7 +3399,7 @@ cRecord& cRecord::addStringList(int __i, const QStringList &__v, eEx __ex)
 QBitArray cRecord::areNull() const
 {
     QBitArray r(cols(), true);
-    if (isEmpty_()) return r;
+    if (isEmptyRec_()) return r;
     int i, n = cols();
     for (i = 0; i < n; ++i) {
         r[i] = isNull(i);
@@ -3393,11 +3407,73 @@ QBitArray cRecord::areNull() const
     return r;
 }
 
+QString cRecord::returningClause(QBitArray& rbMask)
+{
+    QString r;
+    if (_toReadBack == RB_NO || _toReadBack == RB_NO_ONCE || (_toReadBack == RB_MASK && _readBackMask.count(true) == 0)) {
+        rbMask.clear();
+        return r;
+    }
+    int c = cols();
+    rbMask = QBitArray(c, false);
+    int ix;
+    switch (_toReadBack) {
+    case RB_YES:
+        r = " RETURNING *";
+        rbMask.fill(true);
+        break;
+    case RB_ID:
+        ix = idIndex();
+        r = " RETURNING " + columnNameQ(ix);
+        rbMask[ix] = true;
+        break;
+    case RB_DEFAULT:
+        for (ix = 0; ix < c; ++ix) {
+            bool f = ix == idIndex(EX_IGNORE) || ix == descr().textIdIndex(EX_IGNORE)|| !descr().colDescr(ix).colDefault.isEmpty();
+            if (f) rbMask[ix] = true;
+        }
+        if (rbMask.count(true)) {
+            r = " RETURNING " + descr().columnNamesQ(rbMask);
+        }
+        break;
+    case RB_MASK:
+        rbMask = _readBackMask;
+        r = " RETURNING " + descr().columnNamesQ(rbMask);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    return r;
+}
+
+qlonglong cRecord::doReadBack(QSqlQuery& __q, const QBitArray& rbMask)
+{
+    if (_toReadBack == RB_NO_ONCE) {
+        _toReadBack = _toReadBackDefault;
+        return 0;
+    }
+    else if (_toReadBack == RB_YES || rbMask.count(false) == 0) {
+        if (!__q.first()) return ES_DEFECTIVE;
+        set(__q);
+        return ES_COMPLETE | ES_IDENTIF;
+    }
+    else if (rbMask.count(true) == 0) {
+        return 0;
+    }
+    else {
+        if (!__q.first()) return ES_DEFECTIVE;
+        readBack(__q, rbMask);
+        int ix = idIndex(EX_IGNORE);
+        if (ix != NULL_IX && rbMask[ix]) return ES_IDENTIF;
+        return 0;
+    }
+}
+
 bool cRecord::insert(QSqlQuery& __q, eEx _ex)
 {
     _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
     const cRecStaticDescr& recDescr = descr();
-    const int cols = recDescr.cols();
+    const int c = recDescr.cols();
     __q.finish();
     if (!recDescr.isUpdatable()) EXCEPTION(EDATA, -1 , tr("A %1 tábla nem módosítható.").arg(tableName()));
     QString sql, qms;
@@ -3412,71 +3488,36 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
         }
     }
     sql  = "INSERT INTO " + fullTableNameQ() + " (";
-    for (int i = 0; i < cols; ++i) {
+    for (int i = 0; i < c; ++i) {
         if (!get(i).isNull()) {
             qms += QString("?,");
-            sql += dQuoted(columnName(i)) + QChar(',');
+            sql += columnNameQ(i) + QChar(',');
         }
     }
     if (qms.size() < 2) EXCEPTION(EDATA, 0, recDescr.fullTableName());
     qms.chop(1);    // Removing unnecessary commas from the end
     sql.chop(1);    // Removing unnecessary commas from the end
     sql += ") VALUES ( " + qms + ")";   // Values list: question marks list
-    int idIx  = recDescr.idIndex(EX_IGNORE);
-    int tIdIx = recDescr.textIdIndex(EX_IGNORE);
-    QBitArray rbMask(cols, false);
-    switch (_toReadBack) {
-    case RB_NO:
-    case RB_NO_ONCE:
-        break;
-    case RB_YES:
-        sql += " RETURNING *";
-        rbMask.fill(true);
-        break;
-    case RB_ID:
-        sql += " RETURNING " + recDescr.columnNameQ(idIx);
-        rbMask[idIx] = true;
-        break;
-    case RB_DEFAULT:
-        for (int i = 0; i < cols; ++i) {
-            bool f = i == idIx || i == tIdIx || !recDescr.colDescr(i).colDefault.isEmpty();
-            if (f && _fields[i].isNull()) rbMask[i] = true;
-        }
-        if (rbMask.count(true)) {
-            sql += " RETURNING " + recDescr.columnNamesQ(rbMask);
-        }
-        break;
-    case RB_MASK:
-        rbMask = _readBackMask;
-        if (rbMask.count(true)) {
-            sql += " RETURNING " + recDescr.columnNamesQ(rbMask);
-        }
-        break;
-    }
+    QBitArray rbMask;
+    sql += returningClause(rbMask);
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     int i = 0;  // Nem null mezők indexe
-    for (int ix = 0; ix < cols; ++ix) {           // ix: mező index a rekordban
+    for (int ix = 0; ix < c; ++ix) {           // ix: mező index a rekordban
         if (!isNull(ix)) bind(ix, __q, i++);
     }
     PDEB(VVERBOSE) << "Insert :" << sql << _sql_err_bound(__q, " / Bound : ") << endl;
     _EXECSQL(__q);
-    if (rbMask.count(true) == 0) {
-        if (_toReadBack == RB_NO_ONCE) _toReadBack = _toReadBackDefault;
-        return __q.numRowsAffected() == 1;
+    _stat = doReadBack(__q, rbMask);
+    if (_stat & ES_DEFECTIVE) {
+        if (_ex > EX_ERROR) {
+            cError *pe = NEWCERROR(EDATA, 0,
+                tr("A beszúrás utáni újraolvasás sikertelen, nincs adat. Objektum azonosító : ") + identifying());
+            _sql_err_ex(pe, __q.lastError(), sql, _sql_err_bound(__q));
+        }
+        return false;
     }
-    if (__q.first()) {
-        if (_toReadBack == RB_YES) set(__q);
-        else                       readBack(__q, rbMask);
-        _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
-        // PDEB(VERBOSE) << "Insert RETURNING :" << toString() << endl;
-        return true;
-    }
-    if (_ex > EX_ERROR) {
-        cError *pe = NEWCERROR(EDATA, 0,
-            tr("A beszúrás utáni újraolvasás sikertelen, nincs adat. Objektum azonosító : ") + identifying());
-        _sql_err_ex(pe, __q.lastError(), sql, _sql_err_bound(__q));
-    }
-    return false;
+    _stat |=  ES_EXIST;
+    return true;
 }
 
 cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr, bool text)
@@ -3755,7 +3796,7 @@ bool cRecord::existByNameKey(QSqlQuery& __q, eEx __ex) const
 qlonglong cRecord::fetchTableOId(QSqlQuery& __q, eEx __ex) const
 {
     QBitArray m = getSetMap();              // Mit ismerünk ?
-    if (isFaceless() || isEmpty_() || m.count(true) == 0) {
+    if (isFaceless() || isEmptyRec_() || m.count(true) == 0) {
         if (__ex != EX_IGNORE) {
             QString tn = _stat == ES_FACELESS ? "<ismeretlen>" : descr().fullTableName();
             QString msg = tr("Az objektum üres. Rekord típus %1").arg(tn);
@@ -3798,7 +3839,7 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, eEx __ex) const
 
 int cRecord::fetchFieldsById(QSqlQuery& q, QBitArray& __map)
 {
-    if (isEmpty()) return -1;
+    if (isEmptyRec()) return -1;
     int r = 0;
     QString sql = "SELECT " + descr().columnNamesQ(__map)
                 + " FROM "  + fullTableNameQ()
@@ -3840,29 +3881,8 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
     }
     sql.chop(1);    // Removing unnecessary commas from the end
     sql += whereString(where);
-    const int cols = descr().cols();
-    QBitArray rbMask(cols, false);
-    int idIx  = descr().idIndex(EX_IGNORE);
-    switch (_toReadBack) {
-    case RB_NO:
-    case RB_NO_ONCE:
-        break;
-    case RB_DEFAULT:    // ?
-    case RB_YES:
-        sql += " RETURNING *";
-        rbMask.fill(true);
-        break;
-    case RB_ID:
-        sql += " RETURNING " + descr().columnNameQ(idIx);
-        rbMask[idIx] = true;
-        break;
-    case RB_MASK:
-        rbMask = _readBackMask;
-        if (rbMask.count(true)) {
-            sql += " RETURNING " + descr().columnNamesQ(rbMask);
-        }
-        break;
-    }
+    QBitArray rbMask;
+    sql += returningClause(rbMask);
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     for (j = i = 0; i < bset.size(); i++) {
         if (bset[i] && false == get(i).isNull()) {
@@ -3875,25 +3895,21 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         }
     }
     _EXECSQL(__q);
-    int n = 0;
-    if (rbMask.count(true) == 0) {
-        if (_toReadBack == RB_NO_ONCE) _toReadBack = _toReadBackDefault;
-        n = __q.numRowsAffected();
-    }
-    else if (__q.first()) {
-        if (_toReadBack == RB_YES) set(__q);
-        else                       readBack(__q, rbMask);
-        _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
-        // PDEB(VERBOSE) << "Update RETURNING :" << toString() << endl;
-        n = __q.numRowsAffected();
-    }
-    else {
-        n = 0;
-    }
+    int n = __q.numRowsAffected();
     if (n == 0) {
-        QString msg = tr("Nothing modify any record : %1").arg(identifying());
-        if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
+        if (__ex == EX_NOOP) {
+            QString msg = tr("Nothing modify any record : %1").arg(identifying());
+            SQLQUERYDERR(__q, EFOUND, 0, msg);
+        }
+        return 0;
     }
+    _stat = doReadBack(__q, rbMask);
+    if (_stat & ES_DEFECTIVE) {
+        QString msg = tr("Read back error : %1").arg(identifying());
+        SQLQUERYDERR(__q, EDATA, 0, msg);
+        return -1;
+    }
+    _stat |=  ES_EXIST;
     return n;
 }
 
@@ -4017,44 +4033,15 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eT
 bool cRecord::removeById(QSqlQuery& __q, qlonglong __id)
 {
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(tableName(), idName());
-    switch (_toReadBack) {
-    case RB_DEFAULT:    // ?
-    case RB_YES:
-        sql += " RETURNING *";
-        break;
-    case RB_MASK:
-        if (_readBackMask.count(true)) {
-            sql += " RETURNING " + descr().columnNamesQ(_readBackMask);
-        }
-        break;
-    default:
-        break;
-    }
+    QBitArray rbMask;
+    sql += returningClause(rbMask);
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     __q.bindValue(0, __id);
     _EXECSQL(__q);
     int r = __q.numRowsAffected();
     if (r == 0) return false;
     if (r != 1) EXCEPTION(EDBDATA, __id, tableName());
-
-    switch (_toReadBack) {
-    case RB_NO_ONCE:
-        _toReadBack = _toReadBackDefault;
-        break;
-    case RB_DEFAULT:    // ?
-    case RB_YES:
-        set(__q);
-        break;
-    case RB_ID:
-        setId(__id);
-        break;
-    case RB_MASK:
-        if (_readBackMask.count(true) > 0) {
-            readBack(__q, _readBackMask);
-        }
-    default:
-        break;
-    }
+    doReadBack(__q, rbMask);
     return true;
 }
 
@@ -4130,6 +4117,7 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     return  n;
 }
 
+
 int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
 {
     QString fn = _fn;
@@ -4140,15 +4128,16 @@ int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
     QBitArray where = _where;
     QString sql = QString("UPDATE %1 SET %2 = NOW() ").arg(fullTableNameQ()).arg(fn);
     sql += whereString(where);
-    sql += " RETURNING *";
+    QBitArray rbMask;
+    sql += returningClause(rbMask);
     query(q, sql, where);
-    if (q.first()) {
-        set(q.record());
-        _stat |= ES_EXIST;
-        return q.size();
+    int n = q.numRowsAffected();
+    if (n == 0) {
+        return 0;
     }
-    set();
-    return 0;
+    _stat = doReadBack(q, rbMask);
+    if (_stat | ES_DEFECTIVE) return -1;
+    return n;
 }
 
 int cRecord::updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const
@@ -4261,7 +4250,7 @@ QString cRecord::identifying(bool t) const
     if (t) {
         record = tr("Objektum típus : %1 (%2 tábla). ").arg(otype, table);
     }
-    if (isEmpty_()) record += tr("Üres objektum.");
+    if (isEmptyRec_()) record += tr("Üres objektum.");
     else {
         QSqlQuery q(getQuery());
         QString name = tr("Name(%1) = %2");

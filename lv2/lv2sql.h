@@ -45,6 +45,20 @@ static inline QString  mCat(const QString& a, const QString& b)
 {
     return a + QChar('.') + b;
 }
+
+/*!
+Egyszeres, vagy a megadott típusú idézőjeleket szúr az első karakter elé, és az utolsó után.
+@par Például.:
+@code
+QString a = "aaa";
+QString c = quoted(a);  // c = "'aaa'"
+@endcode
+ */
+inline QString quoted(const QString& __s, const QChar __q = QChar('\''))
+{
+    return __q + __s  + __q;
+}
+
 /*!
 Kettős idézőjeleket szúr az első karakter elé, és az utolsó után.
 @par Például.:
@@ -55,19 +69,7 @@ QString c = dQuoted(a);  // c = "\"aaa\""
  */
 static inline QString dQuoted(const QString& __s)
 {
-    return QChar('"') + __s  + QChar('"');
-}
-/*!
-Egyszeres idézőjeleket szúr az első karakter elé, és az utolsó után.
-@par Például.:
-@code
-QString a = "aaa";
-QString c = quoted(a);  // c = "'aaa'"
-@endcode
- */
-static inline QString quoted(const QString& __s)
-{
-    return QChar('\'') + __s  + QChar('\'');
+    return quoted(__s, QChar('"'));
 }
 
 /*!
@@ -78,6 +80,7 @@ static inline QString unQuoted(const QString& name)
 {
     if      (name.startsWith(QChar('\'')) && name.endsWith(QChar('\''))) return name.mid(1, name.size() -2);
     else if (name.startsWith(QChar('"'))  && name.endsWith(QChar('"')))  return name.mid(1, name.size() -2);
+    else if (name.startsWith(QChar('`'))  && name.endsWith(QChar('`')))  return name.mid(1, name.size() -2);
     return name;
 }
 

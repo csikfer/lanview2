@@ -22,7 +22,7 @@
 
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
-    , enumType(cColEnumType::get(_tn))
+    , enumType(cColEnumType::getByName(_tn))
 {
     pLayout = new QVBoxLayout;
     setLayout(pLayout);

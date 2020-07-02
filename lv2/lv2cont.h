@@ -1141,6 +1141,59 @@ public:
     }
 };
 
+/**********************************************************************************************************************/
+
+template <class O> class tTreeItem {
+protected:
+    tTreeItem   *       _pParent;
+    QList<tTreeItem *>  _childList;
+public:
+    O *                 pData;
+    tTreeItem(O * __pd, tTreeItem * __par) : _pParent(__par), _childList(), pData(__pd) {
+        if (__par != nullptr) {
+            _pParent->_childList << this;
+        }
+    }
+    ~tTreeItem() {
+        clear();
+    }
+    void clear() {
+        if (!_childList.isEmpty()) delete _childList.first();
+        if (_pParent != 0) {
+            int ix = indexOnParent();
+            if (!isContIx(_pParent->_childList ,ix)) {
+                EXCEPTION(EPROGFAIL);
+            }
+            _pParent->_childList.removeAt(ix);
+        }
+        pDelete(pData);
+    }
+    tTreeItem * addChild(O * p) { return new tTreeItem(p, this); }
+    tTreeItem& operator << (O * p) { addChild(p); }
+    bool isRoot() const { return _pParent == nullptr; }
+    int childNumber() const { return _childList.size(); }
+    tTreeItem * parent() { return _pParent; }
+    tTreeItem * root() { return _pParent == nullptr ? this : _pParent->root(); }
+    const QList<tTreeItem *> * siblings() const { return _pParent == nullptr ? nullptr : &_pParent->_childList; }
+    int indexOnParent() { return _pParent == nullptr ? NULL_IX : _pParent->_childList.indexOf(this); }
+    tTreeItem * siblingAt(int __ix) {
+        const QList<tTreeItem *> * ps =siblings();
+        if (ps != nullptr && isContIx(*ps, __ix)) return (*ps)[__ix];
+        return nullptr;
+    }
+    tTreeItem * nextSibling() {
+        int ix = indexOnParent();
+        if (ix < 0) return nullptr;
+        ++ix;
+        return siblingAt(ix);
+    }
+    tTreeItem * prevSibling() {
+        int ix = indexOnParent();
+        if (ix < 0) return nullptr;
+        --ix;
+        return siblingAt(ix);
+    }
+};
 
 
 #endif // LV2CONT_H

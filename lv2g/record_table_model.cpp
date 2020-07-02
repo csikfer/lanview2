@@ -50,7 +50,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
                     if (lineBgColorEnum2Ix >= 0) {
                         if (recDescr.colDescr(lineBgColorEnum2Ix).eColType == cColStaticDescr::FT_ENUM) {        // Enum ?
                             lineBgColorEnum2Type = recDescr.colDescr(lineBgColorEnum2Ix).enumType();
-                            if (sl.size() > 2) lineBgColorEnum2Val = cColEnumType::get(lineBgColorEnum2Type).str2enum(sl.at(1));
+                            if (sl.size() > 2) lineBgColorEnum2Val = cColEnumType::getByName(lineBgColorEnum2Type).str2enum(sl.at(1));
                             else               lineBgColorEnum2Val = 0;
                         }
                         else if (recDescr.colDescr(lineBgColorEnum2Ix).eColType == cColStaticDescr::FT_BOOLEAN) {// Boolean ?

@@ -1444,7 +1444,7 @@ void cInspector::timerEvent(QTimerEvent *)
         return;
     }
     // timeperiods ?
-    if (!timeperiod._isEmpty()) {
+    if (!timeperiod._isEmptyRec()) {
         if (!timeperiod.isOnTime(*pQuery())) {
             QDateTime now = QDateTime::currentDateTime();
             int t = int(now.msecsTo(timeperiod.nextOnTime(*pQuery(), now)));
@@ -2043,7 +2043,7 @@ int cInspector::firstDelay()
             t = rnd(interval);
         }
     }
-    if (!timeperiod._isEmpty()) {   // timeperiod ?
+    if (!timeperiod._isEmptyRec()) {   // timeperiod ?
         QSqlQuery q = getQuery();
         QDateTime now  = QDateTime::currentDateTime();
         QDateTime next = now.addMSecs(t);

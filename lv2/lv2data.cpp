@@ -830,7 +830,7 @@ eTristate cIpAddress::thisIsJoint(QSqlQuery &q, qlonglong _nodeId)
             if (p.getId(_sNodeId) != _nodeId) break;
         } while (o.next(q));
         // Volt nem saját cím?
-        if (o.isEmpty_()) return TS_NULL;
+        if (o.isEmptyRec_()) return TS_NULL;
     }
     // Csak egy rekordot vizsgálunk, ha több van akkor is
     if (o.getId(_sIpAddressType) == AT_JOINT) {
@@ -1701,7 +1701,7 @@ int cInterface::updateTrunkMembers(QSqlQuery& q, eEx __ex)
     int r = 0;
     qlonglong id = getId();
     if (id == NULL_ID) {
-        if (isEmpty_() || 1 != completion(q)) EXCEPTION(EDATA);
+        if (isEmptyRec_() || 1 != completion(q)) EXCEPTION(EDATA);
         id = getId();
         if (id == NULL_ID) EXCEPTION(EPROGFAIL);
     }

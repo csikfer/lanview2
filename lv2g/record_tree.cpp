@@ -186,7 +186,7 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
     sql  = "WITH r AS (" + sql + ") ";
     sql += "SELECT *, (SELECT COUNT(*) FROM r AS c WHERE r." + idname + " = c." + pidname + ") AS child_number ";
     sql += "FROM r WHERE ";
-    if (pn->pData == nullptr || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
+    if (pn->pData == nullptr || pn->pData->isEmptyRec()) {    // gyökér vagy gyökerek
         sql += pidname + " IS NULL OR ";
         sql += "0 = (SELECT COUNT(*) FROM r AS p WHERE r." + pidname + " = p." + idname + ")";
     }

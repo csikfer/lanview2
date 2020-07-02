@@ -566,7 +566,12 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             QString msg = tr("interface %1:%2 state : op:%3/adm:%4").
                     arg(node().getName(),iface.getName()).arg(opstat, adstat);
             eMsg = msgCat(eMsg, msg, "\n");
-            insp.hostService.setState(q, state, eMsg, NULL_ID, parid);
+            if (nullptr == insp.hostService.setState(q, state, eMsg, parid)) { // törölték!
+                if (1 != pSubordinates->removeAll(portstat.pRlinkStat)) {
+                    EXCEPTION(EPROGFAIL);
+                }
+                pDelete(portstat.pRlinkStat);
+            }
             insp.flag = true; // State is set
         }
 

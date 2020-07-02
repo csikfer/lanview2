@@ -970,7 +970,7 @@ int cEnumVal::replace(QSqlQuery &__q, eEx __ex)
         where = mask(_ixEnumTypeName, _ixEnumValName);
         sets  = ~(where | mask(idIndex()));
     }
-    int count = rows(false, where);
+    int count = rows(__q, false, where);
     int r = R_ERROR;
     bool isExist;
     switch (count) {

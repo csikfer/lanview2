@@ -137,7 +137,7 @@ void lv2import::fetchAndExec()
         pImp->setName(_sExecState, _sWait);
         pImp->setId(_sTargetId, pSelfInspector->hostServiceId());
         pImp->fetch(*pQuery, false, pImp->mask(_sTargetId, _sExecState), pImp->iTab(_sDateOf), 1);
-        if (pImp->isEmpty_()) {
+        if (pImp->isEmptyRec_()) {
             PDEB(INFO) << tr("No waitig imports record, dropp notification.") << endl;
             return;
         }
