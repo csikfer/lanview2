@@ -13,6 +13,7 @@ CONFIG += C++14
 DEFINES += LV2G_LIBRARY
 
 SOURCES += \
+    glpisync.cpp \
     input_dialog.cpp \
     lv2g.cpp \
     record_dialog.cpp \
@@ -51,6 +52,7 @@ SOURCES += \
     changeswitch.cpp
 
 HEADERS +=\
+    glpisync.h \
     input_dialog.h \
     lv2g_global.h \
     lv2g.h \
@@ -92,6 +94,7 @@ HEADERS +=\
 
 FORMS += \
     column_filter.ui \
+    glpisync.ui \
     reportwidget.ui \
     setup_logl.ui \
     setup.ui \

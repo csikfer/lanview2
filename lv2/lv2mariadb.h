@@ -12,10 +12,9 @@ A kiegészítés alapvetően a GLPI MySQL adatbázisának a kezelését célozza
 /// A Maria DB kezeló objektum (hasonlóan a lanView osztályhoz, csak egy példány!)
 class LV2SHARED_EXPORT cMariaDb : public QSqlDatabase {
 public:
-    cMariaDb(const QString &_sHost, const QString &_sDbName = _sGlpi, const QString &_sTablePrefix = _sGlpi_);
-    ~cMariaDb();
-    bool open(const QString& _pwd, const QString& _usr = _sNul);
 
+    static void init();
+    static void drop();
     static cMariaDb * pInstance(eEx __ex = EX_ERROR) {
         if (_pInstance == nullptr && __ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
         return _pInstance;
@@ -24,11 +23,10 @@ public:
     static QString schemaName()   { return pInstance()->databaseName(); }
     static QSqlQuery getQuery();
     static QSqlQuery * newQuery();
-    static const QString _sGlpi;
-    static const QString _sGlpi_;
-    static const QString _sConnectionName;
+    static const QString sConnectionName;
 protected:
-    QString sConnectionName;
+    cMariaDb();
+    ~cMariaDb();
     QString sTablePrefix;
     static cMariaDb *_pInstance;
 };

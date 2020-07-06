@@ -5,18 +5,29 @@
    *                                         cMariaDb                                                   *
    ******************************************************************************************************/
 
-const QString cMariaDb::_sGlpi = "glpi";
-const QString cMariaDb::_sGlpi_ = "glpi_";
 cMariaDb *cMariaDb::_pInstance = nullptr;
- const QString cMariaDb::_sConnectionName = "QMYSQL";
+const QString cMariaDb::sConnectionName = "QMYSQL";
 
-cMariaDb::cMariaDb(const QString& _sHost, const QString &_sDbName, const QString& _sTablePrefix)
-    : QSqlDatabase(QSqlDatabase::addDatabase(_sConnectionName))
+/// Az adatbázis paramétereket a konfigból veszi. Ahhoz, hogy ezek a paraméterek belekerüljenek a konfigba, kell egy
+/// config_ -sal kezdődő nevű rendszerváltozó. Pl.:
+/// ":title=GLPI adatbázis elérése:glpi_host=text,GLPI szerver:glpi_db=text,Adatbázis név:glpi_user=passwd,Felhasználó név:glpi_psw=passwd,Adatbázis jelszó:glpi_prefix=text,Adattábla név prefix:"
+/// A változó értékének a szintaxisa azonos a features mezőkkel.
+/// Ha a fenti változó létezik, akkor a megadott paraméterek megjelennek a setup widget-en, és megadhatóak:
+/// A title paraméter a paraméter csoport megjelenített neve. A többinél a név a config változó neve, az első érték a típus,
+/// a második pedig a megjelenített név (mindíg két értéket kell megadni).
+/// Az objetum által használt konfig változó nevek : glpi_host, glpi_db, glpi_user, glpi_psw, glpi_prefix
+cMariaDb::cMariaDb()
+    : QSqlDatabase(QSqlDatabase::addDatabase(sConnectionName))
 {
-    sConnectionName = _sConnectionName;
-    sTablePrefix = _sTablePrefix;
-    setHostName(_sHost);
-    setDatabaseName(_sDbName);
+    QSettings& qset = *lanView::getInstance()->pSet;
+    setHostName(qset.value("glpi_host").toString());
+    setDatabaseName(qset.value("glpi_db").toString());
+    setPassword(scramble(qset.value("glpi_psw").toString()));
+    setUserName(scramble(qset.value("glpi_user").toString()));
+    sTablePrefix = qset.value("glpi_prefix").toString();
+    if (!QSqlDatabase::open()) {
+        EXCEPTION(ESQLOPEN, 1);
+    }
 }
 
 cMariaDb::~cMariaDb()
@@ -26,11 +37,17 @@ cMariaDb::~cMariaDb()
     _pInstance = nullptr;
 }
 
-bool cMariaDb::open(const QString& _pwd, const QString& _usr)
+void cMariaDb::init()
 {
-    setPassword(_pwd);
-    setUserName(_usr.isEmpty() ? databaseName() : _usr);
-    return QSqlDatabase::open();
+    if (_pInstance != nullptr) EXCEPTION(EPROGFAIL);
+    _pInstance = new cMariaDb;
+}
+
+void cMariaDb::drop()
+{
+    if (_pInstance == nullptr) EXCEPTION(EPROGFAIL);
+    delete _pInstance;
+    _pInstance = nullptr;
 }
 
 QSqlQuery cMariaDb::getQuery()

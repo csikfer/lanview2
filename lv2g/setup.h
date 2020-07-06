@@ -48,6 +48,7 @@ private:
     QSettings       &qset;
     cLogLevelDialog *pLl;
     bool            forced;
+    QList<QPair<QString, QLineEdit *> >   others;
 };
 
 #if defined(LV2G_LIBRARY)

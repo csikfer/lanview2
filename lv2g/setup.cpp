@@ -66,6 +66,62 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
     foreach (QString dir, mibPathList) {
         pUi->MibPathLS->addItem(new QListWidgetItem(dir, pUi->MibPathLS));
     }
+
+    if (lanView::dbIsOpen()) {
+        QSqlQuery q = getQuery();
+        static const QString sql =
+                "SELECT sys_param_name, param_value"
+                " FROM sys_params"
+                " JOIN param_types USING(param_type_id)"
+                " WHERE sys_param_name LIKE 'config_%' AND param_type_name = 'text'";
+        if (execSql(q, sql)) {
+            int ix = pUi->verticalLayoutLast->count();
+            pUi->verticalLayoutLast->insertWidget(ix -1, line());
+            do {
+                QString name  = q.value(0).toString().mid(7);
+                QString value = q.value(1).toString();
+                cFeatures f;
+                if (!f.split(value, false, EX_IGNORE) || f.isEmpty()) continue;
+                static const QString keyTitle = "title";
+                QString title = f.value(keyTitle);
+                f.remove(keyTitle);
+                if (f.isEmpty()) continue;
+                if (title.isEmpty()) title = name;
+                pUi->verticalLayoutLast->insertWidget(ix++, new QLabel(title));
+                QFormLayout *pfm = new QFormLayout;
+                pUi->verticalLayoutLast->insertLayout(ix++, pfm);
+                foreach (QString key, f.keys()) {
+                    QStringList sl = f.slValue(key);
+                    if (sl.size() != 2) continue;
+                    QString type = sl.first();
+                    QLineEdit *pw = new QLineEdit;
+                    QString value = qset.value(key).toString();
+                    if (type.compare(_sText, Qt::CaseInsensitive) == 0) {
+                        pfm->addRow(sl.at(1), pw);
+                    }
+                    else if (type.compare(_sPasswd, Qt::CaseInsensitive) == 0) {
+                        pw->setEchoMode(QLineEdit::Password);
+                        pfm->addRow(sl.at(1), pw);
+                        if (!value.isEmpty()) value = scramble(value);
+                        key.prepend(QChar('!'));
+                    }
+                    else if (type.compare(_sInteger, Qt::CaseInsensitive) == 0) {
+                        pw->setValidator(new QIntValidator);
+                        pfm->addRow(sl.at(1), pw);
+                    }
+                    else {
+                        delete pw;
+                        continue;
+                    }
+                    pw->setText(value);
+                    others << QPair<QString, QLineEdit *>(key, pw);
+                }
+                pUi->verticalLayoutLast->insertWidget(ix, line());
+            } while (q.next());
+        };
+    }
+
+
     DBGFNL();
 }
 
@@ -100,6 +156,17 @@ void cSetupWidget::applicate()
         mibPath += pUi->MibPathLS->item(i)->text();
     }
     qset.setValue(_sMibPath, mibPath);
+    QPair<QString, QLineEdit *> pair;
+    foreach (pair, others) {
+        QString key = pair.first;
+        QString val = pair.second->text();
+        if (key.startsWith(QChar('!'))) {
+            key = key.mid(1);
+            val = scramble(val);
+        }
+        qset.setValue(key, val);
+    }
+
     qset.sync();
     QSettings::Status st = qset.status();
     if (QSettings::NoError != st) {

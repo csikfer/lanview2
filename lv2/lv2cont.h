@@ -1169,7 +1169,7 @@ public:
         pDelete(pData);
     }
     tTreeItem * addChild(O * p) { return new tTreeItem(p, this); }
-    tTreeItem& operator << (O * p) { addChild(p); }
+    tTreeItem& operator << (O * p) { addChild(p); return *this; }
     bool isRoot() const { return _pParent == nullptr; }
     int childNumber() const { return _childList.size(); }
     tTreeItem * parent() { return _pParent; }
