@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1472</width>
-    <height>1117</height>
+    <width>742</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,31 +24,32 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1454</width>
-        <height>1037</height>
+        <width>730</width>
+        <height>357</height>
        </rect>
       </property>
       <attribute name="label">
-       <string>Page 1</string>
+       <string>Helyek, helyiségek</string>
       </attribute>
-      <widget class="QTreeView" name="treeView">
-       <property name="geometry">
-        <rect>
-         <x>70</x>
-         <y>70</y>
-         <width>1261</width>
-         <height>611</height>
-        </rect>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QTreeWidget" name="treeWidgetLocation">
+         <column>
+          <property name="text">
+           <string notr="true">1</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="page_2">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1454</width>
-        <height>1037</height>
+        <width>730</width>
+        <height>357</height>
        </rect>
       </property>
       <attribute name="label">
@@ -56,6 +57,44 @@
       </attribute>
      </widget>
     </widget>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>24</number>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="pushButtonStart">
+       <property name="text">
+        <string>Start</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonBreak">
+       <property name="text">
+        <string>Megszakít</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

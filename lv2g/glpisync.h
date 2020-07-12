@@ -2,6 +2,7 @@
 #define GLPISYNC_H
 
 #include <QWidget>
+#include "lv2glpi.h"
 
 namespace Ui {
 class cGlpiSync;

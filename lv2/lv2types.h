@@ -22,6 +22,7 @@
 #include "lv2_global.h"
 #include <QtNetwork>
 #include <QSqlRecord>
+#include <QSqlQuery>
 #include <QProcess>
 
 /*! @file lv2types.h
@@ -414,6 +415,8 @@ public:
     @see set(const QString& __s, int __m)
     */
     netAddress(const QString& __s, int __m = -1) : QPair<QHostAddress, int>() { set(__s, __m); }
+    /// Copy konstruktor
+    netAddress(const netAddress& __o) : QPair<QHostAddress, int>() { *this = __o; }
     /*!
     Törli az objektum tartalmát. A mask-ot -1 -re állítja.
     A hívás után a feltételvizsgáló metódusok a következő értékekkel fognak visszatérni:
@@ -611,7 +614,7 @@ public:
     /*!
       Két objektum adattartalmának a cserélye.
      */
-    netAddress& swap(netAddress& __o)   { netAddress t = __o; __o = *this; return *this = t; }
+    netAddress& swap(netAddress& __o)   { std::swap(*this,__o); return *this; }
     ///
     static int ipv4NetMask(const QString& _mask);
     QPair<QHostAddress, int> toPair() { return *this; }

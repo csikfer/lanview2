@@ -938,7 +938,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
         memcpy(qm.beginMark,  "??",   sizeof(qm.beginMark));
         qm.clrErrSt = 'T';
         memcpy(qm.clrKontSt,  "FF",   sizeof(qm.clrKontSt));
-        strncpy(qm.endMark,    "\r\n", sizeof(qm.endMark));
+        memcpy(qm.endMark,    "\r\n", sizeof(qm.endMark));
         // IAIF2
         memcpy(qm2.beginMark, "??",   sizeof(qm2.beginMark));
         qm2.clrErrSt = 'T';
