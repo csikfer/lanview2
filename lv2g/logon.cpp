@@ -1,6 +1,6 @@
 #include "logon.h"
 
-#if   defined(Q_CC_MSVC)
+#if   defined(Q_OS_WIN)
 #define SECURITY_WIN32
 #include <security.h>
 #include <secext.h>

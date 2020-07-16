@@ -369,7 +369,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
     QSqlDatabase *pDb = new  QSqlDatabase(QSqlDatabase::addDatabase(_sQPSql));
     if (!pDb->isValid()) {
         QSqlError le = pDb->lastError();
-        QString msg = QString("SQL DB ERROR #") + QString::number(le.number()) + "\n"
+        QString msg = QString("SQL DB ERROR #") + le.nativeErrorCode() + "\n"
                     + "driverText   : " + le.driverText() + "\n"
                     + "databaseText : " + le.databaseText();
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
@@ -384,7 +384,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
     QString msg;
     if (!pDb->open()) {
         QSqlError le = pDb->lastError();
-        msg = QString("SQL open ERROR #") + QString::number(le.number()) + "\n"
+        msg = QString("SQL open ERROR #") + le.nativeErrorCode() + "\n"
                     + "driverText   : " + le.driverText() + "\n"
                     + "databaseText : " + le.databaseText();
         QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);

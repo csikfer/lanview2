@@ -22,16 +22,21 @@
 #include "cerror.h"
 #include <iostream>
 #if defined(Q_CC_GNU)
-#include <execinfo.h>
+# if !defined(Q_OS_WIN)
+#  include <execinfo.h>
+# endif / NOT defined(Q_OS_WIN)
 #elif 0 && defined(Q_CC_MSVC)
-#include <Windows.h>
-#include <WinBase.h>
-#include <DbgHelp.h>
+# include <Windows.h>
+# include <WinBase.h>
+# include <DbgHelp.h>
 #endif
 
 cBackTrace::cBackTrace(size_t _size)
 {
 #if defined(Q_CC_GNU)
+# if defined(Q_OS_WIN)
+    (void)_size;
+# else
     int     size;
     char ** symbols;
     void * buffer[_size];
@@ -46,6 +51,7 @@ cBackTrace::cBackTrace(size_t _size)
         }
         free(symbols);
     }
+# endif // defined(Q_OS_WIN)
 #elif 0 && defined(Q_CC_MSVC)
     unsigned short frames;
     SYMBOL_INFO    symbol;

@@ -11,7 +11,7 @@ cErrcodesWidget::cErrcodesWidget(QMdiArea *par)
     connect(pUi->closwPB, SIGNAL(clicked()), this, SLOT(endIt()));
     const QMap<int, QString>& emap = cError::errorMap();
     QList<int> codes = emap.keys();
-    qSort(codes);
+    std::sort(codes.begin(), codes.end());
     int row = 0;
     pUi->errcodesTW->setRowCount(codes.size());
     foreach (int code, codes) {

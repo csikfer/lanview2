@@ -491,7 +491,7 @@ QString intervalToStr(qlonglong i);
 /// SQL tábla mezőinek listája, (egy tábla mezőinek a tulajdonságát leíró lista)
 /// A listában a mezők kötött, az adattáblával azonos sorrendben szerepelnek.
 ///
-class cColStaticDescrList : public QList<cColStaticDescr *> {
+class LV2SHARED_EXPORT cColStaticDescrList : public QList<cColStaticDescr *> {
 public:
     typedef QList<cColStaticDescr *>::iterator          iterator;
     typedef QList<cColStaticDescr *>::const_iterator    const_iterator;
@@ -515,11 +515,11 @@ public:
     /// A megadott nevű mező leírójánask a referenciájával tér vissza.
     /// @exception cError* Ha nincs ilyen mező, akkor dob egy kizárást.
     /// @param __n a keresett mező neve.
-    cColStaticDescr& operator[](const QString& __n);
+    cColStaticDescr& operator[](const QString& __n) { return *(*static_cast<list *>(this))[toIndex(__n, EX_ERROR)]; }
     /// A megadott nevű mező leírójánask a konstans referenciájával tér vissza.
     /// @exception cError* Ha nincs ilyen mező, akkor dob egy kizárást.
     /// @param __n a keresett mező neve.
-    const cColStaticDescr& operator[](const QString& __n) const;
+    const cColStaticDescr& operator[](const QString& __n) const { return *(*static_cast<const list *>(this))[toIndex(__n, EX_ERROR)]; }
     /// A megadott indexű mező leírójának a referenciájával tér vissza.
     /// @exception cError* Ha nincs ilyen mező, akkor dob egy kizárást.
     /// @param i a keresett mező indexe (0,1,...).
@@ -657,7 +657,7 @@ public:
     /// Az index alapján vissza adja az oszlop leíró referenciáját.
     const cColStaticDescr& colDescr(int i) const { chkIndex(i); return _columnDescrs[i]; }
     /// Az név alapján vissza adja az oszlop leíró referenciáját.
-    const cColStaticDescr& colDescr(const QString& __fn) const { return _columnDescrs[toIndex(__fn)]; }
+    const cColStaticDescr& colDescr(const QString& __fn) const { return _columnDescrs[toIndex(__fn, EX_ERROR)]; }
     /// Ha bármelyik mező módosítható az adatbázisban, akkor true-val tér vissza.
     bool isUpdatable() const                    { return _isUpdatable; }
     /// Ha a megadott indexű mező módosítható az adatbázisban, akkor true-val tér vissza.
@@ -665,7 +665,7 @@ public:
     bool isUpdatable(int i) const               { return colDescr(i).isUpdatable; }
     /// Ha a megadott nevű mező módosítható az adatbázisban, akkor true-val tér vissza.
     /// Ha nincs ilyen nevű mező, dob egy kizárást.
-    bool isUpdatable(const QString& fn) const   { return colDescr(toIndex(fn)).isUpdatable; }
+    bool isUpdatable(const QString& fn) const   { return colDescr(toIndex(fn, EX_ERROR)).isUpdatable; }
     /// Ellenőrzi a megadott mező indexet
     /// @param i Az ellenőrizendő mező/oszlop index érték
     /// @return ha i egy valós index, akkor true, ha nem false
@@ -698,7 +698,7 @@ public:
     /// @param __n A keresett mező neve
     /// @param __ex Ha értéke nem EX_IGNORE, és nem találja a keresett mezőt, akkor dob egy kizárást.
     /// @return A mező indexe, vagy ha nem talált ilyen nevű mezőt, és __ex értéke nem EX_IGNORE, akkor NULL_IX (negatív).
-    int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const { return _columnDescrs.toIndex(__n, __ex); }
+    inline int toIndex(const QString& __n, enum eEx __ex = EX_ERROR) const { return _columnDescrs.toIndex(__n, __ex); }
     /// A séma nevet adja vissza
     const QString&  schemaName() const              { return _schemaName; }
     /// A tábla nevet adja vissza
@@ -859,19 +859,19 @@ public:
     QBitArray mask(int __i1, int __i2, int __i3, int __i4) const{ QBitArray m = mask(__i1, __i2, __i3); m.setBit(chkIndex(__i4)); return m; }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőnévnek megfelelő sorszámú bitet 1-be állítja.
     /// Ha a megadott név nem egy mező név, akkor dob egy kizárást.
-    QBitArray mask(const QString& __n1) const   { return _mask(_columnsNum, chkIndex(toIndex(__n1))); }
+    QBitArray mask(const QString& __n1) const   { return _mask(_columnsNum, toIndex(__n1)); }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 1-be állítja.
     /// Ha a megadott név bármelyike nem egy mező név, akkor dob egy kizárást.
     QBitArray mask(const QString& __n1, const QString& __n2) const
-        { QBitArray m = mask(__n1); m.setBit(chkIndex(toIndex(__n2))); return m; }
+        { QBitArray m = mask(__n1); m.setBit(toIndex(__n2)); return m; }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 1-be állítja.
     /// Ha a megadott név bármelyike nem egy mező név, akkor dob egy kizárást.
     QBitArray mask(const QString& __n1, const QString& __n2, const QString& __n3) const
-        { QBitArray m = mask(__n1, __n2); m.setBit(chkIndex(toIndex(__n3))); return m; }
+        { QBitArray m = mask(__n1, __n2); m.setBit(toIndex(__n3)); return m; }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 1-be állítja.
     /// Ha a megadott név bármelyike nem egy mező név, akkor dob egy kizárást.
     QBitArray mask(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const
-        { QBitArray m = mask(__n1, __n2, __n3); m.setBit(chkIndex(toIndex(__n4))); return m; }
+        { QBitArray m = mask(__n1, __n2, __n3); m.setBit(toIndex(__n4)); return m; }
     /// Létrehoz egy bit tömböt ugyan akkora mérettel, mint a mezők száma, és a megadott mezőneveknek megfelelő sorszámú biteket 1-be állítja.
     /// Ha a megadott név bármelyike nem egy mező név, akkor dob egy kizárást.
     QBitArray mask(const QStringList& __nl, enum eEx __ex = EX_ERROR) const;
@@ -884,15 +884,15 @@ public:
     QBitArray inverseMask(const QStringList& __nl) const { return inverseMask(mask(__nl)); }
 
     /// Létrehoz egy tIntVector objektumot, egy elemmel, ami a megadott mező név indexe.
-    tIntVector   iTab(const QString& __n1) const                      { return ::iTab(chkIndex(toIndex(__n1))); }
+    tIntVector   iTab(const QString& __n1) const                      { return ::iTab(toIndex(__n1)); }
     /// Létrehoz egy tIntVector objektumot, két elemmel, ami a megadott mező nevek indexei.
-    tIntVector   iTab(const QString& __n1, const QString& __n2) const { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2))); }
+    tIntVector   iTab(const QString& __n1, const QString& __n2) const { return ::iTab(toIndex(__n1), toIndex(__n2)); }
     /// Létrehoz egy tIntVector objektumot, három elemmel, ami a megadott mező nevek indexei.
     tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3) const
-        { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2)), chkIndex(toIndex(__n3))); }
+        { return ::iTab(toIndex(__n1), toIndex(__n2), toIndex(__n3)); }
     /// Létrehoz egy tIntVector objektumot, négy elemmel, ami a megadott mező nevek indexei.
     tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const
-        { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2)), chkIndex(toIndex(__n3)), chkIndex(toIndex(__n4))); }
+        { return ::iTab(toIndex(__n1), toIndex(__n2), toIndex(__n3), toIndex(__n4)); }
     /// Megvizsgálja, hogy a mező értéke lehet-e NULL.
     /// @param __ix A mező indexe.
     /// @return true, ha a mező lehet NULL.
@@ -1416,7 +1416,7 @@ public:
     /// @param __fn A mező neve
     /// @param __v A megadott mező új értéke
     /// @return Az objektumra mutató referencia
-    cRecord& set(const QString& __fn, const QVariant& __v) { return set(chkIndex(toIndex(__fn)), __v); }
+    cRecord& set(const QString& __fn, const QVariant& __v) { return set(toIndex(__fn), __v); }
     /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja.
     cRecord& set(const QSqlQuery& __q, int * __fromp = nullptr, int __size = -1)   { return set(__q.record(), __fromp, __size);   }
     /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja, de csak azokat a mezőket
@@ -2838,8 +2838,8 @@ public:
 };
 TSTREAMO(cRecordFieldRef)
 
-inline cRecordFieldRef cRecord::operator[](const QString& __fn)             { return (*this)[chkIndex(toIndex(__fn))]; }
-inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { return (*this)[chkIndex(toIndex(__fn))]; }
+inline cRecordFieldRef cRecord::operator[](const QString& __fn)             { return (*this)[toIndex(__fn)]; }
+inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { return (*this)[toIndex(__fn)]; }
 inline cRecordFieldRef cRecord::ref(int _ix)                                { return (*this)[_ix]; }
 inline cRecordFieldConstRef cRecord::cref(int _ix) const                    { return (*this)[_ix]; }
 inline cRecordFieldRef cRecord::ref(const QString& _fn)                     { return (*this)[_fn]; }

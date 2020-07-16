@@ -1250,25 +1250,26 @@ const QString& errtype(int e, eEx __ex)
 
 /* ***************************************************************************************************************** */
 
-#if   defined(Q_CC_MSVC)
-#define SECURITY_WIN32
-#include <security.h>
-#include <secext.h>
+#if   defined(Q_CC_MSVC) || defined(Q_OS_WIN)
+# include <Windows.h>
+# define SECURITY_WIN32
+# include <security.h>
+# include <secext.h>
 #else
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <pwd.h>
 #endif
 
 cUser * getOsUser(QString& domain, QString& user)
 {
     domain.clear();
     user.clear();
-#if   defined(Q_CC_MSVC)
+#if   defined(Q_CC_MSVC) || defined(Q_OS_WIN)
 #define USER_NAME_MAXSIZE   64
     char charUserName[USER_NAME_MAXSIZE];
-    DWORD userNameSize = USER_NAME_MAXSIZE;
-    if (GetUserNameExA(NameDnsDomain, charUserName, &userNameSize)) {
+    ULONG userNameSize = USER_NAME_MAXSIZE;
+    if (GetUserNameExA(NameDnsDomain, (LPSTR)charUserName, &userNameSize)) {
         QString du = QString(charUserName);
         QStringList sdu = du.split('\\');
         if (sdu.size() == 2) {
@@ -1302,7 +1303,7 @@ cUser * getOsUser(QString& domain, QString& user)
 bool parentIsLv2d()
 {
     bool r = false;
-#if   defined(Q_CC_MSVC)
+#if   defined(Q_CC_MSVC) || defined(Q_OS_WIN)
 #else
     pid_t ppid = getppid();
     QFile comm(QString("/proc/%1/comm").arg(int(ppid)));

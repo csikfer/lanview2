@@ -134,6 +134,9 @@ unix:{
         DEFINES += SNMP_IS_EXISTS
     }
 }
+else {
+    LIBS += -lSecur32 -lWtsapi32
+}
 
 TRANSLATIONS    = lv2lib_hu.ts \
                   lv2lib_en.ts

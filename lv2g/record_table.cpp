@@ -797,7 +797,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     pForm->comboBoxCol->addItems(cols);
     connect(pForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
     connect(pForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
-    qSort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
+    std::sort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
     setGridLayoutOrder();
     iSelFilterCol  = -1;
     iSelFilterType = -1;
@@ -1232,7 +1232,7 @@ void cRecordTableFODialog::ordMoveUp(cRecordTableOrd * _po)
 {
     int i = indexOf(_po);
     if (i == 0) EXCEPTION(EPROGFAIL);
-    ords.swap(i, i -1);
+    ords.swapItemsAt(i, i -1);
     setGridLayoutOrder();
 }
 
@@ -1240,7 +1240,7 @@ void cRecordTableFODialog::ordMoveDown(cRecordTableOrd * _po)
 {
     int i = indexOf(_po);
     if (i >= (ords.size() -1)) EXCEPTION(EPROGFAIL);
-    ords.swap(i, i +1);
+    ords.swapItemsAt(i, i +1);
     setGridLayoutOrder();
 }
 

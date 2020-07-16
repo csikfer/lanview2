@@ -127,8 +127,7 @@ FORMS += \
     translator.ui \
     changeswitch.ui
 INCLUDEPATH += ../lv2
-#unix:LIBS += -lsnmp
-msvc:LIBS += -lSecur32 -lWtsapi32
+
 LIBS += -L../lv2 -llv2
 
 #exists(../../zodiacgraph) {
@@ -141,6 +140,9 @@ unix:{
     exists(/usr/include/net-snmp) {
         DEFINES += SNMP_IS_EXISTS
     }
+}
+else {
+    LIBS += -lSecur32 -lWtsapi32
 }
 
 

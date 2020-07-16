@@ -1655,7 +1655,7 @@ static void newEnum(const QString& _type, QString * _pval = nullptr, int _rep = 
             return;
         }
         else {
-            if (!cType.check(*_pval)) {
+            if (!cType.containsValue(*_pval)) {
                 yyerror(QObject::tr("Invalid enum value : %1.%2").arg(actEnumType, *_pval));
                 delete _pval;
                 return;

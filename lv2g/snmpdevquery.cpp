@@ -405,7 +405,7 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
             }
             ui->tableWidget->resizeColumnsToContents();
             if (validPorts != pDev->ports.size()) {
-                expError(trUtf8("validPorts : %1 != ports.size() : %2").arg(validPorts).arg(pDev->ports.size()));
+                expError(tr("validPorts : %1 != ports.size() : %2").arg(validPorts).arg(pDev->ports.size()));
             }
         }
     } CATCHS(pe)

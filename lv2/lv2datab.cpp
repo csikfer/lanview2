@@ -1923,24 +1923,9 @@ int cColStaticDescrList::toIndex(const QString& __n, eEx __ex) const
         return NULL_IX;
     }
     const_iterator  i;
-    for (i = constBegin(); i != constEnd(); i++) if (**i == __n) return (*i)->pos -1;
-    if (__ex) EXCEPTION(ENOFIELD, -1, fullColName(__n));
+    for (i = constBegin(); i != constEnd(); i++) if (**i == __n) return i - constBegin();
+    if (__ex != EX_IGNORE) EXCEPTION(ENOFIELD, -1, fullColName(__n));
     return NULL_IX;
-}
-
-
-cColStaticDescr& cColStaticDescrList::operator[](const QString& __n)
-{
-    int i = toIndex(__n);
-    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, fullColName(__n));
-    return (*this)[i];
-}
-
-const cColStaticDescr& cColStaticDescrList::operator[](const QString& __n) const
-{
-    int i = toIndex(__n);
-    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, fullColName(__n));
-    return (*this)[i];
 }
 
 cColStaticDescr& cColStaticDescrList::operator[](int i)
