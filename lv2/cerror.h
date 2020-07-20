@@ -19,10 +19,12 @@
  ***************************************************************************/
 #ifndef CERROR_H_INCLUDED
 #define CERROR_H_INCLUDED
+#include <stddef.h>
 #include <errno.h>
 #include "lv2_global.h"
 #include "others.h"
 #include <QtCore>
+#include <QStringList>
 #include <QSqlError>
 #include <QSqlQuery>
 

@@ -66,6 +66,11 @@ This file is part of LanView2.
 #   define LV2_FALLTHROUGH
 #endif
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
+#define swapItemsAt swap
+#endif
+
+
 #if defined(__cplusplus) && __cplusplus < 201703L
     // ?!
 #   define nullptr NULL

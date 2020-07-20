@@ -24,7 +24,7 @@
 #if defined(Q_CC_GNU)
 # if !defined(Q_OS_WIN)
 #  include <execinfo.h>
-# endif / NOT defined(Q_OS_WIN)
+# endif // NOT defined(Q_OS_WIN)
 #elif 0 && defined(Q_CC_MSVC)
 # include <Windows.h>
 # include <WinBase.h>

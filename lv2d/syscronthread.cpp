@@ -1,6 +1,6 @@
 #include "syscronthread.h"
 #include "lv2user.h"
-#include "SmtpMime"
+#include "SimpleMail"
 
 qlonglong cSysInspector::syscronId = NULL_ID;
 

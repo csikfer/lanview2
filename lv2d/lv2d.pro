@@ -47,7 +47,7 @@ exists(../../simple-mail/src) {
     DEFINES += SYSCRON
     SOURCES += syscronthread.cpp
     INCLUDEPATH += ../../simple-mail/src
-    LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+    LIBS += -L../../simple-mail/build/src -lSimpleMail2Qt5
 }
 
 
