@@ -2177,18 +2177,7 @@ public:
     ///             Ha viszont értéke EX_ERROR és nem konvertálható a típus, akkor kizárást dob.
     ///             Ha értéke nem EX_IGNORE, és T vagy az objektum cRecodeAny, kizárást dob.
     /// @return 0, ha egyezés van, 1 ha konvertálható, és -1 ha nem konvertálható.
-    template <class T> int chkObjType(enum eEx __ex = EX_ERROR) const {
-        T o;
-        if (typeid(T) == typeid(cRecordAny) || typeid(*this) == typeid(cRecordAny)) {
-            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
-            return -1;
-        }
-        if (descr().tableoid() == o.descr().tableoid()) return 0;  // Azonos
-        if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::tr("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
-        if (descr() > o.descr()) return 1;        // Nem azonos, de konvertálható
-        if (__ex >= EX_ERROR)   EXCEPTION(EDATA, 2, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
-        return -1;
-    }
+    template <class T> int chkObjType(enum eEx __ex = EX_ERROR) const;
     /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem őse a megadott típus, akkor dob egy kizárást
     template <class T> T * reconvert() { chkObjType<T>(); return dynamic_cast<T *>(this); }
@@ -2396,6 +2385,9 @@ protected:
     void setDefectivFieldBit(int ix) {
         chkIndex(ix);
         _setDefectivFieldBit(ix);
+    }
+    void clearDefectivFieldBits() {
+        _stat &= ES_INV_FLD_MSK;
     }
     void _clearDefectivFieldBit(int ix) {
         _stat &= ~(1LL << (ix + 16));
@@ -2934,6 +2926,20 @@ protected:
     /// Az objektum viselkedését meghatározó leíró objektum pointere.
     const cRecStaticDescr *pStaticDescr;
 };
+
+template <class T> int cRecord::chkObjType(enum eEx __ex) const {
+    T o;
+    if (typeid(T) == typeid(cRecordAny) || typeid(*this) == typeid(cRecordAny)) {
+        if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+        return -1;
+    }
+    if (descr().tableoid() == o.descr().tableoid()) return 0;  // Azonos
+    if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::tr("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+    if (descr() > o.descr()) return 1;        // Nem azonos, de konvertálható
+    if (__ex >= EX_ERROR)   EXCEPTION(EDATA, 2, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+    return -1;
+}
+
 
 /// Template függvény a "features" mező felbontására
 /// A sablon föggvény számít arra, hogy az objektumnak van egy

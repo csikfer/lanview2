@@ -3888,6 +3888,7 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         }
         return 0;
     }
+    _stat &= ~ES_DEFECTIVE;
     _stat = doReadBack(__q, rbMask);
     if (_stat & ES_DEFECTIVE) {
         QString msg = tr("Read back error : %1").arg(identifying());

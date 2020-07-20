@@ -20,15 +20,17 @@ This file is part of LanView2.
 
 #include <QtCore/qglobal.h>
 #include <QtCore>
+#include <QString>
+#include <QList>
+#include <QPair>
+#include <QPointF>
 
 #define LV2_THROW 1
 
 #if defined(LV2_LIBRARY)
 #  define LV2SHARED_EXPORT Q_DECL_EXPORT
-// #  warning "LIB..."
 #else
 #  define LV2SHARED_EXPORT Q_DECL_IMPORT
-// #  warning "APP..."
 #endif
 
 #define EXT_ extern LV2SHARED_EXPORT
@@ -67,13 +69,13 @@ This file is part of LanView2.
 #endif
 
 #if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-#define swapItemsAt swap
+#  define swapItemsAt swap
 #endif
 
 
 #if defined(__cplusplus) && __cplusplus < 201703L
     // ?!
-#   define nullptr NULL
+#  define nullptr NULL
 #endif
 
 
@@ -90,7 +92,7 @@ This file is part of LanView2.
 #elif defined(Q_CC_GNU)
     // OK
 #else
-#error "Nem támogatott C++ fordító használata."
+#  error "Nem támogatott C++ fordító használata."
 #endif
 
 enum eEx {
