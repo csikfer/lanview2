@@ -112,7 +112,7 @@ void	cImportParseThread::run()
     reset();
     if (importParserStat != IPS_READY || pImportInputStream != nullptr) {
         if (pImportLastError == nullptr) pImportLastError = NEWCERROR(ESTAT);
-        DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
+        DERR() << VEDEB(importParserStat, ipsName) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
         return;
     }
     PDEB(INFO) << QObject::tr("Start parser (thread) ...") << endl;

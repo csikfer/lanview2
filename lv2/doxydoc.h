@@ -129,7 +129,7 @@ Fejállomány: srvdata.h
 A cInspector osztály lekérdező programokban a host-services rekordok alapján épít fel a lekérdezéshez
 a szolgáltatáspéldányok fáját, és vezérli a lekérdezés részfolyamatait. A konkrét résztevékenységeket
 vagy az alap osztály tartalmazza, vagy a cInspector származtatásával valósítható meg,
-a virtuális metódusokon keresztül. Egy cIspector objektum működését mindíg egy cHostServices objektum
+a virtuális metódusokon keresztül. Egy cIspector objektum működését mindíg egy cHostService objektum
 (vagyis egy hostt_services rekord) és az általuk hivatkozott cService objektumok (services rekordok)
 határozzák meg. Kulcs szerepük van ebben még a features mezőknek is.
 

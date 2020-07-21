@@ -504,6 +504,17 @@ enum eImportParserStat {
     IPS_RUN,
     IPS_THREAD
 };
+
+inline QString ipsName(eImportParserStat e) {
+    QString r;
+    switch (e) {
+    case IPS_READY:  r = "Ready";   break;
+    case IPS_RUN:    r = "Run";     break;
+    case IPS_THREAD: r = "Thread";  break;
+    }
+    return r;
+}
+
 EXT_ bool callFromInterpreter();
 
 EXT_ enum eImportParserStat importParserStat;

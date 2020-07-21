@@ -1,5 +1,6 @@
 %{
 
+#include <stdio.h>
 #include <math.h>
 #include <QStringList>
 #include "lanview.h"
@@ -17,6 +18,7 @@
 #include "export.h"
 
 #define  YYERROR_VERBOSE
+#define  YYINITDEPTH    5000
 
 /// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
 static inline int yyerror(QString em)
@@ -257,7 +259,7 @@ int importParse(eImportParserStat _st)
     if (importParserStat != IPS_READY || _st == IPS_READY)
         EXCEPTION(EPROGFAIL, (int)importParserStat);
     importParserStat = _st;
-    PDEB(VERBOSE) << VDEB(importParserStat) << endl;
+    PDEB(VERBOSE) << VEDEB(importParserStat, ipsName) << endl;
     // static const QString tn = "YYParser";
     int i = -1;
     try {
@@ -275,7 +277,7 @@ int importParse(eImportParserStat _st)
         // sqlCommit(qq(), tn);
     }
     importParserStat = IPS_READY;
-    PDEB(VERBOSE) << VDEB(importParserStat) << endl;
+    PDEB(VERBOSE) << VEDEB(importParserStat, ipsName) << endl;
     return i;
 }
 
@@ -313,8 +315,6 @@ public:
         for (i = begin(); i != n; ++i) { i->updateArpTable(q); }
     }
 };
-
-typedef QList<tStringPair> QStringPairList;
 
 typedef QList<qlonglong> intList;
 
@@ -1686,10 +1686,41 @@ static inline cEnumVal& actEnum()
     return *pActEnum;
 }
 
+/* *************************************************** DEBUG *************************************************** */
+// miért nincs debug !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define YYDEBUG 1
+#define YYFPRINTF   yydebprintf
+#define PFOUTMAX 512
+static int yydebprintf(FILE *, const char * format, ... )
+{
+    char    cs[PFOUTMAX +1];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(cs, PFOUTMAX, format, args);
+    va_end(args);
+    QString s(cs);
+    int r = s.size();
+    if (s.endsWith(QChar('\n'))) {
+        s.chop(1);
+        PDEB(VERBOSE) << s << endl;
+    }
+    else {
+        PDEB(VERBOSE) << s;
+    }
+    return r;
+}
+static QString intList2String(const intList& il) {
+    QString r = "{";
+    foreach (int i, il) { r += QString::number(i) + _sCommaSp; }
+    r.chop(2);
+    return r + "}";
+}
+inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, %2)").arg(quotedString(ss.first), quotedString(ss.second)); }
+
+/* ************************************************* DEBUG END ************************************************* */
 %}
 
 %union {
-    void *              u;
     qlonglong           i;
     intList *           il;
     QVariantList *      ids;
@@ -1705,7 +1736,6 @@ static inline cEnumVal& actEnum()
     QPointF *           pnt;
     tPolygonF *         pol;
     tStringPair *       ss;
-    QStringPairList *   ssl;
     cSnmpDevice *       sh;
     cHostServices *     hss;
     tStringMap *        sm;
@@ -1774,6 +1804,33 @@ static inline cEnumVal& actEnum()
 %type  <sm>  feature_s maps
 %type  <coid> coid
 
+/* Generate the parser description file.  */
+%verbose
+/* Enable run-time traces (yydebug).  */
+%define parse.trace
+
+/* Formatting semantic values.  */
+%printer { PDEB(VERBOSE) << $$                           << "::qlonglong";       } <i>;
+%printer { PDEB(VERBOSE) << intList2String(*$$)          << "::intList";         } <il>;
+%printer { PDEB(VERBOSE) << debVariantToString(*$$);                             } <ids>;
+%printer { PDEB(VERBOSE) << DBOOL($$)                    << "::bool";            } <b>;
+%printer { PDEB(VERBOSE) << *$$                          << "::QString";         } <s>;
+%printer { PDEB(VERBOSE) << debVariantToString(*$$);                             } <sl>;
+%printer { PDEB(VERBOSE) << $$->toString()               << "::cMac";            } <mac>;
+%printer { PDEB(VERBOSE) << $$                           << "::double";          } <r>;
+%printer { PDEB(VERBOSE) << $$->toString()               << "::QHostAddress";    } <ip>;
+%printer { PDEB(VERBOSE) << $$->toString()               << "::netAddress";      } <n>;
+%printer { PDEB(VERBOSE) << debVariantToString(*$$)      << "::QVariant";        } <v>;
+%printer { PDEB(VERBOSE) << debVariantToString(*$$)      << "::QVariantList";    } <vl>;
+%printer { PDEB(VERBOSE) << QPointFTosString(*$$)        << "::QPointF";         } <pnt>;
+%printer { PDEB(VERBOSE) << tPolygonFToString(*$$)       << "::tPolygonF";       } <pol>;
+%printer { PDEB(VERBOSE) << tStringPair2String(*$$)      << "::tStringPair";     } <ss>;
+%printer { PDEB(VERBOSE) << $$->identifying(false)       << "::cSnmpHost";       } <sh>;
+%printer { PDEB(VERBOSE) << $$->size()             << "::cHostServices::size()"; } <hss>;
+%printer { PDEB(VERBOSE) << "{" << cFeatures::join(*$$) << "}::tStringMap";      } <sm>;
+%printer { PDEB(VERBOSE) << $$->toString()               << "::cOId";            } <coid>;
+
+// A destruktorokat rendesen meg kellene csinálni !!!! A többit is!
 %destructor { pDelete($$); } <sm>
 
 %left  NOT_T
@@ -2252,8 +2309,8 @@ subnet  : ip '/' INTEGER_V ';'
                     delete $1; delete $3;
                 }
         ;
-ip      : IPV4_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV4):" << $$->toString() << endl; }
-        | IPV6_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV6):" << $$->toString() << endl; }
+ip      : IPV4_V                    { $$ = $1; }
+        | IPV6_V                    { $$ = $1; }
         | IP_T '(' sexpr ')'        { $$ = new QHostAddress(); if (!$$->setAddress(*$3)) yyerror("Invalid address"); }
         ;
 ips     : ip                        { $$ = new QString($1->toString()); delete $1; }
@@ -3244,7 +3301,7 @@ static QString *yygetstr2(const QString& mn)
             *ps += c;
         }
     }
-    // PDEB(VVERBOSE) << ee << QChar(' ') << *ps;
+    // (VVERBOSE) << ee << QChar(' ') << *ps;
     delete ps;
     yyerror(ee);    // az yyerror() olyan mintha visszatérne, pedig dehogy.
     return nullptr;
@@ -3352,7 +3409,7 @@ static int _yylex(void)
 {
     // DBGFN();
 recall:
-    yylval.u = nullptr;
+    yylval.i = 0;
     QChar     c;
     // Elvalaszto karakterek és kommentek atlepese
     // Fajl vege eseten vege

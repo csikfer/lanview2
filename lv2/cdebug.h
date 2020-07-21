@@ -129,6 +129,10 @@ EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QCha
 /// @def VDEB(n)
 /// Kiíratásnál használható makró, egy változó nevének és értékének a kiíratásához.
 #define VDEB(n)     " " #n " = " << n
+/// @def VEDEB(n)
+/// Kiíratásnál használható makró, egy változó nevének és értékének a kiíratásához.
+/// A második paraméter a konverziós függvény neve
+#define VEDEB(n, c) " " #n " = " << c(n)
 /// @def VDEBHEX(n)
 /// Kiíratásnál használható makró, egy változó nevének és értékének a kiíratásához.
 #define VDEBHEX(n)     " " #n " = " << QString("%1").arg(n, 0, 16)
