@@ -3442,7 +3442,7 @@ qlonglong cRecord::doReadBack(QSqlQuery& __q, const QBitArray& rbMask)
         set(__q);
         return ES_COMPLETE | ES_IDENTIF;
     }
-    else if (rbMask.count(true) == 0) {
+    else if (_toReadBack == RB_NO || rbMask.count(true) == 0) {
         return 0;
     }
     else {
