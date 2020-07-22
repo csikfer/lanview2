@@ -3396,11 +3396,11 @@ QString cRecord::returningClause(QBitArray& rbMask)
 {
     QString r;
     if (_toReadBack == RB_NO || _toReadBack == RB_NO_ONCE || (_toReadBack == RB_MASK && _readBackMask.count(true) == 0)) {
-        rbMask.clear();
+        rbMask.clear(); // No read back
         return r;
     }
-    int c = cols();
-    rbMask = QBitArray(c, false);
+    int c = cols();     // Column number
+    rbMask = QBitArray(c, false);   // Create mask, all bit is off
     int ix;
     switch (_toReadBack) {
     case RB_YES:
@@ -3437,13 +3437,13 @@ qlonglong cRecord::doReadBack(QSqlQuery& __q, const QBitArray& rbMask)
         _toReadBack = _toReadBackDefault;
         return 0;
     }
+    else if (_toReadBack == RB_NO  || rbMask.count(true) == 0) {
+        return 0;
+    }
     else if (_toReadBack == RB_YES || rbMask.count(false) == 0) {
         if (!__q.first()) return ES_DEFECTIVE;
         set(__q);
         return ES_COMPLETE | ES_IDENTIF;
-    }
-    else if (_toReadBack == RB_NO || rbMask.count(true) == 0) {
-        return 0;
     }
     else {
         if (!__q.first()) return ES_DEFECTIVE;
