@@ -248,6 +248,8 @@ static cEnumVal        *pActEnum = nullptr;
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
 cError *pImportLastError = nullptr;
+static void set_debug(bool f);
+
 
 /// A parse() hívása a hiba elkapásával.
 /// Hiba esetén a hiba objektumba menti a parser következő állpotváltozóit:
@@ -262,6 +264,7 @@ int importParse(eImportParserStat _st)
     PDEB(VERBOSE) << VEDEB(importParserStat, ipsName) << endl;
     // static const QString tn = "YYParser";
     int i = -1;
+    set_debug(true);        // DEBUG PARSER
     try {
         // sqlBegin(qq(), tn);
         i = yyparse();
@@ -1702,10 +1705,10 @@ static int yydebprintf(FILE *, const char * format, ... )
     int r = s.size();
     if (s.endsWith(QChar('\n'))) {
         s.chop(1);
-        PDEB(VERBOSE) << s << endl;
+        _PDEB(VERBOSE) << "\t[YY]\t" << s << "\\" << endl;
     }
     else {
-        PDEB(VERBOSE) << s;
+        _PDEB(VERBOSE) << "\t[YY]\t" << s << endl;
     }
     return r;
 }
@@ -1808,6 +1811,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %verbose
 /* Enable run-time traces (yydebug).  */
 %define parse.trace
+%debug
 
 /* Formatting semantic values.  */
 %printer { PDEB(VERBOSE) << $$                           << "::qlonglong";       } <i>;
@@ -1848,7 +1852,7 @@ main    :
         | commands
         ;
 commands: command
-        | command commands
+        | commands command
         ;
 command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | macro
@@ -3208,6 +3212,11 @@ coid    : str                           { $$ = newOId($1); }
         | coid '.' int                  { $$ = addOId($1, $3); }
         ;
 %%
+
+static void set_debug(bool f)
+{
+    yydebug = f ? 1 : 0;
+}
 
 static inline bool isXDigit(QChar __c) {
     int cc;

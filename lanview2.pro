@@ -5,7 +5,11 @@ CONFIG -= debug_and_release
 lv2.subdir = lv2
 SUBDIRS += lv2 \
     clisetup
+
 lv2.subdirs = lv2
+
+clisetup.subdirs = clisetuo
+clisetup.depends = lv2
 
 !exists(lv2g/miss) {
     SUBDIRS += lv2g lv2gui
@@ -30,7 +34,6 @@ lv2.subdirs = lv2
 }
 
 unix {
-
   !exists(portmac/miss) {
     SUBDIRS += portmac
     portmac.subdirs = portmac
