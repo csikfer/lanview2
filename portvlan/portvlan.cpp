@@ -144,8 +144,6 @@ cPortVLans::~cPortVLans()
 
 void cPortVLans::postInit(QSqlQuery &q)
 {
-    cInspector::postInit(q);
-
     // Current VLAN settings (dynamic)
     setOid(dot1qVlanCurrentEgressPorts,             "SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
     setOid(dot1qVlanCurrentUntaggedPorts,           "SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
@@ -167,6 +165,7 @@ void cPortVLans::postInit(QSqlQuery &q)
                               << hpicfDot1xAuthClientLimit << hpicfDot1xAuthLogoffPeriod << hpicfDot1xAuthClientLimit2;
     headerAuthConfigTable << _sAuth << _sUnauth << sUnauthPeriod << sClientLimit << sLogoffPeriod << sClientLimit2;
 
+    cInspector::postInit(q);
 }
 
 cInspector * cPortVLans::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
@@ -198,7 +197,7 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     else {  // Csak az SNMP lekérdezés támogatott (egyelőre)
         EXCEPTION(EDATA, protoServiceId(), QObject::tr("Nem támogatott proto_service_id!"));
     }
-    hpicfDot1xAuthenticator = mTrunkByMembers = mNoUntaggedBitmap = mNoPVID = false;
+    f_hpicfDot1xAuthenticator = mTrunkByMembers = mNoUntaggedBitmap = mNoPVID = false;
     ctVlan = ctUnchg = ctMod = ctNew = ctIns = ctUnkn = ctRm = ctErr = 0;
 }
 
@@ -295,8 +294,8 @@ void cDevicePV::postInit(QSqlQuery& q)
     } while (r != 0 && probe++ < maxProbe);
     if (r == 0) {
         snmp.first();
-        hpicfDot1xAuthenticator = snmp.name() > par.hpicfDot1xAuthenticator;
-        if (hpicfDot1xAuthenticator) {  // Van tábla. Mindegyik oszlop létezik?
+        f_hpicfDot1xAuthenticator = snmp.name() > par.hpicfDot1xAuthenticator;
+        if (f_hpicfDot1xAuthenticator) {  // Van tábla. Mindegyik oszlop létezik?
             hpicfDot1xAuthConfigTable = par.hpicfDot1xAuthConfigTable;
             headerAuthConfigTable     = par.headerAuthConfigTable;
             probe = 0;
@@ -317,10 +316,10 @@ void cDevicePV::postInit(QSqlQuery& q)
                     }
                     snmp.next();
                 }
-                hpicfDot1xAuthenticator = headerAuthConfigTable.contains(_sAuth) && headerAuthConfigTable.contains(_sUnauth);
+                f_hpicfDot1xAuthenticator = headerAuthConfigTable.contains(_sAuth) && headerAuthConfigTable.contains(_sUnauth);
             }
             else {
-                hpicfDot1xAuthenticator = false;
+                f_hpicfDot1xAuthenticator = false;
             }
         }
     }
@@ -331,7 +330,7 @@ void cDevicePV::postInit(QSqlQuery& q)
         pp.setId(pp.ixPortId(), p->getId());
         bool f = pp.completion(q) && str2bool(pp.getName(ixParamValue));
         if (f) mNoVlanPortsByPar << int(p->getId(ixPortIndex));
-        else if (!hpicfDot1xAuthenticator) {    // Ha lekérdezzük a 802.1x, akkor nincs statikus tiltás a 802.1x paraméterrel.
+        else if (!f_hpicfDot1xAuthenticator) {    // Ha lekérdezzük a 802.1x, akkor nincs statikus tiltás a 802.1x paraméterrel.
             pp.clear();
             pp.setName(key2);
             pp.setType(typeId);
@@ -426,7 +425,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(q, sql, nodeId());
-    if (hpicfDot1xAuthenticator) {
+    if (f_hpicfDot1xAuthenticator) {
         PDEB(VERBOSE) << "SNMP Query : hpicfDot1xAuthenticator " << endl;
         cTable table;
         r = snmp.getTable(hpicfDot1xAuthConfigTable, headerAuthConfigTable, table);

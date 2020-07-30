@@ -72,7 +72,7 @@ public:
     bool mDumpBitMaps;
     /// A trunk portokról nincs infó, azonos a member portok kiosztásával
     bool        mTrunkByMembers;
-    bool        hpicfDot1xAuthenticator;
+    bool        f_hpicfDot1xAuthenticator;
     /// A trunkökhöz tartozü member portok kiosztása
     /// trunkMembersVlanTypes[<trunk id>][<trunk member index>][<vlan id>] = <vlan type>
     QMap<qlonglong, QMap<int, QMap<int, QString> > >  trunkMembersVlanTypes;
