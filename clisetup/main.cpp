@@ -20,7 +20,7 @@ const QString& setAppHelp()
 static QTextStream stdo(stdout);
 static QTextStream stdi(stdin);
 
-static void set(const QString& _key, const QString& _text, qlonglong _def)
+static void settingQSetIValue(const QString& _key, const QString& _text, qlonglong _def)
 {
     bool ok;
     qlonglong i;
@@ -29,21 +29,30 @@ static void set(const QString& _key, const QString& _text, qlonglong _def)
         stdo << QObject::tr("%1 (%2) : ").arg(_text).arg(i) << endl;
         QString s = stdi.readLine();
         s = s.simplified();
-        if (s.isEmpty()) return;
+        if (s.isEmpty()) break;
         i = s.toLongLong(&ok);
     } while (!ok);
     lanView::getInstance()->pSet->setValue(_key, i);
 }
 
 
-static void set(const QString& _key, const QString& _text, const QString& _def = _sNul, bool _scr = false)
+static void settingQSetSValue(const QString& _key, const QString& _text, const QString& _def)
 {
     QString s = lanView::getInstance()->pSet->value(_key, _def).toString();
     stdo << QObject::tr("%1 (%2) : ").arg(_text, s) << endl;
     s = stdi.readLine();
     s = s.simplified();
+    if (s.isEmpty()) s = _def;
+    lanView::getInstance()->pSet->setValue(_key, s);
+}
+
+static void settingQSetXValue(const QString& _key, const QString& _text)
+{
+    stdo << QObject::tr("%1 : ").arg(_text) << endl;
+    QString s = stdi.readLine();
+    s = s.simplified();
     if (s.isEmpty()) return;
-    if (_scr) s = scramble(s);
+    s = scramble(s);
     lanView::getInstance()->pSet->setValue(_key, s);
 }
 
@@ -64,15 +73,15 @@ int main(int argc, char *argv[])
     cError *pe = nullptr;
 
     try {
-        set(_sHomeDir,  QObject::tr("Munka könyvtér path"), lanView::homeDefault);
-        set(_sSqlHost,  QObject::tr("SQL szerver címe"),    _sLocalHost);
-        set(_sSqlPort,  QObject::tr("SQL szerver port"),    5432);
-        set(_sSqlUser,  QObject::tr("SQL felhasználói név"),_sLanView2, true);
-        set(_sSqlPass,  QObject::tr("SQL jelszó"),          "***",      true);
-        set(_sDbName,   QObject::tr("Az adatbázis neve"),   _sLanView2);
-        set(_sLogFile,  QObject::tr("Log fájl"),            _sStdErr);
-        set(_sDebugLevel,QObject::tr("Nyomkövetési szint"), lanView::debugDefault);
-        set(_sMibPath,  QObject::tr("MIB path lista"));
+        settingQSetSValue(_sHomeDir,   QObject::tr("Munka könyvtár path"), lanView::homeDefault);
+        settingQSetSValue(_sSqlHost,   QObject::tr("SQL szerver címe"),    _sLocalHost);
+        settingQSetIValue(_sSqlPort,   QObject::tr("SQL szerver port"),    5432);
+        settingQSetXValue(_sSqlUser,   QObject::tr("SQL felhasználói név"));
+        settingQSetXValue(_sSqlPass,   QObject::tr("SQL jelszó"));
+        settingQSetSValue(_sDbName,    QObject::tr("Az adatbázis neve"),   _sLanView2);
+        settingQSetSValue(_sLogFile,   QObject::tr("Log fájl"),            _sStdErr);
+        settingQSetIValue(_sDebugLevel,QObject::tr("Nyomkövetési szint"),  lanView::debugDefault);
+        settingQSetSValue(_sMibPath,   QObject::tr("MIB path lista"),      _sNul);
         lanView::getInstance()->pSet->sync();
 
         eTristate f = TS_NULL;

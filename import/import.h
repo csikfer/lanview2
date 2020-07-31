@@ -24,6 +24,7 @@ class lv2import : public lanView {
     QString     inFileName;
     QString     outFileName;
     bool        daemonMode;
+    QString     sExecStr;
     QString     sDebugLines;
 protected slots:
     virtual void dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);

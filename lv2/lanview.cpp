@@ -91,11 +91,7 @@ const QString lanView::orgDomain(ORGDOMAIN);
 const short lanView::libVersionMajor = VERSION_MAJOR;
 const short lanView::libVersionMinor = VERSION_MINOR;
 const QString lanView::libVersion(VERSION_STR);
-#ifdef Q_OS_WIN
-const QString lanView::homeDefault(".");
-#else
-const QString lanView::homeDefault("/var/local/lanview2");
-#endif
+QString lanView::homeDefault(".");
 QString    lanView::appHelp;
 QString    lanView::appName;
 short      lanView::appVersionMinor;
@@ -217,6 +213,12 @@ lanView::lanView()
     pQuery = nullptr;
     pLanguage = nullptr;
     pLocale   = nullptr;
+#if   defined (Q_OS_LINUX)
+    QString home = getEnvVar("HOME");
+#elif defined (Q_OS_WIN)
+    QString home = getEnvVar("USERPROFILE");
+#endif
+    homeDefault = home;
 
     try {
         cError::init(); // Set error strings
@@ -241,19 +243,14 @@ lanView::lanView()
         ipv6Pol = eIPV6Pol(IPV6Pol(pSet->value(_sIPV6Pol, QVariant(_sPermissive)).toString()));
         QDir    d(homeDir);
         if (!QDir::setCurrent(d.path())) {
-            // Ha GUI, és nem volt megadva könyvtár, akkor az user home könyvtár lessz a home
-            if (gui) {
-                if (pSet->value(_sHomeDir).isNull()) {
-                    d.setPath(QDir::homePath());
-                    homeDir = d.path();
-                }
-                else {
-                    // You should not crashed, rather setup
-                    nonFatal = NEWCERROR(ENODIR, 0, d.path());
-                }
+            DERR() << tr("Nincs beállítva, vagy nem létezik a program home könyvtár.") << endl;
+            if (pSet->value(_sHomeDir).isNull()) {
+                d.setPath(QDir::homePath());
+                homeDir = d.path();
             }
             else {
-                EXCEPTION(ENODIR, -1, d.path());
+                // You should not crashed, rather setup
+                nonFatal = NEWCERROR(ENODIR, 0, d.path());
             }
         }
         binPath = d.filePath(_sBin);

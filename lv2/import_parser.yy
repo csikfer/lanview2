@@ -264,7 +264,7 @@ int importParse(eImportParserStat _st)
     PDEB(VERBOSE) << VEDEB(importParserStat, ipsName) << endl;
     // static const QString tn = "YYParser";
     int i = -1;
-    set_debug(true);        // DEBUG PARSER
+    set_debug(false);        // DEBUG PARSER
     try {
         // sqlBegin(qq(), tn);
         i = yyparse();

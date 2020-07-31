@@ -412,7 +412,7 @@ public:
     static bool             snmpNeeded;         ///< Ha kell az SNMP akkor true
     static eSqlNeed         sqlNeeded;          ///< Ha a konstruktor nyissa meg az adatbázist, akkor true
     static qlonglong        debugDefault;       ///< Debug maszk alapértelmezett értéke.
-    static const QString    homeDefault;        ///< a home mappa alapértelmezett értéke.
+    static QString          homeDefault;        ///< a home mappa alapértelmezett értéke.
     /// Amennyiben be van állítva, akkor ezel a saját hosznévvel fog dolgozni a rendszer. Lsd.: class cInspector;
     /// Akkor használható, ha egy teszt gépen akarjuk futtatni a programot a célgép helyett.
     /// A lanview objektum létrehozásánál, ha értéke NULL string, és létezik a "LV2TEST_SET_SELF_NAME"

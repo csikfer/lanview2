@@ -13,9 +13,12 @@ void setAppHelp()
 {
     lanView::appHelp += QObject::tr("-i|--input-file <path>      Set input file path\n");
     lanView::appHelp += QObject::tr("-I|--input-stdin            Set input file is stdin\n");
-    lanView::appHelp += QObject::tr("-D|--daemon-mode            Set daemon mode\n");
+    lanView::appHelp += QObject::tr("-D|--daemon-mode            Set daemon mode (default, if set -R)\n");
     lanView::appHelp += QObject::tr("-o|--output-file <path>     Set output file path\n");
-    lanView::appHelp += QObject::tr("-O|--output-stdout          Set input file is stdin\n");
+    lanView::appHelp += QObject::tr("-O|--output-stdout          Set output file is stdin\n");
+    lanView::appHelp += QObject::tr("-e|--exec <command>         Execute <command>\n");
+    lanView::appHelp += QObject::tr("If set -R and/or -D, then ignore -i, -I and -e.\n");
+    lanView::appHelp += QObject::tr("If set -e, then ignore -o and -O.\n");
 }
 
 QString     lv2import::actDir;
@@ -47,13 +50,14 @@ int main (int argc, char * argv[])
 lv2import::lv2import() : lanView()
   , inFileName("-"), outFileName("-")
 {
-    daemonMode = forcedSelfHostService; // A -R megadva, akkor nem kell a -D opció.
+    daemonMode = forcedSelfHostService; // Ha az -R megvan adva, akkor nem kell a -D opció.
     pQuery = nullptr;
     if (lastError != nullptr) {
         return;
     }
     pQuery = newQuery();
     int i;
+    // Command options :
     if (0 < (i = findArg('i', "input-file", args)) && (i + 1) < args.count()) {
         inFileName = args[i + 1];
         args.removeAt(i);
@@ -75,6 +79,11 @@ lv2import::lv2import() : lanView()
     }
     if (0 < (i = findArg('O', "output-stdout", args))) {
         outFileName = '-';
+        args.removeAt(i);
+    }
+    if (0 < (i = findArg('e', "exec", args)) && (i + 1) < args.count()) {
+        sExecStr = args[i + 1];
+        args.removeAt(i);
         args.removeAt(i);
     }
     if (args.count() > 1) DWAR() << tr("Invalid arguments : ") << args.join(QChar(' ')) << endl;
@@ -214,10 +223,11 @@ void lv2import::execute()
     }
     QString out;
     try {
-        if (inFileName.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fájl!"));
+        if (inFileName.isEmpty() && sExecStr.isEmpty()) EXCEPTION(EDATA, -1, QObject::tr("Nincs megadva forrás fáj, vagy végrehajtandó parancs!"));
         PDEB(VVERBOSE) << "Begin parser ..." << endl;
         cExportQueue::init(true);
-        importParseFile(inFileName);
+        if (sExecStr.isEmpty()) importParseFile(inFileName);
+        else                    importParseText(sExecStr);
         out = cExportQueue::toText(true);
     } catch(cError *e) {
         lastError = e;
