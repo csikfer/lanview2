@@ -78,7 +78,6 @@ private:
         queue.enqueue(msg);
         emit msgQueued();
     }
-    static const QString sqlCount;
     static QString sNodeHead;
     static QString sLogical;
     static QString sLldp;

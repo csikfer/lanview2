@@ -4122,7 +4122,7 @@ int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
         return 0;
     }
     _stat = doReadBack(q, rbMask);
-    if (_stat | ES_DEFECTIVE) return -1;
+    if (_stat & ~ES_DEFECTIVE) return -1;
     return n;
 }
 

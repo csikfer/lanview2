@@ -932,6 +932,7 @@ bool cLldpScan::updateLink(cAppMemo &em)
     }
 
     if (lnk.isLinked(q, lId, rId)) {
+        lnk._toReadBack = RB_NO_ONCE;
         r = lnk.touch(q);
         switch (r) {
         case 0:

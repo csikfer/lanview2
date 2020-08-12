@@ -167,7 +167,6 @@ void cReportWidget::threadReady()
 
 /* ******************************************************************************************* */
 
-const QString cReportThread::sqlCount  = "SELECT COUNT(*)";
 QString cReportThread::sNodeHead;
 QString cReportThread::sLogical;
 QString cReportThread::sLldp;
@@ -350,16 +349,12 @@ public:
         static const QString sqlOrd =
                 " ORDER BY tn.node_name ASC, tp.port_name ASC, mp.port_index ASC, mp.port_name ASC";
 
-        // Get record number
-        execSql(q, cReportThread::sqlCount + sqlFrom + sqlWhere);
-        parent->recordNumber = q.value(0).toInt();
-
-        if (parent->recordNumber == 0) return nullptr;
         // get first records
         last = !execSql(q, sqlSelect + sqlFrom + sqlOuterJoin + sqlWhere + sqlOrd);
         if (last) {
-            EXCEPTION(EDATA, 0, sqlSelect + sqlFrom + sqlOuterJoin + sqlWhere + sqlOrd);
+            return nullptr;
         }
+        parent->recordNumber = q.size();
         return fetchNext(q, last);
     }
     static cTrunk * fetchNext(QSqlQuery& q, bool& last)
@@ -549,8 +544,15 @@ void cReportThread::trunkReport()
 
 void cReportThread::linksReport()
 {
-    enum eColumns { C_PORT1, C_PORT2, C_PORT3, C_PORT4, C_PORT5S, C_COLUMNS };
-    static QStringList emptyRow;
+    // A megjelenített táblázat oszlopai
+    enum eColumns { C_PORT1,    // Kiindulási port
+                    C_PORT2,    // Linkelt elsődleges (log/lldp)
+                    C_PORT3,    // Linkeltr másodlagos (log/lldp)
+                    C_PORT4,    // mactab a MAC alapján
+                    C_PORT5S,   // mactab az port ID alapján.
+                    C_COLUMNS   // az oszlopok száma a táblázatban
+                  };
+    static QStringList emptyRow;    // Egy üres sor
     if (emptyRow.isEmpty()) {
         appendCont(emptyRow, _sNul, C_PORT1);
         appendCont(emptyRow, _sNul, C_PORT2);
@@ -613,20 +615,23 @@ void cReportThread::linksReport()
     const QString sqlJoin = _sqlJoin.arg(secondLinkTable);
 
     QSqlQuery q = getQuery();
-    execSql(q, sqlCount + sqlFrom);
-    recordNumber = q.value(0).toInt();
-    if (recordNumber == 0) {
-        sendMsg(tr("Nincs egyetlen %1 link rekordunk sem.")
-                .arg(subType == cReportWidget::RLT_LOG_LINKS ? sLogical : sLldp));
-        return;
-    }
     int n = 0;
     eTristate nodeOk = TS_TRUE;
     QString s;
     QList<QStringList> matrix;
     qlonglong lastNodeId = NULL_ID;
     QString lastNodeName;
-    execSql(q, sqlSelect + sqlFrom + sqlJoin + sqlOrd);
+    QString sLastTime = (subType == cReportWidget::RLT_LOG_LINKS ?   // 13: LLDP - LastTime
+                ", sl.last_time" :
+                ", ml.last_time" )
+            ;
+    execSql(q, sqlSelect + sLastTime + sqlFrom + sqlJoin + sqlOrd);
+    if (q.size() <= 0) {
+        sendMsg(tr("Nincs egyetlen %1 link rekordunk sem.")
+                .arg(subType == cReportWidget::RLT_LOG_LINKS ? sLogical : sLldp));
+        return;
+    }
+    recordNumber = q.size();
     do {
         eTristate linkOk   = TS_TRUE;
         eTristate mactabOk = TS_TRUE;
@@ -652,11 +657,16 @@ void cReportThread::linksReport()
         qlonglong portId4 = getId(q, 10);
         QString portName4 = q.value(11).toString();
         QVariantList portId5List = sqlToIntegerList(q.value(12));
+        QVariant vLastTime  = q.value(13);
 
         row[C_PORT1] = portName1;
         row[C_PORT2] = cNPort::catFullName(nodeName2, portName2);                           // main linked port full name
         if (portId3 != NULL_ID) row[C_PORT3] = cNPort::catFullName(nodeName3, portName3);   // second linked port full name
         if (portId4 != NULL_ID) row[C_PORT4] = cNPort::catFullName(nodeName4, portName4);   // port by mactab
+        if (vLastTime.isValid()) {
+            int ix = cReportWidget::RLT_LOG_LINKS ? C_PORT2 : C_PORT3;
+            row[ix] += " (" + vLastTime.toDateTime().toString(lanView::sDateTimeForm) + ")";
+        }
 
         linkOk = compareId(portId2, portId3);   // compare first and second link
         switch (linkOk) {

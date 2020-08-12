@@ -13,7 +13,7 @@ class cRecordTreeModel;
 class LV2GSHARED_EXPORT cTreeNode {
 public:
     cTreeNode(cRecord *__po = nullptr, cTreeNode *_parentNode = nullptr);
-    cTreeNode(const cTreeNode&);
+    cTreeNode(const cTreeNode&) = delete;
     ~cTreeNode();
     cTreeNode          *parent;
     cRecord            *pData;

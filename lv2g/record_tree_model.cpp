@@ -11,11 +11,6 @@ cTreeNode::cTreeNode(cRecord *__po, cTreeNode * _parentNode)
     childNumber = NULL_IX;
 }
 
-cTreeNode::cTreeNode(const cTreeNode&)
-{
-    EXCEPTION(EPROGFAIL);
-}
-
 cTreeNode::~cTreeNode()
 {
     if (pData) {
@@ -101,8 +96,11 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
         return QModelIndex();
     }
     cTreeNode *parentNode = nodeFromIndex(parent);
-    if (parentNode->pChildrens == nullptr) // EXCEPTION(EPROGFAIL);
-        return  QModelIndex(); // ??
+    if (parentNode->pChildrens == nullptr) {
+        if (parentNode->childNumber > 0) {
+            const_cast<cRecordTreeModel *>(this)->readChilds(parentNode);
+        }
+    }
 //    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
     if (parentNode->pChildrens->size() <= row) {
         DWAR() << "Invalid row = " << row << "child number : " << parentNode->pChildrens->size() << endl;
@@ -129,13 +127,6 @@ int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
         PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : 0 (parant is NULL)" << endl;
         return 0;
     }
-//    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : " << parentNode->childrens.count()
-//                   << " (parant : "<< parentNode->name() << ")" << endl;
-/*    if (parentNode->pChildrens == nullptr) {
-        // Csak így mőködik, de akkor minek a canFetchMore() és fetchMore(); ?? (talán előre kéne tudni a sorok számát?)
-        const_cast<cRecordTreeModel *>(this)->readChilds(parentNode);
-    }
-    return parentNode->pChildrens->count();*/
     return parentNode->childNumber;
 }
 
@@ -234,14 +225,21 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
         return;
     }
     pNode->pChildrens = new QList<cTreeNode *>;
-    pNode->childNumber = 0;
+    int childNumber = 0;
     if (((cRecordTree&)recordView).queryNodeChildrens(*pq, pNode)) {
         do {
             cTreeNode *pChild = new cTreeNode(qGetRecord(*pq), pNode);
             pChild->childNumber = pq->value("child_number").toInt();
             pNode->addChild(pChild);
-            pNode->childNumber++;
+            childNumber++;
         } while (pq->next());
+    }
+    if (pNode->childNumber != childNumber) {
+        if (pNode->childNumber >= 0) {
+            QString msg = tr("Az fa beolvasása meghiusult. Változott a szerkezete? Teljes újraolvasás szükséges!");
+            QMessageBox::warning(nullptr, dcViewLong(DC_WARNING), msg);
+        }
+        pNode->childNumber = childNumber;
     }
 }
 
