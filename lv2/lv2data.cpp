@@ -1249,7 +1249,7 @@ bool cNPort::insert(QSqlQuery &__q, eEx __ex)
 {
     bool r = cRecord::insert(__q, __ex);
     if (r) {
-        return params.insert(__q, __ex) == params.size();
+        return params.size() == 0 || params.insert(__q, __ex) == params.size();
     }
     return false;
 }

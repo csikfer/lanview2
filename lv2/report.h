@@ -166,7 +166,7 @@ EXT_ QString htmlTable(const QStringList head, const QList<QStringList> matrix, 
 /// @param q Az adatbázis műveletekhez használható query objektum.
 /// @param list A rekord ill. objektum lista
 /// @param shape A megjelenítést leíró objektum.
-/// @param shrt Az oszlopok láthatóságának a forráas: true esetén (ez az alapértelmezés) akkor jelenik meg az oszlop,
+/// @param shrt Az oszlopok láthatóságának a forrása: true esetén (ez az alapértelmezés) akkor jelenik meg az oszlop,
 /// ha az oszlop leíróban a FF_HTML flag igaz, false esetén a feltétel ugyan az mint a grafikus megjelenítésnél:
 /// az oszlop nem jelenik meg, ha a FF_TABLE_HIDE igaz.
 template <class R>

@@ -2,17 +2,30 @@
 #define LV2GLPI_H
 #include "lv2mariadb.h"
 #include "lv2cont.h"
+#include "lv2data.h"
 
-class LV2SHARED_EXPORT cRegExpConverterItem : public QPair<QRegExp, QString> {
+class LV2SHARED_EXPORT cRegExpConverterItem : public cSelect {
 public:
-    cRegExpConverterItem(const QString& r, const QString& s) : QPair<QRegExp, QString>(QRegExp(r), s) {}
+    cRegExpConverterItem(QSqlQuery q) : cSelect() {
+        set(q);
+        const QString patternType = getName(_sPatternType);
+        Qt::CaseSensitivity      caseSensitivity;
+        if      (patternType.compare(_sRegexp,  Qt::CaseInsensitive) == 0) caseSensitivity = Qt::CaseSensitive;
+        else if (patternType.compare(_sRegexpi, Qt::CaseInsensitive) == 0) caseSensitivity = Qt::CaseInsensitive;
+        else {
+            EXCEPTION(EDATA);
+        }
+        pattern.setPattern(getName(_sPattern));
+        pattern.setCaseSensitivity(caseSensitivity);
+
+    }
     QString compareAndConvert(const QString& s);
+    QRegExp     pattern;
 };
 
-class LV2SHARED_EXPORT cRegExpConverter : public QList<cRegExpConverterItem> {
+class LV2SHARED_EXPORT cRegExpConverter : public QList<cRegExpConverterItem *> {
 public:
-    cRegExpConverter() : QList<cRegExpConverterItem>() {};
-    cRegExpConverter(const QStringList& l);
+    cRegExpConverter(const QString& key);
     QString compareAndConvert(const QString& s);
 };
 
@@ -28,8 +41,8 @@ public:
     static QString nameFromGlpi(const QString& __n);
     static const QString sLevelSep;
 private:
-    static cRegExpConverter convertFromGlpi;
-    static cRegExpConverter convertToGlpi;
+    static cRegExpConverter * pConvertFromGlpi;
+    static cRegExpConverter * pConvertToGlpi;
 };
 
 class LV2SHARED_EXPORT cGlpiLocationsTreeItem : public tTreeItem<cMyRec> {

@@ -88,6 +88,7 @@ STRDEF(Filtertype, "filtertype")
  STRDEF(Like, "like")
  STRDEF(Similar, "similar")
  STRDEF(Regexp, "regexp")
+ STRDEF(Regexpi, "regexpi")
  STRDEF(Big, "big")
  STRDEF(Litle, "litle")
  dnl interval

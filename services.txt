@@ -239,11 +239,12 @@ SERVICE "icontsrv" "icontsrv daemon" {
 }
 SERVICE "import" "import daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "import $S -D";
+    COMMAND "/usr/local/bin/import $S -D";
     FEATURES  {
         "control" = "restart";
+        "method" = "inspector";
         "process" = "respawn";
-        "timing" = "custom";
+        "timing" = "timed";
     }
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
@@ -340,7 +341,7 @@ SERVICE "linux_cpu-snmp" {
 SERVICE "linux_load-snmp" {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "service_vars.load15m.rarefaction" = "2";
         "timing" = "timed";
         "variables" =  {
@@ -360,7 +361,7 @@ SERVICE "linux_load-snmp" {
 SERVICE "linux_mem-snmp" {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "timing" = "timed";
         "variables" =  {
             "memAvail" = "UCD-SNMP-MIB::memAvailReal,memory";
@@ -420,7 +421,7 @@ SERVICE "nil-3" "Csak az azonos funkciójú példányok megkülöngöztetésére
 SERVICE "nut" "Network Ups Tools" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "superior";
         "timing" = "passive";
     }
@@ -432,7 +433,7 @@ SERVICE "nut" "Network Ups Tools" {
 SERVICE "parser" "Query Parser (pure)" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "method" = "parser";
         "superior";
         "timing" = "passive";
@@ -446,7 +447,7 @@ SERVICE "ping" "Ping check" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
     COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "critical" = "20,19%";
         "method" = "nagios,qparse";
         "timing" = "timed";
@@ -463,7 +464,7 @@ SERVICE "ping" "Ping check" {
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "superior";
         "timing" = "timed";
     }
@@ -478,7 +479,7 @@ SERVICE "portmac" "Device port address table query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portmac $S -R $host_service_id";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -494,7 +495,7 @@ SERVICE "portmac" "Device port address table query daemon" {
 SERVICE "portstat" "Device port status query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "superior";
         "timing" = "passive";
     }
@@ -506,7 +507,7 @@ SERVICE "portstat" "Device port status query daemon" {
 SERVICE "portvars" "Port változók" {
     SUPERIOR SERVICE MASK "^pstat$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "timing" = "passive";
     }
     MAX CHECK ATTEMPTS 2;
@@ -520,7 +521,7 @@ SERVICE "portvlan" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portvlan $S -R $host_service_id";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -536,7 +537,7 @@ SERVICE "portvlan" {
 SERVICE "PowerNet-MIB" "SNMP query old MIB " {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "timing" = "timed";
         "variables" =  {
             "upsAdvBatteryRunTimeRemaining" = "PowerNet-MIB::upsAdvBatteryRunTimeRemaining,upsAdvBatteryRunTimeRemaining";
@@ -560,7 +561,7 @@ SERVICE "proc_loadavg" {
     SUPERIOR SERVICE MASK "^(lv2d|group)$";
     COMMAND "cat $file";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "file" = "/proc/loadavg";
         "list";
         "method" = "text";
@@ -586,7 +587,7 @@ SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
     COMMAND "pstat $S  -R $host_service_id";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -602,7 +603,7 @@ SERVICE "pstat" "Query port status by <protocol>" {
 SERVICE "pvlan" {
     SUPERIOR SERVICE MASK "^portvlan$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "delay" = "1000";
         "timing" = "timed";
     }
@@ -747,7 +748,7 @@ SERVICE "soniwall_arp" {
     SUPERIOR SERVICE MASK "parser";
     COMMAND "$homedir/bin/fwarp.sh";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "method" = "qparse";
         "timing" = "timed";
     }
@@ -782,7 +783,7 @@ SERVICE "syscron" "System cron" {
 SERVICE "sysUpTime_snmp" {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "timing" = "timed";
         "variables" =  {
             "sysUpTimeInstance" = "DISMAN-EVENT-MIB::sysUpTimeInstance.,sysUpTimeInstance";
@@ -806,7 +807,7 @@ SERVICE "temp_owget" "Temp by OWFS" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "owget $paths";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "list";
         "method" = "text";
         "regexp_separator" = "\\s+";
@@ -825,7 +826,7 @@ SERVICE "temp.raspb" "Temp by raspbian" {
     SUPERIOR SERVICE MASK "^parser$";
     COMMAND "sh -c 'echo \\$((`cat /sys/class/thermal/thermal_zone0/temp`/1000))'";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "method" = "qparse,carried";
         "timing" = "timed";
         "varname" = "temp";
@@ -843,8 +844,8 @@ SERVICE "updt_oui" "Update OUI" {
     COMMAND "updt_oui -R $host_service_id";
     FEATURES  {
         "method" = "carried";
-        "process" = "timed";
-        "stop_timeout" = "60000";
+        "process" = "timed,async";
+        "stop_timeout" = "900000";
     }
     MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 86400;
@@ -857,7 +858,7 @@ SERVICE "updt_oui" "Update OUI" {
 SERVICE "UPS-MIB" {
     SUPERIOR SERVICE MASK "^snmpvars$";
     FEATURES  {
-        "control" = "tic,reset,exit";
+        "control" = "tick,reset,exit";
         "timing" = "timed";
         "variables" =  {
             "upsBatteryStatus" = "UPS-MIB::upsBatteryStatus, upsBatteryStatus";

@@ -1124,7 +1124,7 @@ public slots:
     /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
     /// @return Az új objektum ID, vagy NULL_ID.
     qlonglong insertPlace();
-    bool editPlace();
+    void editPlace();
     /// Az objektumhoz rendelt widgetek engedélyezése, vagy tiltása.
     void setEnabled(bool f = true);
     /// Az objektumhoz rendelt widgetek tiltása vagy engedélyezése.

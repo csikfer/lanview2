@@ -4,16 +4,17 @@
 QString cRegExpConverterItem::compareAndConvert(const QString& s)
 {
     QString r;
-    if (first.exactMatch(s)) {
-        QString::iterator i = second.begin();
-        QString::iterator e = second.end();
+    QString c = getName(ixChoice());
+    if (pattern.exactMatch(s)) {
+        QString::iterator i = c.begin();
+        QString::iterator e = c.end();
         for (; i < e; ++i) {
             if (*i == QChar('$')) {
                 ++i;
                 if (i >= e || *i == QChar('$')) r += *i;
                 else {
                     int ix = i->toLatin1() - '0';
-                    if (ix > 0 && ix < 10) r += first.cap(ix);
+                    if (ix > 0 && ix < 10) r += pattern.cap(ix);
                 }
             }
             else {
@@ -24,18 +25,25 @@ QString cRegExpConverterItem::compareAndConvert(const QString& s)
     return r;
 }
 
-cRegExpConverter::cRegExpConverter(const QStringList& l) : QList<cRegExpConverterItem>()
+cRegExpConverter::cRegExpConverter(const QString& key) : QList<cRegExpConverterItem *>()
 {
-    for (int i = 0; i + 1 < l.size(); i += 2) {
-        (*this) << cRegExpConverterItem(l.at(i), l.at(i + 1));
+    static const QString sql = "SELECT * FROM selects WHERE select_type = ? ORDER BY precedence ASC";
+    QSqlQuery q = getQuery();
+    if (execSql(q, sql, key)) {
+        do {
+            (*this) << new cRegExpConverterItem(q);
+        } while (q.next());
+    }
+    else {
+        EXCEPTION(EENODATA, 0, key);
     }
 }
 
 QString cRegExpConverter::compareAndConvert(const QString& s)
 {
     QString r;
-    foreach (cRegExpConverterItem c, *this) {
-        r = c.compareAndConvert(s);
+    foreach (cRegExpConverterItem * c, *this) {
+        r = c->compareAndConvert(s);
         if (!r.isEmpty()) break;
     }
     return r;
@@ -55,45 +63,34 @@ const cRecStaticDescr&  cGlpiEntities::descr() const {
 
 /* ************************** locations ************************** */
 
-static const QStringList patternFromGlpi = {
-    "(\\S+)\\s+épület",                                                         "$1",
-    "(\\S+)\\s+épület\\s*>\\s*földszint",                                       "$1F",
-    "(\\S+)\\s+épület\\s*>\\s*(\\d)\\.?\\s*emelet",                             "$1$2",
-    "(\\S+)\\s+épület\\s*>\\s*földszint\\s*>\\s*(\\d{2})\\.\\s*szoba",          "$1F$2",
-    "(\\S+)\\s+épület\\s*>\\s*(\\d)\\.?\\s*emelet\\s*>\\s*(\\d{2})\\.\\s*szoba","$1$2$3"
-};
-
-static const QStringList patternToGlpi = {
-    "(\\w)",                                        "$1 épület",
-    "(\\w)F",                                       "$1 épület > Földszint",
-    "(\\w)(\\d)",                                   "$1 épület > $2. emelet",
-    "(\\w)F(\\d{2})",                               "$1 épület > Földszint > $2. szoba",
-    "(\\w)(\\d)(\\d{2})",                           "$1 épület > $2. emelet > $3. szoba",
-};
-
-const QString cGlpiLocations::sLevelSep = " > ";
-cRegExpConverter cGlpiLocations::convertFromGlpi;
-cRegExpConverter cGlpiLocations::convertToGlpi;
+static const QString _sPlaceFromGlpi = "place.from.glpi";
+static const QString _sPlaceToGlpi   = "place.to.glpi";
+// const QString cGlpiLocations::sLevelSep = " > ";
 
 CMYRECCNTR(cGlpiLocations)
 CRECDEFNCD(cGlpiLocations)
 
+cRegExpConverter * cGlpiLocations::pConvertFromGlpi = nullptr;
+cRegExpConverter * cGlpiLocations::pConvertToGlpi   = nullptr;
+
 const cRecStaticDescr&  cGlpiLocations::descr() const {
     if (initPMyDescr<cGlpiLocations>(_sGlpiLocations)) {
-        convertFromGlpi = cRegExpConverter(patternFromGlpi);
-        convertToGlpi   = cRegExpConverter(patternToGlpi);
+        pConvertFromGlpi = new cRegExpConverter(_sPlaceFromGlpi);
+        pConvertToGlpi   = new cRegExpConverter(_sPlaceToGlpi);
     }
     return *_pRecordDescr;
 }
 
 QString cGlpiLocations::nameToGlpi(const QString& __n)
 {
-    return convertToGlpi.compareAndConvert(__n);
+    if (pConvertToGlpi == nullptr) EXCEPTION(EPROGFAIL);
+    return pConvertToGlpi->compareAndConvert(__n);
 }
 
 QString cGlpiLocations::nameFromGlpi(const QString& __n)
 {
-    return convertFromGlpi.compareAndConvert(__n);
+    if (pConvertFromGlpi == nullptr) EXCEPTION(EPROGFAIL);
+    return pConvertFromGlpi->compareAndConvert(__n);
 }
 
 

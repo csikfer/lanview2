@@ -68,26 +68,16 @@ cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     pq = newQuery();
     if (sPortRefForm.isEmpty()) sPortRefForm = tr("#%1 (%2/%3)");
     pUi->setupUi(this);
-    // nem ciffrázzuk ro-nal le ven titva az ok gomb
-    if (ro) pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
-    pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, nullptr, nullptr, this);
-    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
+    pUi->buttonBox->button(QDialogButtonBox::Ok)  ->setDisabled(true);
+    pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
+    pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePattern, nullptr, this);
+    pSelectPlace->setPlaceRefreshButton(pUi->toolButtonRefreshPlace);
+    pSelectPlace->setPlaceEditButton(pUi->toolButtonInfoPlace);
+    pSelectPlace->setPlaceInsertButton(pUi->toolButtonNewPlace);
     cIntValidator *intValidator = new cIntValidator(false);
     pUi->tableWidgetPorts->setItemDelegateForColumn(CPP_INDEX, new cItemDelegateValidator(intValidator));
-
-    connect(pUi->lineEditName,      SIGNAL(textChanged(QString)),       this, SLOT(changeName(QString)));
-    connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)),   this, SLOT(changeFilterZone(int)));
-    connect(pUi->toolButtonNewPlace,SIGNAL(pressed()),          pSelectPlace, SLOT(insertPlace()));
-    connect(pUi->spinBoxFrom,       SIGNAL(valueChanged(int)),          this, SLOT(changeFrom(int)));
-    connect(pUi->spinBoxTo,         SIGNAL(valueChanged(int)),          this, SLOT(changeTo(int)));
-    connect(pUi->pushButtonAddPorts,SIGNAL(pressed()),                  this, SLOT(addPorts()));
-    connect(pUi->tableWidgetPorts,  SIGNAL(cellChanged(int,int)),       this, SLOT(cellChanged(int, int)));
     connect(pUi->tableWidgetPorts->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-    connect(pUi->pushButtonDelPort, SIGNAL(pressed()),                  this, SLOT(delPorts()));
-    connect(pUi->pushButtonPort1,   SIGNAL(pressed()),                  this, SLOT(set1port()));
-    connect(pUi->pushButtonPort2,   SIGNAL(pressed()),                  this, SLOT(set2port()));
-    connect(pUi->pushButtonPort2Shared, SIGNAL(pressed()),              this, SLOT(set2sharedPort()));
     shOk = pNamesOk = pIxOk = true;
     lockSlot = false;
 }
@@ -168,6 +158,7 @@ cPatch * cPatchDialog::getPatch()
 
 void cPatchDialog::setPatch(const cPatch *pSample)
 {
+    pUi->lineEditID  ->setText(QString::number(pSample->getId()));
     pUi->lineEditName->setText(pSample->getName());
     pUi->lineEditNote->setText(pSample->getNote());
     _setPlaceComboBoxs(pSample->getId(_sPlaceId), pUi->comboBoxZone, pUi->comboBoxPlace, true);
@@ -358,7 +349,7 @@ void cPatchDialog::updateSharedIndexs()
         }
     }
     UNLOCKSLOTS();
-    changeName(pUi->lineEditName->text());  // Menthető ?
+    on_lineEditName_textChanged(pUi->lineEditName->text());  // Menthető ?
 }
 
 void cPatchDialog::updatePNameIxOk()
@@ -407,13 +398,14 @@ QList<int>  cPatchDialog::selectedRows() const
 }
 
 /* SLOTS */
-void cPatchDialog::changeName(const QString& name)
+void cPatchDialog::on_lineEditName_textChanged(const QString& name)
 {
     bool f = name.isEmpty() || pUi->tableWidgetPorts->rowCount() == 0 || !shOk || !pNamesOk || !pIxOk;
-    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(f);
+    pUi->buttonBox->button(QDialogButtonBox::Ok)  ->setDisabled(f);
+    pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(f);
 }
 
-void cPatchDialog::set1port()
+void cPatchDialog::on_pushButtonPort1_clicked()
 {
     LOCKSLOTS();
     clearRows();
@@ -428,9 +420,9 @@ void cPatchDialog::set1port()
     UNLOCKSLOTS();
 }
 
-void cPatchDialog::set2port()
+void cPatchDialog::on_pushButtonPort2_clicked()
 {
-    set1port();
+    on_pushButtonPort1_clicked();
     LOCKSLOTS();
     setRows(2);
     QTableWidgetItem *pItem;
@@ -441,15 +433,15 @@ void cPatchDialog::set2port()
     UNLOCKSLOTS();
 }
 
-void cPatchDialog::set2sharedPort()
+void cPatchDialog::on_pushButtonPort2Shared_clicked()
 {
-    set2port();
+    on_pushButtonPort2_clicked();
     setPortShare(0, ES_A);
     setPortShare(1, ES_B);
     rowsData[1]->comboBoxPortIx->setCurrentIndex(1);    // Az első portra mutat
 }
 
-void cPatchDialog::addPorts()
+void cPatchDialog::on_pushButtonAddPorts_clicked()
 {
     int from = pUi->spinBoxFrom->value();
     int to   = pUi->spinBoxTo->value();
@@ -475,10 +467,10 @@ void cPatchDialog::addPorts()
     }
     UNLOCKSLOTS();
     updatePNameIxOk();
-    changeName(pUi->lineEditName->text());
+    on_lineEditName_textChanged(pUi->lineEditName->text());
 }
 
-void cPatchDialog::delPorts()
+void cPatchDialog::on_pushButtonDelPorts_clicked()
 {
     QList<int>  rows = selectedRows();   // Törlendő sorok sorszámai, rendezett
     // A hivatkozásokat töröljük a törlendő sorokra
@@ -502,22 +494,22 @@ void cPatchDialog::delPorts()
     }
     updateSharedIndexs();
     // Mentés gomb enhedélyezés, ha ok
-    changeName(pUi->lineEditName->text());
+    on_lineEditName_textChanged(pUi->lineEditName->text());
 }
 
-void cPatchDialog::changeFrom(int i)
+void cPatchDialog::on_spinBoxFrom_valueChanged(int i)
 {
     bool f = (pUi->spinBoxTo->value() - i) >= 0;
     pUi->pushButtonAddPorts->setEnabled(f);
 }
 
-void cPatchDialog::changeTo(int i)
+void cPatchDialog::on_spinBoxTo_valueChanged(int i)
 {
     bool f = (i - pUi->spinBoxFrom->value()) >= 0;
     pUi->pushButtonAddPorts->setEnabled(f);
 }
 
-void cPatchDialog::cellChanged(int row, int col)
+void cPatchDialog::on_tableWidgetPorts_cellChanged(int row, int col)
 {
     if (lockSlot) return;
     QString text = getTableItemText(pUi->tableWidgetPorts, row, col);
@@ -569,7 +561,7 @@ void cPatchDialog::cellChanged(int row, int col)
             pRow->comboBoxPortIx->setItemText(ix + 1, sRefName);
         }
     }
-    changeName(pUi->lineEditName->text());
+    on_lineEditName_textChanged(pUi->lineEditName->text());
 }
 
 void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection &)
@@ -604,6 +596,13 @@ void cPatchDialog::on_pushButtonShDel_clicked()
     int i, n = rows.size();
     for (i = 0; i < n; i++) {
         setPortShare(i   , ES_);
+    }
+}
+
+void cPatchDialog::on_buttonBox_clicked(QAbstractButton *button)
+{
+    if (pUi->buttonBox->button(QDialogButtonBox::Save) == button) {
+        done(QDialogButtonBox::Save);
     }
 }
 
@@ -652,6 +651,7 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
     }
     return p;
 }
+
 
 /* ********************************************************************************************** */
 
@@ -1381,3 +1381,4 @@ cEnumValsEdit::~cEnumValsEdit()
 {
 
 }
+

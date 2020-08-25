@@ -183,6 +183,19 @@ ENUM "db_errs.acknowledged" {
         ICON "dialog-ok-2.ico";
     }
 }
+ENUM "dyn_addr_ranges.exclude" {
+    VIEW NULL;
+    TOOL TIP "false";
+     "false" {
+        VIEW "nem",@;
+        ICON "add.ico";
+    }
+     "true" {
+        VIEW "igen",@;
+        ICON "minus.ico";
+        BACKGROUND COLOR "#ffff00";
+    }
+}
 ENUM "errtype" {
     VIEW "errtype",@;
      "Error" {
@@ -504,6 +517,22 @@ ENUM "phslinktype" {
         FONT ATTR "underline";
     }
 }
+ENUM "placegrouptype" {
+    VIEW "placegrouptype",@;
+     "category" {
+        VIEW "category",@;
+        BACKGROUND COLOR "#ffff7f";
+    }
+     "group" {
+        VIEW "group",@;
+        FONT ATTR "italic";
+    }
+     "zone" {
+        VIEW "zone",@;
+        BACKGROUND COLOR "#55ffff";
+        FONT ATTR "bold", "underline";
+    }
+}
 ENUM "portshare" {
     VIEW "portshare",@;
      "" {
@@ -758,11 +787,13 @@ ENUM "settype" {
     VIEW "settype",@;
      "auto" {
         VIEW "auto",@;
-        ICON "down.ico";
+        ICON "first.ico";
+        FONT ATTR "italic";
     }
      "config" {
         VIEW "config",@;
-        ICON "edit-history.ico";
+        ICON "configure-2.ico";
+        FONT ATTR "underline";
     }
      "manual" {
         VIEW "manual",@;
@@ -770,7 +801,8 @@ ENUM "settype" {
     }
      "query" {
         VIEW "query",@;
-        ICON "go-jump.ico";
+        ICON "system-search-4.ico";
+        FONT ATTR "bold";
     }
 }
 ENUM "snmpdevices.deleted" {
@@ -808,53 +840,74 @@ ENUM "vlantype" {
     VIEW "vlantype",@;
      "auth" {
         VIEW "auth","E";
-        BACKGROUND COLOR "#aa00ff";
-        FONT ATTR "italic";
+        ICON "identity.ico";
+        BACKGROUND COLOR "#4e9a06";
+        FONT ATTR "italic", "underline";
+        TOOL TIP "Azomosított";
     }
      "auto" {
         VIEW "auto","A";
+        ICON "services.ico";
         BACKGROUND COLOR "#91e3d1";
-        TOOL TIP "auto";
+        FONT ATTR "italic";
+        TOOL TIP "automatikus";
     }
      "auto_tagged" {
         VIEW "auto_tagged","AT";
+        ICON "tag_st.png";
         BACKGROUND COLOR "#b4bfff";
+        TOOL TIP "automatikus, tagged (címkézett)";
     }
      "forbidden" {
         VIEW "forbidden","F";
+        ICON "cancel.ico";
         BACKGROUND COLOR "red";
-        TOOL TIP "forbidden";
+        FONT ATTR "bold", "strikeout";
+        TOOL TIP "letiltva";
     }
      "hard" {
         VIEW "hard","H";
+        ICON "configure-2.ico";
         FONT ATTR "bold", "underline";
+        TOOL TIP "Hardwer";
     }
      "no" {
         VIEW "no","N";
+        ICON "check_no.ico";
         BACKGROUND COLOR "grey";
+        FONT ATTR "italic", "strikeout";
+        TOOL TIP "nem";
     }
      "tagged" {
         VIEW "tagged","T";
+        ICON "tag_st.png";
         BACKGROUND COLOR "yellow";
+        TOOL TIP "tagged (címkézett)";
     }
      "unauth" {
         VIEW "unauth","D";
-        BACKGROUND COLOR "#4e9a06";
-        FONT ATTR "bold";
+        ICON "system-log-out-2.ico";
+        BACKGROUND COLOR "#ad7fa8";
+        FONT ATTR "italic", "strikeout";
+        TOOL TIP "Nem azonosított";
     }
      "unknown" {
         VIEW "unknown","X";
+        ICON "emblem-question-red.ico";
         BACKGROUND COLOR "magenta";
-        TOOL TIP "unknown";
+        TOOL TIP "ismeretlen";
     }
      "untagged" {
         VIEW "untagged","U";
+        ICON "ok.ico";
         BACKGROUND COLOR "#8ae234";
         FONT ATTR "bold";
+        TOOL TIP "untagged (nem címkézett)";
     }
      "virtual" {
         VIEW "virtual","V";
         FONT ATTR "italic";
+        TOOL TIP "virtuális";
     }
 }
 // Act Language : Magyar; ( default : US English ; failower : Magyar)
@@ -1356,12 +1409,12 @@ TABLE SHAPE "arps" {
     }
     ADD FIELD "ipaddress" AS "port_by_ip" {
         TITLE "By IP","Port(ok) az IP alapján";
-        FEATURES ":view.func=ip2full_port_name:";
+        FEATURES ":view_func=ip2full_port_name:";
         FLAG "read_only";
     }
     ADD FIELD "hwaddress" AS "port_by_hwa" {
         TITLE "By MAC","Port(ok) a MAC alapján";
-        FEATURES ":view.func=mac2full_port_name:";
+        FEATURES ":view_func=mac2full_port_name:";
         FLAG "read_only";
     }
     FIELD "ipaddress" ORD asc, no, desc;
@@ -1451,7 +1504,7 @@ TABLE SHAPE "db_errs" {
 TABLE SHAPE "dyn_addr_ranges" {
     TITLE "Dinamikus címtartományok","Dinamikus címtartomány";
     TYPE "simple";
-    FEATURES ":button.copy:";
+    FEATURES ":bg_color=exclude:button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -1465,7 +1518,9 @@ TABLE SHAPE "dyn_addr_ranges" {
         TITLE "dyn_addr_range_note",@;
     }
     ADD FIELD "exclude" "exclude" {
-        TITLE "exclude",@;
+        TITLE "*exclude","Exclude";
+        TOOL TIP "Dinamikus címtartományból kizárt tartomány";
+        FLAG "image", "notext";
     }
     ADD FIELD "begin_address" "begin_address" {
         TITLE "begin_address",@;
@@ -2145,7 +2200,7 @@ TABLE SHAPE "ip_address_logs" {
     }
     ADD FIELD "port_id" {
         TITLE "interfész","Interfész";
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
         FLAG "HTML";
     }
     ADD FIELD "address_old" {
@@ -2387,7 +2442,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     ADD FIELD "hwaddress" AS "hwaddress_node" {
         TITLE "MAC node","Node név a MAC alapján";
         FEATURES  {
-            "view.expr" = "mac2node_name(?::macaddr)";
+            "view_expr" = "mac2node_name(?::macaddr)";
         }
     }
     ADD FIELD "reason" "reason" {
@@ -2401,7 +2456,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     }
     ADD FIELD "port_id_old" {
         TITLE "port_id_old",@;
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
     }
     ADD FIELD "mactab_state_old" "mactab_state_old" {
         TITLE "mactab_state_old",@;
@@ -2417,7 +2472,7 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
     }
     ADD FIELD "port_id_new" {
         TITLE "port_id_new",@;
-        FEATURES ":view.func=port_id2full_name:";
+        FEATURES ":view_func=port_id2full_name:";
     }
     ADD FIELD "mactab_state_new" "mactab_state_new" {
         TITLE "mactab_state_new",@;
@@ -2699,10 +2754,10 @@ TABLE "node_port_vlans" SHAPE "node_port_vlan" {
     }
     ADD FIELD "vlan_type" {
         TITLE "Viszony","Port / VLAN viszonya";
-        FLAG "read_only", "bg_color", "fg_color", "font", "HTML";
+        FLAG "read_only", "bg_color", "fg_color", "font", "HTML", "image", "notext";
     }
-    FIELD "port_name", "port_index" ORD asc, no, desc;
-    FIELD "vlan_id", "vlan_name", "vlan_type" ORD no, asc, desc;
+    FIELD "port_index", "vlan_id" ORD asc, no, desc;
+    FIELD "port_name", "vlan_name", "vlan_type" ORD no, asc, desc;
     FIELD ORD SEQUENCE "port_index", "port_name", "vlan_id", "vlan_name", "vlan_type";
 }
 TABLE SHAPE "nodes" "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
@@ -3083,7 +3138,7 @@ TABLE SHAPE "place_groups" "Hely csoportok, kategóriák és zónák" {
     }
     ADD FIELD "place_group_type" {
         TITLE "place_group_type",@;
-        FLAG "HTML";
+        FLAG "bg_color", "font", "HTML";
     }
     FIELD "place_group_name" ORD asc, no, desc;
     FIELD ORD SEQUENCE "place_group_name";
@@ -3119,6 +3174,7 @@ TABLE SHAPE "places" "Helyiségek (tábla)" {
     }
     ADD FIELD "parent_id" "parent_id" {
         TITLE "Helye","Felsőbb szintú hely";
+        FEATURES ":filter=places:";
     }
     ADD FIELD "image_id" "image_id" {
         TITLE "Térkép","Térkép, alaprajz";
@@ -3207,7 +3263,8 @@ TABLE SHAPE "port_in_mactab" {
     }
     ADD FIELD "mactab_port_id" "mactab_port_id" {
         TITLE "mactab_port_id",@;
-        FLAG "read_only";
+        FEATURES ":view_func=port_id2full_name:";
+        FLAG "table_hide", "dialog_hide", "read_only";
     }
     ADD FIELD "mactab_port_full_name" "mactab_port_full_name" {
         TITLE "mactab_port_full_name",@;
@@ -3250,6 +3307,7 @@ TABLE SHAPE "port_params" "Port paraméterek" {
     }
     ADD FIELD "port_id" {
         TITLE "Port",@;
+        FEATURES ":view_func=port_id2full_name:";
         FLAG "table_hide", "read_only";
     }
     ADD FIELD "param_type_id" {
@@ -3341,6 +3399,59 @@ TABLE SHAPE "portvars" {
     FIELD "service_var_type_id" ORD no, asc, desc;
     FIELD ORD SEQUENCE "service_var_name", "service_var_type_id";
 }
+TABLE SHAPE "port_vlan_logs" {
+    TITLE "Port - VLAN változások","Port-VLAN log rekord";
+    TYPE "simple", "read_only";
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "operator";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "operator";
+    ADD FIELD "port_vlan_log_id" {
+        TITLE "port_vlan_log_id",@;
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
+    ADD FIELD "date_of" {
+        TITLE "date_of",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "reason" {
+        TITLE "reason",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "port_id" {
+        TITLE "Port",@;
+        FEATURES ":view_func=port_id2full_name:";
+        FLAG "HTML";
+    }
+    ADD FIELD "vlan_id" {
+        TITLE "vlan_id",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "old_type" {
+        TITLE NULL,"Régi típus";
+        FLAG "bg_color", "font", "HTML", "image", "notext";
+    }
+    ADD FIELD "first_time_old" {
+        TITLE "first_time_old",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "last_time_old" {
+        TITLE "last_time_old",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "new_type" {
+        TITLE "*Új típus","Új típus";
+        FLAG "bg_color", "font", "HTML", "image", "notext";
+    }
+    ADD FIELD "acknowledged" {
+        TITLE "acknowledged",@;
+        FLAG "bg_color", "HTML";
+    }
+    FIELD "date_of" ORD desc, no, asc;
+    FIELD "port_id", "acknowledged" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "date_of", "port_id", "acknowledged";
+}
 TABLE SHAPE "port_vlans" {
     TITLE "Portok VLAN kiosztása","Port - VLAN öszerendelés";
     TYPE "simple";
@@ -3371,10 +3482,11 @@ TABLE SHAPE "port_vlans" {
     }
     ADD FIELD "vlan_type" "vlan_type" {
         TITLE "Típus",@;
-        FLAG "bg_color", "fg_color", "font";
+        FLAG "bg_color", "fg_color", "font", "image", "notext";
     }
     ADD FIELD "set_type" "set_type" {
         TITLE "Forrás",@;
+        FLAG "image", "notext";
     }
     ADD FIELD "flag" "flag" {
         TITLE "flag",@;
@@ -5102,6 +5214,9 @@ GUI "lv2gui" {
         }
         SHAPE "mactab_logs" {
             TITLE "Port címtáblak napló",@;
+        }
+        SHAPE "port_vlan_logs" {
+            TITLE "Port-VLAN változások",@;
         }
         SHAPE "dyn_addr_ranges" {
             TITLE "Dinamikus címtartományok",@;

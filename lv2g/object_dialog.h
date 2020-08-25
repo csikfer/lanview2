@@ -102,18 +102,19 @@ protected:
     QList<int>  selectedRows() const;
 
 private slots:
-    void changeName(const QString& name);
-    void set1port();
-    void set2port();
-    void set2sharedPort();
-    void addPorts();
-    void delPorts();
-    void changeFrom(int i);
-    void changeTo(int i);
-    void cellChanged(int row, int col);
+    void on_lineEditName_textChanged(const QString& name);
+    void on_pushButtonPort1_clicked();
+    void on_pushButtonPort2_clicked();
+    void on_pushButtonPort2Shared_clicked();
+    void on_pushButtonAddPorts_clicked();
+    void on_pushButtonDelPorts_clicked();
+    void on_spinBoxFrom_valueChanged(int i);
+    void on_spinBoxTo_valueChanged(int i);
+    void on_tableWidgetPorts_cellChanged(int row, int col);
     void selectionChanged(const QItemSelection &, const QItemSelection &);
     void on_pushButtonShAB_clicked();
     void on_pushButtonShDel_clicked();
+    void on_buttonBox_clicked(QAbstractButton *button);
 };
 
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);

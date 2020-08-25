@@ -4209,12 +4209,12 @@ qlonglong cSelectPlace::insertPlace()
     return pid;
 }
 
-/// Egy új helyiség objektum adatlap megjelkenítése, és az objektum beillesztése az adatbázisba.
-/// @return Ha el lett mentve a modosított objetum, akkor true
-bool cSelectPlace::editPlace()
+/// Szignál:
+/// Az aktuális helyiség objektum adatlap megjelkenítése, és szerkesztése. A név változtatás tiltott.
+void cSelectPlace::editPlace()
 {
     qlonglong pid = currentPlaceId();
-    if (pid == NULL_ID) return false;
+    if (pid == NULL_ID) return;
     QSqlQuery q = getQuery();
     cPlace place;
     place.setById(q, pid);
@@ -4223,9 +4223,7 @@ bool cSelectPlace::editPlace()
     shape.fetchFields(q);
     shape.shapeFields.get(_sPlaceName)->enum2setOn(_sFieldFlags, FF_READ_ONLY);   // Set name (place_name) is read only
     cRecord *p = recordDialog(q, shape, qobject_cast<QWidget *>(parent()), &place, pid <= ROOT_PLACE_ID, true);
-    if (p == nullptr) return false;
-    // Név változást tiltottuk, ID nem változhat, nincs más dolgunk
-    return true;
+    pDelete(p);
 }
 
 qlonglong cSelectPlace::editCurrentPlace()
