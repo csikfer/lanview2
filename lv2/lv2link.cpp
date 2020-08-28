@@ -1,5 +1,6 @@
 #include "lanview.h"
 #include "lv2link.h"
+#include "lv2user.h"
 
 int phsLinkType(const QString& n, eEx __ex)
 {
@@ -380,9 +381,20 @@ QString cPhsLink::show(bool t) const
 {
     QSqlQuery q = getQuery();
     QString r;
-    if (!t) r = tr("Fizikai link. ");
+    if (t) r = tr("Fizikai link : ");
     r += show12(q, true) + " <==> " + show12(q, false);
     QString note = getNote();
+    QString   tm  = getName(_sCreateTime);
+    qlonglong uid = getId(_sCreateUserId);
+    if (uid == NULL_ID) r += " ?(";
+    else                r += " " + cUser().getNameById(q, uid);
+    r += tm + ")";
+    if (!isNull(_sModifyTime)) {
+        QString   tm  = getName(_sModifyTime);
+        qlonglong uid = getId(_sModifyUserId);
+        if (uid == NULL_ID) r += "; ?(";
+        else                r += "; " + cUser().getNameById(q, uid);
+    }
     if (!note.isEmpty()) r += " " + parentheses(note);
     return r;
 }
@@ -465,7 +477,7 @@ int cLogLink::replace(QSqlQuery &, eEx __ex)
     return false;
 }
 
-int cLogLink::update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool)
+int cLogLink::update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, enum eEx)
 {
     EXCEPTION(ENOTSUPP);
     return 0;
@@ -488,30 +500,35 @@ QStringList cLogLink::showChain() const
 {
     QVariantList vids = get(__sPhsLinkChain).toList();
     if (vids.isEmpty()) return QStringList(tr("Üres lánc"));
-    QString e = tr("A lánc hibás");
+    static const QString eChain = tr("A lánc hibás! Hibás port azonosító.");
+    static const QString eNotFd = tr("A lánc hibás! A hivatkozott fizikai link (#%) nem létezik.");
     qlonglong apid = getId(_sPortId1);  // Megyünk portról - portra, ez az első
     qlonglong rpid = getId(_sPortId2);  // Ha fordított az irány, akkor ez az első
     bool first   = true;
     bool reverse = false;
     QStringList lines;
+    QSqlQuery q = getQuery();
     foreach (QVariant sid, vids) {
         cPhsLink pl;
         bool ok;
         qlonglong id = sid.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA, -1, sid.toString());
-        pl.setById(id);
-        if (first) {
+        if (!pl.fetchById(q, id)) {
+            lines << eNotFd.arg(id);
+            continue;
+        }
+        else if (first) {
             first = false;
             if      (pl.getId(_sPortId1) == apid) { apid = pl.getId(_sPortId2); }
             else if (pl.getId(_sPortId2) == apid) { apid = pl.swap().getId(_sPortId2);  }
             else if (pl.getId(_sPortId1) == rpid) { apid = pl.getId(_sPortId2);         reverse = true; }
             else if (pl.getId(_sPortId2) == rpid) { apid = pl.swap().getId(_sPortId2);  reverse = true; }
-            else                                  { lines << e; break; }
+            else                                  { lines << eChain; }
         }
         else {
             if      (pl.getId(_sPortId1) == apid) { apid = pl.getId(_sPortId2); }
             else if (pl.getId(_sPortId2) == apid) { apid = pl.swap().getId(_sPortId2);  }
-            else                                  { lines << e; break; }
+            else                                  { lines << eChain; }
         }
         lines << pl.show();
     }

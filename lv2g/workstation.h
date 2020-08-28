@@ -121,6 +121,7 @@ private:
 
     void node2gui(bool setModOn);
     bool setModButtons(qlonglong _id);
+    bool checkSelectedNode(cNode& n, const QString& _t);
 
     bool isModify;
     Ui::wstWidget   *pUi;

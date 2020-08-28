@@ -892,6 +892,28 @@ bool cWorkstation::setModButtons(qlonglong _id)
     return f;
 }
 
+bool cWorkstation::checkSelectedNode(cNode& n, const QString &_t)
+{
+    if (0 != (excludedNodeType & n.getId(_sNodeType))) {
+        pUi->textEditMsg->append(htmlError(tr("A %1 alapján kiválasztott %2 eszköz a típusa alapján (%3), ezzel az űrlappal nem kezelhető.")
+                                           .arg(_t, n.getName(), n.getName(_sNodeType))));
+        return false;
+    }
+    if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
+        pUi->textEditMsg->append(htmlError(tr("A %1 alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
+                                           .arg(_t, n.getName())));
+        return false;
+    }
+    cNPort *p = n.ports.first();
+    cInterface *pi = p->reconvert<cInterface>();
+    if (pi->addresses.size() > 1) {                 // Max egy cím
+        pUi->textEditMsg->append(htmlError(tr("A %1 alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
+                                           .arg(_t, n.getName())));
+        return false;
+    }
+    return true;
+}
+
 // SLOTS:
 
 void cWorkstation::selectedNode(qlonglong id)
@@ -942,6 +964,7 @@ void cWorkstation::ip_info()
     popupReportByIp(this, *pq, a.toString());
 }
 
+
 void cWorkstation::ip_go()
 {
     if (pip != nullptr) {
@@ -952,32 +975,10 @@ void cWorkstation::ip_go()
             cNode n;
             cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
             if (1 == cnt) {
-                if (0 != (excludedNodeType & n.getId(_sNodeType))) {
-                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköz a típusa alapján (%3), ezzel az űrlappal nem kezelhető.")
-                                                       .arg(ip.toString(), n.getName(), n.getName(_sNodeType))));
-                    return;
-                }
-                if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
-                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
-                                                       .arg(ip.toString(), n.getName())));
-                    return;
-                }
-                cNPort *p = n.ports.first();
-                cInterface *pi = p->reconvert<cInterface>();
-                if (pi->addresses.size() > 1) {                 // Max egy cím
-                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
-                                                       .arg(ip.toString(), n.getName())));
-                    return;
-                }
+                QString t = QString("%1 IP").arg(ip.toString());
+                if (!checkSelectedNode(n, t)) return;
                 pSelNode->setCurrentNode(n.getId());
                 set = n.getId() == pSelNode->currentNodeId();
-                if (!set) {     // Mégegy próba, töröljük a típus szűrőt
-                    pUi->lineEditNodeTypeFilt->setText(_sNul);
-                    pSelNode->setNodeFilter(pSetDialogFiltType->toWhere(_sNul, excludedNodeType), OT_DEFAULT, FT_NO);
-                    filtTypeOn = filtTypeOff = 0;
-                    pSelNode->setCurrentNode(n.getId());
-                    set = n.getId() == pSelNode->currentNodeId();
-                }
                 if (set) {
                     pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
                 }
@@ -1212,28 +1213,11 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
         if (mac.isValid()) {
             cNode n;
             cnt = n.fetchByMac(*pq, mac, EX_ERROR);
-            if (1 == cnt) {        // Egy port
-                if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
-                    pUi->textEditMsg->append(htmlError(tr("A %1 MAC alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
-                                                       .arg(mac.toString(), n.getName())));
-                    return;
-                }
-                cNPort *p = n.ports.first();
-                cInterface *pi = p->reconvert<cInterface>();
-                if (pi->addresses.size() > 1) {                 // Max egy cím
-                    pUi->textEditMsg->append(htmlError(tr("A %1 MAC alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
-                                                       .arg(mac.toString(), n.getName())));
-                    return;
-                }
+            if (1 == cnt) {
+                QString t = QString("%1 MAC").arg(mac.toString());
+                if (!checkSelectedNode(n, t)) return;
                 pSelNode->setCurrentNode(n.getId());
                 set = n.getId() == pSelNode->currentNodeId();
-                if (!set) {     // Mégegy próba, töröljük a típus szűrőt
-                    pUi->lineEditNodeTypeFilt->setText(_sNul);
-                    pSelNode->setNodeFilter(pSetDialogFiltType->toWhere(_sNul, excludedNodeType), OT_DEFAULT, FT_NO);
-                    filtTypeOn = filtTypeOff = 0;
-                    pSelNode->setCurrentNode(n.getId());
-                    set = n.getId() == pSelNode->currentNodeId();
-                }
                 if (set) {
                     pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
                 }

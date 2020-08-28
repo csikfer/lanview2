@@ -61,6 +61,7 @@ void cPPortTableLine::changePortIx(int ix)
 
 QString cPatchDialog::sPortRefForm;
 
+// ro !!!
 cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     : QDialog(parent)
     , pUi(new Ui::patchSimpleDialog)
