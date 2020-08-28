@@ -952,6 +952,11 @@ void cWorkstation::ip_go()
             cNode n;
             cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
             if (1 == cnt) {
+                if (0 != (excludedNodeType & n.getId(_sNodeType))) {
+                    pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköz a típusa alapján (%3), ezzel az űrlappal nem kezelhető.")
+                                                       .arg(ip.toString(), n.getName(), n.getName(_sNodeType))));
+                    return;
+                }
                 if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
                     pUi->textEditMsg->append(htmlError(tr("A %1 IP alapján kiválasztott %2 eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető.")
                                                        .arg(ip.toString(), n.getName())));

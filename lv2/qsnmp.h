@@ -407,6 +407,7 @@ public:
 class LV2SHARED_EXPORT cOId {
 public:
     cOId() { EXCEPTION(ENOTSUPP); }
+    QString toString() { EXCEPTION(ENOTSUPP); }
 };
 
 #endif // SNMP_IS_EXISTS
