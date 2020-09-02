@@ -436,4 +436,5 @@ inline eTristate checkBoxState2tristate(Qt::CheckState s) {
     return r;
 }
 
+_GEX void clearWidgets(QLayout * layout);
 #endif // LV2G_H

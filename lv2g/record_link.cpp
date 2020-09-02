@@ -264,7 +264,12 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
       pHBoxL->addWidget(pTextEditNote, 1);
      pVBoxL->addLayout(pHBoxL);
      pVBoxL->addWidget(line());
-
+     // report
+     // +------------+-------------+
+     // | label      |             |
+     // | checkbox   | report text |
+     // | refr.butt. |             |
+     // +------------+-------------+
        pLabelCollisions      = new QLabel(tr("Riport :"));
        pCheckBoxCollisions   = new QCheckBox(tr("Automatikus törlés(ek)"));
        pToolButtonRefresh    = new QToolButton();
@@ -277,7 +282,7 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
       pVBoxL2->addWidget(pCheckBoxCollisions);
       pVBoxL2->addWidget(pToolButtonRefresh);
       pVBoxL2->addStretch();
-     // report
+     // report layout
      pHBoxL = new QHBoxLayout;
      pHBoxL->addLayout(pVBoxL2);
      pHBoxL->addWidget(pTextEditReport);

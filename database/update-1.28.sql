@@ -388,7 +388,10 @@ CREATE TRIGGER imports_check_reference_node_id
   ON public.imports
   FOR EACH ROW
   EXECUTE PROCEDURE public.check_reference_node_id('nodes');
-
+  
+-- A paraméter rekordok mint esemény, egy idő adat hozzáadása 2020.08.29.
+ALTER TABLE node_params ADD COLUMN IF NOT EXISTS date_of TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE port_params ADD COLUMN IF NOT EXISTS date_of TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!! Nem biztos, hogy végleges !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 -- Grafikonok

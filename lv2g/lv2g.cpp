@@ -495,3 +495,12 @@ QString condAddJoker(const QString& pat)
     return pat;
 }
 
+
+void clearWidgets(QLayout * layout) {
+   if (! layout)
+      return;
+   while (auto item = layout->takeAt(0)) {
+      delete item->widget();
+      clearWidgets(item->layout());
+   }
+}

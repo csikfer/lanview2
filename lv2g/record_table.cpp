@@ -881,14 +881,7 @@ QString cRecordTableFODialog::sCheckInverse;
 void cRecordTableFODialog::setFilterDialog()
 {
     QGridLayout *pGrid = pForm->gridLayoutFilter;
-    int i;
-    while (0 < (i = pGrid->count())) {  // Clear grid layout
-        QLayoutItem *p = pGrid->itemAt(i -1);
-        if (p != nullptr && p->widget() != nullptr) {
-            pGrid->removeItem(p);
-            delete p;
-        }
-    }
+    clearWidgets(pGrid);
     if (sCheckInverse.isEmpty()) {
         sCheckInverse = QObject::tr("Fordított logika");
     }
@@ -1049,13 +1042,23 @@ void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et, bool _enu
     QGridLayout *pGrid = pForm->gridLayoutFilter;
     int i;
     for (i = 0; i < et.enumValues.size(); ++i) {
-        QString t = cEnumVal::viewShort(et, i, et.enum2str(i));
-        cEnumCheckBox *p = new cEnumCheckBox(i, &f.setOn, _enum ? nullptr : &f.setOff, t);
-        pGrid->addWidget(p, i, 0);
+        QString se  = et.enum2str(i);
+        QString svs = cEnumVal::viewShort(et, i, se);
+        QString svl = cEnumVal::viewLong( et, i, se);
+        QString stt = cEnumVal::toolTip(  et, i);
+        cEnumCheckBox *pCheckBox = new cEnumCheckBox(i, &f.setOn, _enum ? nullptr : &f.setOff, svs);
+        const cEnumVal& ev = cEnumVal::enumVal(et, i, EX_IGNORE);
+        QString sIcon = ev.getName(_sIcon);
+        if (!sIcon.isEmpty()) pCheckBox->setIcon(resourceIcon(sIcon));
+        enumSetD(pCheckBox, ev);
+        QLineEdit *pLine = new QLineEdit(svl);
+        pGrid->addWidget(pCheckBox, i, 0);
+        pLine->setReadOnly(true);
+        pGrid->addWidget(pLine,     i, 1);
     }
-    QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);;
-    pGrid->addWidget(pCheckBoxI,  0, 1);
-    connect(pCheckBoxI, SIGNAL(toggled(bool)), &f, SLOT(togledInverse(bool)));
+    QCheckBox *pCheckBoxInv  = new QCheckBox(sCheckInverse);;
+    pGrid->addWidget(pCheckBoxInv,  0, 2);
+    connect(pCheckBoxInv, SIGNAL(toggled(bool)), &f, SLOT(togledInverse(bool)));
 }
 
 void cRecordTableFODialog::clickOk()

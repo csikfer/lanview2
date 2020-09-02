@@ -352,9 +352,9 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
         if (pEs != nullptr) *pEs += es + "\n"; \
     }   return  false; }
 
-static cMac portSetMac(QSqlQuery& q, cSnmpDevice& node, cNPort& p, cTable& table, int i, QString& note)
+static cMac portSetMac(QSqlQuery& q, cSnmpDevice& node, cNPort& p, cTable& table, int row, QString& note)
 {
-    cMac            mac(table[_sIfPhysAddress][i].toByteArray());
+    cMac            mac(table[_sIfPhysAddress][row].toByteArray());
     if (mac.isValid()) {
         // MAC collisions are not allowed, but it happens
         cInterface colIf;
@@ -401,9 +401,9 @@ static void portSetAddress(QSqlQuery& q, cSnmpDevice& node, QHostAddress& hostAd
         found = true;
     }
 }
-static QHostAddress portSetAddress(QSqlQuery& q, cSnmpDevice& node, QHostAddress hostAddr, cNPort & p, cTable& table, int i, bool& found, bool& foundMyIp, bool& foundJoint)
+static QHostAddress portSetAddress(QSqlQuery& q, cSnmpDevice& node, QHostAddress hostAddr, cNPort & p, cTable& table, int row, bool& found, bool& foundMyIp, bool& foundJoint)
 {
-    QHostAddress addr(table[_sIpAdEntAddr][i].toString());
+    QHostAddress addr(table[_sIpAdEntAddr][row].toString());
     portSetAddress(q, node, hostAddr, p, addr, found, foundMyIp, foundJoint);
     return addr;
 }
@@ -594,8 +594,8 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             pTrk->setName(_sIfDescr.toLower(), (*ptab)[_sIfDescr][row].toString());
             QString note = QObject::tr("Feltételezett trunk port (ifType = %1)").arg((*ptab)[_sIfType][row].toString());
             pTrk->setNote(note);
-            portSetMac(q, node, *pTrk, *ptab, tix, note);
-            portSetAddress(q, node, hostAddr, *pTrk, *ptab, tix, found, foundMyIp, foundJoint);
+            portSetMac(q, node, *pTrk, *ptab, row, note);
+            portSetAddress(q, node, hostAddr, *pTrk, *ptab, row, found, foundMyIp, foundJoint);
             node.ports << pTrk;
         }
         else {
