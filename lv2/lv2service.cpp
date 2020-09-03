@@ -252,15 +252,17 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
-    if (state() == QProcess::Running) {
+    bool isRuning = state() == QProcess::Running;
+    if (isRuning) {
         msg = tr("Service %1 : Process %2 already runing, skeep.").arg(inspector.name(), inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "));
-        inspector.setState(*inspector.pQuery(), _sUnreachable, msg);
-        return -1;
+        APPMEMO(*inspector.pQuery(), msg, RS_WARNING);
     }
-    PDEB(VERBOSE) << "START program : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ")
-                   << (isAsync ? "; Asyncron (no wait for exit)" :
-                                (stopTo == 0) ? "; no wait for exit" : "; Syncron (wait for exit)")
-                   << endl;
+    else {
+        PDEB(VERBOSE) << "START program : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ")
+                       << (isAsync ? "; Asyncron (no wait for exit)" :
+                                    (stopTo == 0) ? "; no wait for exit" : "; Syncron (wait for exit)")
+                       << endl;
+    }
     if (isAsync || stopTo == 0) {  // No wait for terminate, asyncron call
         if (!bProcessFinished) {
             // connect(this, SIGNAL(finished(int, ExitStatus)), this, SLOT(processFinished(int, ExitStatus))); // Ez nem működik !?
@@ -278,10 +280,12 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
             EXCEPTION(EPROGFAIL,0, msg);
         }
     }
-    lastStart.invalidate();
+    if (!isRuning) {
+        lastStart.invalidate();
+        lastStart.start();
+        start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
+    }
     internalStat = IS_RUN;
-    lastStart.start();
-    start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
         kill();
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
