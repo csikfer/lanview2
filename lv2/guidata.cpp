@@ -253,12 +253,6 @@ cTableShape::~cTableShape()
     clearToEnd();
 }
 
-cTableShape::cTableShape(QString sn) : cRecord(), shapeFields(this)
-{
-    QSqlQuery q = getQuery();
-    if (!fetchByName(q, sn)) EXCEPTION(EDATA,-1,sn);
-}
-
 int  cTableShape::_ixFeatures       = NULL_IX;
 int  cTableShape::_ixTableShapeType = NULL_IX;
 const cRecStaticDescr&  cTableShape::descr() const

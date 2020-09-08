@@ -163,7 +163,6 @@ class LV2SHARED_EXPORT cTableShape : public cRecord {
     CRECORD(cTableShape);
     FEATURES(cTableShape)
 public:
-    explicit cTableShape(QString sn);
     /// Szöveg azonosítók
     enum eTextIndex {
         LTX_TABLE_TITLE = 0,    ///< Title of the table

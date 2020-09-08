@@ -262,6 +262,8 @@ typedef QList<cRecordsViewBase *>   tRecordsViewBaseList;
 /// Base object for displaying a data table
 class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
+private:
+    void _init();
 public:
     cRecordsViewBase(cTableShape *_pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par);
     cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget);

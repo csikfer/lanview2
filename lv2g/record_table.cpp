@@ -1226,49 +1226,7 @@ bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
 
 /* ***************************************************************************************************** */
 
-cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par)
-    : QObject(par)
-    , isDialog(_isDialog)
-    , pTableShape(pTS)
-    , fields()
-    , inheritTableList()
-    , viewName()
-{
-    flags = 0;
-    isReadOnly = false;
-    pq = newQuery();
-    pTabQuery = newQuery();
-    pModel = nullptr;
-    pMaster = pUpper = _upper;
-    pRecDescr = nullptr;
-    _pWidget = nullptr;
-    pMasterSplitter = nullptr;
-    pButtons = nullptr;
-    pMainLayout = nullptr;
-    pLeftWidget = nullptr;
-    pRightTables = nullptr;
-    pRightTabWidget = nullptr;
-    pFODialog   = nullptr;
-    owner_id = NULL_ID;
-    parent_id= NULL_ID;
-    pInhRecDescr = nullptr;
-    tableInhType = TIT_NO;
-    pRecordDialog = nullptr;
-    _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
-//    disableFilters = false; // alapértelmezetten vannak szűrők
-    if (pMaster != nullptr) {
-        while (pMaster->pMaster != nullptr) pMaster = pMaster->pMaster;
-    }
-    initShape();
-}
-
-cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget)
-    : QObject(__pWidget)
-    , isDialog(false)
-    , pTableShape(pTS)
-    , fields()
-    , inheritTableList()
-    , viewName()
+void cRecordsViewBase::_init()
 {
     flags = 0;
     isReadOnly = false;
@@ -1290,6 +1248,35 @@ cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget)
     pInhRecDescr = nullptr;
     tableInhType = TIT_NO;
     pRecordDialog = nullptr;
+
+}
+
+cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, cRecordsViewBase *_upper, bool _isDialog, QWidget *par)
+    : QObject(par)
+    , isDialog(_isDialog)
+    , pTableShape(pTS)
+    , fields()
+    , inheritTableList()
+    , viewName()
+{
+    _init();
+    pMaster = pUpper = _upper;
+    _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
+    if (pMaster != nullptr) {
+        while (pMaster->pMaster != nullptr) pMaster = pMaster->pMaster;
+    }
+    initShape();
+}
+
+cRecordsViewBase::cRecordsViewBase(cTableShape *pTS, QWidget *__pWidget)
+    : QObject(__pWidget)
+    , isDialog(false)
+    , pTableShape(pTS)
+    , fields()
+    , inheritTableList()
+    , viewName()
+{
+    _init();
     _pWidget = __pWidget;
     initShape();
 }
@@ -2363,8 +2350,15 @@ void cRecordsViewBase::hideColumns(void)
 
 /* ----------------------------------------------------------------------------------------------------- */
 
+inline cTableShape * getTableShapeByName(const QString& _mn)
+{
+    cTableShape *p = new cTableShape();
+    p->setByName(_mn);
+    return p;
+}
+
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
-    : cRecordsViewBase(new cTableShape(_mn), nullptr, _isDialog, par)
+    : cRecordsViewBase(getTableShapeByName(_mn), nullptr, _isDialog, par)
 {
 
 }
