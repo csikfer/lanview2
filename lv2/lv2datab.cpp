@@ -3680,18 +3680,15 @@ QString cRecord::whereString(QBitArray& fm) const
     return where;
 }
 
-bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
+QString cRecord::queryString(bool __only, QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
 {
-    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off <<  _sCommaSp << __s << QChar(')') << endl;
-    // PDEB(VVERBOSE) << "Record value : " << toString() << endl;
     const cRecStaticDescr& recDescr = descr();
-    QBitArray fm = _fm;
     QString     sql;    // sql parancs
     sql  = "SELECT " + (__s.isEmpty() ? "*" : __s) + " FROM ";
     if (__only) sql += "ONLY ";
     sql += descr().fullViewNameQ();
     if (__w.isEmpty()) {
-        sql += whereString(fm);
+        sql += whereString(_fm);
     }
     else {
         sql += " WHERE " + __w;
@@ -3706,7 +3703,14 @@ bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
     }
     if (__lim > 0) sql += " LIMIT "  + QString::number(__lim);
     if (__off > 0) sql += " OFFSET " + QString::number(__off);
-    query(__q, sql, fm);
+    return sql;
+}
+
+bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
+{
+    QBitArray fm = _fm;
+    QString sql = queryString(__only, fm, __ord, __lim, __off, __s, __w);
+    query(__q, sql, _fm);
     return __q.first();
 }
 

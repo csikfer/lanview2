@@ -165,12 +165,13 @@ void cLogOn::userNameEdited()
     // DBGFNL();
     QSqlQuery q = getQuery();
     QString sql =
-            "SELECT place_group_id, place_group_note"
-            " FROM group_users"
-            " JOIN groups USING (group_id)"
-            " JOIN place_groups USING(place_group_id)"
-            " JOIN users USING(user_id)"
-            " WHERE place_group_type = 'zone' AND user_name = ?";
+            "SELECT DISTINCT(place_group_id), coalesce(place_group_note, place_group_name) AS name"
+            "  FROM group_users"
+            "  JOIN groups USING (group_id)"
+            "  JOIN place_groups USING(place_group_id)"
+            "  JOIN users USING(user_id)"
+            " WHERE place_group_type = 'zone' AND user_name = ?"
+            " ORDER BY name ASC";
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, _inUser);
     if (!q.exec()) SQLQUERYERR(q);

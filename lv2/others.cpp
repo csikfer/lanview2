@@ -99,12 +99,6 @@ int removeAll(QStringList& sl, const QString& s)
 const QString cFeatures::list_sep = ",";
 const QString cFeatures::list_esep = "\\,";
 
-cFeatures::cFeatures()
-    : tStringMap()
-{
-    ;
-}
-
 bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
 {
     static const QString msg = QObject::tr("Invalid magic string %1 : %2");
@@ -396,6 +390,18 @@ cFeatures& cFeatures::merge(const cFeatures& _o, const QString& _cKey)
     return *this;
 }
 
+cFeatures& cFeatures::selfMerge(const QString& _cKey)
+{
+    tStringMap m;
+    QString k = _cKey + '.';
+    foreach (QString key, keys()) {
+        if (key.startsWith(k)) {
+            m[key] = take(key);
+        }
+    }
+    return merge(m, _cKey);
+}
+
 void cFeatures::modifyField(cRecordFieldRef& _fr)
 {
     QString key = _fr.columnName();
@@ -424,17 +430,6 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
         }
         _fr = set;
     }
-}
-
-cFeatures cFeatures::noSimple() const
-{
-    cFeatures r;
-    foreach (QString key, keys()) {
-        if (key.contains(QChar('.'))) {
-            r[key] = value(key);
-        }
-    }
-    return r;
 }
 
 /******************************************************************************/

@@ -1,157 +1,4 @@
 #include "report.h"
-#include "guidata.h"
-
-const QString sHtmlHead   = "<!DOCTYPE html> <html> <head> <meta charset=\"UTF-8\"> </head> <body>\n";
-const QString sHtmlTail   = "</body> </html>\n";
-const QString sHtmlLine   = "\n<hr>\n";
-const QString sHtmlTabBeg = "<table border=\"1\" cellpadding=\"2\" cellspacing=\"2\">";
-const QString sHtmlTabEnd = "</table>\n";
-const QString sHtmlRowBeg = "<tr>";
-const QString sHtmlRowEnd = "</tr>\n";
-const QString sHtmlTh     = "<th> %1 </th>";
-const QString sHtmlTd     = "<td> %1 </td>";
-const QString sHtmlBold   = "<b>%1</b>";
-const QString sHtmlItalic = "<i>%1</i>";
-const QString sHtmlVoid   = " - ";
-const QString sHtmlBr     = "<br>\n";
-const QString sHtmlBRed   = "<b><span style=\"color:red\"> %1 </span></b>";
-const QString sHtmlBGreen = "<b><span style=\"color:green\"> %1 </span></b>";
-const QString sHtmlNbsp   = " &nbsp; ";
-
-
-QString toHtml(const QString& text, bool chgBreaks, bool esc, int indent)
-{
-    static const QChar   cr = QChar('\n');
-    static const QString sp = "&#160;";
-    QString r = text;
-    if (chgBreaks)  r = r.trimmed();
-    if (esc)        r = r.toHtmlEscaped();
-    if (chgBreaks)  {
-        if (indent) {
-            QString rr;
-            int i, n = r.size();
-            for (i = 0; i < n; i++) {
-                QChar c = r[i];
-                if (c == cr) {
-                    rr += sHtmlBr;
-                    while (true) {
-                        ++i;
-                        if (i >= n) {
-                            EXCEPTION(EPROGFAIL);
-                        }
-                        c = r[i];
-                        switch (c.toLatin1()) {
-                        case 32:    // Space
-                            rr += sp;
-                            continue;
-                        case 11:    // TAB
-                            for (int j = indent; j > 0; --j) rr += sp;
-                            continue;
-                        }
-                        break;
-                    }
-                    rr += c;
-                }
-                else {
-                    rr += c;
-                }
-            }
-            r = rr;
-        }
-        else {
-            r = r.replace(cr, sHtmlBr);
-        }
-    }
-    return r;
-}
-
-/* ****************************************************************************************************************** */
-
-QString htmlEnumDecoration(const QString text, const cEnumVal& eval, int m, bool chgBreaks, bool esc)
-{
-    QString r = toHtml(text, chgBreaks, esc);
-    qlonglong fa = eval.getId(cEnumVal::ixFontAttr());
-    if (m & EDM_FONT_ATTR && fa != NULL_ID) {
-        if (fa & ENUM2SET(FA_BOOLD))     r = toHtmlBold(         r, false, false);
-        if (fa & ENUM2SET(FA_ITALIC))    r = toHtmlItalic(       r, false, false);
-        if (fa & ENUM2SET(FA_STRIKEOUT)) r = toHtmlStrikethrough(r, false, false);
-        if (fa & ENUM2SET(FA_UNDERLINE)) r = toHtmlUnderline(    r, false, false);
-    }
-    QString s, style;
-    if (m & EDM_FONT_COLOR) {
-        s = eval.getName(cEnumVal::ixFgColor());
-        if (!s.isEmpty()) {
-            style  = QString(" \"color:%1\" ").arg(s);
-        }
-    }
-    if (m & EDM_BACKGROUND_COLOR) {
-        s = eval.getName(cEnumVal::ixBgColor());
-        if (!s.isEmpty()) {
-            style += QString(" \"background-color:%1\" ").arg(s);
-        }
-    }
-    if (m & EDM_FONT_FAMILY) {
-        s = eval.getName(cEnumVal::ixFontFamily());
-        if (!s.isEmpty()) {
-            style += QString(" \"font-family:%1\" ").arg(s);
-        }
-    }
-    if (!style.isEmpty()) {
-        r = "<span style=" + style + ">" + r + "</span>";
-    }
-    return r;
-}
-
-/* ****************************************************************************************************************** */
-
-QString htmlTableLine(const QStringList& fl, const QString& ft, bool esc)
-{
-    QString r = tag("tr");
-    foreach (QString f, fl) {
-        r += tag(ft.isEmpty() ? "td" : ft);
-        r += esc ? f.toHtmlEscaped() : f;
-        r += tag("/" + ft);
-    }
-    r += tag("/tr");
-    return r + "\n";
-}
-
-QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc, int padding_pix)
-{
-    QString table;
-    if (padding_pix == 0) table += "\n<table border=\"1\" > ";
-    else table = QString("\n<table border=\"1\" cellpadding = \"%1\" > ").arg(padding_pix);
-    if (!head.isEmpty()) table += htmlTableLine(head, "th", esc);
-    foreach (QStringList line, matrix) {
-        table += htmlTableLine(line, "td", esc);
-    }
-    table += "</table>\n";
-    return table;
-}
-
-QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, const QString& shrt)
-{
-    cRecordAny rec(_shape.getName(_sTableName));
-    tRecordList<cRecordAny> list;
-    QString ord = shrt;
-    if (ord.isEmpty()) {        // Default: order by name, if exixst name
-        QString nameName = rec.nameName(EX_IGNORE);
-        if (!nameName.isEmpty())ord = QString(" ORDER BY %1 ASC").arg(nameName);
-    }
-    else if (ord == "!") {      // No order
-        ord.clear();
-    }
-    else {
-        ord.prepend(" ");
-    }
-    QString sql = QString("SELECT * FROM %1 WHERE ").arg(rec.tableName()) + _where + ord;
-    if (execSql(q, sql, _par)) do {
-        rec.set(q);
-        list << rec;
-    } while (q.next());
-    if (list.isEmpty()) return QString();
-    return list2html(q, list, _shape, false);
-}
 
 /* *********************************************************************************************** */
 
@@ -222,7 +69,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
             pgl << pg;
         } while(pg.next(q));
         shape.setByName(_sPlaceGroups);
-        html += list2html(q, pgl, shape);
+        html += list2html(q, pgl, shape, _sReport);
     }
     else {
         html += htmlInfo(QObject::tr("A hely ill. helyiség nem tagja egy csoportnak sem."));
@@ -240,12 +87,12 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
         if (!patchs.isEmpty()) {
             html += htmlInfo(QObject::tr("Patch penelek, vagy fali csatlakozók :"));
             shape.setByName(_sPatchs);
-            html += list2html(q, patchs, shape);
+            html += list2html(q, patchs, shape, _sReport);
         }
         if (!nodes.isEmpty()) {
             html += htmlInfo(QObject::tr("Hálózati eszközök :"));
             shape.setByName(_sNodes);
-            html += list2html(q, nodes, shape);
+            html += list2html(q, nodes, shape, _sReport);
         }
     }
     tRecordList<cUser>  users;
@@ -253,7 +100,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
     if (!users.isEmpty()) {
         html += htmlInfo(QObject::tr("Felhasználók :"));
         shape.setByName(_sUsers);
-        html += list2html(q, users, shape);
+        html += list2html(q, users, shape, _sReport);
     }
     return tStringPair(t, html);
 }
@@ -418,7 +265,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                         text += sHtmlTd.arg(node.ports.get(psid)->getName());
                     }
                     else {
-                        text += sHtmlTd.arg(sHtmlVoid);
+                        text += sHtmlTd.arg(sVoid);
                     }
                 }
                 // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
@@ -441,7 +288,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                     pPatchPort = p->reconvert<cPPort>();
                     text += sHtmlTd.arg(pPatchPort->getName(_sSharedCable));    // Shared
                     qlonglong spid = pPatchPort->getId(_sSharedPortId);
-                    if (spid == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);// S.p.
+                    if (spid == NULL_ID) text += sHtmlTd.arg(sVoid);// S.p.
                     else {
                         int ix = node.ports.indexOf(spid);
                         if (ix < 0) text += sHtmlTd.arg(htmlError("!?"));
@@ -449,9 +296,9 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                     }
                 }
                 else {                                              // NPort
-                     text += sHtmlTd.arg(sHtmlVoid);
-                     text += sHtmlTd.arg(sHtmlVoid);
-                     text += sHtmlTd.arg(sHtmlVoid);
+                     text += sHtmlTd.arg(sVoid);
+                     text += sHtmlTd.arg(sVoid);
+                     text += sHtmlTd.arg(sVoid);
                 }
                 qlonglong pid = p->getId();
                 // Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
@@ -473,7 +320,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                             sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
                         }
                     }
-                    text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
+                    text += sHtmlTd.arg(sl.isEmpty() ? sVoid : sl.join(sHtmlBr));
                     // Back link
                     pl.clear();
                     pl.setId(_sPortId1, pid);
@@ -497,7 +344,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                         else        text += sHtmlTd.arg(htmlError(sl.join(QChar('\n')), true));
                     }
                     else {
-                        QString cel = sHtmlVoid;
+                        QString cel = sVoid;
                         qlonglong spid = pPatchPort->getId(_sSharedPortId);
                         if (spid != NULL_ID) {
                             static const QString sql =
@@ -526,7 +373,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                     }
                     // phisical link
                     if (plp == NULL_ID) {
-                        text += sHtmlTd.arg(sHtmlVoid);
+                        text += sHtmlTd.arg(sVoid);
                     }
                     else {
                         QString s = cNPort::getFullNameById(q, plp);
@@ -549,7 +396,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                         text += sHtmlTd.arg(s);
                     }
                     // logical link
-                    if (llp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                    if (llp == NULL_ID) text += sHtmlTd.arg(sVoid);
                     else {
                         QString n = cNPort::getFullNameById(q, llp);
                         if (mtp != NULL_ID) {
@@ -559,7 +406,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                         text += sHtmlTd.arg(n);
                     }
                     // lldp
-                    if (ldp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                    if (ldp == NULL_ID) text += sHtmlTd.arg(sVoid);
                     else {
                         QString n = cNPort::getFullNameById(q, ldp);
                         if (llp != NULL_ID) {
@@ -1200,3 +1047,4 @@ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name, const cTa
     }
     return htmlReport(q, o, *pShape);
 }
+

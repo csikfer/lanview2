@@ -1801,6 +1801,20 @@ public:
     /// @param __fm Bit vektor, ha a vektor elem true, akkor az azonos indexű mezőt kell bind-olni
     /// @exception Ha a QSqlQuery::prepare() vagy exec() metódus sikertelen, akkor dob egy kizárást.
     void query(QSqlQuery& __q, const QString& sql, const QBitArray& __fm) const;
+    /// Összeálít egy lekérdezést a beállított, ill. a megadott adatok alapján.
+    /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+    /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
+    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Ez alapján lessz
+    ///             összeállítva a WHERE string a whereString() metódussal, kivéve, ha __w nem üres string.
+    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, negatív érték csökkenő sorrendet jelent, a 0. elem nem rendezhető csökkenő sorrendbe)
+    /// @param __lim Limit. Ha értéke 0, akkor nincs.
+    /// @param __off Offset. Ha értéke 0, akkor nincs.
+    /// @param __s A SELECT kulcs szó utáni lista. Ha nincs megadva (vagy NULL), akkor az alapértelmezés a "*"
+    /// @param __w A WHERE kulcs szó utáni feltétel, Feltéve, hogy nem üres string. Ebben az esetben a feltételre nincs hatással
+    ///            az __fn paraméter, de ez alapján lessznek bind-elve a mező értékek. Tehát a megadott feltételnek annyi paraméter
+    ///            kell várnia, ahány igaz bit van az __fn-ben, és a mező értékek sorrendje a rekordban lévő sorrendjük szerinti.
+    /// @return A SELECT utasítás.
+    QString queryString(bool __only, QBitArray& _fm, const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString()) const;
     /// Összeálít egy lekérdezést a beállított, ill. a megadott adatok alapján. A leérdeklést végrehajtja,
     /// Az eredmény a a paraméterként megadott QSqlQuery objektumban. Az SQL parancs végrehajtása után
     /// hívja a __q.first() metódust, és azzal tér vissza.
@@ -1816,7 +1830,7 @@ public:
     ///            az __fn paraméter, de ez alapján lessznek bind-elve a mező értékek. Tehát a megadott feltételnek annyi paraméter
     ///            kell várnia, ahány igaz bit van az __fn-ben, és a mező értékek sorrendje a rekordban lévő sorrendjük szerinti.
     /// @return A lekérdezés után, a __q.first() által visszaadott érték
-    bool fetchQuery(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString()) const;
+    bool fetchQuery(QSqlQuery& __q, bool __only = false, const QBitArray& _fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString()) const;
     /// Beolvassa az adatbázisból azt a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel.
     /// Az első rekordot beolvassa az objektumba, ill ha nincs egyetlen rekord sem, akkor törli az objektumot.

@@ -160,7 +160,8 @@ class cRecordFieldRef;
 class LV2SHARED_EXPORT cFeatures : public tStringMap
 {
 public:
-    cFeatures();
+    cFeatures()                    : tStringMap()  { }
+    cFeatures(const tStringMap& m) : tStringMap(m) { }
     /// Egy magic stringet szétvág és objektumot feltölti, ill. összefésüli az elemeivel
     /// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
     /// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
@@ -219,8 +220,8 @@ public:
     /// így kerül az objektumba. Ha a _o -ban egy (modosított)kulcsértékhez a "!" van rendelve,
     /// akkor az ez alatti érték törlődik az objektumban.
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
+    cFeatures& selfMerge(const QString& _cKey);
     void modifyField(cRecordFieldRef& _fr);
-    cFeatures noSimple() const;
     static const QString list_sep;
     static const QString list_esep;
 };

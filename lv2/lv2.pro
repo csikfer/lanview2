@@ -73,6 +73,7 @@ SOURCES += lanview.cpp \
     cdebug.cpp \
     cerror.cpp \
     lv2glpi.cpp \
+    lv2html.cpp \
     lv2mariadb.cpp \
     lv2types.cpp \
     lv2sql.cpp \
@@ -96,6 +97,7 @@ SOURCES += lanview.cpp \
 HEADERS += lanview.h \
     lv2_global.h \
     lv2glpi.h \
+    lv2html.h \
     lv2mariadb.h \
     qsnmp.h \
     errcodes.h \

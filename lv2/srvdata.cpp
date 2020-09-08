@@ -735,8 +735,6 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 
 QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
 {
-    static const QString _sBr = "<br>";
-
     bool isTicket = false;
     cAlarm a;
     cRecord *pTargetRec = &a;
@@ -757,14 +755,14 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     cPlace place;    place.setById(q, node.       getId(_sPlaceId));
     QString m;
     const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
-    text += _sBr + tr("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
-    text += _sBr + tr("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
-    text += _sBr + tr("A hállózati elem neve")    + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
-    text += _sBr + tr("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
+    text += sHtmlBr + tr("Riasztási állpot kezdete") + sSpColonSp + toHtmlBold(pTargetRec->view(q, _sBeginTime));
+    text += sHtmlBr + tr("A hállózati elem helye")   + sSpColonSp + toHtmlBold(place.getName()) + _sCommaSp + toHtmlItalic(place.getNote());
+    text += sHtmlBr + tr("A hállózati elem neve")    + sSpColonSp + toHtmlBold(node.getName())  + _sCommaSp + toHtmlItalic(node.getNote());
+    text += sHtmlBr + tr("Szolgáltatás neve")        + sSpColonSp + toHtmlBold(pSrv->getName()) + _sCommaSp + toHtmlItalic(pSrv->getNote());
     m = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
-    text += _sBr + tr("Riasztás oka")          + " : <b><i>" + m + "</i></b>";
+    text += sHtmlBr + tr("Riasztás oka")          + " : <b><i>" + m + "</i></b>";
     m = pTargetRec->getName(_sEventNote);
-    text += _sBr + tr("Csatolt üzenet")        + " : <b><i>" + _sBr
+    text += sHtmlBr + tr("Csatolt üzenet")        + " : <b><i>" + sHtmlBr
             + toHtml(m, true) + "</i></b>";
     static const QString sql =
             "SELECT s.service_var_id, s.service_var_name, s.service_var_note, s.service_var_type_id, s.host_service_id,"
@@ -782,14 +780,14 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
             pShape = new cTableShape;
             pShape->setByName(q, _sServiceVars);
         }
-        text += _sBr + tr("Változók : ") + _sBr + list2html(q, vars, *pShape);
+        text += sHtmlBr + tr("Változók : ") + sHtmlBr + list2html(q, vars, *pShape, _sReport);
     }
     if (a.isNull(_sEndTime)) {
-        text += _sBr + tr("A riasztási állapot az üzenetküdéskor még aktív volt.");
+        text += sHtmlBr + tr("A riasztási állapot az üzenetküdéskor még aktív volt.");
     }
     else {
-        text += _sBr + tr("A riasztási állapot az üzenetküdéskor már nem volt aktív.");
-        text += _sBr + tr("A riasztási állapot vége : ") + "<b>" + pTargetRec->view(q, _sEndTime) + "</i></b>";
+        text += sHtmlBr + tr("A riasztási állapot az üzenetküdéskor már nem volt aktív.");
+        text += sHtmlBr + tr("A riasztási állapot vége : ") + "<b>" + pTargetRec->view(q, _sEndTime) + "</i></b>";
     }
 
     if (isTicket) delete pTargetRec;
