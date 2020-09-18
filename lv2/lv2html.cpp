@@ -178,6 +178,7 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     return QString();
 }
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! const QString& childShrt, const QString& mergeKey
 QString query2html(QSqlQuery q, cTableShape &ownerShape, cTableShape &childShape, const QString& _where, const QVariantList& _par, const QString& ownerShrt, const QString& childShrt, const QString& mergeKey)
 {
     tRecordList<cRecordAny> list;

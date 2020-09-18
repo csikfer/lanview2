@@ -3961,6 +3961,7 @@ bool cRecord::updateFieldById(QSqlQuery &__q, qlonglong _id, const QString& _fn,
 int cRecord::mark(QSqlQuery& __q, const QBitArray &__where, bool __flag) const
 {
     cRecord *p = dup();
+    p->_toReadBack = RB_NO;
     int ixFlag = p->descr()._flagIndex;
     if (ixFlag < 0) EXCEPTION(EDATA, 0, "Missing 'flag' field in " + tableName() + " table.");
     p->setBool(ixFlag, __flag);
@@ -3972,6 +3973,7 @@ int cRecord::mark(QSqlQuery& __q, const QBitArray &__where, bool __flag) const
 int cRecord::removeMarked(QSqlQuery& __q, const QBitArray& __where) const
 {
     cRecord *p = dup();
+    p->_toReadBack = RB_NO;
     int ixFlag = p->descr()._flagIndex;
     if (ixFlag < 0) EXCEPTION(EDATA, 0, "Missing 'flag' field in " + tableName() + " table.");
     p->setBool(ixFlag, true);

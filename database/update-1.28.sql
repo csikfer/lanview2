@@ -447,6 +447,13 @@ CREATE TABLE service_diagrams (
 ALTER TABLE service_diagrams OWNER TO lanview2;
 COMMENT ON TBALE service_diagrams IS 'Szolgáltatás lekérdezéshez rendelt diagram leírója, ill kapcsoló rekord';
 
+-- Update 2020.09.16.
+
+-- trash
+DROP FUNCTION IF EXISTS truncate_disabled_alarms(); 
+DROP VIEW IF EXISTS online_alarms_noack;
+-- mod by place GLPI sync
+ALTER TABLE places ADD COLUMN IF NOT EXISTS flag boolean DEFAULT false;
 
 
 -- ******************************

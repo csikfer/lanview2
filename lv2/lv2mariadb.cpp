@@ -6,8 +6,10 @@
    ******************************************************************************************************/
 
 cMariaDb *cMariaDb::_pInstance = nullptr;
-const QString cMariaDb::sConnectionName = "QMYSQL";
+const QString cMariaDb::sConnectionType = "QMYSQL";
+const QString cMariaDb::sConnectionName = "GLPI";
 
+/// Konstruktor, az adatbázis eléréséhez, csak egy példányban létezhet, elérése az init() metóduson keresztül.
 /// Az adatbázis paramétereket a konfigból veszi. Ahhoz, hogy ezek a paraméterek belekerüljenek a konfigba, kell egy
 /// config_ -sal kezdődő nevű rendszerváltozó. Pl.:
 /// ":title=GLPI adatbázis elérése:glpi_host=text,GLPI szerver:glpi_db=text,Adatbázis név:glpi_user=passwd,Felhasználó név:glpi_psw=passwd,Adatbázis jelszó:glpi_prefix=text,Adattábla név prefix:"
@@ -17,16 +19,21 @@ const QString cMariaDb::sConnectionName = "QMYSQL";
 /// a második pedig a megjelenített név (mindíg két értéket kell megadni).
 /// Az objetum által használt konfig változó nevek : glpi_host, glpi_db, glpi_user, glpi_psw, glpi_prefix
 cMariaDb::cMariaDb()
-    : QSqlDatabase(QSqlDatabase::addDatabase(sConnectionName))
+    : QSqlDatabase(QSqlDatabase::addDatabase(sConnectionType, sConnectionName))
 {
     QSettings& qset = *lanView::getInstance()->pSet;
-    setHostName(qset.value("glpi_host").toString());
-    setDatabaseName(qset.value("glpi_db").toString());
-    setPassword(scramble(qset.value("glpi_psw").toString()));
-    setUserName(scramble(qset.value("glpi_user").toString()));
+    QString s;
+    s = qset.value("glpi_host").toString();
+    setHostName(s);
+    s = qset.value("glpi_db").toString();
+    setDatabaseName(s);
+    s = scramble(qset.value("glpi_psw").toString());
+    setPassword(s);
+    s = scramble(qset.value("glpi_user").toString());
+    setUserName(s);
     sTablePrefix = qset.value("glpi_prefix").toString();
     if (!QSqlDatabase::open()) {
-        EXCEPTION(ESQLOPEN, 1);
+        SQLOERR(*this);
     }
 }
 
@@ -37,29 +44,46 @@ cMariaDb::~cMariaDb()
     _pInstance = nullptr;
 }
 
-void cMariaDb::init()
+bool cMariaDb::init(eEx __ex)
 {
-    if (_pInstance != nullptr) EXCEPTION(EPROGFAIL);
+    if (_pInstance != nullptr) {
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+        return false;
+    }
     _pInstance = new cMariaDb;
+    return true;
 }
 
-void cMariaDb::drop()
+bool cMariaDb::drop(eEx __ex)
 {
-    if (_pInstance == nullptr) EXCEPTION(EPROGFAIL);
+    if (_pInstance == nullptr) {
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+        return false;
+    }
     delete _pInstance;
     _pInstance = nullptr;
+    return true;
 }
 
-QSqlQuery cMariaDb::getQuery()
+cMariaDb * cMariaDb::pInstance(eEx __ex)
 {
-    QSqlDatabase *pDb = pInstance();
+    if (_pInstance == nullptr) {
+        if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+        _pInstance = new cMariaDb;
+    }
+    return _pInstance;
+}
+
+QSqlQuery cMariaDb::getQuery(eEx __ex)
+{
+    QSqlDatabase *pDb = pInstance(__ex);
     if (!pDb->isOpen()) EXCEPTION(EPROGFAIL);
     return QSqlQuery(*pDb);
 }
 
-QSqlQuery * cMariaDb::newQuery()
+QSqlQuery * cMariaDb::newQuery(eEx __ex)
 {
-    QSqlDatabase *pDb = pInstance();
+    QSqlDatabase *pDb = pInstance(__ex);
     if (!pDb->isOpen()) EXCEPTION(EPROGFAIL);
     return new QSqlQuery(*pDb);
 }
@@ -457,6 +481,7 @@ cMyRecStaticDescr::~cMyRecStaticDescr()
 void cMyRecStaticDescr::_setting(const QString& __t)
 {
     _DBGFN() << " " << __t << endl;
+    cMariaDb::init();
     // Set table naame
     _tableName = _viewName = __t;
     _schemaName = cMariaDb::schemaName();
@@ -509,7 +534,7 @@ void cMyRecStaticDescr::_setting(const QString& __t)
     // PDEB(VVERBOSE) << VDEB(_columnsNum) << endl;
     int i = 0;
     do {
-        ++i;    // Vigyázz, fizikus index! (1,2,...)
+        ++i;    // Warning, index: 1,2,...
         cColStaticMyDescr columnDescr(this);
         columnDescr.colName() = pq->value(IX_COLUMN_NAME).toString();
         columnDescr.pos       = i;
@@ -518,13 +543,12 @@ void cMyRecStaticDescr::_setting(const QString& __t)
         // PDEB(VVERBOSE) << "colDefault : " <<  (columnDescr.colDefault.isNull() ? "NULL" : dQuoted(columnDescr.colDefault)) << endl;
         columnDescr.colType   = pq->value(IX_DATA_TYPE).toString();
         columnDescr.udtName   = pq->value(IX_COLUMN_TYPE).toString();
-        QVariant cml = pq->value(IX_CHARACTER_MAXIMUM_LENGHT);
-        columnDescr.chrMaxLenghr = cml.canConvert(QVariant::Int) ? cml.toInt() : -1;
+        columnDescr.chrMaxLenghr = pq->isNull(IX_CHARACTER_MAXIMUM_LENGHT) ? -1 : pq->value(IX_CHARACTER_MAXIMUM_LENGHT).toInt();
         columnDescr.isNullable= str2bool(pq->value(IX_IS_NULLABLE).toString());
         columnDescr.isUpdatable=pq->value(IX_PRIVILEGES).toString().contains("update", Qt::CaseInsensitive);
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
         // PDEB(INFO) << fullTableName() << " field #" << i << QChar('/') << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
-        // Is auto increment ?
+        // Is auto increment ? Ez nem derül ki, a mező mindíg üres.
         _autoIncrement.setBit(i -1, 0 == pq->value(IX_EXTRA).toString().compare("auto_increment", Qt::CaseInsensitive));
         // Megnézzük enum-e ... A GLPI-ben nincs, kihagyjuk
         // Deleted mező? ...    A GLPI-ben nincs, kihagyjuk
@@ -614,7 +638,7 @@ void cMyRecStaticDescr::_setting(const QString& __t)
     // Index (there is no VIEW TABLE either)
     enum { II_Table, II_Non_unique, II_Key_name, II_Seq_in_index, II_Column_name, II_Collation, II_Cardinality,
            II_Sub_part, II_Packed, II_Null, II_Index_type, II_Comment, II_Index_comment };
-    sql = "SHOW INDEX FROM " + fullTableName();
+    sql = "SHOW INDEX FROM " + fullTableNameQ();
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     // PDEB(VVERBOSE) << "Read keys in " << _fullTableName() << " table..." << endl;
     if (pq->first()) {
@@ -623,15 +647,14 @@ void cMyRecStaticDescr::_setting(const QString& __t)
         do {
             QString constraintName = pq->value(II_Key_name).toString();
             QString columnName     = pq->value(II_Column_name).toString();
-            QString constraintType = pq->value(II_Index_type).toString();
+            int     non_unique     = pq->value(II_Non_unique).toInt();
             i = toIndex(columnName, EX_IGNORE);
             if (i < 0) EXCEPTION(EDBDATA,0, QObject::tr("Invalid column name : %1").arg(fullColumnName(columnName)));
-            if     (constraintType == "PRIMARY KEY") {
+            if (0 == constraintName.compare("PRIMARY", Qt::CaseInsensitive)) {
                 //PDEB(VVERBOSE) << "Set _primaryKeyMask bit, index = " << i << endl;
                 _primaryKeyMask.setBit(i);
-                if (columnName.endsWith(QString("_id"))) _idIndex = i;
             }
-            else if(constraintType == "UNIQUE") {
+            else if(0 == non_unique) {
                 // A map-ban van ilyen nevű CONSTRAINT (UNIQUE KEY név) ?
                 QMap<QString, int>::iterator    it = map.find(constraintName);
                 int j;

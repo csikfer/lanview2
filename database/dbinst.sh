@@ -27,6 +27,7 @@ CREATE DATABASE $MYNAME
     ENCODING = 'UTF8'
     LC_COLLATE = 'hu_HU.UTF-8'
     LC_CTYPE = 'hu_HU.UTF-8'
+    TEMPLATE template0
     CONNECTION LIMIT = -1;
 
 \q

@@ -1147,51 +1147,131 @@ template <class O> class tTreeItem {
 protected:
     tTreeItem   *       _pParent;
     QList<tTreeItem *>  _childList;
+    tTreeItem   *       _pRoot;
 public:
     O *                 pData;
     tTreeItem(O * __pd, tTreeItem * __par) : _pParent(__par), _childList(), pData(__pd) {
         if (__par != nullptr) {
             _pParent->_childList << this;
+            _pRoot = _pParent->_pRoot;
+            if (_pRoot == nullptr) _pRoot = _pParent->root();
+        }
+        else {
+            _pRoot = this;
+        }
+    }
+    tTreeItem(const O& __d, tTreeItem * __par) : _pParent(__par), _childList(), pData(static_cast<O *>(__d.dup())) {
+        if (__par != nullptr) {
+            _pParent->_childList << this;
+            _pRoot = _pParent->_pRoot;
+            if (_pRoot == nullptr) _pRoot = _pParent->root();
+        }
+        else {
+            _pRoot = this;
         }
     }
     ~tTreeItem() {
-        clear();
+        clear(true);
     }
-    void clear() {
+    /// Törli az obketum tartalmát:
+    /// Törli és felszabadítja a leveleket, törli és felszabadítja a pData-t,
+    /// törli a _pRoot pointert.
+    /// @param getOut Ha értéke igaz, és a _pParent értéke nem nullptr, akkor
+    /// a parentnél is törli magát a levelek (gyerekek) listábó. Ekkor, ha nem
+    /// találja magát a parent litájában, akkor kizárást dob.
+    void clear(bool getOut = false) {
         if (!_childList.isEmpty()) delete _childList.first();
-        if (_pParent != 0) {
+        if (getOut && _pParent != nullptr) {
             int ix = indexOnParent();
             if (!isContIx(_pParent->_childList ,ix)) {
-                EXCEPTION(EPROGFAIL);
+                EXCEPTION(EDATA);
             }
             _pParent->_childList.removeAt(ix);
         }
+        _pRoot = nullptr;
         pDelete(pData);
     }
-    tTreeItem * addChild(O * p) { return new tTreeItem(p, this); }
-    tTreeItem& operator << (O * p) { addChild(p); return *this; }
-    bool isRoot() const { return _pParent == nullptr; }
-    int childNumber() const { return _childList.size(); }
-    tTreeItem * parent() { return _pParent; }
-    tTreeItem * root() { return _pParent == nullptr ? this : _pParent->root(); }
-    const QList<tTreeItem *> * siblings() const { return _pParent == nullptr ? nullptr : &_pParent->_childList; }
-    int indexOnParent() { return _pParent == nullptr ? NULL_IX : _pParent->_childList.indexOf(this); }
+    /// Hozzáad a levelek (gyerekek) listához egy elemet.
+    /// @param pi Az új levél (leszármazozz elem) pointere.
+    /// @return Az objektum (nem a hozzáadot levél!) pointerével tér vissza
+    tTreeItem * addChild(tTreeItem *pi) {
+        _childList << pi;
+        pi->_pParent = this;
+        pi->_pRoot   = this->root();
+    }
+    /// Hozzáad a levelek (gyerekek) listához egy elemet.
+    /// @param pi Az új levél (leszármazozz elem) pointere.
+    /// @return Az objektum (nem a hozzáadot levél!) referenciájával tér vissza
+    tTreeItem& operator << (tTreeItem*p){ return *addChild(p); }
+    /// A megadott adattal létrehoz egy tTreeItem objektumot, és azt
+    /// hozzáadja a levelek (gyerekek) listájához.
+    /// @param p Az új levél adat tartalma (pData adattag értéke).
+    /// @return A létrehozott új elem pointerével tér vissza
+    tTreeItem * addChild(O * p)         { return new tTreeItem(p, this); }
+    /// A megadott adattal létrehoz egy tTreeItem objektumot, és azt
+    /// hozzáadja a levelek (gyerekek) listájához.
+    /// @param p Az új levél adat tartalma (pData adattag értéke).
+    /// @return A létrehozott új elem referenciájával tér vissza
+    tTreeItem& operator << (O * p)      { return *addChild(p); }
+    /// A megadott adat másolatával létrehoz egy tTreeItem objektumot, és azt
+    /// hozzáadja a levelek (gyerekek) listájához. Feltézelezi, hogy az O osztálynak
+    /// van dup() metódusa a másolat elkészítéséhez.
+    /// @param p Az új levél adat tartalma (pData a másolatra fog mutatni).
+    /// @return A létrehozott új elem pointerével tér vissza
+    tTreeItem * addChild(const O& o)    { return new tTreeItem(o, this); }
+    /// A megadott adat másolatával létrehoz egy tTreeItem objektumot, és azt
+    /// hozzáadja a levelek (gyerekek) listájához. Feltézelezi, hogy az O osztálynak
+    /// van dup() metódusa a másolat elkészítéséhez.
+    /// @param p Az új levél adat tartalma (pData a másolatra fog mutatni).
+    /// @return A létrehozott új elem referenciájával tér vissza
+    tTreeItem& operator << (const O& o) { return *addChild(o); }
+    /// Ha a _pParent értéke nullptr, akkor igaz értékkel tér vissza.
+    bool isRoot() const                 { return _pParent == nullptr; }
+    int childNumber() const             { return _childList.size(); }
+    tTreeItem * parent()                { return _pParent; }
+    tTreeItem * root() {
+        if (_pRoot != nullptr) return _pRoot;
+        _pRoot = this;
+        while (_pRoot->_pParent != nullptr) _pRoot = _pRoot->_pParent;
+        return _pRoot;
+    }
+    const QList<tTreeItem *> * siblings() const {
+        return _pParent == nullptr ? nullptr : &_pParent->_childList;
+    }
+    int indexOnParent() {
+        return _pParent == nullptr ?
+                    NULL_IX :
+                    _pParent->_childList.indexOf(this);
+    }
     tTreeItem * siblingAt(int __ix) {
         const QList<tTreeItem *> * ps =siblings();
         if (ps != nullptr && isContIx(*ps, __ix)) return (*ps)[__ix];
         return nullptr;
     }
-    tTreeItem * nextSibling() {
+    tTreeItem * nextSibling(eEx __ex = EX_ERROR) {
         int ix = indexOnParent();
-        if (ix < 0) return nullptr;
+        if (ix < 0 || (ix +1) >= childNumber()) {
+            if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, ix +1);
+            return nullptr;
+        }
         ++ix;
         return siblingAt(ix);
     }
-    tTreeItem * prevSibling() {
+    tTreeItem * prevSibling(eEx __ex = EX_ERROR) {
         int ix = indexOnParent();
-        if (ix < 0) return nullptr;
+        if (ix < 1 || ix > childNumber())  {
+            if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, ix -1);
+            return nullptr;
+        }
         --ix;
         return siblingAt(ix);
+    }
+    tTreeItem * lastChild(eEx __ex = EX_ERROR) {
+        if (_childList.isEmpty()) {
+            if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, 0);
+            return nullptr;
+        }
+        return _childList.last();
     }
 };
 

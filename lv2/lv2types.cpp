@@ -121,8 +121,7 @@ QString   cMac::toString() const
     QString r;
     qlonglong m = val;
     for (int i = 6; i > 0; --i) {
-        QString b;
-        r.push_front(b.sprintf(":%02X", int(m & 0x00ff)));
+        r.push_front(QString(":%1").arg(int(m & 0x00ff), 2, 16, QChar('0')));
         m >>= 8;
     }
     return r.right(17);

@@ -8,6 +8,7 @@
 #include "others.h"
 #include "lv2link.h"
 #include "lv2service.h"
+#include "lv2glpi.h"
 
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
@@ -1745,6 +1746,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
     cOId *              coid;
 }
 
+%token      TEST_T
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T ICON_T
@@ -1854,7 +1856,8 @@ main    :
 commands: command
         | commands command
         ;
-command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
+command : test
+        | INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | macro
         | sql
         | user
@@ -1878,6 +1881,13 @@ command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | exports
         | snmp
         | ';'
+        ;
+// *** TEST ***
+test    : TEST_T ';'                                        { QString e;
+                                                              cGlpiLocationsTreeItem *p = cGlpiLocationsTreeItem::syncing(e, TS_FALSE, TS_FALSE);
+                                                              cExportQueue::push(e);
+                                                              delete p;
+                                                            }
         ;
 // Makró vagy makró jellegű definíciók
 macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
@@ -3369,6 +3379,7 @@ static const struct token {
     const char *name;
     int         value;
 } yyTokenList[] = {
+    TOK(TEST)
     TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
     TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
     TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS) TOK(ICON)

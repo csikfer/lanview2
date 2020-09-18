@@ -193,9 +193,9 @@ void cError::exception()
             std::cout << m.toStdString() << std::endl << mm.toStdString() << std::endl;
         }
         sendError(this);
-        exit(mErrorCode);
     }
 #endif
+    exit(mErrorCode);
 }
 
 QString cError::errorMsg(int __ErrorCode)
@@ -298,6 +298,7 @@ void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString& _mF
 {
     auto *pe = new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
     pe->exception();
+    exit(1);
 }
 
 QString SqlErrorTypeToString(int __et)
@@ -359,6 +360,7 @@ void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql, const QStr
     pe->mSqlQuery     = sql;
     pe->mSqlBounds    = bound;
     pe->exception();
+    exit(1);
 }
 
 void _sql_derr_ex(cError *pe, QSqlQuery& q)
@@ -366,4 +368,5 @@ void _sql_derr_ex(cError *pe, QSqlQuery& q)
     pe->mSqlQuery     = q.lastQuery();
     pe->mSqlBounds    = _sql_err_bound(q);
     pe->exception();
+    exit(1);
 }

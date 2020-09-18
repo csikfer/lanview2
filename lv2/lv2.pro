@@ -69,61 +69,62 @@ TARGET = lv2
 TEMPLATE = lib
 
 DEFINES += LV2_LIBRARY
-SOURCES += lanview.cpp \
+SOURCES += \
+    lanview.cpp \
     cdebug.cpp \
     cerror.cpp \
-    lv2glpi.cpp \
-    lv2html.cpp \
-    lv2mariadb.cpp \
     lv2types.cpp \
+    others.cpp \
+    lv2xml.cpp \
     lv2sql.cpp \
     lv2datab.cpp \
     lv2data.cpp \
     lv2user.cpp \
-    lv2xml.cpp \
+    srvdata.cpp \
+    vardata.cpp \
     lv2service.cpp \
-    others.cpp \
     qsnmp.cpp \
     guidata.cpp \
     import_parser.cpp \
     lv2daterr.cpp \
-    qtelnet.cpp \
-    srvdata.cpp \
     lv2link.cpp \
-    vardata.cpp \
+    export.cpp \
+    lv2html.cpp \
     report.cpp \
-    export.cpp
+    lv2mariadb.cpp \
+    lv2glpi.cpp \
+    qtelnet.cpp
 
-HEADERS += lanview.h \
+HEADERS += \
     lv2_global.h \
-    lv2glpi.h \
-    lv2html.h \
-    lv2mariadb.h \
-    qsnmp.h \
-    errcodes.h \
-    cerror.h \
+    lanview.h \
     cdebug.h \
-    lv2types.h \
-    lv2sql.h \
-    lv2xml.h \
+    cerror.h \
+    errcodes.h \
     LV2_errcodes.h \
-    scan.h \
-    lv2service.h \
+    lv2types.h \
     others.h \
+    lv2xml.h \
+    lv2sql.h \
     lv2datab.h \
+    lv2cont.h \
     lv2data.h \
     lv2user.h \
+    srvdata.h \
+    vardata.h \
+    lv2service.h \
+    qsnmp.h \
     guidata.h \
-    lv2cont.h \
-    doxydoc.h \
     import_parser.h \
     lv2daterr.h \
-    qtelnet.h \
-    srvdata.h \
     lv2link.h \
-    vardata.h \
+    export.h \
+    lv2html.h \
     report.h \
-    export.h
+    lv2mariadb.h \
+    lv2glpi.h \
+    qtelnet.h \
+    scan.h
 
 #FORMS +=
 

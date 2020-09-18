@@ -2,6 +2,7 @@
 #define LV2MARIADB_H
 #include "lanview.h"
 #include <typeinfo>
+#include <QSqlDatabase>
 
 /*!
 @file lv2mariadb.h
@@ -9,20 +10,18 @@ A mariadb (mysql?) adatbázis interfész bázis objektuma, és a rekord ill. mez
 A kiegészítés alapvetően a GLPI MySQL adatbázisának a kezelését célozza meg.
 */
 
+/// @class cMariaDb
 /// A Maria DB kezeló objektum (hasonlóan a lanView osztályhoz, csak egy példány!)
 class LV2SHARED_EXPORT cMariaDb : public QSqlDatabase {
 public:
-
-    static void init();
-    static void drop();
-    static cMariaDb * pInstance(eEx __ex = EX_ERROR) {
-        if (_pInstance == nullptr && __ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
-        return _pInstance;
-    }
+    static bool init(eEx __ex = EX_IGNORE);
+    static bool drop(eEx __ex = EX_IGNORE);
+    static cMariaDb * pInstance(eEx __ex = EX_ERROR);
     static const QString& tablePrefix() { return pInstance()->sTablePrefix; }
     static QString schemaName()   { return pInstance()->databaseName(); }
-    static QSqlQuery getQuery();
-    static QSqlQuery * newQuery();
+    static QSqlQuery getQuery(eEx __ex = EX_ERROR);
+    static QSqlQuery * newQuery(eEx __ex = EX_ERROR);
+    static const QString sConnectionType;
     static const QString sConnectionName;
 protected:
     cMariaDb();
@@ -165,10 +164,10 @@ public:
     /// A megadott indexű mező nevével tér vissza. Hasonló a _columnName() metódushoz, de a visszaadott nevet idézőjelek közé teszi
     QString columnNameQ(int i) const                 { return quoted(columnName(i), QChar('`')); }
     /// A tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
-    QString fullTableName() const                   { return _tableName; }
+    QString fullTableName() const                   { return mCat(_schemaName, _tableName); }
     /// A view tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
     /// Lásd még a _viewName adattagot.
-    QString fullViewName() const                    { return _viewName; }
+    QString fullViewName() const                    { return mCat(_schemaName, _viewName); }
     /// A teljes mező névvel (tábla és ha szükséges a séma névvel kiegészített) tér vissza. a nevek nincsenek idézőjelbe rakva.
     /// @param _i A mező indexe
     QString fullColumnName(int i) const{ return mCat(fullTableName(), columnName(i)); }
@@ -176,10 +175,10 @@ public:
     /// @param _c (rövid) mező név
     QString fullColumnName(const QString& _c) const{ return mCat(fullTableName(), _c); }
     /// A tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
-    QString fullTableNameQ() const                   { return quoted(_tableName, QChar('`')); }
+    QString fullTableNameQ() const                   { return mCat(quoted(_schemaName, QChar('`')), quoted(_tableName, QChar('`'))); }
     /// A view tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
     /// Lásd még a _viewName adattagot.
-    QString fullViewNameQ() const                   { return quoted(_viewName, QChar('`')); }
+    QString fullViewNameQ() const                   { return mCat(quoted(_schemaName, QChar('`')), quoted(_viewName, QChar('`'))); }
     /// A teljes mező névvel (tábla és ha sükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param i a mező indexe
     QString fullColumnNameQ(int i) const             { return mCat(fullTableNameQ(), columnNameQ(i)); }
@@ -268,21 +267,20 @@ public:
     /// Nemtámogatott.
     /// Ha __ex értéke nem EX_IGNORE, akkor kizárást dob, vagy NULL_ID-vel tér vissza.
     qlonglong fetchTableOId(QSqlQuery&, enum eEx __ex = EX_ERROR) const;
-    template <class T> int chkObjType(enum eEx __ex = EX_ERROR) const {
+    /// Ellenörzi, hogy a konverzió elvégezhető-e. Csak az eredeti típusra konvertálás lehetséges, mivel nincs öröklés.
+    template <class T> int chkMyObjType(enum eEx __ex = EX_ERROR) const {
         T o;
         if (typeid(T) == typeid(cMyRecAny) || typeid(*this) == typeid(cMyRecAny)) {
-            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 -> %2, but only one type is cMyRecAny").arg(descr().tableName()).arg(o.descr().tableName())));
             return -1;
         }
-        if (descr().tableoid() == o.descr().tableoid()) return 0;  // Azonos
-        if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::tr("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
-        if (descr() > o.descr()) return 1;        // Nem azonos, de konvertálható
-        if (__ex >= EX_ERROR)   EXCEPTION(EDATA, 2, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+        if (descr().tableName() == o.descr().tableName()) return 0;  // Azonos
+        if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableName()).arg(o.descr().tableName())));
         return -1;
     }
-    /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkObjType<T>() -t.
+    /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkMyObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem őse a megadott típus, akkor dob egy kizárást
-    template <class T> T * reconvert() { chkObjType<T>(); return dynamic_cast<T *>(this); }
+    template <class T> T * reconvertMy() { chkMyObjType<T>(); return dynamic_cast<T *>(this); }
     /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem őse a megadott típus, akkor dob egy kizárást
     template <class T> const T * creconvert() const { chkObjType<T>(); return dynamic_cast<const T *>(this); }
@@ -348,8 +346,6 @@ template <class R> const cMyRecStaticDescr *getPMyDescr(const QString& _tn)
     R::R()             : cMyRec() { _set(R::descr()); } \
     R::R(const R& __o) : cMyRec() { _cp(__o); } \
     R& R::clone(const cRecord& __o) { clear(); copy(__o); return *this; }
-
-
 
 /*!
 @class cMyRecAny

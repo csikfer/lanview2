@@ -2430,6 +2430,7 @@ protected:
         __cp(__o);
         pDelete(pTextList);
         if (__o.pTextList != nullptr) pTextList = new QStringList(*__o.pTextList);
+        if (NULL_IX != __o.descr().nameIndex(EX_IGNORE)) setObjectName(__o.getName());
     }
     /// Átmásolja a paraméterként megadott objektum mezőit. Előtte nem törli az objektum mező adatait.
     /// Ha a forrás olyan mezőt tartalmaz, amit a cél nem, akkor azokat figyelmen kívül hagyja.

@@ -45,14 +45,15 @@ public:
 };
 
 
-class LV2SHARED_EXPORT cGlpiEntities : public cMyRec {
-    CMYRECORD(cGlpiEntities);
+class LV2SHARED_EXPORT cGlpiEntity : public cMyRec {
+    CMYRECORD(cGlpiEntity);
 public:
 };
 
-class LV2SHARED_EXPORT cGlpiLocations : public cMyRec {
-    CMYRECORD(cGlpiLocations);
+class LV2SHARED_EXPORT cGlpiLocation : public cMyRec {
+    CMYRECORD(cGlpiLocation);
 public:
+    QString nameFromGlpi() { return nameFromGlpi(getName(_sCompletename)); }
     static QString nameToGlpi(const QString& __n);
     static QString nameFromGlpi(const QString& __n);
     static const QString sLevelSep;
@@ -61,12 +62,61 @@ private:
     static cRegExpConverter * pConvertToGlpi;
 };
 
-class LV2SHARED_EXPORT cGlpiLocationsTreeItem : public tTreeItem<cMyRec> {
-public:
-    cGlpiLocationsTreeItem(cMyRec * __d = nullptr, tTreeItem * __par = nullptr) : tTreeItem(__d, __par) {}
-    bool setEntity();
-    qlonglong entitiesId() { return pData->getId(); }
-    QString  entityName;
+enum eGlpiSyncResult {
+    SR_UNSET,       ///< Előkészítés
+    SR_EQU,         ///< Azonos rekordok
+    SR_SYNCED_GLPI, ///< GLPI rekord létrehozva
+    SR_SYNCED_LV2,  ///< LanView2 rekord létrehozva
+    SR_ERROR_GLPI,  ///< GLPI rekord létrehozvása sikertelen
+    SR_ERROR_LV2,   ///< LanView2 rekord létrehozvása sikertelen
+    SR_SKIP_GLPI,   ///< GLPI rekord létrehozvésa kihagyva
+    SR_SKIP_LV2     ///< LanView2 rekord létrehozvása kihagyva
 };
+
+class LV2SHARED_EXPORT cLocationsTreeItemData  {
+public:
+    cLocationsTreeItemData(const cMyRec& _glpiRecord);
+    cLocationsTreeItemData(const cPlace& _lv2Record);
+    cLocationsTreeItemData(cPlace * _pLv2Record);
+    ~cLocationsTreeItemData();
+//    cLocationsTreeItemData *dup() const;
+    QString toString();
+    cMyRec    * pGlpiRecord;    ///< cGlpiEntity (root) or cGlpiLocation
+    cPlace    * pLv2Record;
+    QString     placeName;
+    QString     completename;
+    QString     locationName;
+    enum eGlpiSyncResult result;
+};
+
+class LV2SHARED_EXPORT cGlpiLocationsTreeItem : public tTreeItem<cLocationsTreeItemData> {
+public:
+    cGlpiLocationsTreeItem(const cMyRec& __d, tTreeItem * __par = nullptr)
+        : tTreeItem(new cLocationsTreeItemData(__d), __par) { }
+    QString toString(bool tree = false, int indent = 0);
+    bool fetchGlpiTree(QString& emsg);
+    bool mergeLv2Tree(QString& emsg);
+    bool addLv2Tree(QString& emsg);
+    void prepare(QString &emsg, eTristate _updateGlpi, eTristate _updateLv2);
+    void updateLv2Record(bool _update, QString& emsg);
+    void updateGlpiRecord(bool _update, QString& emsg);
+
+    /// Betölti a GLPI glpi_locations rekordokból a hely fát, ahol lehet betölti a places rekordokat.
+    /// Majd kiegésziti a fát a még fel nem dolgozott places rekordokkal.
+    /// Azokat a glpi_locations reokordokat, melyek neve nem konvertálható a places rekord névvé, el lesznek dobva.
+    /// A places rekordok közül amelyek neve nem konvertálható, szintén eldobásra kerülnek.
+    static cGlpiLocationsTreeItem * fetchLocationAndPlaceTree(QString& emsg);
+
+    static cGlpiLocationsTreeItem * syncing(QString& emsg, eTristate _updateGlpi, eTristate _updateLv2)
+    {
+        cMariaDb::init();
+        cGlpiLocationsTreeItem * pTree = fetchLocationAndPlaceTree(emsg);
+        cMariaDb::drop();
+        if (pTree == nullptr) return nullptr;
+        pTree->prepare(emsg, _updateGlpi, _updateLv2);
+        return pTree;
+    }
+};
+
 
 #endif // LV2GLPI_H
