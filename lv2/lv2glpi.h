@@ -79,7 +79,7 @@ public:
     cLocationsTreeItemData(const cPlace& _lv2Record);
     cLocationsTreeItemData(cPlace * _pLv2Record);
     ~cLocationsTreeItemData();
-//    cLocationsTreeItemData *dup() const;
+    cLocationsTreeItemData *dup() const { EXCEPTION(ENOTSUPP); }    // A VC reklamál ha nincs dup()
     QString toString();
     cMyRec    * pGlpiRecord;    ///< cGlpiEntity (root) or cGlpiLocation
     cPlace    * pLv2Record;

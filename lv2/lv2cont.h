@@ -1192,14 +1192,17 @@ public:
         pDelete(pData);
     }
     /// Hozzáad a levelek (gyerekek) listához egy elemet.
+    /// A hozzáadott elem a tTreeItem tulajdona lesz, a destruktora fogja felszabadítani.
     /// @param pi Az új levél (leszármazozz elem) pointere.
     /// @return Az objektum (nem a hozzáadot levél!) pointerével tér vissza
     tTreeItem * addChild(tTreeItem *pi) {
         _childList << pi;
         pi->_pParent = this;
         pi->_pRoot   = this->root();
+        return  this;
     }
     /// Hozzáad a levelek (gyerekek) listához egy elemet.
+    /// A hozzáadott elem a tTreeItem tulajdona lesz, a destruktora fogja felszabadítani.
     /// @param pi Az új levél (leszármazozz elem) pointere.
     /// @return Az objektum (nem a hozzáadot levél!) referenciájával tér vissza
     tTreeItem& operator << (tTreeItem*p){ return *addChild(p); }
