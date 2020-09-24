@@ -245,21 +245,38 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
 
 /// Törli a csomóponthoz rendelt rekordot, és a gyerek csomópontokat, vagyis a teljes rész fát.
 /// A csomopontot eltávolítja a pearent-ből.
-/// Az adatok változásáról nem küld szignáltt. Rekourzív.
-bool cRecordTreeModel::removeNode(cTreeNode *pn)
+/// Az adatok változásáról nem küld szignált. Rekourzív.
+bool cRecordTreeModel::removeNode(cTreeNode *pn, bool recursive)
 {
     if (pn->parent == nullptr) {
         EXCEPTION(EPROGFAIL);   // A gyökér törlése nem értelmezhető
     }
-    // Töröljük az elemet a parentből
-    pn->parent->pChildrens->removeAt(pn->row());
     if (pn->pChildrens == nullptr) {   // Még be sincsenek olvasva a gyerköcök
         readChilds(pn);
     }
+    // Töröljük az elemet a parentből
+    pn->parent->pChildrens->removeAt(pn->row());
     // Töröljük a gyerköcöket..
-    while (pn->pChildrens->size()) removeNode(pn->pChildrens->at(0));
-    bool r = pn->pData->remove(*pq); // Töröljük a rekordot;
-    delete pn;  // Végül magát (a már gyermektelen) a node-ot
+    bool r = true;
+    QString tn;
+    if (!recursive) {
+        tn = tableShape.getName() + "_" + _sRemove;
+        sqlBegin(*pq, tn);
+    }
+    while (pn->pChildrens->size()) {
+        r = removeNode(pn->pChildrens->at(0), true);
+        if (!r) break;
+    }
+    if (cErrorMessageBox::condMsgBox(pn->pData->tryRemove(*pq, false, QBitArray(), TS_FALSE))) {
+        delete pn;  // Végül magát (a már gyermektelen) a node-ot
+        if (!recursive) sqlCommit(*pq, tn);
+    }
+    else {
+        if (!recursive) {
+            sqlRollback(*pq, tn);
+            refresh(false);
+        }
+    }
     return r;
 }
 

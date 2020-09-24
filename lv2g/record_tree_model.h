@@ -61,7 +61,8 @@ public:
     /// Beolvassa a node laszármazottait (nem rekurzív)
     void readChilds(cTreeNode *pNode);
     /// Törli a rész fát és rekordjait
-    bool removeNode(cTreeNode *pn);
+    /// A gyerek objektumokat rekurzív hívással törli.
+    bool removeNode(cTreeNode *pn, bool recursive = false);
     /// A kiválasztott sor lessz a gyökér
     void setRoot(const QModelIndex& mi);
     /// Vissalép a fán a pRootNode pointerrel, ha lehet

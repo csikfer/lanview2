@@ -825,6 +825,61 @@ qlonglong cMyRec::fetchTableOId(QSqlQuery&, eEx __ex) const
     return NULL_ID;
 }
 
+bool cMyRec::insert(QSqlQuery &__q, enum eEx __ex)
+{
+    eToReadBack toReadBack = _toReadBack;
+    _toReadBack = RB_NO;
+    bool r = cRecord::insert(__q, __ex);
+    _toReadBack = toReadBack;
+    if (r) {
+        // Read back :
+        switch (_toReadBack) {
+        case RB_NO_ONCE:
+        case RB_NO:
+            break;
+        case RB_YES:
+        case RB_ID:
+        case RB_MASK:
+        case RB_DEFAULT: {
+            qlonglong id = NULL_ID;
+            if (isIndex(idIndex(EX_IGNORE))) {
+                if (isNullId()) {
+                    id = execSqlIntFunction(__q, nullptr, "LAST_INSERT_ID");
+                    if (id == NULL_ID) {
+                        EXCEPTION(EDATA);
+                    }
+                    setId(id);
+                }
+                else {
+                    id = getId();
+                }
+                if (_toReadBack == RB_ID) break;    // The ID is readed, end read back
+            }
+            QBitArray rbMask = QBitArray(cols(), false);
+            QString sql = returningClause(rbMask, "SELECT ");
+            if (sql.isEmpty()) break;   // No read back (by mask)
+            sql += " WHERE ";
+            if (id != NULL_ID) {
+                sql = columnNameQ(idIndex()) + " = ?";
+                if (execSql(__q, sql, QVariant(id))) {
+                    readBack(__q, rbMask);
+                }
+                else {
+                    EXCEPTION(EDATA,0,identifying());
+                }
+            }
+            else {
+                EXCEPTION(ENOTSUPP);
+            }
+          } break;
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+    }
+    if (_toReadBack == RB_NO_ONCE) _toReadBack = _toReadBackDefault;
+    return r;
+}
+
 /* ******************************************************************************************************* */
 cMyRecAny::cMyRecAny() : cMyRec()
 {

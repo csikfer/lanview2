@@ -111,9 +111,9 @@ public:
     {
         cMariaDb::init();
         cGlpiLocationsTreeItem * pTree = fetchLocationAndPlaceTree(emsg);
-        cMariaDb::drop();
         if (pTree == nullptr) return nullptr;
         pTree->prepare(emsg, _updateGlpi, _updateLv2);
+        cMariaDb::drop();
         return pTree;
     }
 };

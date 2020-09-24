@@ -280,6 +280,7 @@ bool cGlpiLocationsTreeItem::fetchGlpiTree(QString& emsg)
     location.setId(_sEntitiesId, pData->pGlpiRecord->getId());  // root item, data: entities record
     if (location.fetch(q, false, location.mask(_sEntitiesId), location.iTab(_sCompletename))) {
         do {
+            emsg += QString("Fetched glpi_location : '%1' / '%2'.\n").arg(location.getName(_sCompletename), location.getName());
             stack.checkLevel(&location, emsg);
         } while (location.next(q));
     }
@@ -306,16 +307,16 @@ bool cGlpiLocationsTreeItem::mergeLv2Tree(QString& emsg)
         }
     }
     else {                                                      // child item
-        QString placeName = pData->pGlpiRecord->reconvertMy<cGlpiLocation>()->nameFromGlpi();
-        if (placeName.isEmpty()) {
-            emsg += QObject::tr("The GLPI locations.completename = %1, not converted to LanView2 place name.\n").arg(pData->pGlpiRecord->getName(_sCompletename));
+        pData->placeName = pData->pGlpiRecord->reconvertMy<cGlpiLocation>()->nameFromGlpi();
+        if (pData->placeName.isEmpty()) {
+            emsg += QObject::tr("The GLPI locations.completename = '%1', not converted to LanView2 place name.\n").arg(pData->pGlpiRecord->getName(_sCompletename));
             delete pPlace;
             return true;    // non fatal
         }
-        pPlace->setName(placeName);     // WHERE
-        pPlace->setBool(_sFlag, false); // SET
+        pPlace->setName(pData->placeName);  // WHERE ..
+        pPlace->setBool(_sFlag, false);     // SET ..
         if (0 == pPlace->update(q, false, pPlace->mask(_sFlag), pPlace->mask(pPlace->nameIndex()), EX_ERROR)) { // Set flag to false, and read record
-            emsg += QObject::tr("The GLPI locations.completename = %1,  converted to LanView2 place name = %2. Place is not found in LanView2 database.\n").arg(pData->pGlpiRecord->getName(_sCompletename), placeName);
+            emsg += QObject::tr("The GLPI locations.completename = '%1',  converted to LanView2 place name = '%2'. Place is not found in LanView2 database.\n").arg(pData->pGlpiRecord->getName(_sCompletename), pData->placeName);
             delete pPlace;
             return true;
         }
@@ -389,8 +390,8 @@ bool cGlpiLocationsTreeItem::addLv2Tree(QString &emsg)
                 }
             }
             if (locationName.isEmpty()) {
-                emsg += QObject::tr("The GLPI locations completename name is invalid : parent completename = '%1', completename = '%2', separator = '%3', place_name = %4\n").arg(parentCompletename, completename, cGlpiLocation::sLevelSep, placeName);
-                emsg += "Tree : \n" + static_cast<cGlpiLocationsTreeItem *>(root())->toString(true, 0);
+                emsg += QObject::tr("The GLPI locations completename name is invalid : parent completename = '%1', completename = '%2' (separator = '%3'), place_name source = %4, parent = %5\n").arg(parentCompletename, completename, cGlpiLocation::sLevelSep, placeName, parentPlaceName);
+//              emsg += "Tree : \n" + static_cast<cGlpiLocationsTreeItem *>(root())->toString(true, 0);
                 delete pPlace;
                 continue;    // non fatal, DROP RECORD
             }
@@ -476,7 +477,10 @@ void cGlpiLocationsTreeItem::updateLv2Record(bool _update, QString& emsg)
         return;
     }
     pPlace->setName(pData->placeName);
-    pPlace->setId(_sParentId, pParent->getTextId());
+    QString note = QObject::tr("Synced from GLPI.");
+    msgAppend(&note, pData->pGlpiRecord->getName("comment"));
+    pPlace->setNote(note);
+    pPlace->setId(_sParentId, pParent->getId());
     if (_update) {
         QSqlQuery q = getQuery();
         cError *pe = pPlace->tryInsert(q);
@@ -499,6 +503,7 @@ void cGlpiLocationsTreeItem::updateLv2Record(bool _update, QString& emsg)
 void cGlpiLocationsTreeItem::updateGlpiRecord(bool _update, QString& emsg)
 {
     cGlpiLocation *pLocation = new cGlpiLocation;
+    pLocation->_toReadBack = RB_ID; // Need the ID after the insert
     pData->pGlpiRecord = pLocation;
     pLocation->setName(_sName,         pData->locationName);
     pLocation->setName(_sCompletename, pData->completename);
@@ -511,11 +516,15 @@ void cGlpiLocationsTreeItem::updateGlpiRecord(bool _update, QString& emsg)
     }
     else {
         locationId = parent()->pData->pGlpiRecord->getId();
+        if (locationId == 0) EXCEPTION(EDATA);
         level = int(parent()->pData->pGlpiRecord->getId(_sLevel)) + 1;
     }
     pLocation->setId(__sLocationsId, locationId);
     pLocation->setId(_sLevel, level);
     pLocation->setId("is_recursive", 0);
+    QString note = QObject::tr("Synced from LanView2.");
+    msgAppend(&note, pData->pLv2Record->getNote());
+    pLocation->setName("comment", note);
     QVariant now = QDateTime::currentDateTime();
     pLocation->set("date_mod", now);
     pLocation->set("date_creation", now);

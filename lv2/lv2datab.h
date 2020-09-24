@@ -1668,7 +1668,7 @@ public:
     bool isNullName() const                         { return isNull(nameIndex()); }
     /// Visszaad egy bitmap-et, ahol minden olyan bit igaz, mellyel azonos idexű mező értéke NULL.
     QBitArray areNull() const;
-    QString returningClause(QBitArray& rbMask);
+    QString returningClause(QBitArray& rbMask, const QString &clause = " RETURNING ");
     qlonglong doReadBack(QSqlQuery &__q, const QBitArray& rbMask);
     /// Beszúr egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
     /// lesznek megadva, melyeknek nem NULL az értékük.

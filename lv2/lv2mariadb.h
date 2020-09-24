@@ -267,6 +267,8 @@ public:
     /// Nemtámogatott.
     /// Ha __ex értéke nem EX_IGNORE, akkor kizárást dob, vagy NULL_ID-vel tér vissza.
     qlonglong fetchTableOId(QSqlQuery&, enum eEx __ex = EX_ERROR) const;
+    /// Kezeli az INSERT parancsban a RETURNING hiányát
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Ellenörzi, hogy a konverzió elvégezhető-e. Csak az eredeti típusra konvertálás lehetséges, mivel nincs öröklés.
     template <class T> int chkMyObjType(enum eEx __ex = EX_ERROR) const {
         T o;

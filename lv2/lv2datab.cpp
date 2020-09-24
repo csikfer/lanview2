@@ -3392,7 +3392,7 @@ QBitArray cRecord::areNull() const
     return r;
 }
 
-QString cRecord::returningClause(QBitArray& rbMask)
+QString cRecord::returningClause(QBitArray& rbMask, const QString& clause)
 {
     QString r;
     if (_toReadBack == RB_NO || _toReadBack == RB_NO_ONCE || (_toReadBack == RB_MASK && _readBackMask.count(true) == 0)) {
@@ -3404,12 +3404,12 @@ QString cRecord::returningClause(QBitArray& rbMask)
     int ix;
     switch (_toReadBack) {
     case RB_YES:
-        r = " RETURNING *";
+        r = clause + "*";
         rbMask.fill(true);
         break;
     case RB_ID:
         ix = idIndex();
-        r = " RETURNING " + columnNameQ(ix);
+        r = clause + columnNameQ(ix);
         rbMask[ix] = true;
         break;
     case RB_DEFAULT:
@@ -3418,12 +3418,12 @@ QString cRecord::returningClause(QBitArray& rbMask)
             if (f) rbMask[ix] = true;
         }
         if (rbMask.count(true)) {
-            r = " RETURNING " + descr().columnNamesQ(rbMask);
+            r = clause + descr().columnNamesQ(rbMask);
         }
         break;
     case RB_MASK:
         rbMask = _readBackMask;
-        r = " RETURNING " + descr().columnNamesQ(rbMask);
+        r = clause + descr().columnNamesQ(rbMask);
         break;
     default:
         EXCEPTION(EPROGFAIL);

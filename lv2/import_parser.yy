@@ -1776,7 +1776,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T RAW_T  RRD_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
-%token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T
+%token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T GLPI_T SYNC_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1856,7 +1856,7 @@ main    :
 commands: command
         | commands command
         ;
-command : test
+command : glpi
         | INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | macro
         | sql
@@ -1882,12 +1882,11 @@ command : test
         | snmp
         | ';'
         ;
-// *** TEST ***
-test    : TEST_T ';'                                        { QString e;
-                                                              cGlpiLocationsTreeItem *p = cGlpiLocationsTreeItem::syncing(e, TS_FALSE, TS_FALSE);
-                                                              cExportQueue::push(e);
-                                                              delete p;
-                                                            }
+glpi    : GLPI_T PLACE_T SYNC_T bool_ bool_ ';'     { QString e;
+                                                      cGlpiLocationsTreeItem *p = cGlpiLocationsTreeItem::syncing(e, bool2ts($4), bool2ts($5));
+                                                      cExportQueue::push(e);
+                                                      delete p;
+                                                    }
         ;
 // Makró vagy makró jellegű definíciók
 macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
@@ -3409,7 +3408,7 @@ static const struct token {
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED) TOK(RAW)  TOK(RRD)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
-    TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID)
+    TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID) TOK(GLPI) TOK(SYNC)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },
