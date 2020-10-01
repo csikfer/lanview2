@@ -1789,7 +1789,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts srvvt_id reattr nodetype
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool_ bool_on bool ifdef exclude replfl prefered inverse
+%type  <b>  bool_ bool_on bool_off bool ifdef exclude replfl prefered inverse
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from features osver
@@ -1882,11 +1882,10 @@ command : glpi
         | snmp
         | ';'
         ;
-glpi    : GLPI_T PLACE_T SYNC_T bool_ bool_ ';'     { QString e;
-                                                      cGlpiLocationsTreeItem *p = cGlpiLocationsTreeItem::syncing(e, bool2ts($4), bool2ts($5));
-                                                      cExportQueue::push(e);
-                                                      delete p;
-                                                    }
+glpi    : GLPI_T PLACE_T SYNC_T bool_ bool_ bool_off ';' {
+                    cGlpiLocationsTreeItem *p = cGlpiLocationsTreeItem::syncing(bool2ts($4), bool2ts($5), $6);
+                    if (p != nullptr) delete p;
+                }
         ;
 // Makró vagy makró jellegű definíciók
 macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
@@ -2100,6 +2099,9 @@ bool    : bool_                     { $$ = $1; }
 bool_on :                           { $$ = true; }
         | bool_                     { $$ = $1; }
         ;
+bool_off:                           { $$ = false; }
+        | bool_                     { $$ = $1; }
+        ;
 value   : iexpr                     { $$ = new QVariant($1); }
         | fexpr                     { $$ = new QVariant($1); }
         | str                       { $$ = sp2vp($1);}
@@ -2161,8 +2163,8 @@ user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3,
         | USER_T GROUP_T INSERT_T str str_z     { REPOBJ(pGroup, cGroup(), REPLACE_OFF, $4, $5); }
             ugrp_e                              { writeAndDel(pGroup); }
 //  Felhasználói csoportagság kezelése
-        | USER_T GROUP_T str ADD_T str ';'      { tGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
-        | USER_T GROUP_T str REMOVE_T str ';'   { tGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
+        | USER_T GROUP_T str ADD_T str ';'      { tGroupUser gu(qq(), *$3, *$5); if (NULL_ID == gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
+        | USER_T GROUP_T str REMOVE_T str ';'   { tGroupUser gu(qq(), *$3, *$5); if (NULL_ID != gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
         ;
 // Felhasználók tulajdonságai
 user_e  : ';'
@@ -2355,8 +2357,8 @@ place   : PLACE_T replace str str_z             { REPOBJ(pPlace, cPlace, $2, $3,
                                                   else                   cPlaceGroup::insertNew( qq(), sp2s($3), sp2s($4), $5); }
         | PLACE_T GROUP_T REPLACE_T str str_z pgtype ';'{cPlaceGroup::replaceNew(qq(), sp2s($4), sp2s($5), $6); }
         | PLACE_T GROUP_T INSERT_T str str_z pgtype ';'{ cPlaceGroup::insertNew(qq(), sp2s($4), sp2s($5), $6); }
-        | PLACE_T GROUP_T str ADD_T str ';'     { cGroupPlace gp(qq(), *$3, *$5); if (!gp.test(qq())) gp.insert(qq()); delete $3; delete $5; }
-        | PLACE_T GROUP_T str REMOVE_T str ';'  { cGroupPlace gp(qq(), *$3, *$5); if (gp.test(qq())) gp.remove(qq()); delete $3; delete $5; }
+        | PLACE_T GROUP_T str ADD_T str ';'     { cGroupPlace gp(qq(), *$3, *$5); if (NULL_ID == gp.test(qq())) gp.insert(qq()); delete $3; delete $5; }
+        | PLACE_T GROUP_T str REMOVE_T str ';'  { cGroupPlace gp(qq(), *$3, *$5); if (NULL_ID != gp.test(qq())) gp.remove(qq()); delete $3; delete $5; }
         ;
 place_e : ';'
         | '{' plac_ps '}'

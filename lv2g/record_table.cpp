@@ -919,7 +919,7 @@ void cRecordTableFODialog::setFilterDialog()
         break;
     case FT_SQL_WHERE:
         pLabel    = new QLabel(tr("SQL kifejezés :"));
-        pTextEdit  = new QPlainTextEdit(filter().param1.toString());
+        pTextEdit = new QPlainTextEdit(filter().param1.toString());
         pGrid->addWidget(pLabel,    0, 0);
         pGrid->addWidget(pTextEdit, 0, 1);
         connect(pTextEdit, SIGNAL(textChanged()), &filter(), SLOT(changedText()));
@@ -1150,7 +1150,12 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     }
     else {
         pColDescr = &recDescr.colDescr(fieldIndex);
-        dataCharacter = defaultDataCharacter(recDescr, fieldIndex);
+        if (shapeField.isFeature(_sViewExpr) || shapeField.isFeature(_sViewFunc)) {
+            dataCharacter = DC_DERIVED;
+        }
+        else {
+            dataCharacter = defaultDataCharacter(recDescr, fieldIndex);
+        }
         if (pColDescr->eColType == cColStaticDescr::FT_INTEGER && pColDescr->fKeyType == cColStaticDescr::FT_NONE) {
             dataAlign |= Qt::AlignRight;
         }

@@ -93,6 +93,11 @@ cRecordViewModelBase::~cRecordViewModelBase()
     delete pq;
 }
 
+/// @param fix      Mező index az aktuális rekordban
+/// @param column   Oszlop megjelenítését vezérlő objektum
+/// @param pr       Az aktuális rekordra mutató pointer
+/// @param role     A hívó eredeti QTableModel::data() role paraméter
+/// @”aram isTextId Igaz, ha az aktuális rekordban az aktuális mező egy text_id mező
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
     qlonglong& ff = column.fieldFlags;

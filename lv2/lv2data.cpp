@@ -551,6 +551,19 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
     return iid.isNull() ? NULL_ID : variantToId(iid);
 }
 
+QString cPlace::placeCategoryName()
+{
+    static const QString sql =
+            "SELECT place_group_name"
+            " FROM places"
+            " JOIN place_group_places USING(place_id)"
+            " JOIN place_groups USING(place_group_id)"
+            " WHERE place_id = ? AND place_group_type = 'category'"
+            " LIMIT 1";
+    QSqlQuery q = getQuery();
+    return execSql(q, sql, getId()) ? q.value(0).toString() : _sNul;
+}
+
 /* ------------------------------ place_froups ------------------------------ */
 
 const QString& placeGroupType(int e, eEx __ex)

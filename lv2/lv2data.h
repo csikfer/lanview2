@@ -479,10 +479,19 @@ public:
 class LV2SHARED_EXPORT cPlace : public cRecord {
     CRECORD(cPlace);
 public:
+    /// Megkeresi az első olyan szűlőt, melyhez hozzárendeltek térképet (image_id nem NULL),
+    /// Ha talál ilyet, akkor az image_id-vel térvissza, ha nem akkor NULL_ID-vel.
+    /// A get_parent_image() PLPGSQL függvényt hívja az ID-vel.
     qlonglong parentImageId(QSqlQuery& q);
     bool isUnknown() { return getId() <= UNKNOWN_PLACE_ID; }
     bool isRoot()    { return getId() == ROOT_PLACE_ID; }
     bool isValid()   { return getId() >  ROOT_PLACE_ID; }
+    /// A helyiség kategória nevével tér vissza.
+    /// A kategória egy category típusú place_groups rekord, egy helyiséghez
+    /// elvileg egy category típusú plce_groups rekord rendelhető (nincs ellenörzés)
+    /// Ha nincs hozzárendelt category típusú plce_groups rekord, akkor üres stringgel tér vissza.
+    /// Ha több is van, akkor az egyik nevével, amit elöszőr visszaad az adatbázis.
+    QString placeCategoryName();
 };
 
 

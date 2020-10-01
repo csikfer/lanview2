@@ -183,9 +183,9 @@ int indexOfResourceIcon(const QString& _s)
 int defaultDataCharacter(const cRecStaticDescr& __d, int __ix)
 {
     __d.chkIndex(__ix);
-    if (__ix == __d.idIndex(EX_IGNORE))      return DC_ID;
-    if (__ix == __d.nameIndex(EX_IGNORE))    return DC_NAME;
-    if (__d.primaryKey()[__ix])     return DC_PRIMARY;
+    if (__ix == __d.idIndex(EX_IGNORE))     return DC_ID;
+    if (__ix == __d.nameIndex(EX_IGNORE))   return DC_NAME;
+    if (__d.primaryKey()[__ix])             return DC_PRIMARY;
     const cColStaticDescr& cd = __d[__ix];
     switch (cd.fKeyType) {
     case cColStaticDescr::FT_SELF:
