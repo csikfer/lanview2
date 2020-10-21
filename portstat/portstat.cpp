@@ -526,17 +526,15 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         if (ix < 0)
             continue;   // Not Found
         // Get interface object
-        cInterface&     iface = * dynamic_cast<cInterface *>(host().ports[ix]);
+        cInterface&     iface = *host().ports[ix]->reconvert<cInterface>();
         // Find cPortStat object
         QMap<qlonglong, cPortStat *>::iterator ifi = ifMap.find(iface.getId());
         if (ifi == ifMap.end())
             continue;   // Not found
         cPortStat& portstat = **ifi;
-        QBitArray bitsSet = iface.mask(ixPortOStat, ixPortAStat);     // bits: Field is changed
-        iface.set(ixLastTouched, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
-        bitsSet.setBit(ixLastTouched);
-        changeStringField(ifDescr, ixIfdescr, iface, bitsSet);
-
+        QBitArray bitsSet = iface.mask(ixLastTouched);              // bits: Field is changed
+        iface.set(ixLastTouched, QDateTime::currentDateTime());     // utolsó status állítás ideje, most.
+        iface.set(ixLastChanged, QDateTime::currentDateTime());     // Last changed, if changed any state.
         QString eMsg;
 
         int    _opstat = tab[_sIfOperStatus][i].toInt(&ok);
@@ -545,7 +543,6 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             eMsg = QObject::tr("Port %1: ifOperStatus is not numeric, or invalid : %2").arg(iface.getName(), tab[_sIfOperStatus][i].toString());
             opstat = _sUnknown;
         }
-        iface.setName(ixPortOStat, opstat);
 
         int    _adstat = tab[_sIfAdminStatus][i].toInt(&ok);
         QString adstat = snmpIfStatus(_adstat, EX_IGNORE);
@@ -554,7 +551,11 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             eMsg = msgCat(eMsg, msg, "\n");
             adstat = _sUnknown;
         }
-        iface.setName(ixPortAStat, adstat);
+        bool change;
+        change = changeStringField(ifDescr, ixIfdescr,   iface, bitsSet);
+        change = changeStringField(opstat,  ixPortOStat, iface, bitsSet) || change;
+        change = changeStringField(adstat,  ixPortAStat, iface, bitsSet) || change;
+        bitsSet.setBit(ixLastTouched, change);
 
         // rlinkstat if exists
         if (portstat.pRlinkStat != nullptr) {
@@ -615,7 +616,6 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);
             insp.flag = true; // State is set
             if (pstate != RS_INVALID && changeStringField(notifSwitch(pstate), ixPortStat, iface, bitsSet)) {
-                iface.set(ixLastChanged, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
                 bitsSet.setBit(ixLastChanged);
             }
         }

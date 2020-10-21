@@ -1050,7 +1050,7 @@ void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et, bool _enu
         const cEnumVal& ev = cEnumVal::enumVal(et, i, EX_IGNORE);
         QString sIcon = ev.getName(_sIcon);
         if (!sIcon.isEmpty()) pCheckBox->setIcon(resourceIcon(sIcon));
-        enumSetD(pCheckBox, ev);
+        enumSetD(pCheckBox, ev, i);
         QLineEdit *pLine = new QLineEdit(svl);
         pGrid->addWidget(pCheckBox, i, 0);
         pLine->setReadOnly(true);

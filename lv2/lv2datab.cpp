@@ -2391,48 +2391,6 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
   // DBGFL();
 }
 
-/*
-int cRecStaticDescr::toIndex(const QString& __n, eEx __ex) const
-{
-    // _DBGFN() << " @(" << __n << "): " << fullTableName() << endl;
-    // Esetleges schema vagy tábla név leválasztása
-    QStringList m = __n.split(QChar('.'));
-    // csak három elem lehet: schema.table.field
-    if (m.size() > 3) {
-        if (__ex) EXCEPTION(EDATA, -1, QObject::tr("Invalid field name %1").arg(__n));
-        DERR() << "Invalid index : -1 / To many field in name"  << endl;
-        return NULL_IX;
-    }
-    // Ha megvan adva schema név
-    if (m.size() == 3) {
-        QString sn = _schemaName;
-        if (sn == unQuoted(m.first())) {
-            m.pop_front();  // Schema név ok, eldobjuk
-        }
-        else{
-            if (__ex) EXCEPTION(EDATA, -1, QObject::tr("Invalid field name (other schema name) %1").arg(__n));
-            DERR() << "Invalid index : -1 / mismatch shema : my schema is " << schemaName() << endl;
-            return NULL_IX; // Másik schemarol van szó
-        }
-    }
-    // Ha megvan adva tábla név
-    if (m.size() == 2) {
-        if (_tableName == unQuoted(m.first())
-         || (_viewName.size() > 0 &&_viewName  == unQuoted(m.first()))) {
-            m.pop_front();  // Tábla név ok, eldobjuk
-        }
-        else {
-            if (__ex) EXCEPTION(EDATA, -1, QObject::tr("Invalid field name (other table name) ") + __n);
-            DERR() << QObject::tr("Invalid index : -1 / mismatch table : my table is %1").arg(tableName()) << endl;
-            return NULL_IX; // Másik tábláról van szó
-        }
-    }
-    // maradt a mező név, keressük a listűban
-    QString name = unQuoted(m.first());
-    return _columnDescrs.toIndex(name, __ex);
-}
-*/
-
 const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
 {
     cRecStaticDescr *p = nullptr;
