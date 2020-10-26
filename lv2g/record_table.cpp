@@ -1841,6 +1841,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     isNoModify = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
+    isReadOnly = isReadOnly || isNoModify;
 
     if (shapeType & ENUM2SET(TS_DIALOG))
         EXCEPTION(EDATA, 0, tr("Táblázatos megjelenítés az arra alkalmatlan %1 nevű leíróval.").arg(pts->getName()));

@@ -30,14 +30,61 @@ cPPortTableLine::cPPortTableLine(int r, cPatchDialog *par, qlonglong _pid)
     row    = r;
     pid = _pid;
     sharedPortRow = -1;
-    comboBoxShare  = new QComboBox();
-    for (int i = ES_; i <= ES_NC; ++i) comboBoxShare->addItem(portShare(i));
-    tableWidget->setCellWidget(row, CPP_SH_TYPE, comboBoxShare);
-    comboBoxPortIx = new QComboBox();
-    tableWidget->setCellWidget(row, CPP_SH_IX, comboBoxPortIx);
+    if (par->readOnly) {
+        comboBoxShare = nullptr;
+        comboBoxPortIx = nullptr;
+    }
+    else {
+        comboBoxShare  = new QComboBox();
+        for (int i = ES_; i <= ES_NC; ++i) comboBoxShare->addItem(portShare(i));
+        tableWidget->setCellWidget(row, CPP_SH_TYPE, comboBoxShare);
+        comboBoxPortIx = new QComboBox();
+        tableWidget->setCellWidget(row, CPP_SH_IX, comboBoxPortIx);
 
-    connect(comboBoxShare,  SIGNAL(currentIndexChanged(int)), this, SLOT(changeShared(int)));
-    connect(comboBoxPortIx, SIGNAL(currentIndexChanged(int)), this, SLOT(changePortIx(int)));
+        connect(comboBoxShare,  SIGNAL(currentIndexChanged(int)), this, SLOT(changeShared(int)));
+        connect(comboBoxPortIx, SIGNAL(currentIndexChanged(int)), this, SLOT(changePortIx(int)));
+
+    }
+}
+
+int cPPortTableLine::getShare()
+{
+    if (comboBoxShare != nullptr) {
+        return comboBoxShare->currentIndex();
+    }
+    else {
+        QString ssh = _sNul;
+        QTableWidgetItem *pi = tableWidget->takeItem(row, CPP_SH_TYPE);
+        if (pi != nullptr) ssh = pi->text();
+        return portShare(ssh);
+    }
+}
+
+void cPPortTableLine::setShare(int sh)
+{
+    if (comboBoxShare != nullptr) {
+        comboBoxShare->setCurrentIndex(sh);
+    }
+}
+
+
+bool cPPortTableLine::setShared(const QStringList& sl)
+{
+    bool shOk = true;
+    if (comboBoxPortIx != nullptr) {
+        comboBoxPortIx->addItem(_sNul);
+        comboBoxPortIx->addItems(sl);
+        if (sharedPortRow >= 0 && listPortIxRow.contains(sharedPortRow)) {
+            int ix = listPortIxRow.indexOf(sharedPortRow);
+            comboBoxPortIx->setCurrentIndex(ix +1);
+        }
+        else {
+            sharedPortRow = -1;
+            comboBoxPortIx->setCurrentIndex(0);
+            shOk = false;   // Nincs megadva az elsődleges, az nem OK.
+        }
+    }
+    return shOk;
 }
 
 void cPPortTableLine::changeShared(int _sh)
@@ -65,20 +112,54 @@ QString cPatchDialog::sPortRefForm;
 cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     : QDialog(parent)
     , pUi(new Ui::patchSimpleDialog)
+    , readOnly(ro)
 {
     pq = newQuery();
     if (sPortRefForm.isEmpty()) sPortRefForm = tr("#%1 (%2/%3)");
     pUi->setupUi(this);
-    pUi->buttonBox->button(QDialogButtonBox::Ok)  ->setDisabled(true);
-    pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
-    pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePattern, nullptr, this);
-    pSelectPlace->setPlaceRefreshButton(pUi->toolButtonRefreshPlace);
-    pSelectPlace->setPlaceEditButton(pUi->toolButtonInfoPlace);
-    pSelectPlace->setPlaceInsertButton(pUi->toolButtonNewPlace);
-    cIntValidator *intValidator = new cIntValidator(false);
-    pUi->tableWidgetPorts->setItemDelegateForColumn(CPP_INDEX, new cItemDelegateValidator(intValidator));
-    connect(pUi->tableWidgetPorts->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-            this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    if (ro) {
+        pSelectPlace = nullptr;
+        pUi->buttonBox->button(QDialogButtonBox::Ok)->hide();
+        pUi->buttonBox->button(QDialogButtonBox::Save)->hide();
+        pUi->buttonBox->button(QDialogButtonBox::Cancel)->hide();
+        pUi->toolButtonRefreshPlace->hide();
+        pUi->toolButtonInfoPlace->hide();
+        pUi->toolButtonNewPlace->hide();
+        pUi->lineEditNamePattern->hide();
+        pUi->comboBoxZone->hide();
+        pUi->comboBoxPlace->hide();
+        pUi->labelPlacePattern->hide();
+        pUi->labelZone->hide();
+        pUi->lineEditPlacePattern->hide();
+        pUi->pushButtonPort1->setDisabled(true);
+        pUi->pushButtonPort2->setDisabled(true);
+        pUi->pushButtonPort2Shared->setDisabled(true);
+        pUi->pushButtonShAB->setDisabled(true);
+        pUi->pushButtonShDel->setDisabled(true);
+        pUi->pushButtonAddPorts->setDisabled(true);
+        pUi->lineEditName->setReadOnly(true);
+        pUi->lineEditNote->setReadOnly(true);
+        pUi->lineEditTagPattern->setDisabled(true);
+        pUi->spinBoxTo->setDisabled(true);
+        pUi->spinBoxFrom->setDisabled(true);
+        pUi->spinBoxTagOffs->setDisabled(true);
+        pUi->spinBoxNameOffs->setDisabled(true);
+        pUi->tableWidgetPorts->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    }
+    else {
+        pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
+        pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
+        pUi->buttonBox->button(QDialogButtonBox::Close)->hide();
+        pUi->lineEditPlace->hide();
+        pSelectPlace = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePattern, nullptr, this);
+        pSelectPlace->setPlaceRefreshButton(pUi->toolButtonRefreshPlace);
+        pSelectPlace->setPlaceEditButton(pUi->toolButtonInfoPlace);
+        pSelectPlace->setPlaceInsertButton(pUi->toolButtonNewPlace);
+        cIntValidator *intValidator = new cIntValidator(false);
+        pUi->tableWidgetPorts->setItemDelegateForColumn(CPP_INDEX, new cItemDelegateValidator(intValidator));
+        connect(pUi->tableWidgetPorts->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+                this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    }
     shOk = pNamesOk = pIxOk = true;
     lockSlot = false;
 }
@@ -90,6 +171,7 @@ cPatchDialog::~cPatchDialog()
 
 cPatch * cPatchDialog::getPatch()
 {
+    if (readOnly) EXCEPTION(ECONTEXT);
     cPatch *p = new cPatch();
     p->setId(_sNodeType, ENUM2SET(NT_PATCH));
     p->setName(pUi->lineEditName->text());
@@ -162,12 +244,19 @@ void cPatchDialog::setPatch(const cPatch *pSample)
     pUi->lineEditID  ->setText(QString::number(pSample->getId()));
     pUi->lineEditName->setText(pSample->getName());
     pUi->lineEditNote->setText(pSample->getNote());
-    _setPlaceComboBoxs(pSample->getId(_sPlaceId), pUi->comboBoxZone, pUi->comboBoxPlace, true);
+    if (readOnly) {
+        qlonglong placeId = pSample->getId(_sPlaceId);
+        QString placeName = cPlace().getNameById(*pq, placeId, EX_IGNORE);
+        pUi->lineEditPlace->setText(placeName);
+    }
+    else {
+        _setPlaceComboBoxs(pSample->getId(_sPlaceId), pUi->comboBoxZone, pUi->comboBoxPlace, true);
+    }
     clearRows();
     int n = pSample->ports.size();
     if (n > 0) {
         int i;
-        setRows(n, &pSample->ports.list());
+        setRows(n, &pSample->ports.list()); // sportok/sorok száma, és port id
         for (i = 0; i < n; i++) {
             const cPPort *pp = pSample->ports.at(i)->reconvert<cPPort>();
             setTableItemText(pp->getName(),              pUi->tableWidgetPorts, i, CPP_NAME);
@@ -175,8 +264,30 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             setTableItemText(pp->getName(_sPortTag),     pUi->tableWidgetPorts, i, CPP_TAG);
             setTableItemText(pp->getName(_sPortIndex),   pUi->tableWidgetPorts, i, CPP_INDEX);
             int s = int(pp->getId(__sSharedCable));
-            setPortShare(i, s);
+            if (readOnly) {
+                setTableItemText(portShare(s), pUi->tableWidgetPorts, i, CPP_SH_TYPE);
+                qlonglong spid = pp->getId(__sSharedPortId);
+                if (spid != NULL_ID) {
+                    cPPort sp;
+                    sp.setById(*pq, spid);
+                    if (pp->getId(_sNodeId) == sp.getId(_sNodeId)) {
+                        setTableItemText(sp.getName(), pUi->tableWidgetPorts, i, CPP_SH_IX);
+                    }
+                    else {
+                        QTableWidgetItem *pi = new QTableWidgetItem(sp.getFullName(*pq));
+                        QFont font;
+                        font.setBold(true);
+                        pi->setFont(font);
+                        pi->setForeground(QBrush(Qt::red));
+                        pUi->tableWidgetPorts->setItem(i, CPP_SH_IX, pi);
+                    }
+                }
+            }
+            else {
+                setPortShare(i, s);
+            }
         }
+        if (readOnly) return;
         // Másodlagos megosztáshoz tartozó elsődleges portok
         // Elvileg adatbázisból származó objektum, így ki vannak töltve az ID-k
         // Ha mégse, akkor ezek a hivatkozások elvesznek,
@@ -194,7 +305,7 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             }
             ix = rowsData[i]->listPortIxRow.indexOf(ix);    // Kiválasztható ?
             if (ix < 0) {                   // nem találta
-                QString msg = tr("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem választható ki.").
+                QString msg = tr("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, ami nem választható ki.").
                         arg(pp->getName()).arg(spid);
                 cMsgBox::warning(msg, this);
                 continue;
@@ -245,7 +356,7 @@ void cPatchDialog::setRows(int rows, const QList<cNPort *> *pports)
 void cPatchDialog::setPortShare(int row, int sh)
 {
     if (!isContIx(rowsData, row)) EXCEPTION(ENOINDEX, row);
-    rowsData[row]->comboBoxShare->setCurrentIndex(sh);
+    rowsData[row]->setShare(sh);
 }
 
 #define _LOCKSLOTS()    _lockSlotSave_ = lockSlot; lockSlot = true
@@ -257,14 +368,14 @@ void cPatchDialog::updateSharedIndexs()
     // Az összes elsödleges megosztás listája (sor indexek)
     shPrimRows.clear();
     foreach (cPPortTableLine *pRow, rowsData) {
-        int sh = pRow->comboBoxShare->currentIndex();          // megosztás típusa
+        int sh = pRow->getShare();              // megosztás típusa
         if (sh == ES_A || sh == ES_AA) shPrimRows << pRow->row;// Ha elsődleges megosztás (amire hivatkozik a többi)
     }
     // MAP az elsődleges megosztásokra mutatók listái
     shPrimMap.clear();
     QList<int> secondIxs;
     foreach (cPPortTableLine *pRow, rowsData) {
-        int sh = pRow->comboBoxShare->currentIndex();   // megosztás típusa
+        int sh = pRow->getShare();   // megosztás típusa
         if (sh == ES_AB || sh == ES_B || sh == ES_BA || sh == ES_BB || sh == ES_C || sh ==  ES_D) {
             int shrow = pRow->sharedPortRow;        // Mutató az elsődleges megosztott portra
             if (shrow >= 0 && !shPrimRows.contains(shrow)) {
@@ -282,7 +393,7 @@ void cPatchDialog::updateSharedIndexs()
         if (secondIxs.contains(pRow->row)) {    // Másodlagos megosztott port (lehet hivatkozás, a)
             QStringList sl;             // Az eredmény lista (ezekre lehet hivatkozni) a teljes lista leválogatásának a célja
             pRow->listPortIxRow.clear();// A táblázatbeli sor idexek (hogy tudjuk is mire hivatkozik a fenti lista)
-            int mysh = pRow->comboBoxShare->currentIndex(); // Az aktuális másodlagos megosztás típusa
+            int mysh = pRow->getShare(); // Az aktuális másodlagos megosztás típusa
             // Elsödleges megosztott portokhoz rendelések vizsgálata
             foreach (int pix, shPrimRows) {     // Végivesszük a lehetőségeket (elsödleges megosztások listája)
                 QList<int> secs = shPrimMap[pix];       // Ezek a másodlagosak hivatkoznak rá
@@ -331,22 +442,11 @@ void cPatchDialog::updateSharedIndexs()
                     pRow->listPortIxRow << pix;
                 }
             }
-            pRow->comboBoxPortIx->clear();
-            pRow->comboBoxPortIx->addItem(_sNul);
-            pRow->comboBoxPortIx->addItems(sl);
-            if (pRow->sharedPortRow >= 0 && pRow->listPortIxRow.contains(pRow->sharedPortRow)) {
-                int ix = pRow->listPortIxRow.indexOf(pRow->sharedPortRow);
-                pRow->comboBoxPortIx->setCurrentIndex(ix +1);
-            }
-            else {
-                pRow->sharedPortRow = -1;
-                pRow->comboBoxPortIx->setCurrentIndex(0);
-                shOk = false;   // Nincs megadva az elsődleges, az nem OK.
-            }
+            shOk = pRow->setShared(sl);
         }
         else {                                  // Elsodleges megosztott, vagy nem megosztott
-            pRow->comboBoxPortIx->clear();      // Nem hivatkozik senkire
             pRow->sharedPortRow = -1;
+            pRow->setShared(QStringList());
         }
     }
     UNLOCKSLOTS();

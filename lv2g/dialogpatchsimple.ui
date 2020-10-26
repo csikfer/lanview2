@@ -58,6 +58,13 @@
        <item row="5" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
+          <widget class="QLineEdit" name="lineEditPlace">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QComboBox" name="comboBoxPlace"/>
          </item>
          <item>
@@ -141,44 +148,6 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Név minta :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Cimke minta :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButtonAddPorts">
-           <property name="text">
-            <string>Port(ok) hozzáadása</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="0" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
@@ -236,6 +205,13 @@
          </item>
         </layout>
        </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Név minta :</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
@@ -264,6 +240,13 @@
          </item>
         </layout>
        </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Cimke minta :</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
@@ -288,18 +271,29 @@
          </item>
         </layout>
        </item>
-       <item row="4" column="1">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+       <item row="3" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonAddPorts">
+           <property name="text">
+            <string>Port(ok) hozzáadása</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -440,11 +434,14 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="locale">
+      <locale language="C" country="AnyCountry"/>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::Save</set>
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Save</set>
      </property>
     </widget>
    </item>

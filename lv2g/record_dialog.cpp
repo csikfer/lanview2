@@ -772,7 +772,7 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
             }
         }
         if (!data) {
-            if (edit || ro) EXCEPTION(EPROGFAIL);
+            if (edit) EXCEPTION(EPROGFAIL);
         }
         if (edit) pRec = patchEditDialog(q, pPar, pSample, ro);
         else      pRec = patchInsertDialog(q, pPar, pSample);

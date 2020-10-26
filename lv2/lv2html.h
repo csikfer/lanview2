@@ -274,13 +274,14 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     return htmlTable(head, data);
 }
 
-/// Rekordok beolvasása és HTML formátumú táblázat késítése.
+/// Rekordok beolvasása és HTML formátumú táblázat készítése.
 /// @param q Query objektum az adatbázis eléréshez
 /// @param _shape A megjelenítést leíró objektum
-/// @param _where A szűrési feltétel a WHRE striggel együtt, ha van.
-/// @param _par A szűrési feltétel paraméterei
+/// @param _where A szűrési feltétel a WHRE striggel együtt, vagy üres string. Opcionális, alapértelmezetten nincs szűrési feltétel.
+/// @param _par A szűrési feltétel paraméterei. Opcionális, alapértelmezetten nincs paraméter.
 /// @param shrt A rendezés SQL string, ha üres, akkor a _shape leíró szerinti a endezés, ha '@' akkor a név mezőre vagy ha az nincs az id-re van rendezés, ha értéke '!', akkor nincs rendezés,
-/// illetve, ha az előzőek közül egyiksem, akkor a rendezés módját tartalmazza az "ORDER BY" szöveg együtt.
+///     illetve, ha az előzőek közül egyiksem, akkor a rendezés módját tartalmazza az "ORDER BY" szöveg együtt. Opcionális, alapértelmezetten a shape leíró szerinti rendezés.
+/// @param mergeKey Opcionális kulcs, ami alapján kiegészíti a feature változókat a shape laíróban (lásd a cFeatures osztály merge() metódustát). Opcionális, alapértelmezett érték a "report" string.
 EXT_ QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where = QString(), const QVariantList &_par = QVariantList(), const QString& shrt = QString(), const QString& mergeKey = _sReport);
 /// Rekordok beolvasása és HTML formátumú táblázat késítése.
 /// @param q Query objektum az adatbázis eléréshez
@@ -295,8 +296,9 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
     shape.setByName(q, _shapeName);
     return query2html(q, shape, _where, _par, shrt);
 }
+/*
 EXT_ QString query2html(QSqlQuery q, cTableShape &ownerShape, cTableShape &childShape, const QString& _where = QString(), const QVariantList& _par = QVariantList(), const QString& ownerShrt = QString(),
                         const QString& childShrt = QString(), const QString &mergeKey = _sReport);
-
+*/
 
 #endif // LV2HTML_H

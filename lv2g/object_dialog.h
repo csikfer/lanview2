@@ -39,6 +39,9 @@ class cPPortTableLine;
         Q_OBJECT
     public:
         cPPortTableLine(int r, cPatchDialog *par, qlonglong _pid = NULL_ID);
+        int getShare();
+        void setShare(int sh);
+        bool setShared(const QStringList &sl);
         /// A táblázatban a sor száma (0,1, ...)
         int                 row;
         /// Port ID, ha létezik a port rekord
@@ -83,6 +86,7 @@ protected:
     QList<cPPortTableLine *>rowsData;
     QList<int>              shPrimRows;
     QMap<int, QList<int> >  shPrimMap;
+    bool                    readOnly;
     bool                    shOk;
     bool                    pNamesOk;
     bool                    pIxOk;
