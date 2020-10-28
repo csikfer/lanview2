@@ -567,7 +567,8 @@ QString cLldpLink::show(bool t) const
     QSqlQuery q = getQuery();
     QString r;
     if (!t) r = tr("LLDP link. ");
-    r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
+    r += tr("(%1 - %2) ").arg(getName(_sFirstTime), getName(_sLastTime));
+    r += tr("%1 <==> %2").arg(cNPort::getFullNameById(q, getId(_sPortId1)), cNPort::getFullNameById(q, getId(_sPortId2)));
     return r;
 }
 
