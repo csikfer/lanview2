@@ -3258,9 +3258,6 @@ bool   cInspectorVar::skeep()
     if (!r) {
         skeepCnt = rarefaction;
     }
-    else {
-        PDEB(VERBOSE) << "Skeep " << pInspector->name() << " : " << pSrvVar->getName() << endl;
-    }
     return r;
 }
 
