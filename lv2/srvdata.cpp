@@ -774,13 +774,14 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
             " ORDER BY service_var_name ASC";
     if (execSql(q, sql, hs.getId(), _id)) {
         tRecordList<cServiceVar> vars;
-        vars.set(q);
-        static cTableShape *pShape = nullptr;
-        if (pShape == nullptr) {
-            pShape = new cTableShape;
-            pShape->setByName(q, _sServiceVars);
+        if (0 < vars.set(q)) {
+            static cTableShape *pShape = nullptr;
+            if (pShape == nullptr) {
+                pShape = new cTableShape;
+                pShape->setByName(q, _sServiceVars);
+            }
+            text += sHtmlBr + tr("Változók : ") + sHtmlBr + list2html(q, vars, *pShape, _sReport);
         }
-        text += sHtmlBr + tr("Változók : ") + sHtmlBr + list2html(q, vars, *pShape, _sReport);
     }
     if (a.isNull(_sEndTime)) {
         text += sHtmlBr + tr("A riasztási állapot az üzenetküdéskor még aktív volt.");
