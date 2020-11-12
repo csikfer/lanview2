@@ -40,6 +40,7 @@ SOURCES += \
     hsoperate.cpp \
     phslinkform.cpp \
     findbymac.cpp \
+    tool_table.cpp \
     workstation.cpp \
     object_dialog.cpp \
     deducepatch.cpp \
@@ -81,6 +82,8 @@ HEADERS +=\
     hsoperate.h \
     phslinkform.h \
     findbymac.h \
+    tool_table.h \
+    tool_table_model.h \
     workstation.h \
     object_dialog.h \
     deducepatch.h \

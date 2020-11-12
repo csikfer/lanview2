@@ -104,6 +104,47 @@ SERVICE "check_disk" {
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "check_http" "Check http server" {
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
+    PORT 80;
+    COMMAND "/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri";
+    FEATURES  {
+        "control" = "tick,reset,exit";
+        "method" = "nagios";
+        "stop_timeout" = "15000";
+        "timing" = "timed";
+        "uri" = "/";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
+}
+SERVICE "check_http_proxy" "Check http proxy server" {
+    SUPERIOR SERVICE MASK "^http$";
+    PORT 3128;
+    COMMAND "/usr/lib/nagios/plugins/check_http -I $address -p $port -u http://$parent.address:$parent.port$parent.uri -w $w -c $c -t $t";
+    FEATURES  {
+        "c" = "10";
+        "control" = "tick,reset,exit";
+        "method" = "nagios";
+        "stopt_imeout" = "16000";
+        "t" = "15";
+        "timing" = "timed";
+        "uri" = "/";
+        "w" = "2";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 120;
+    FLAPPING INTERVAL 120;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
+}
 SERVICE "check_ide_smart" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "/usr/lib/nagios/plugins/check_ide_smart $dev";
@@ -137,6 +178,42 @@ SERVICE "check_md_raid" {
     FLAPPING MAX CHANGE 15;
     TYPE "check_service";
     OFF LINE GROUPS "admin_net";
+}
+SERVICE "check_ping" "Ping check" {
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
+    COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
+    FEATURES  {
+        "control" = "tick,reset,exit";
+        "critical" = "20,19%";
+        "method" = "nagios,qparse";
+        "timing" = "timed";
+        "warning" = "10,9%";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "check_service";
+}
+SERVICE "check_rtsp" {
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
+    PORT 554;
+    COMMAND "/usr/lib/nagios/plugins/check_real -H $address -p $port";
+    FEATURES  {
+        "control" = "tick";
+        "method" = "nagios";
+        "stop_timeout" = "15000";
+        "timing" = "timed";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 600;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 4;
+    TYPE "check_service";
 }
 SERVICE "check_ups" "UPS check by NUT" {
     SUPERIOR SERVICE MASK "^nut$";
@@ -178,47 +255,6 @@ SERVICE "group" "Dummy service for grouping services." {
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
-}
-SERVICE "http" "Check http server" {
-    SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    PORT 80;
-    COMMAND "/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri";
-    FEATURES  {
-        "control" = "tick,reset,exit";
-        "method" = "nagios";
-        "stop_timeout" = "15000";
-        "timing" = "timed";
-        "uri" = "/";
-    }
-    MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 300;
-    HEARTBEAT TIME 600;
-    RETRY CHECK INTERVAL 60;
-    FLAPPING INTERVAL 3600;
-    FLAPPING MAX CHANGE 4;
-    TYPE "check_service";
-}
-SERVICE "http_proxy" "Check http proxy server" {
-    SUPERIOR SERVICE MASK "^http$";
-    PORT 3128;
-    COMMAND "/usr/lib/nagios/plugins/check_http -I $address -p $port -u http://$parent.address:$parent.port$parent.uri -w $w -c $c -t $t";
-    FEATURES  {
-        "c" = "10";
-        "control" = "tick,reset,exit";
-        "method" = "nagios";
-        "stopt_imeout" = "16000";
-        "t" = "15";
-        "timing" = "timed";
-        "uri" = "/";
-        "w" = "2";
-    }
-    MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 300;
-    HEARTBEAT TIME 600;
-    RETRY CHECK INTERVAL 120;
-    FLAPPING INTERVAL 120;
-    FLAPPING MAX CHANGE 4;
-    TYPE "check_service";
 }
 SERVICE "icontsrv" "icontsrv daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -443,24 +479,6 @@ SERVICE "parser" "Query Parser (pure)" {
     FLAPPING MAX CHANGE 15;
     OFF LINE GROUPS "admin_net";
 }
-SERVICE "ping" "Ping check" {
-    SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
-    COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
-    FEATURES  {
-        "control" = "tick,reset,exit";
-        "critical" = "20,19%";
-        "method" = "nagios,qparse";
-        "timing" = "timed";
-        "warning" = "10,9%";
-    }
-    MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 300;
-    HEARTBEAT TIME 600;
-    RETRY CHECK INTERVAL 60;
-    FLAPPING INTERVAL 3600;
-    FLAPPING MAX CHANGE 6;
-    TYPE "check_service";
-}
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
     FEATURES  {
@@ -612,6 +630,7 @@ SERVICE "pvlan" {
     RETRY CHECK INTERVAL 300;
     FLAPPING INTERVAL 10800;
     FLAPPING MAX CHANGE 4;
+    TYPE "link";
     OFF LINE GROUPS "admin_net";
 }
 SERVICE "rightmac" "MAC cím fehér lista" {
@@ -893,6 +912,7 @@ SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     RETRY CHECK INTERVAL 600;
     FLAPPING INTERVAL 43200;
     FLAPPING MAX CHANGE 8;
+    TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
 PARAM "bigint" TYPE "integer";
@@ -903,7 +923,7 @@ PARAM "bytes" "Byte-ok" TYPE "integer" "Byte";
 PARAM "bytes_per_sec" "Bytes/sec" TYPE "real" "byte/s";
 PARAM "date" TYPE "date";
 PARAM "double precision" TYPE "real";
-PARAM "HPE Service SKU" TYPE "text";
+PARAM "HPE_Case" "HPE Support, Switch csere" TYPE "text";
 PARAM "inet" TYPE "inet";
 PARAM "interval" TYPE "interval";
 PARAM "minute" TYPE "integer" "minute";

@@ -46,16 +46,17 @@ ENUM "app_errs.acknowledged" {
     }
 }
 ENUM "app_memos.acknowledged" {
-    VIEW "app_memos.acknowledged",@;
+    VIEW NULL;
     TOOL TIP "false";
      "false" {
         VIEW "false",@;
+        ICON "flag-red.ico";
         BACKGROUND COLOR "#ffffc0";
     }
      "true" {
         VIEW "true",@;
         ICON "dialog-ok-2.ico";
-        BACKGROUND COLOR "#dfdfdf";
+        BACKGROUND COLOR "#8ae234";
     }
 }
 ENUM "arp_logs.acknowledged" {
@@ -1251,66 +1252,66 @@ TABLE SHAPE "app_memos" {
     EDIT RIGHTS "system";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "system";
-    ADD FIELD "app_memo_id" "app_memo_id" {
-        TITLE "app_memo_id",@;
+    ADD FIELD "app_memo_id" {
+        TITLE "ID","Egyedi azonosítü (ID)";
         FLAG "read_only", "HTML";
     }
-    ADD FIELD "date_of" "date_of" {
-        TITLE "date_of",@;
+    ADD FIELD "date_of" {
+        TITLE "Időp.","Az esemény időpontja";
         FLAG "HTML";
     }
-    ADD FIELD "acknowledged" "acknowledged" {
-        TITLE "acknowledged",@;
-        FLAG "bg_color";
+    ADD FIELD "acknowledged" {
+        TITLE "*Nyugtázva","Nyugtázva";
+        FLAG "bg_color", "image", "notext";
     }
-    ADD FIELD "app_name" "app_name" {
-        TITLE "app_name",@;
+    ADD FIELD "app_name" {
+        TITLE "App.név","Applikáció neve";
         FLAG "HTML";
     }
-    ADD FIELD "thread_name" "thread_name" {
-        TITLE "thread_name",@;
+    ADD FIELD "thread_name" {
+        TITLE "Szál","A szál neve az applikációban";
     }
-    ADD FIELD "memo" "memo" {
-        TITLE "memo",@;
+    ADD FIELD "memo" {
+        TITLE "Üzenet",@;
         FEATURES ":stretch.vertical=1:";
         FLAG "huge", "HTML";
     }
-    ADD FIELD "func_name" "func_name" {
-        TITLE "func_name",@;
+    ADD FIELD "func_name" {
+        TITLE "Függvény","A függvény neve";
         FLAG "HTML";
     }
-    ADD FIELD "src_name" "src_name" {
-        TITLE "src_name",@;
+    ADD FIELD "src_name" {
+        TITLE "Forrás","A forrás fájl neve";
         FLAG "HTML";
     }
-    ADD FIELD "src_line" "src_line" {
-        TITLE "src_line",@;
+    ADD FIELD "src_line" {
+        TITLE "Sor","Sor száma a forrásban";
         FLAG "HTML";
     }
-    ADD FIELD "node_id" "node_id" {
-        TITLE "node_id",@;
+    ADD FIELD "node_id" {
+        TITLE "Eszköz","Sámítógép, eszköz neve";
         FLAG "HTML";
     }
-    ADD FIELD "host_service_id" "host_service_id" {
-        TITLE "host_service_id",@;
+    ADD FIELD "host_service_id" {
+        TITLE "Szolg.példány","A szolgáltatás példány";
         FLAG "HTML";
     }
-    ADD FIELD "user_id" "user_id" {
-        TITLE "user_id",@;
+    ADD FIELD "user_id" {
+        TITLE "Felh.","A felhasználó neve";
         FLAG "HTML";
     }
-    ADD FIELD "importance" "importance" {
-        TITLE "importance",@;
+    ADD FIELD "importance" {
+        TITLE "Súly","Az esemény súlyossága";
         FLAG "HTML";
     }
-    ADD FIELD "pid" "pid" {
-        TITLE "pid",@;
+    ADD FIELD "pid" {
+        TITLE "PID",@;
     }
-    ADD FIELD "app_ver" "app_ver" {
-        TITLE "app_ver",@;
+    ADD FIELD "app_ver" {
+        TITLE "App.V.","Az applikáció verziószáma";
     }
-    ADD FIELD "lib_ver" "lib_ver" {
-        TITLE "lib_ver",@;
+    ADD FIELD "lib_ver" {
+        TITLE "Lib.V.","A könyvtár verziószáma";
     }
     FIELD "importance" ORD asc, no, desc;
     FIELD "date_of" ORD desc, no, asc;
@@ -1607,7 +1608,7 @@ TABLE SHAPE "enum_vals" {
 }
 TABLE SHAPE "fkey_types" {
     TITLE "Távoli kulcs típusok","Távoli kulcs típus";
-    TYPE "simple", "read_only";
+    TYPE "simple";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
     EDIT RIGHTS "system";
@@ -2148,6 +2149,7 @@ TABLE SHAPE "ip_addresses" "IP címek" {
     }
     ADD FIELD "port_id" "port_id" {
         TITLE "port_id",@;
+        FEATURES ":view_func=port_id2full_name:";
         FLAG "table_hide", "read_only";
     }
     ADD FIELD "flag" "flag" {
@@ -2709,6 +2711,9 @@ TABLE SHAPE "node_params" "Eszköz paraméterek" {
         TITLE "Típus",@;
         FLAG "HTML";
     }
+    ADD FIELD "date_of" {
+        TITLE "Időpont",@;
+    }
     ADD FIELD "param_value" {
         TITLE "Érték",@;
         FLAG "huge", "HTML";
@@ -2720,9 +2725,9 @@ TABLE SHAPE "node_params" "Eszköz paraméterek" {
         TITLE "flag",@;
         FLAG "table_hide", "dialog_hide";
     }
-    FIELD "node_param_name", "node_id", "param_type_id" ORD asc, no, desc;
+    FIELD "node_param_name", "node_id", "param_type_id", "date_of" ORD asc, no, desc;
     FIELD "param_value" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "node_param_name", "node_id", "param_type_id", "param_value";
+    FIELD ORD SEQUENCE "date_of", "node_param_name", "node_id", "param_type_id", "param_value";
 }
 TABLE "node_port_vlans" SHAPE "node_port_vlan" {
     TITLE "VLAN kiosztás","VLAN / port";
@@ -3159,13 +3164,22 @@ TABLE SHAPE "places" "Helyiségek (tábla)" {
     RIGHT SHAPE "place_groups";
     ADD FIELD "place_name" "place_name" {
         TITLE "Név","Hely helyiség neve";
+        FLAG "HTML";
     }
     ADD FIELD "place_id" "place_id" {
         TITLE "place_id","Egyedi azonosító (ID)";
-        FLAG "table_hide", "read_only";
+        FLAG "table_hide", "read_only", "HTML";
     }
     ADD FIELD "place_note" "place_note" {
         TITLE "place_note",@;
+        FLAG "batch_edit", "HTML";
+    }
+    ADD FIELD "place_id" AS "place_category" {
+        TITLE "Hely kat.","Hely kategória";
+        FEATURES  {
+            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND  place_group_type = 'category')\\,'\\,')";
+        }
+        FLAG "dialog_hide", "read_only", "HTML";
     }
     ADD FIELD "place_type" "place_type" {
         TITLE "Típus",@;
@@ -3175,21 +3189,22 @@ TABLE SHAPE "places" "Helyiségek (tábla)" {
     ADD FIELD "parent_id" "parent_id" {
         TITLE "Helye","Felsőbb szintú hely";
         FEATURES ":filter=places:";
+        FLAG "batch_edit", "HTML";
     }
     ADD FIELD "image_id" "image_id" {
         TITLE "Térkép","Térkép, alaprajz";
+        FLAG "HTML";
     }
     ADD FIELD "frame" "frame" {
         TITLE "frame","Keret az alaprajzon";
-        FLAG "table_hide";
     }
     ADD FIELD "tels" "tels" {
         TITLE "Telefonszám(ok)",@;
-        FLAG "table_hide";
+        FLAG "HTML";
     }
     FIELD "place_name" ORD asc, no, desc;
-    FIELD "parent_id" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "parent_id", "place_name";
+    FIELD "place_category", "parent_id" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "parent_id", "place_name", "place_category";
 }
 TABLE "places" SHAPE "places_topol" "Helyek fa és a helységben lévő objektumok" {
     TITLE "places_topol",@,@;
@@ -3313,6 +3328,10 @@ TABLE SHAPE "port_params" "Port paraméterek" {
     ADD FIELD "param_type_id" {
         TITLE "Típus",@;
     }
+    ADD FIELD "date_of" {
+        TITLE "Időpont",@;
+        FLAG "HTML";
+    }
     ADD FIELD "param_value" {
         TITLE "Érték",@;
     }
@@ -3323,9 +3342,9 @@ TABLE SHAPE "port_params" "Port paraméterek" {
         TITLE "flag",@;
         FLAG "table_hide", "dialog_hide";
     }
-    FIELD "port_param_name", "param_type_id", "param_value" ORD asc, no, desc;
+    FIELD "port_param_name", "param_type_id", "date_of", "param_value" ORD asc, no, desc;
     FIELD "port_id" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "port_param_name", "port_id", "param_type_id", "param_value";
+    FIELD ORD SEQUENCE "date_of", "port_param_name", "port_id", "param_type_id", "param_value";
 }
 TABLE SHAPE "portvars" {
     TITLE "portvars",@,@;
@@ -4134,10 +4153,10 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
         FEATURES ":filter=places:";
         FLAG "batch_edit", "HTML";
     }
-    ADD FIELD "place_id" AS "place_groups" {
-        TITLE "Hely cs.","place_groups";
+    ADD FIELD "place_id" AS "place_category" {
+        TITLE "Hely kat.","Hely kategória";
         FEATURES  {
-            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND place_group_id  > 1)\\,'\\,')";
+            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND  place_group_type = 'category')\\,'\\,')";
         }
         FLAG "dialog_hide", "read_only", "HTML";
     }
@@ -4215,8 +4234,8 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
         FLAG "table_hide", "dialog_hide", "read_only";
     }
     FIELD "node_name" ORD asc, no, desc;
-    FIELD "node_stat", "node_type", "place_id", "place_groups", "serial_number", "inventory_number", "model_number", "model_name", "os_name", "os_version", "node_note" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "serial_number", "inventory_number", "node_name", "node_stat", "node_note", "place_id", "place_groups", "node_type", "model_number", "model_name", "os_name", "os_version";
+    FIELD "node_stat", "node_type", "place_id", "place_category", "serial_number", "inventory_number", "model_number", "model_name", "os_name", "os_version", "node_note" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "serial_number", "inventory_number", "node_name", "node_stat", "node_note", "place_id", "place_category", "node_type", "model_number", "model_name", "os_name", "os_version";
 }
 TABLE SHAPE "subnets" "Alhálózatok" {
     TITLE "subnets",@,@;
@@ -4508,6 +4527,66 @@ TABLE SHAPE "timeperiods" "Időintervallumok" {
     }
     FIELD "timeperiod_name" ORD asc, no, desc;
     FIELD ORD SEQUENCE "timeperiod_name";
+}
+TABLE SHAPE "tools" {
+    TITLE "tools",@,@;
+    TYPE "simple";
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "operator";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "operator";
+    ADD FIELD "tool_id" {
+        TITLE "ID","Egyedi azonosító (ID)";
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "tool_name" {
+        TITLE "Név",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "tool_note" {
+        TITLE "Megj.","Megjegyzés";
+        FLAG "HTML";
+    }
+    ADD FIELD "tool_type" {
+        TITLE "Típus","A típusa";
+        FLAG "HTML";
+    }
+    ADD FIELD "tool_stmt" {
+        TITLE "Érték","Parancs, URL";
+        FLAG "HTML";
+    }
+    ADD FIELD "object_name" {
+        TITLE "Obj.","Objektum név";
+        FLAG "HTML";
+    }
+    ADD FIELD "features" {
+        TITLE "Par.","EGyébb paraméterek";
+        FLAG "HTML";
+    }
+    ADD FIELD "wait" {
+        TITLE "Vár?","Várakozik a végrehajtásra?";
+        FLAG "HTML";
+    }
+    ADD FIELD "view_rights" {
+        TITLE "Megnézheti","Minimális jog a parancs ill. URL megtekintéséhez";
+        FLAG "HTML";
+    }
+    ADD FIELD "exec_rights" {
+        TITLE "Végr.?","Minimális jog a végrehajtáshoz";
+        FLAG "HTML";
+    }
+    ADD FIELD "text_id" {
+        TITLE "text_id",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "icon" {
+        TITLE "icon",@;
+        FLAG "HTML";
+    }
+    FIELD "tool_name" ORD asc, no, desc;
+    FIELD "tool_type", "tool_stmt", "object_name" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "tool_name", "tool_type", "tool_stmt", "object_name";
 }
 TABLE SHAPE "tpows" "Időintervallumok, a hét napjaira" {
     TITLE "Rész időintervallumok","Rész időintervallum",NULL,"Tag rész időintervallumok","Nem tag rész időintervallumok";
@@ -5138,6 +5217,10 @@ GUI "lv2gui" {
         }
         SHAPE "timeperiods" {
             TITLE "Időintervallumok",@;
+        }
+        SHAPE "tool_table" {
+            PARAM "tools";
+            TITLE "Eszköz objektumok",@;
         }
     }
     MENU "events" {

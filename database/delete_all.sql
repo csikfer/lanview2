@@ -3,15 +3,27 @@
 -- \i clrstat.sql
 
 TRUNCATE imports RESTART IDENTITY;
-TRUNCATE import_templates RESTART IDENTITY;
+-- TRUNCATE import_templates RESTART IDENTITY;
 TRUNCATE mactab_logs RESTART IDENTITY;
 TRUNCATE arps RESTART IDENTITY;
 TRUNCATE dyn_addr_ranges RESTART IDENTITY;
+TRUNCATE dyn_ipaddress_logs RESTART IDENTITY;
 TRUNCATE group_users RESTART IDENTITY;
 TRUNCATE mactab RESTART IDENTITY;
 TRUNCATE phs_links_table RESTART IDENTITY;
 TRUNCATE log_links_table RESTART IDENTITY;
 TRUNCATE lldp_links_table RESTART IDENTITY;
+TRUNCATE alarm_service_vars RESTART IDENTITY;
+TRUNCATE app_memos  RESTART IDENTITY;
+TRUNCATE db_errs  RESTART IDENTITY;
+TRUNCATE host_service_noalarms  RESTART IDENTITY;
+TRUNCATE ip_address_logs RESTART IDENTITY;
+
+DELETE FROM app_errs;
+
+DELETE FROM service_vars;
+DELETE FROM host_services;
+ALTER SEQUENCE host_services_host_service_id_seq RESTART WITH 1;
 
 DELETE FROM nports;
 ALTER SEQUENCE nports_port_id_seq RESTART WITH 1;
@@ -20,14 +32,12 @@ ALTER SEQUENCE patchs_node_id_seq RESTART WITH 1;
 DELETE FROM subnets;
 ALTER SEQUENCE subnets_subnet_id_seq RESTART WITH 1;
 DELETE FROM vlans;
-DELETE FROM host_services;
-ALTER SEQUENCE host_services_host_service_id_seq RESTART WITH 1;
-DELETE FROM images;
 ALTER SEQUENCE images_image_id_seq RESTART WITH 1;
 DELETE FROM groups;
 ALTER SEQUENCE graphs_graph_id_seq RESTART WITH 1;
 DELETE FROM users;
 ALTER SEQUENCE users_user_id_seq RESTART WITH 1;
+DELETE FROM images WHERE 'map' = ANY (usabilityes);
 
 DELETE FROM places WHERE place_type = 'real';
 DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'office', 'schoolroom', 'student', 'technical_room');

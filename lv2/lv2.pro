@@ -73,6 +73,7 @@ SOURCES += \
     lanview.cpp \
     cdebug.cpp \
     cerror.cpp \
+    lv2tooldata.cpp \
     lv2types.cpp \
     others.cpp \
     lv2xml.cpp \
@@ -102,6 +103,7 @@ HEADERS += \
     cerror.h \
     errcodes.h \
     LV2_errcodes.h \
+    lv2tooldata.h \
     lv2types.h \
     others.h \
     lv2xml.h \

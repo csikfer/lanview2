@@ -7,6 +7,7 @@
 #include <QBitArray>
 #include <QFile>
 #include <QBitArray>
+#include <QSqlQuery>
 
 inline bool isNumNull(const QVariant v)
 {
@@ -166,8 +167,9 @@ public:
     /// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
     /// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
     /// ':par1:par2=val2:par3:par4=val4:
-    /// Ha a paraméter érték a felkiáltójel, akkor az adott kulcs törölve lessz.
+    /// Ha a paraméter érték a felkiáltójel, és a merge értéke igaz, akkor az adott kulcs törölve lessz.
     /// @param __ms A feldolgozandó paraméter string
+    /// @param merge
     /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
     /// @return true, ha nincs hiba. Hiba esetén (ha __ex = EX_IGNORE) false.
     bool split(const QString& __ms, bool merge = false, enum eEx __ex = EX_ERROR);
@@ -329,6 +331,11 @@ inline const QString& msgAppend(QString *pMsg, const QString& m)
     }
     return m;
 }
+
+/* Substitute */
+typedef QString (tGetValueFnPtr)(const QString& key, QSqlQuery& q, void *p);
+EXT_ QString substitute(QSqlQuery& q, void *p, const QString& str, tGetValueFnPtr fn);
+
 /* ******************************  ****************************** */
 EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
 

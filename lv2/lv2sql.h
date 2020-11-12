@@ -242,6 +242,8 @@ EXT_ eTristate trFlag(eTristate __tf);
 EXT_ void sqlBegin(QSqlQuery& q, const QString& tn);
 /// Tranzakció befejezése
 EXT_ void sqlCommit(QSqlQuery& q, const QString& tn);
+
+class cError;
 /// Tranzakció visszagörgetése
 EXT_ cError * sqlRollback(QSqlQuery& q, const QString& tn, eEx __ex = EX_ERROR);
 

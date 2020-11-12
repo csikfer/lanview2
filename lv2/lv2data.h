@@ -1758,5 +1758,4 @@ public:
 
 };
 
-
 #endif // LV2DATA_H

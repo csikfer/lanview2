@@ -868,7 +868,7 @@ STRDEF(TableShapes, "table_shapes")
   STRDEF(Stretch, "stretch")
   STRDEF(Horisontal, "horisontal")
   STRDEF(Vertical, "vertical")
-  dnl read_only
+  dnl read_only, tools
   STRDEF(IGroup, "igroup")
   STRDEF(NGroup, "ngroup")
   STRDEF(IMember, "imember")
@@ -1059,6 +1059,29 @@ STRDEF(Selects, "selects")
   __SDEF(HPAPC)
   __SDEF(Linux)
   __SDEF(Empty)
+
+STRDEF(Tools, "tools")
+ STRDEF(ToolId, "host_tool_id")
+ STRDEF(ToolName, "host_tool_name")
+ STRDEF(ToolNote, "host_tool_note")
+ STRDEF(ToolType, "host_tool_type")
+  STRDEF(Command, "command")
+  dnl parse
+  STRDEF(Url, "url")
+ STRDEF(ToolStmt, "tool_stmt")
+ STRDEF(ObjectName, "object_name")
+ dnl features, wait, view_rights
+ STRDEF(ExecRights, "exec_rights")
+ dnl text_id
+  STRDEF(Title, "title")
+  dnl tool_tip
+ dnl icon
+
+STRDEF(ToolObjects, "tool_objects")
+ STRDEF(ToolObjectId, "tool_object_id")
+ dnl object_name
+ STRDEF(ObjectId, "object_id")
+ STRDEF(ToolObjectNote, "tool_object_note")
 
 dnl PLPGSQL functions
 STRDEF(SetServiceStat, "set_service_stat")

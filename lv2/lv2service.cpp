@@ -1297,6 +1297,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     char separator = 0;
     QString checkCmdSubs;   // Command substituted
     // Substitute
+    /*
     while (i != checkCmd.constEnd()) {
         char c = i->toLatin1();
         QChar qc = *i;
@@ -1332,6 +1333,15 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         }
         checkCmdSubs += qc;
     }
+    */
+    checkCmdSubs = substitute(q, this, checkCmd,
+        [] (const QString& key, QSqlQuery& q, void *_p)
+            {
+                QString r;
+                cInspector *p = static_cast<cInspector *>(_p);
+                r = p->getParValue(q, key);
+                return r;
+            });
     // Split args
     bool prevSpace = false;
     i = checkCmdSubs.constBegin();

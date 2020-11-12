@@ -1776,7 +1776,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T RAW_T  RRD_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
-%token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T GLPI_T SYNC_T
+%token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T GLPI_T SYNC_T LIKE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1906,6 +1906,16 @@ for_m   : FOR_T vals DO_T MACRO_T NAME_V ';'                { forLoopMac($5, $2)
 // Listák
 list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, $2, $4, 1);  }
         | LIST_T iexpr TO_T iexpr STEP_T iexpr MASK_T str   { $$ = listLoop($8, $2, $4, $6); }
+        | LIST_T str TABLE_T str_z LIKE_T str   { $$ = new QStringList;
+                                                  QString nn = cRecordAny(*$2).nameName();
+                                                  QString sql = QString("SELECT %1 FROM %2 WHERE %3 LIKE ?")
+                                                    .arg(nn, sp2s($2), $4->isEmpty() ? nn : *$4);
+                                                  delete $4;
+                                                  sql = sql.arg(nn);
+                                                  QSqlQuery q = qq();
+                                                  execSql(q, sql, sp2s($6));
+                                                  getListFromQuery(q, *$$, 0);
+                                                }
         ;
 // tranzakciókezelés
 sql     : NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
@@ -2952,8 +2962,8 @@ gui     : tblmod
         | enum
         | appmenu
         ;
-tblmod_h: TABLE_T str SHAPE_T replace str str_z '{'     { pTableShape = newTableShape($2,          $5, $6); setReplace($4); }
-        | TABLE_T SHAPE_T replace str str_z '{'         { pTableShape = newTableShape(new QString, $4, $5); setReplace($3); }
+tblmod_h: TABLE_T str SHAPE_T replace str str_z '{'     { pTableShape = newTableShape($2,               $5, $6); setReplace($4); }
+        | TABLE_T SHAPE_T replace str str_z '{'         { pTableShape = newTableShape(new QString(*$4), $4, $5); setReplace($3); }
         | TABLE_T SHAPE_T replace str str_z  COPY_T FROM_T str '{'
                                                         { REPOBJ(pTableShape, cTableShape, $3, $4, $5); copyTableShape($8); }
         ;
@@ -3373,7 +3383,7 @@ static int isAddress(const QString& __s)
 }
 
 // Egy karakteres tokenek
-static const char yyTokenChars[] = "=+-*(),;|&<>^{}[]:.#@";
+static const char yyTokenChars[] = "=+-*(),;|&<>^{}[]:.#@~";
 #define TOK(t)  { #t, t##_T },
 // Tokenek
 static const struct token {
@@ -3410,7 +3420,7 @@ static const struct token {
     TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED) TOK(RAW)  TOK(RRD)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
-    TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID) TOK(GLPI) TOK(SYNC)
+    TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID) TOK(GLPI) TOK(SYNC) TOK(LIKE)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },

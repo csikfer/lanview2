@@ -15,11 +15,14 @@ int tableShapeType(const QString& n, enum eEx __ex)
     if (0 == n.compare(_sMember,  Qt::CaseInsensitive)) return TS_MEMBER;
     if (0 == n.compare(_sGroup,   Qt::CaseInsensitive)) return TS_GROUP;
     if (0 == n.compare(_sReadOnly,Qt::CaseInsensitive)) return TS_READ_ONLY;
+    if (0 == n.compare(_sTools,   Qt::CaseInsensitive)) return TS_TOOLS;
+    // TS_UNKNOWN_PAD
+    if (__ex >= EX_WARNING) EXCEPTION(EENUMVAL, -1, n);
     if (0 == n.compare(_sIGroup,  Qt::CaseInsensitive)) return TS_IGROUP;
     if (0 == n.compare(_sNGroup,  Qt::CaseInsensitive)) return TS_NGROUP;
     if (0 == n.compare(_sIMember, Qt::CaseInsensitive)) return TS_IMEMBER;
     if (0 == n.compare(_sNMember, Qt::CaseInsensitive)) return TS_NMEMBER;
-    if (__ex) EXCEPTION(EENUMVAL, -1, n);
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
     return TS_UNKNOWN;
 }
 
@@ -37,14 +40,18 @@ const QString& tableShapeType(int e, enum eEx __ex)
     case TS_MEMBER:     return _sMember;
     case TS_GROUP:      return _sGroup;
     case TS_READ_ONLY:  return _sReadOnly;
-      // TS_INVALID_PAD
+    case TS_TOOLS:      return _sTools;
+    }
+    // TS_UNKNOWN_PAD
+    if (__ex >= EX_WARNING) EXCEPTION(EENUMVAL, e);
+    switch(e) {
     case TS_IGROUP:     return _sIGroup;
     case TS_NGROUP:     return _sNGroup;
     case TS_IMEMBER:    return _sIMember;
     case TS_NMEMBER:    return _sNMember;
     default:            break;
     }
-    if (__ex) EXCEPTION(EENUMVAL, e);
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 

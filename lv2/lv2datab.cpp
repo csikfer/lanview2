@@ -688,7 +688,7 @@ void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, co
     }
     const QString e = (*e2s)(i, EX_IGNORE);
     if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
-        EXCEPTION(EENUMVAL, 5, QObject::tr("A %1 adatvázis típus hiényos, extra elem : #%2/%3").arg(*pEnumType).arg(i).arg(e));
+        EXCEPTION(EENUMVAL, 5, QObject::tr("A %1 típus az adatbázisban hiényos, extra elem : #%2/%3").arg(*pEnumType).arg(i).arg(e));
     }
 }
 

@@ -2,6 +2,7 @@
 #include "lv2user.h"
 #include "record_tree.h"
 #include "record_link.h"
+#include "tool_table.h"
 #include "cerrormessagebox.h"
 #include "tableexportdialog.h"
 #include "lv2validator.h"
@@ -1916,6 +1917,9 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
     }
     else if (type & ENUM2SET(TS_LINK)) {
         r = new cRecordLink(pts, false, own, par);
+    }
+    else if (type & ENUM2SET(TS_TOOLS)) {
+        r = new cToolTable(pts, false, own, par);
     }
     else {
         r = new cRecordTable(pts, false, own, par);

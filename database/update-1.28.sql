@@ -393,59 +393,10 @@ CREATE TRIGGER imports_check_reference_node_id
 ALTER TABLE node_params ADD COLUMN IF NOT EXISTS date_of TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE port_params ADD COLUMN IF NOT EXISTS date_of TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
--- !!!!!!!!!!!!!!!!!!!!!!!!!!! Nem biztos, hogy végleges !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
--- Grafikonok
--- régebbi probálkozás törlése
+-- Grafikonok: régebbi probálkozás törlése
 DROP TABLE IF EXISTS graphs, graph_vars CASCADE;
 
--- Új (probálkozás)
-
-DROP TABLE IF EXISTS srv_diagram_types, srv_diagram_type_vars, service_diagrams;
-DROP TYPE IF EXISTS srvdiagramtypetext, srvdiagramtypevartext;
-
-ALTER TYPE tablefortext ADD VALUE IF NOT EXISTS 'service_diagram_types';
-ALTER TYPE tablefortext ADD VALUE IF NOT EXISTS 'srv_diagram_type_vars';
-CREATE TYPE srvdiagramtypetext AS ENUM ('title', 'vertical_label');
-CREATE TYPE srvdiagramtypevartext AS ENUM ();
-
-CREATE TABLE srv_diagram_types (
-    srv_diagram_type_id         bigserial   PRIMARY KEY,
-    srv_diagram_type_name       text        NOT NULL,
-    srv_diagram_type_note       text        DEFAULT NULL,
-    service_id                  bigint      NOT NULL
-                REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    text_id                     bigint      NOT NULL DEFAULT nextval('text_id_sequ'),
-    height                      integer     NOT NULL CHECK height >  50 AND height <= 2160,
-    width                       integer     NOT NULL CHECK width  > 100 AND width  <= 2840,
-    hrule                       text        NOT NULL DEFAULT '',
-    features                    text        DEFAULT NULL,
-    UNIQUE (srv_diagram_type_name, service_id)
-);
-
-CREATE TABLE srv_diagram_type_vars (
-    srv_diagram_type_var_id     bigserial   PRIMARY KEY,
-    srv_diagram_type_var_name   text        NOT NULL,
-    srv_diagram_type_var_note   text        DEFAULT NULL,
-    srv_diagram_type_id         bigint      NOT NULL
-                REFERENCES srv_diagram_types(srv_diagram_type_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    service_var_name            text        NOT NULL,
-    rpn                         text        DEFAULT NULL,
-    features                    text        DEFAULT NULL,
-    UNIQUE (srv_diagram_type_id, srv_diagram_type_var_name),
-    UNIQUE (srv_diagram_type_id, service_var_name)
-};
-
-CREATE TABLE service_diagrams (
-    service_diagram_id          bigserial   NOT NULL PRIMARY KEY,
-    host_service_id             bigint      NOT NULL
-                REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    srv_diagram_type_id         bigint      NOT NULL
-                REFERENCES srv_diagram_types(srv_diagram_type_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    features                    text        DEFAULT NULL,
-    UNIQUE (host_service_id, srv_diagram_type_id)
-);
-ALTER TABLE service_diagrams OWNER TO lanview2;
-COMMENT ON TBALE service_diagrams IS 'Szolgáltatás lekérdezéshez rendelt diagram leírója, ill kapcsoló rekord';
+-- Új (probálkozás) később
 
 -- Update 2020.09.16.
 
@@ -455,6 +406,79 @@ DROP VIEW IF EXISTS online_alarms_noack;
 -- mod by place GLPI sync
 ALTER TABLE places ADD COLUMN IF NOT EXISTS flag boolean DEFAULT false;
 
+-- Update 2020.11.06. ...
+
+DROP TABLE   IF EXISTS tool_objects;
+DROP TABLE   IF EXISTS tools;
+DROP TYPE    IF EXISTS tooltext;
+DROP TYPE    IF EXISTS tooltype;
+
+CREATE TYPE tooltext AS ENUM ('title', 'tool_tip');
+CREATE TYPE tooltype AS ENUM ('command', 'parse', 'url');
+ALTER TYPE tableshapetype ADD VALUE IF NOT EXISTS 'tools';
+
+CREATE TABLE tools (
+    tool_id	    bigserial   NOT NULL PRIMARY KEY,
+    tool_name   text        NOT NULL UNIQUE,
+    tool_note   text        DEFAULT NULL,
+    tool_type   tooltype    NOT NULL,
+    tool_stmt   text        NOT NULL,
+    object_name text        DEFAULT NULL,
+    features    text        DEFAULT NULL,
+    wait        boolean     DEFAULT false,
+    view_rights rights      DEFAULT 'operator'::rights,
+    exec_rights rights      DEFAULT 'operator'::rights,
+    text_id     bigint      NOT NULL DEFAULT nextval('text_id_sequ'),
+    icon        text
+);
+
+COMMENT ON COLUMN tools.tool_stmt   IS 'Paraméter: Command string or URL';
+COMMENT ON COLUMN tools.object_name IS 'The name of the record still required as a parameter.';
+COMMENT ON COLUMN tools.view_rights IS 'Minimum permission to view the record in its entirety';
+COMMENT ON COLUMN tools.exec_rights IS 'Minimum authority to execute';
+
+CREATE TABLE tool_objects (
+    tool_object_id      bigserial   NOT NULL PRIMARY KEY,
+    tool_id             bigint      NOT NULL
+        REFERENCES tools(tool_id) MATCH FULL
+            ON UPDATE RESTRICT
+            ON DELETE CASCADE,
+    object_name         text        NOT NULL,
+    object_id           bigint      NOT NULL,
+    tool_object_note    text,
+    features            text,
+    UNIQUE (tool_id, object_name, object_id)
+);
+CREATE INDEX IF NOT EXISTS tool_objects_object_index ON tool_objects(object_name, object_id);
+
+CREATE OR REPLACE FUNCTION check_reference_tool_object() RETURNS TRIGGER AS $$
+DECLARE
+    basename    text;
+    select_stmt text;
+    tool_rec    tools;
+BEGIN
+    SELECT * INTO tool_rec FROM tools WHERE tool_id = NEW.tool_id;
+    IF NEW.object_name IS NULL THEN 
+        NEW.object_name := tool_rec.object_name;
+    ELSIF NEW.object_name <> tool_rec.object_name THEN
+        PERFORM error('InvRef', NEW.tool_id, NEW.object_name || ' <> ' || tool_rec.object_name, 'check_reference_tool_object()',  TG_TABLE_NAME, TG_OP);
+    END IF;
+    IF NEW.object_name LIKE '%ses' THEN
+        basename := btrim(NEW.object_name, 'es');    -- !! The table name cannot begin with 'es'.
+    ELSE
+        basename := trim(trailing 's' from NEW.object_name);
+    END IF;
+    select_stmt := format('SELECT COUNT(*) FROM %s WHERE %s_id = NEW.object_id', tool_rec.tool_id, basename);
+    EXECUTE select_stmt;
+    IF found THEN
+        RETURN NEW;
+    END IF;
+    PERFORM error('IdNotFound', NEW.object_id, basename, 'check_reference_tool_object()',  TG_TABLE_NAME, TG_OP);
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_reference_tool_object BEFORE UPDATE OR INSERT ON tool_objects FOR EACH ROW EXECUTE PROCEDURE check_reference_tool_object();
 
 -- ******************************
--- SELECT set_db_version(1, 28);
+SELECT set_db_version(1, 28);

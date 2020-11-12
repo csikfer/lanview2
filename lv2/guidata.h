@@ -25,6 +25,7 @@ enum eTableShapeType {
     TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
     TS_READ_ONLY,   ///< "read_only" Nem modosítható
+    TS_TOOLS,       ///< Table for tools_objects
     /// Dummy érték a CHKENU miatt (ne jelezzen hibát, a tableShapeType() üres stringet ad vissza),
     /// A további lehetséges értékek nem megengedettek az adatbázisban, csak az API használja.
     TS_UNKNOWN_PAD,
@@ -35,13 +36,15 @@ enum eTableShapeType {
 };
 /// Konverziós függvény a eTableShapeType enumerációs típushoz.
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs név esetén kizárást dob.
-/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TS_UNKNOWN, ha ismeretlen a név, és __ex hamis.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_WARNING vagy nagyobb, akkor az adatbázisban ismeretlen enumerációs konstans esetén kizárást dob,
+///                          ha __ex értke EX_ERROR akkor megengedettek a csak az API által hsznált értékek is.
+/// @return Az enumerációs névhez tartozó enumeráxiós érték, vagy -1, ha ismeretlen a konstams, és __ex értéke EX_IGNORE.
 EXT_ int tableShapeType(const QString& n, enum eEx __ex = EX_ERROR);
 /// Konverziós függvény a eTableShapeType enumerációs típushoz.  Az TS_UNKNOWN_PAD értéket nem konvertálja.
 /// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex értéke nem EX_IGNORE, akkor ismeretlen enumerációs konstans esetén kizárást dob.
-/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
+/// @param __ex hibakezekés: ha __ex értéke nem EX_WARNING vagy nagyobb, akkor az adatbázisban ismeretlen enumerációs konstans esetén kizárást dob,
+///                          ha __ex értke EX_ERROR akkor megengedettek a csak az API által hsznált értékek is.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex értéke EX_IGNORE.
 EXT_ const QString&       tableShapeType(int e, enum eEx __ex = EX_ERROR);
 
 /// @enum eTableInheritType

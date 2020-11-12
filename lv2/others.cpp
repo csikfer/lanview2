@@ -648,6 +648,51 @@ QString getParName(QString::const_iterator& i, const QString::const_iterator& e,
     return r;
 }
 
+QString substitute(QSqlQuery& q, void *p, const QString& str, tGetValueFnPtr fn)
+{
+    QString::const_iterator i = str.constBegin();
+    char separator = 0;
+    QString substituted;   // Command substituted
+    // Substitute
+    while (i != str.constEnd()) {
+        char c = i->toLatin1();
+        QChar qc = *i;
+        ++i;
+        if (separator != 0 && c == separator) {
+            separator = 0;
+            substituted += qc;
+            continue;
+        }
+        if (c == '\'') {
+            separator = c;
+            substituted += qc;
+            continue;
+        }
+        if (c == '\\') {
+            if (i != str.constEnd()) {
+                substituted += qc;
+                substituted += *i;
+                ++i;
+            }
+            continue;
+        }
+        if (c == '$') {
+            if (i->toLatin1() == '$') {
+                ++i;
+            }
+            else {
+                QString vname;
+                vname = getParName(i, str.constEnd());
+                substituted += fn(vname, q, p);
+                continue;
+            }
+        }
+        substituted += qc;
+    }
+    return substituted;
+}
+
+
 QVariantList list_longlong2variant(const QList<qlonglong> &v)
 {
     QVariantList r;
