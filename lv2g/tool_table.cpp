@@ -5,3 +5,9 @@ cToolTable::cToolTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_uppe
 {
 
 }
+
+int cToolTable::ixToForeignKey()
+{
+    int ix;
+    return ix;
+}

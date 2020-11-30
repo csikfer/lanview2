@@ -8,6 +8,7 @@ class LV2GSHARED_EXPORT cToolTable : public cRecordTable {
     Q_OBJECT
 public:
     cToolTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = nullptr, QWidget * par = nullptr);
+    virtual int ixToForeignKey();
 };
 
 

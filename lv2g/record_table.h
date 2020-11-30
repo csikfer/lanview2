@@ -445,7 +445,7 @@ public:
     /// Alapesetben ez kiderül a rekord idegen kulcsokból.
     /// De megadható a features mezőben is, ha ez az idegen kilcsmezőkkel nem lehetséges, nem egyértelmű:
     /// ekkor a <table shape name>.owner kulcs értéke a keresett mező neve. (nem a tábla, hanem a leíró neve van a kulcsban)
-    int ixToForeignKey();
+    virtual int ixToForeignKey();
     void setOwnerId(qlonglong _id);
 
 private:

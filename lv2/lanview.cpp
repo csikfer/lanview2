@@ -529,7 +529,16 @@ void lanView::setSelfObjects()
                 pSelfHostService = new cHostService();
                 pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
                 pSelfHostService->setId(_sServiceId, pSelfService->getId());
-                if (1 == pSelfHostService->completion(*pQuery)) {
+                int n = pSelfHostService->completion(*pQuery);
+                if (n > 1) {       // ambiguous, and if proto and prime = nil ?
+                    pSelfHostService->clear();
+                    pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
+                    pSelfHostService->setId(_sServiceId, pSelfService->getId());
+                    pSelfHostService->setId(_sProtoServiceId, NIL_SERVICE_ID);
+                    pSelfHostService->setId(_sPrimeServiceId, NIL_SERVICE_ID);
+                    n = pSelfHostService->completion(*pQuery);
+                }
+                if (1 == n) {
                     setSelfStateF = true;
                     selfHostServiceId = pSelfHostService->getId();
                 }
