@@ -1292,6 +1292,8 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     checkCmd = checkCmd.trimmed();
     if (checkCmd.isEmpty()) return 0;
     if (inspectorType | IT_MAIN) {      // Rész fa gyökere, már egy hívott szolgáltatás
+        checkCmd.clear();
+        checkCmdArgs.clear();
         return -1;
     }
 
