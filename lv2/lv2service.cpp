@@ -1190,7 +1190,13 @@ int cInspector::getInspectorType(QSqlQuery& q)
     inspectorType = 0;
     if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
     if (isFeature(_sSuperior))         inspectorType |= IT_SUPERIOR;
-    if (pParent == nullptr)            inspectorType |= IT_MAIN;        // Csak a rész fa gyökere !!!
+    if (pParent == nullptr) {
+        PDEB(VERBOSE) << "Parent is NULL" << endl;
+        inspectorType |= IT_MAIN;        // Csak a rész fa gyökere !!!
+    }
+    else {
+        PDEB(VERBOSE) << "Parent is " << pParent->name() << endl;
+    }
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
@@ -1290,10 +1296,14 @@ int cInspector::getCheckCmd(QSqlQuery& q)
         else            checkCmd = val;
     }
     checkCmd = checkCmd.trimmed();
-    if (checkCmd.isEmpty()) return 0;
+    if (checkCmd.isEmpty()) {
+        PDEB(VERBOSE) << "Check command is empty ..." << endl;
+        return 0;
+    }
     if (inspectorType & IT_MAIN) {      // Rész fa gyökere, már egy hívott szolgáltatás
         checkCmd.clear();
         checkCmdArgs.clear();
+        PDEB(VERBOSE) << name() << " : root of the part tree." << endl;
         return -1;
     }
 
