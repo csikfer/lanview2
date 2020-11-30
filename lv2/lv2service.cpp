@@ -1190,7 +1190,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
     inspectorType = 0;
     if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
     if (isFeature(_sSuperior))         inspectorType |= IT_SUPERIOR;
-    if (pParent == nullptr)            inspectorType |= IT_MAIN;
+    if (pParent == nullptr)            inspectorType |= IT_MAIN;        // Csak a rész fa gyökere !!!
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
@@ -1291,49 +1291,11 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     }
     checkCmd = checkCmd.trimmed();
     if (checkCmd.isEmpty()) return 0;
-
-    QString arg;
-    QString::const_iterator i = checkCmd.constBegin();
-    char separator = 0;
-    QString checkCmdSubs;   // Command substituted
-    // Substitute
-    /*
-    while (i != checkCmd.constEnd()) {
-        char c = i->toLatin1();
-        QChar qc = *i;
-        ++i;
-        if (separator != 0 && c == separator) {
-            separator = 0;
-            checkCmdSubs += qc;
-            continue;
-        }
-        if (c == '\'') {
-            separator = c;
-            checkCmdSubs += qc;
-            continue;
-        }
-        if (c == '\\') {
-            if (i != checkCmd.constEnd()) {
-                checkCmdSubs += qc;
-                checkCmdSubs += *i;
-                ++i;
-            }
-            continue;
-        }
-        if (c == '$') {
-            if (i->toLatin1() == '$') {
-                ++i;
-            }
-            else {
-                QString vname;
-                vname = getParName(i, checkCmd.constEnd());
-                checkCmdSubs += getParValue(q, vname);
-                continue;
-            }
-        }
-        checkCmdSubs += qc;
+    if (inspectorType | IT_MAIN) {      // Rész fa gyökere, már egy hívott szolgáltatás
+        return -1;
     }
-    */
+
+    QString checkCmdSubs;   // Command substituted
     checkCmdSubs = substitute(q, this, checkCmd,
         [] (const QString& key, QSqlQuery& q, void *_p)
             {
@@ -1343,38 +1305,9 @@ int cInspector::getCheckCmd(QSqlQuery& q)
                 return r;
             });
     // Split args
-    bool prevSpace = false;
-    i = checkCmdSubs.constBegin();
-    while (i != checkCmdSubs.constEnd()) {
-        char c = i->toLatin1();
-        QChar qc = *i;
-        ++i;
-        if (separator == 0 && qc.isSpace()) {
-            if (prevSpace) continue;
-            prevSpace = true;
-            checkCmdArgs << arg;
-            arg.clear();
-            continue;
-        }
-        prevSpace = false;
-        if (separator != 0 && c == separator) {
-            separator = 0;
-            continue;
-        }
-        if (c == '"' || c == '\'') {
-            separator = c;
-            continue;
-        }
-        if (c == '\\') {
-            if (i != checkCmdSubs.constEnd()) {
-                arg += *i;
-                ++i;
-            }
-            continue;
-        }
-        arg += qc;
-    }
-    checkCmdArgs << arg;                // Utolsó paraméter
+    checkCmdArgs = splitArgs(checkCmdSubs);
+    QString ccBase = QFileInfo(checkCmdArgs.first()).baseName();
+
     if (pProtoService != nullptr && protoService().getName() == _sSsh) {
         QString sUser = feature(_sUser);
         QString sHost = node().getIpAddress(q).toString();
@@ -1385,19 +1318,17 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     checkCmd = checkCmdArgs.takeFirst();    // Split command and arguments
 
     QString myBase = QFileInfo(QCoreApplication::arguments().at(0)).baseName();
-    QString ccBase = QFileInfo(checkCmd).baseName();
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
     enum Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #else
     enum Qt::CaseSensitivity cs = Qt::CaseInsensitive;
 #endif
     if (0 == myBase.compare(ccBase, cs)) {
-        // Önmagunk hívása lenne!
-        checkCmd.clear();
-        checkCmdArgs.clear();
-        return -1;
+        if (pService->getName() != _sLv2d) {   // Az lv2d hívhatja önmagát
+            // Önmagunk hívása lenne!
+            EXCEPTION(ECONTEXT, 0, name());
+        }
     }
-
     bool isFullPath;
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
     isFullPath = checkCmd.startsWith(QChar('/'));

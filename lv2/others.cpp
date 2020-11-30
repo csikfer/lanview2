@@ -692,6 +692,46 @@ QString substitute(QSqlQuery& q, void *p, const QString& str, tGetValueFnPtr fn)
     return substituted;
 }
 
+QStringList splitArgs(const QString& cmd)
+{
+    QStringList r;
+    char separator = 0;
+    QString arg;
+    bool prevSpace = false;
+    QString::const_iterator i = cmd.constBegin();
+    while (i != cmd.constEnd()) {
+        char c = i->toLatin1();
+        QChar qc = *i;
+        ++i;
+        if (separator == 0 && qc.isSpace()) {
+            if (prevSpace) continue;
+            prevSpace = true;
+            r << arg;
+            arg.clear();
+            continue;
+        }
+        prevSpace = false;
+        if (separator != 0 && c == separator) {
+            separator = 0;
+            continue;
+        }
+        if (c == '"' || c == '\'') {
+            separator = c;
+            continue;
+        }
+        if (c == '\\') {
+            if (i != cmd.constEnd()) {
+                arg += *i;
+                ++i;
+            }
+            continue;
+        }
+        arg += qc;
+    }
+    r << arg;                // Utolsó paraméter
+    return r;
+}
+
 
 QVariantList list_longlong2variant(const QList<qlonglong> &v)
 {

@@ -335,6 +335,8 @@ inline const QString& msgAppend(QString *pMsg, const QString& m)
 /* Substitute */
 typedef QString (tGetValueFnPtr)(const QString& key, QSqlQuery& q, void *p);
 EXT_ QString substitute(QSqlQuery& q, void *p, const QString& str, tGetValueFnPtr fn);
+EXT_ QStringList splitArgs(const QString& cmd);
+
 
 /* ******************************  ****************************** */
 EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
