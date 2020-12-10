@@ -487,7 +487,7 @@ ENUM "notifswitch" {
     }
      "unknown" "ismeretlen" {
         VIEW "ismeretlen","unknown";
-        ICON "emblem-question-red.ico";
+        ICON "emblem-question-yellow.ico";
         BACKGROUND COLOR "#d0d0d0";
         FONT ATTR "strikeout";
     }
@@ -624,6 +624,75 @@ ENUM "portvars.disabled" {
      "true" {
         VIEW "igen",@;
         ICON "disable.ico";
+    }
+}
+ENUM "reasons" {
+    VIEW "reasons",@;
+     "ambiguous" {
+        VIEW "ambiguous",@;
+    }
+     "caveat" {
+        VIEW "caveat",@;
+    }
+     "close" {
+        VIEW "close",@;
+    }
+     "discard" {
+        VIEW "discard",@;
+    }
+     "error" {
+        VIEW "error",@;
+    }
+     "expired" {
+        VIEW "expired",@;
+        ICON "edit-history.ico";
+    }
+     "found" {
+        VIEW "found",@;
+    }
+     "insert" {
+        VIEW "insert",@;
+        ICON "db_add.ico";
+    }
+     "modify" {
+        VIEW "modify",@;
+        ICON "edit.ico";
+    }
+     "move" {
+        VIEW "move",@;
+        ICON "next.ico";
+    }
+     "new" {
+        VIEW "new",@;
+        ICON "add.ico";
+    }
+     "notfound" {
+        VIEW "notfound",@;
+    }
+     "ok" {
+        VIEW "ok",@;
+        ICON "ok.ico";
+    }
+     "remove" {
+        VIEW "remove",@;
+        ICON "minus.ico";
+    }
+     "restore" {
+        VIEW "restore",@;
+        ICON "dialog-ok-4.ico";
+    }
+     "timeout" {
+        VIEW "timeout",@;
+    }
+     "unchange" {
+        VIEW "unchange",@;
+    }
+     "unknown" {
+        VIEW "unknown",@;
+    }
+     "update" {
+        VIEW "update",@;
+        ICON "refresh.ico";
     }
 }
 ENUM "service_rrd_vars.delegate_port_state" {
@@ -2446,44 +2515,57 @@ TABLE SHAPE "mactab_logs" "Port címtábla lekérdezés napló" {
         FEATURES  {
             "view_expr" = "mac2node_name(?::macaddr)";
         }
+        FLAG "HTML";
     }
     ADD FIELD "reason" "reason" {
         TITLE "reason",@;
+        FLAG "HTML";
     }
     ADD FIELD "be_void" "be_void" {
         TITLE "be_void",@;
+        FLAG "HTML";
     }
     ADD FIELD "date_of" "date_of" {
         TITLE "date_of",@;
+        FLAG "HTML";
     }
     ADD FIELD "port_id_old" {
         TITLE "port_id_old",@;
         FEATURES ":view_func=port_id2full_name:";
+        FLAG "HTML";
     }
     ADD FIELD "mactab_state_old" "mactab_state_old" {
         TITLE "mactab_state_old",@;
+        FLAG "HTML";
     }
     ADD FIELD "first_time_old" "first_time_old" {
         TITLE "first_time_old",@;
+        FLAG "HTML";
     }
     ADD FIELD "last_time_old" "last_time_old" {
         TITLE "last_time_old",@;
+        FLAG "HTML";
     }
     ADD FIELD "set_type_old" "set_type_old" {
         TITLE "set_type_old",@;
+        FLAG "HTML";
     }
     ADD FIELD "port_id_new" {
         TITLE "port_id_new",@;
         FEATURES ":view_func=port_id2full_name:";
+        FLAG "HTML";
     }
     ADD FIELD "mactab_state_new" "mactab_state_new" {
         TITLE "mactab_state_new",@;
+        FLAG "HTML";
     }
     ADD FIELD "set_type_new" "set_type_new" {
         TITLE "set_type_new",@;
+        FLAG "HTML";
     }
     ADD FIELD "acknowledged" {
         TITLE "acknowledged",@;
+        FLAG "HTML";
     }
     FIELD "date_of" ORD desc, no, asc;
     FIELD "hwaddress", "hwaddress_node", "port_id_old", "port_id_new", "acknowledged" ORD no, asc, desc;

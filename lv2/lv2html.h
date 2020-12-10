@@ -159,7 +159,7 @@ EXT_ QString htmlEnumDecoration(const QString text, const cEnumVal& eval, int m 
 // HTML táblázat
 
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = QString(), bool esc = true);
-EXT_ QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc = true, int padding_pix = 0);
+EXT_ QString htmlTable(const QStringList& head, const QList<QStringList>& matrix, bool esc = true, int padding_pix = 0);
 
 /// Egy rekord ill. objektum HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
 /// @param q Az adatbázis műveletekhez használható query objektum.
@@ -218,7 +218,7 @@ inline void list2head(QStringList& head, QSqlQuery& q, cTableShape& shape, const
 /// @param list A rekord ill. objektum lista
 /// @param shape A megjelenítést leíró objektum. Feltételezi, hogy a mezőleírók már be vannak olvasva
 template <class R>
-void list2texts(QList<QStringList> data, QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape)
+void list2texts(QList<QStringList>& data, QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape)
 {
     int col, row;
     int cols = shape.shapeFields.size();
@@ -253,7 +253,7 @@ void list2texts(QList<QStringList> data, QSqlQuery& q, const tRecordList<R>& lis
 /// @param mergeKey Egy másodlagos kulcs, ami alapján modosítható a leíró feature értéke, lásd: cFeatures::selfMerge(const QString& key) metódust.
 ///  Ha mergeKey nem üres string, akkor mindenképpen újraolvassa a metódus, a leíróban a mező leírókat.
 template <class R>
-void list2texts(QStringList& head, QList<QStringList> data, QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, const QString& mergeKey = QString())
+void list2texts(QStringList& head, QList<QStringList>& data, QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, const QString& mergeKey = QString())
 {
     list2head(head, q, shape, mergeKey);
     list2texts(data, q, list, shape);

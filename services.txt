@@ -36,7 +36,7 @@ SERVICE "arp" "ARP tábla lekérdezése" {
 }
 SERVICE "arpd" "Arp daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "/usr/local/bin/arpd $S  -R $host_service_id";
+    COMMAND "/usr/local/bin/arpd  -R $host_service_id";
     FEATURES  {
         "controll" = "tick,reset,exit";
         "logrot" = "500M,8";
@@ -258,7 +258,7 @@ SERVICE "group" "Dummy service for grouping services." {
 }
 SERVICE "icontsrv" "icontsrv daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "icontsrv $S";
+    COMMAND "icontsrv -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit";
         "logrot" = "500M,4";
@@ -275,7 +275,7 @@ SERVICE "icontsrv" "icontsrv daemon" {
 }
 SERVICE "import" "import daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "/usr/local/bin/import $S -D";
+    COMMAND "/usr/local/bin/import -D -R $host_service_id";
     FEATURES  {
         "control" = "restart";
         "method" = "inspector";
@@ -424,10 +424,13 @@ SERVICE "local" "local service" {
     TYPE "protocol";
 }
 SERVICE "lv2d" "Lanview2 Main server" {
-    SUPERIOR SERVICE MASK "~.";
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "lv2d -R $host_service_id";
     FEATURES  {
         "control" = "tick, reset,exit";
         "logrot" = "500M,8";
+        "method" = "inspector";
+        "process" = "continue";
         "superior";
         "timing" = "passive";
     }
@@ -495,7 +498,7 @@ SERVICE "pmac" "Query port address table by <protocol>" {
 }
 SERVICE "portmac" "Device port address table query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "portmac $S -R $host_service_id";
+    COMMAND "portmac -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit";
         "logrot" = "500M,8";
@@ -537,7 +540,7 @@ SERVICE "portvars" "Port változók" {
 }
 SERVICE "portvlan" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
-    COMMAND "portvlan $S -R $host_service_id";
+    COMMAND "portvlan -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit";
         "logrot" = "500M,8";
@@ -603,7 +606,7 @@ SERVICE "proc_loadavg" {
 }
 SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
-    COMMAND "pstat $S  -R $host_service_id";
+    COMMAND "pstat  -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit";
         "logrot" = "500M,8";
@@ -655,7 +658,7 @@ SERVICE "rlinkstat" "Jelenlét, a switch port állapota alapján" {
 }
 SERVICE "rrdhelper" "RRD Helper" {
     SUPERIOR SERVICE MASK "^lv2|group$";
-    COMMAND "rrdhelper $S -R $host_service_id";
+    COMMAND "rrdhelper -R $host_service_id";
     FEATURES  {
         "method" = "inspector";
         "process" = "continue";
@@ -747,7 +750,7 @@ SERVICE "snmp" "SNMP" {
 }
 SERVICE "snmpvars" {
     SUPERIOR SERVICE MASK "^lv2|group$";
-    COMMAND "snmpvars $S -R $host_service_id";
+    COMMAND "snmpvars -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit";
         "logrot" = "500M,8";

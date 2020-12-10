@@ -59,13 +59,13 @@ private:
     bool    fMAC, fIP, fSw;
     static eTristate nmapExists;
 private slots:
-    void changeMAC(const QString& s);
-    void changeIP(const QString& s);
-    void hit_clear();
-    void hit_find();
-    void hit_explore();
-    void ip2mac();
-    void mac2ip();
+    void on_comboBoxMAC_currentTextChanged(const QString& s);
+    void on_comboBoxIP_currentTextChanged(const QString& s);
+    void on_pushButtonClear_clicked();
+    void on_pushButtonFindMac_clicked();
+    void on_pushButtonExplore_clicked();
+    void on_toolButtonIP2MAC_clicked();
+    void on_toolButtonMAC2IP_clicked();
     void expLine(QString s);
     void finished();
     void on_pushButtonFindIp_clicked();

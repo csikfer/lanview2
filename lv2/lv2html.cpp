@@ -117,7 +117,7 @@ QString htmlTableLine(const QStringList& fl, const QString& ft, bool esc)
     return r + "\n";
 }
 
-QString htmlTable(const QStringList head, const QList<QStringList> matrix, bool esc, int padding_pix)
+QString htmlTable(const QStringList& head, const QList<QStringList>& matrix, bool esc, int padding_pix)
 {
     QString table;
     if (padding_pix == 0) table += "\n<table border=\"1\" > ";
@@ -161,14 +161,14 @@ static bool queryTable(tRecordList<cRecordAny>& list, QSqlQuery q, cTableShape &
         ord.prepend(" ");
     }
     QString sql = QString("SELECT * FROM %1 WHERE ").arg(o.tableName()) + " " + _where + " " + ord;
-    if (execSql(q, sql, _par)) {
-        o.set(q);
-        do {
-            o.set(q);
-            list << o;
-        } while (q.next());
+    bool r = execSql(q, sql, _par);
+    if (r) {
+        list << o.set(q);
+        while (q.next()) {
+            list << o.set(q);
+        };
     }
-    return !list.isEmpty();
+    return r;
 }
 
 QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, const QString& shrt, const QString& mergeKey)

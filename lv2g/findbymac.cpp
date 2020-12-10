@@ -122,7 +122,6 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     setAllMac();
 #ifdef SNMP_IS_EXISTS
     setSwitchs();
-    connect(pUi->pushButtonExplore, SIGNAL(clicked()),                      this, SLOT(hit_explore()));
 #else   // SNMP_IS_EXISTS
     pUi->comboBoxSw->hide();
     pUi->labelSw->hide();
@@ -138,13 +137,7 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     if (nmapExists == TS_FALSE) {
         pUi->pushButtonNMap->hide();
     }
-    connect(pUi->comboBoxMAC,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeMAC(QString)));
-    connect(pUi->comboBoxIP ,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeIP(QString)));
-    connect(pUi->pushButtonClear,   SIGNAL(clicked()),                      this, SLOT(hit_clear()));
-    connect(pUi->pushButtonFindMac, SIGNAL(clicked()),                      this, SLOT(hit_find()));
-    connect(pUi->toolButtonIP2MAC,  SIGNAL(clicked()),                      this, SLOT(ip2mac()));
-    connect(pUi->toolButtonMAC2IP,  SIGNAL(clicked()),                      this, SLOT(mac2ip()));
-    changeMAC(pUi->comboBoxMAC->currentText());
+    on_comboBoxMAC_currentTextChanged(pUi->comboBoxMAC->currentText());
 }
 
 cFindByMac::~cFindByMac()
@@ -208,32 +201,32 @@ void cFindByMac::setButtons()
     pUi->toolButtonIP2MAC->setEnabled(fIP);
 }
 
-void cFindByMac::changeMAC(const QString& s)
+void cFindByMac::on_comboBoxMAC_currentTextChanged(const QString& s)
 {
     fMAC = cMac::isValid(s);
     setButtons();
 }
 
-void cFindByMac::changeIP(const QString& s)
+void cFindByMac::on_comboBoxIP_currentTextChanged(const QString& s)
 {
     fIP = !QHostAddress(s).isNull();
     setButtons();
 }
 
-void cFindByMac::hit_clear()
+void cFindByMac::on_pushButtonClear_clicked()
 {
     setAllMac();
     pUi->comboBoxIP->clear();
 }
 
-void cFindByMac::hit_find()
+void cFindByMac::on_pushButtonFindMac_clicked()
 {
     QString sMac = pUi->comboBoxMAC->currentText();
     QString text = htmlReportByMac(*pq, sMac);
     pUi->textEdit->append(text);
 }
 
-void cFindByMac::hit_explore()
+void cFindByMac::on_pushButtonExplore_clicked()
 {
 #ifdef SNMP_IS_EXISTS
     QSqlQuery q = getQuery();
@@ -256,14 +249,14 @@ void cFindByMac::hit_explore()
 #endif
 }
 
-void cFindByMac::ip2mac()
+void cFindByMac::on_toolButtonIP2MAC_clicked()
 {
     QHostAddress ip(pUi->comboBoxIP->currentText());
     cMac mac = cArp::ip2mac(*pq, ip, EX_IGNORE);
     if (mac.isValid()) pUi->comboBoxMAC->setCurrentText(mac.toString());
 }
 
-void cFindByMac::mac2ip()
+void cFindByMac::on_toolButtonMAC2IP_clicked()
 {
     cMac mac(pUi->comboBoxMAC->currentText());
     QList<QHostAddress> ipl = cArp::mac2ips(*pq, mac);

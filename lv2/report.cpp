@@ -523,7 +523,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
         text += sHtmlLine;
         break;
     default:    // ??????
-        text += htmlWarning("Ezzel az MAC címmel több hálózati elem is be van jegyezve.");
+        text += htmlError("Ezzel az MAC címmel több hálózati elem is be van jegyezve.");
         do {
             QSqlQuery qq = getQuery();
             text += htmlPair2Text(htmlReportNode(qq, node));

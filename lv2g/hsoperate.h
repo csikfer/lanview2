@@ -79,7 +79,7 @@ public:
     static const enum ePrivilegeLevel rights;
     int queryNodeServices(qlonglong _nid);
 protected:
-    void setButton();
+    void setButtonsFromTo();
     bool    lockSetButton;
     Ui::hostServiceOp *pUi;
     QButtonGroup   *pButtonGroupPlace;
@@ -119,58 +119,67 @@ protected:
     QDateTime now;
     cRecordTable *pSrvVarsTable;
     cRecordTable *pSrvLogsTable;
-protected slots:
-    void refresh();
-    /// Al példányok megjelenítése
-    void fetchSubs();
-    /// találatok beolvasása/megjelenítése a beállított filterek alakján
-    void fetchByFilter();
-    /// A kijelölt szolgáltatás példányokon a megadott noalarm állpot beállítása
-    void set();
-    /// A táblázat összes sorának a kijelölése
-    void all();
-    /// A táblázat összes sorában a kijelölés törlése
-    void none();
-    void subAll();
-    void subNone();
-    void zoneChanged(int ix);
-    void on_checkBox_stateChanged(int);
-    void clrStat(bool f);
-    void setAlarmButtons(int id);
-    void changePlacePattern(const QString& text);
-    void changeNodePattern(const QString& text);
-    void changeServicePattern(const QString& text);
-    void changeSupPattern(const QString& text);
-    void doubleClickCell(const QModelIndex& mi);
-    /// Egyyel visszalépés, az előző lekérdezésre (nem olvassa újra)
-    void back();
-    /// Egyyel előre lépés, a következő lekérdezésre (nem olvassa újra)
-    void forward();
-    /// A lekérdezések törlése az aktuális kivételével.
-    void clear();
-    void root();
-    // refresh
-    void startRefresh();
-    void changeRefreshInterval(int v);
-    //
-    void changeJustify();
 private slots:
+    void on_pushButtonRefresh_clicked();
+    /// Al példányok megjelenítése
+    void on_pushButtonSub_clicked();
+    /// A kijelölt szolgáltatás példányokon a megadott állpot beállítása vagy művelet végrehajtása
+    void on_pushButtonSet_clicked();
+    /// találatok beolvasása/megjelenítése a beállított filterek alakján
+    void on_pushButtonFetch_clicked();
+    /// A táblázat összes sorának a kijelölése
+    void on_pushButtonAll_clicked();
+    /// A táblázat összes sorában a kijelölés törlése
+    void on_pushButtonNone_clicked();
+    void on_pushButtonSubAll_clicked();
+    void on_pushButtonSubNone_clicked();
+    void on_comboBoxZone_currentIndexChanged(int ix);
+    void on_checkBoxClrStat_toggled(bool f);
+    void setAlarmButtons(int id);
+    void on_lineEditPlacePattern_textChanged(const QString& text);
+    void on_lineEditNodePattern_textChanged(const QString& text);
+    void on_lineEditServicePattern_textChanged(const QString& text);
+    void on_lineEditSupPattern_textChanged(const QString& text);
+    void on_tableWidget_doubleClicked(const QModelIndex& mi);
+    /// Egyyel visszalépés, az előző lekérdezésre (nem olvassa újra)
+    void on_toolButtonBack_clicked();
+    /// Egyyel előre lépés, a következő lekérdezésre (nem olvassa újra)
+    void on_toolButtonForward_clicked();
+    /// A lekérdezések törlése az aktuális kivételével.
+    void on_toolButtonClearHist_clicked();
+    void on_pushButtonRoot_clicked();
+    // refresh
+    void on_pushButtonAutoRefresh_clicked();
+    void on_spinBoxRefresh_valueChanged(int v);
+    // ?!
+    void on_textEditJustify_textChanged();
+
     void on_dateTimeEditFrom_dateTimeChanged(const QDateTime &dateTime);
     void on_dateTimeEditTo_dateTimeChanged(const QDateTime &dateTime);
     void on_toolButtonDateFrom_clicked();
     void on_toolButtonRstFrom_clicked();
     void on_toolButtonDateTo_clicked();
     void on_toolButtonRstTo_clicked();
-
     void on_toolButtonIntervalDef_clicked();
-
     void on_tableWidget_itemSelectionChanged();
-
     void on_toolButtonUnknown_clicked();
-
     void on_toolButtonCritical_clicked();
-
     void on_toolButtonWarning_clicked();
+
+    void on_checkBoxSup_toggled(bool checked);
+    void on_radioButtonSupPattern_toggled(bool checked);
+    void on_toolButtonSupNull_toggled(bool checked);
+
+    void on_checkBoxPlace_toggled(bool checked);
+    void on_radioButtonPlacePattern_toggled(bool checked);
+
+    void on_checkBoxNode_toggled(bool checked);
+    void on_radioButtonNodePattern_toggled(bool checked);
+
+    void on_checkBoxService_toggled(bool checked);
+    void on_radioButtonServicePattern_toggled(bool checked);
+
+    void on_checkBoxRemove_toggled(bool checked);
 
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {
@@ -183,6 +192,32 @@ private:
             pUi->tableWidget->setCellWidget(row, col, pw);
         }
     }
+    void enableSup(bool ena, bool pattern, bool zero) {
+        pUi->radioButtonSupSelect-> setEnabled(ena);
+        pUi->radioButtonSupPattern->setEnabled(ena);
+        pUi->lineEditSupPattern->   setEnabled(ena &&  pattern && !zero);
+        pUi->toolButtonSupNull->    setEnabled(ena &&  pattern);
+        pUi->comboBoxSupSelect->    setEnabled(ena && !pattern);
+    }
+    void enablePlace(bool ena, bool pattern) {
+        pUi->radioButtonPlaceSelect-> setEnabled(ena);
+        pUi->radioButtonPlacePattern->setEnabled(ena);
+        pUi->lineEditPlacePattern->   setEnabled(ena &&  pattern);
+        pUi->comboBoxPlaceSelect->    setEnabled(ena && !pattern);
+    }
+    void enableNode(bool ena, bool pattern) {
+        pUi->radioButtonNodeSelect-> setEnabled(ena);
+        pUi->radioButtonNodePattern->setEnabled(ena);
+        pUi->lineEditNodePattern->   setEnabled(ena &&  pattern);
+        pUi->comboBoxNodeSelect->    setEnabled(ena && !pattern);
+    }
+    void enableService(bool ena, bool pattern) {
+        pUi->radioButtonServiceSelect-> setEnabled(ena);
+        pUi->radioButtonServicePattern->setEnabled(ena);
+        pUi->lineEditServicePattern->   setEnabled(ena &&  pattern);
+        pUi->comboBoxServiceSelect->    setEnabled(ena && !pattern);
+    }
+    void removeSelected();
 };
 
 #endif // HSOPERATE_H

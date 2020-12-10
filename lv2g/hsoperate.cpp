@@ -3,6 +3,7 @@
 #include "record_dialog.h"
 #include "record_tree.h"
 #include "lv2user.h"
+#include "popupreport.h"
 
 #include "input_dialog.h"
 
@@ -16,7 +17,7 @@ enum ePermit {
 /// Field indexs in SQL query
 enum eFieldIx {
     RX_ID,
-    RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
+    RX_HOST_NAME, RX_HOST_STAT, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
     RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
     RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_SOFT_STATE, RX_DELEGATE,
     RX_NSUB, RX_SUPERIOR_ID, RX_SUPERIOR_NAME,
@@ -27,6 +28,7 @@ const QString cHSOperate::_sql =
         "SELECT"
             " hs.host_service_id, "         // RX_ID
             " node_name, "                  // RX_HOST_NAME
+            " node_stat, "                  // RX_NODE_STAT
             " service_name, "               // RX_SERVICE_NAME
             " hs.port_id,"                  // RX_PORT_ID
             " CASE WHEN hs.port_id IS NULL THEN NULL"
@@ -237,7 +239,7 @@ void cHSORow::togleSet(bool f)
 {
     set = f;
     if (!pDialog->lockSetButton) {
-        pDialog->setButton();
+        pDialog->setButtonsFromTo();
     }
 }
 
@@ -318,6 +320,7 @@ enum eFilterButtonId {
 enum eTableColumnIx {
     TC_ID,
     TC_HOST,
+    TC_HOST_STATE,
     TC_SERVICE,
     TC_PORT,
     TC_EXT,         /// prot:prim
@@ -331,11 +334,11 @@ enum eTableColumnIx {
     TC_SOFT_STATE,
     TC_DELEGATE,
     TC_LAST_TM,
-    TC_CBOX_SEL,
+    TC_CBOX_SELECT,
     TC_NSUB,
     TC_CBOX_NSUB,
     TC_SUPERIOR,
-    TC_RESTART,
+    TC_SEND_CMD,
     TC_COUNT
 };
 
@@ -395,7 +398,6 @@ cHSOperate::cHSOperate(QMdiArea *par)
         permit = PERMIT_PART;   // Csak riasztás tiltás, kötelező indoklással
         pUi->splitter->setStretchFactor(0, 3);
         pUi->splitter->setStretchFactor(1, 1);
-        connect(pUi->textEditJustify, SIGNAL(textChanged()), this, SLOT(changeJustify()));
         break;
     case PL_ADMIN:
     case PL_SYSTEM:
@@ -438,47 +440,40 @@ cHSOperate::cHSOperate(QMdiArea *par)
 
     pUi->pushButtonAutoRefresh->setText(sStart);
     if (permit != PERMIT_ALL) {
-        pUi->tableWidget->hideColumn(TC_RESTART);
+        pUi->tableWidget->hideColumn(TC_SEND_CMD);
     }
 
     if (permit == PERMIT_NO) {
+        pUi->tableWidget->hideColumn(TC_CBOX_SELECT);
         pUi->checkBoxAlarmOn->setDisabled(true);
         pUi->checkBoxAlarmOff->setDisabled(true);
         pUi->checkBoxSetTo->setDisabled(true);
         pUi->checkBoxSetFrom->setDisabled(true);
         pUi->checkBoxSetInterval->setDisabled(true);
+        pUi->checkBoxRemove->setDisabled(true);
         pUi->pushButtonSet->setDisabled(true);
         pUi->pushButtonAll->setDisabled(true);
         pUi->pushButtonNone->setDisabled(true);
-        pUi->tableWidget->hideColumn(TC_CBOX_SEL);
         pUi->checkBoxDisable->setDisabled(true);
         pUi->checkBoxDelegate->setDisabled(true);
         pUi->checkBoxClrStat->setDisabled(true);
-        pUi->checkBoxAlarm->setDisabled(true);
-        pUi->checkBoxStatLog->setDisabled(true);
-        pUi->checkBoxMemo->setDisabled(true);
-        pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
-        pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
+        pUi->checkBoxDelAlarm->setDisabled(true);
+        pUi->checkBoxDelStatLog->setDisabled(true);
+        pUi->checkBoxDelMemo->setDisabled(true);
     }
     else {
         connect(pButtonGroupAlarm,      SIGNAL(buttonClicked(int)), this, SLOT(setAlarmButtons(int)));
-        connect(pUi->pushButtonSet,     SIGNAL(clicked()),          this, SLOT(set()));
-        connect(pUi->pushButtonAll,     SIGNAL(clicked()),          this, SLOT(all()));
-        connect(pUi->pushButtonNone,    SIGNAL(clicked()),          this, SLOT(none()));
         if (permit == PERMIT_PART) {
             pUi->checkBoxDisable->setDisabled(true);
             pUi->checkBoxDelegate->setDisabled(true);
             pUi->checkBoxClrStat->setDisabled(true);
-            pUi->checkBoxAlarm->setDisabled(true);
-            pUi->checkBoxStatLog->setDisabled(true);
-            pUi->checkBoxMemo->setDisabled(true);
-            pUi->checkBoxDisable->setCheckState(Qt::PartiallyChecked);
-            pUi->checkBoxDelegate->setCheckState(Qt::PartiallyChecked);
+            pUi->checkBoxDelAlarm->setDisabled(true);
+            pUi->checkBoxDelStatLog->setDisabled(true);
+            pUi->checkBoxDelMemo->setDisabled(true);
+            pUi->checkBoxRemove->setDisabled(true);
         }
         else {
-            connect(pUi->checkBoxClrStat, SIGNAL(toggled(bool)), this, SLOT(clrStat(bool)));
-            connect(pUi->checkBoxDisable, SIGNAL(stateChanged(int)), this, SLOT(on_checkBox_stateChanged(int)));
-            connect(pUi->checkBoxDelegate,SIGNAL(stateChanged(int)), this, SLOT(on_checkBox_stateChanged(int)));
+            pUi->checkBoxRemove->setEnabled(true);
         }
         pUi->dateTimeEditFrom->setDisplayFormat(lanView::sDateTimeForm);
         pUi->dateTimeEditTo->setDisplayFormat(lanView::sDateTimeForm);
@@ -489,32 +484,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
         pUi->dateTimeEditFrom->setDateTime(now);
         pUi->dateTimeEditTo->setDateTime(dt);
 
-        pUi->checkBoxHsDisa->setCheckState(Qt::PartiallyChecked);
+        pUi->checkBoxFiltHsDisa->setCheckState(Qt::PartiallyChecked);
     }
-
-    connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)), this, SLOT(zoneChanged(int)));
-
-    connect(pUi->pushButtonFetch,   SIGNAL(clicked()),  this,   SLOT(fetchByFilter()));
-    connect(pUi->pushButtonSub,     SIGNAL(clicked()),  this,   SLOT(fetchSubs()));
-    connect(pUi->pushButtonSubAll,  SIGNAL(clicked()),  this,   SLOT(subAll()));
-    connect(pUi->pushButtonSubNone, SIGNAL(clicked()),  this,   SLOT(subNone()));
-
-    connect(pUi->lineEditPlacePattern,   SIGNAL(textChanged(QString)), this, SLOT(changePlacePattern(QString)));
-    connect(pUi->lineEditNodePattern,    SIGNAL(textChanged(QString)), this, SLOT(changeNodePattern(QString)));
-    connect(pUi->lineEditServicePattern, SIGNAL(textChanged(QString)), this, SLOT(changeServicePattern(QString)));
-    connect(pUi->lineEditSupPattern, SIGNAL(textChanged(QString)), this, SLOT(changeSupPattern(QString)));
-
-    connect(pUi->tableWidget,      SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doubleClickCell(QModelIndex)));
-
-    connect(pUi->toolButtonBack,   SIGNAL(clicked()),     this, SLOT(back()));
-    connect(pUi->toolButtonForward,SIGNAL(clicked()),     this, SLOT(forward()));
-    connect(pUi->toolButtonClear,  SIGNAL(clicked()),     this, SLOT(clear()));
-
-    connect(pUi->pushButtonRefresh,SIGNAL(clicked()),     this, SLOT(refresh()));
-    connect(pUi->pushButtonRoot,   SIGNAL(clicked()),     this, SLOT(root()));
-
-    connect(pUi->spinBoxRefresh,   SIGNAL(valueChanged(int)), this, SLOT(changeRefreshInterval(int)));
-    connect(pUi->pushButtonAutoRefresh, SIGNAL(clicked()), this, SLOT(startRefresh()));
 
     pZoneModel = new cZoneListModel(this);
     pUi->comboBoxZone->setModel(pZoneModel);
@@ -580,7 +551,7 @@ int cHSOperate::queryNodeServices(qlonglong _nid)
     if (ix < 0) return false;
     pUi->comboBoxNodeSelect->setCurrentIndex(ix);
     pUi->radioButtonNodeSelect->setChecked(true);
-    fetchByFilter();
+    on_pushButtonFetch_clicked();
     return actState()->rows.size();
 }
 
@@ -595,7 +566,7 @@ void cHSOperate::timerEvent(QTimerEvent *event)
     cnt++;
     if (cnt >= refreshTime) {
         cnt = 0;
-        if (stateIx >= 0) refresh();
+        if (stateIx >= 0) on_pushButtonRefresh_clicked();
     }
     pUi->progressBarRefresh->setValue(cnt);
 }
@@ -610,26 +581,27 @@ void cHSOperate::refreshTable()
     pUi->tableWidget->setRowCount(0);
     pUi->tableWidget->setRowCount(actState()->size);
     foreach (cHSORow *pRow, actState()->rows) {
-        setCell(row, TC_ID,      pRow->item(RX_ID));
-        setCell(row, TC_HOST,    pRow->item(RX_HOST_NAME));
-        setCell(row, TC_SERVICE, pRow->item(RX_SERVICE_NAME));
-        setCell(row, TC_PORT,    pRow->item(RX_PORT_NAME));
-        setCell(row, TC_EXT,     pRow->item(RX_SRV_EXT));
-        setCell(row, TC_PLACE,   pRow->item(RX_PLACE_NAME, RX_PLACE_TYPE, cHSORow::pPlaceType));
-        setCell(row, TC_NOALARM, pRow->item(RX_NOALARM, cHSORow::pNoAlarmType));
-        setCell(row, TC_FROM,    pRow->item(RX_FROM, hs.colDescr(hs.toIndex(_sNoalarmFrom))));
-        setCell(row, TC_TO,      pRow->item(RX_TO, hs.colDescr(hs.toIndex(_sNoalarmTo))));
-        setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, _sHostServices, _sDisabled));
-        setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
-        setCell(row, TC_STATE,   pRow->item(RX_STATE, cHSORow::pNotifSwitch));
-        setCell(row, TC_SOFT_STATE,pRow->item(RX_SOFT_STATE, cHSORow::pNotifSwitch));
-        setCell(row, TC_DELEGATE,pRow->boolItem(RX_DELEGATE, _sHostServices, _sDelegateHostState));
-        setCell(row, TC_LAST_TM, pRow->item(RX_LAST_TOUCHED));
-        setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
-        setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
-        setCell(row, TC_CBOX_NSUB,pRow->getWidgetSub());
-        setCell(row, TC_SUPERIOR,pRow->item(RX_SUPERIOR_NAME));
-        setCell(row, TC_RESTART, pRow->getButtonCmd());
+        setCell(row, TC_ID,         pRow->item(RX_ID));
+        setCell(row, TC_HOST,       pRow->item(RX_HOST_NAME));
+        setCell(row, TC_HOST_STATE, pRow->item(RX_HOST_STAT, cHSORow::pNotifSwitch));
+        setCell(row, TC_SERVICE,    pRow->item(RX_SERVICE_NAME));
+        setCell(row, TC_PORT,       pRow->item(RX_PORT_NAME));
+        setCell(row, TC_EXT,        pRow->item(RX_SRV_EXT));
+        setCell(row, TC_PLACE,      pRow->item(RX_PLACE_NAME, RX_PLACE_TYPE, cHSORow::pPlaceType));
+        setCell(row, TC_NOALARM,    pRow->item(RX_NOALARM, cHSORow::pNoAlarmType));
+        setCell(row, TC_FROM,       pRow->item(RX_FROM, hs.colDescr(hs.toIndex(_sNoalarmFrom))));
+        setCell(row, TC_TO,         pRow->item(RX_TO, hs.colDescr(hs.toIndex(_sNoalarmTo))));
+        setCell(row, TC_DISABLED,   pRow->boolItem(RX_DISABLED, _sHostServices, _sDisabled));
+        setCell(row, TC_DISABLED_SRV,pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
+        setCell(row, TC_STATE,      pRow->item(RX_STATE, cHSORow::pNotifSwitch));
+        setCell(row, TC_SOFT_STATE, pRow->item(RX_SOFT_STATE, cHSORow::pNotifSwitch));
+        setCell(row, TC_DELEGATE,   pRow->boolItem(RX_DELEGATE, _sHostServices, _sDelegateHostState));
+        setCell(row, TC_LAST_TM,    pRow->item(RX_LAST_TOUCHED));
+        setCell(row, TC_CBOX_SELECT,   pRow->getCheckBoxSet());
+        setCell(row, TC_NSUB,       pRow->item(RX_NSUB));
+        setCell(row, TC_CBOX_NSUB,  pRow->getWidgetSub());
+        setCell(row, TC_SUPERIOR,   pRow->item(RX_SUPERIOR_NAME));
+        setCell(row, TC_SEND_CMD,    pRow->getButtonCmd());
         row++;
     }
     bool noSup = actState()->nsup == 0;
@@ -639,7 +611,7 @@ void cHSOperate::refreshTable()
     pUi->pushButtonSubAll->setDisabled(noSup);
     pUi->pushButtonSubNone->setDisabled(noSup);
     pUi->pushButtonSub->setDisabled(noSup);
-    setButton();
+    setButtonsFromTo();
     return;
 }
 
@@ -655,7 +627,7 @@ bool cHSOperate::fetch(const QString& sql, const QVariantList& bind)
     stateIx++;
     refreshTable();
     pUi->toolButtonBack->setEnabled(stateIx > 0);
-    pUi->toolButtonClear->setEnabled(stateIx > 0);
+    pUi->toolButtonClearHist->setEnabled(stateIx > 0);
     pUi->toolButtonForward->setDisabled(true);
     pUi->pushButtonRefresh->setEnabled(true);
     return true;
@@ -663,12 +635,12 @@ bool cHSOperate::fetch(const QString& sql, const QVariantList& bind)
 
 void cHSOperate::goSub(int row)
 {
-    subNone();
+    on_pushButtonSubNone_clicked();
     actState()->rows[row]->pCheckBoxSub->setChecked(true);
-    fetchSubs();
+    on_pushButtonSub_clicked();
 }
 
-void cHSOperate::refresh()
+void cHSOperate::on_pushButtonRefresh_clicked()
 {
     cHSOState *p = new cHSOState(*pq, actState()->sql, actState()->binds, this);
     cHSOState *pOld = actState();
@@ -685,28 +657,28 @@ void cHSOperate::refresh()
     refreshTable();
 }
 
-void cHSOperate::fetchByFilter()
+void cHSOperate::on_pushButtonFetch_clicked()
 {
     static const QChar j('%');
 
-    eTristate isHsDis = checkBoxState2tristate(pUi->checkBoxHsDisa->checkState());
-    eTristate isSDis  = checkBoxState2tristate(pUi->checkBoxSDisa->checkState());
+    eTristate isHsDis = checkBoxState2tristate(pUi->checkBoxFiltHsDisa->checkState());
+    eTristate isSDis  = checkBoxState2tristate(pUi->checkBoxFiltSDisa->checkState());
     eTristate isDeleg = checkBoxState2tristate(pUi->checkBoxFiltDelegate->checkState());
 
-    bool isOff    = pUi->checkBoxOff->isChecked();
-    bool isOn     = pUi->checkBoxOn->isChecked();
-    bool isTo     = pUi->checkBoxTo->isChecked();
-    bool isFrom   = pUi->checkBoxFrom->isChecked();
-    bool isFromTo = pUi->checkBoxFromTo->isChecked();
+    bool isOff    = pUi->checkBoxFiltAlarmOff->isChecked();
+    bool isOn     = pUi->checkBoxFiltAlarmOn->isChecked();
+    bool isTo     = pUi->checkBoxFiltAlarmTo->isChecked();
+    bool isFrom   = pUi->checkBoxFiltAlarmFrom->isChecked();
+    bool isFromTo = pUi->checkBoxFiltAlarmFromTo->isChecked();
 
-    bool isStateOn     = pUi->checkBoxStateOn->isChecked();
-    bool isRecovered   = pUi->checkBoxRecovered->isChecked();
-    bool isWarning     = pUi->checkBoxWarning->isChecked();
-    bool isCritical    = pUi->checkBoxCritical->isChecked();
-    bool isUnreachable = pUi->checkBoxUnreachable->isChecked();
-    bool isDown        = pUi->checkBoxDown->isChecked();
-    bool isFlapping    = pUi->checkBoxFlapping->isChecked();
-    bool isUnknown     = pUi->checkBoxUnknown->isChecked();
+    bool isStateOn     = pUi->checkBoxFiltStateOn->isChecked();
+    bool isRecovered   = pUi->checkBoxFiltStatRecovered->isChecked();
+    bool isWarning     = pUi->checkBoxFiltStatWarning->isChecked();
+    bool isCritical    = pUi->checkBoxFiltStatCritical->isChecked();
+    bool isUnreachable = pUi->checkBoxFiltStatUnreachable->isChecked();
+    bool isDown        = pUi->checkBoxFiltStatDown->isChecked();
+    bool isFlapping    = pUi->checkBoxFiltStatFlapping->isChecked();
+    bool isUnknown     = pUi->checkBoxFiltStatUnknown->isChecked();
 
     QString         sql = _sql;
     QStringList     where;
@@ -840,11 +812,16 @@ void cHSOperate::fetchByFilter()
     // Filter by sup.
     if (pUi->checkBoxSup->isChecked()) {
         if (pUi->radioButtonSupPattern->isChecked()) {
-            QString pat = pUi->lineEditSupPattern->text();
-            if (!pat.isEmpty()) {
-                where << " superior_host_service_name LIKE ?";
-                if (pat.indexOf(j) < 0) pat += j;
-                bind  << pat;
+            if (pUi->toolButtonSupNull->isChecked()) {
+                where << " superior_host_service_id IS NULL";
+            }
+            else {
+                QString pat = pUi->lineEditSupPattern->text();
+                if (!pat.isEmpty()) {
+                    where << " superior_host_service_name LIKE ?";
+                    if (pat.indexOf(j) < 0) pat += j;
+                    bind  << pat;
+                }
             }
         }
         else {
@@ -863,7 +840,7 @@ void cHSOperate::fetchByFilter()
     fetch(sql, bind);
 }
 
-void cHSOperate::fetchSubs()
+void cHSOperate::on_pushButtonSub_clicked()
 {
     QStringList ids = actState()->getSupIds();
     if (ids.isEmpty()) return;
@@ -879,9 +856,13 @@ void cHSOperate::fetchSubs()
 }
 
 #define MIN_JUSTIFY 8
-void cHSOperate::set()
+void cHSOperate::on_pushButtonSet_clicked()
 {
     if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
+    if (pUi->checkBoxRemove->isChecked()) { // REMOVE
+        removeSelected();
+        return;
+    }
     QString sJustify = pUi->textEditJustify->toPlainText();
     if (permit <= PERMIT_PART) {
         if (sJustify.size() < MIN_JUSTIFY) return;
@@ -897,14 +878,14 @@ void cHSOperate::set()
     csf << _sHostServiceState << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts
         << _sLastChanged  << _sLastTouched << _sActAlarmLogId;
     QBitArray um_ClrState = hs.mask(csf);
-    int disable  = pUi->checkBoxDisable->checkState();
-    int delegate = pUi->checkBoxDelegate->checkState();
+    eTristate disable  = checkBoxState2tristate(pUi->checkBoxDisable->checkState());
+    eTristate delegate = checkBoxState2tristate(pUi->checkBoxDelegate->checkState());
     bool clrStat = pUi->checkBoxClrStat->isChecked();
-    bool statLog = pUi->checkBoxStatLog->isChecked();
-    bool alarm   = pUi->checkBoxAlarm->isChecked();
-    bool memo    = pUi->checkBoxMemo->isChecked();
+    bool statLog = pUi->checkBoxDelStatLog->isChecked();
+    bool alarm   = pUi->checkBoxDelAlarm->isChecked();
+    bool memo    = pUi->checkBoxDelMemo->isChecked();
     if (permit != PERMIT_ALL) {
-        if (disable != Qt::PartiallyChecked || delegate != Qt::PartiallyChecked || clrStat || statLog || alarm || memo) EXCEPTION(EPROGFAIL);
+        if (disable != TS_NULL || delegate != TS_NULL || clrStat || statLog || alarm || memo) EXCEPTION(EPROGFAIL);
     }
     cError *pe = nullptr;
     sqlBegin(*pq2, tn);
@@ -916,14 +897,14 @@ void cHSOperate::set()
                 hs.clear();
                 QBitArray um(hs.cols());
                 qlonglong id = pRow->id;
-                if (disable != Qt::PartiallyChecked) {
-                    bool v = disable == Qt::Checked;
+                if (disable != TS_NULL) {
+                    bool v = disable == TS_TRUE;
                     hs.setBool(_sDisabled, v);
                     um |= um_disabled;
                     rec.setValue(RX_DISABLED, v);
                 }
-                if (delegate != Qt::PartiallyChecked) {
-                    bool v = delegate == Qt::Checked;
+                if (delegate != TS_NULL) {
+                    bool v = delegate == TS_TRUE;
                     hs.setBool(_sDelegateHostState, v);
                     um |= um_delegate;
                     rec.setValue(RX_DELEGATE, v);
@@ -996,13 +977,13 @@ void cHSOperate::set()
     if (pe != nullptr) {
         sqlRollback(*pq2, tn);
         cErrorMessageBox::messageBox(pe, this);
-        refresh();  // Elrontottuk, újra olvassuk
+        on_pushButtonRefresh_clicked();  // Elrontottuk, újra olvassuk
     }
     sqlCommit(*pq2, tn);
     refreshTable();
 }
 
-void cHSOperate::setButton()
+void cHSOperate::setButtonsFromTo()
 {
     if (permit == PERMIT_NO) {
         pUi->pushButtonSet->setEnabled(false);
@@ -1068,7 +1049,7 @@ cHSOState * cHSOperate::actState(eEx __ex)
     return states.at(stateIx);
 }
 
-void cHSOperate::all()
+void cHSOperate::on_pushButtonAll_clicked()
 {
     if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
     cHSOState *pStat = actState(EX_IGNORE);
@@ -1081,10 +1062,10 @@ void cHSOperate::all()
         }
     }
     lockSetButton = false;
-    setButton();
+    setButtonsFromTo();
 }
 
-void cHSOperate::none()
+void cHSOperate::on_pushButtonNone_clicked()
 {
     cHSOState *pStat = actState(EX_IGNORE);
     if (pStat == nullptr) return;
@@ -1096,10 +1077,10 @@ void cHSOperate::none()
         }
     }
     lockSetButton = false;
-    setButton();
+    setButtonsFromTo();
 }
 
-void cHSOperate::subAll()
+void cHSOperate::on_pushButtonSubAll_clicked()
 {
     cHSOState *pStat = actState(EX_IGNORE);
     if (pStat == nullptr) return;
@@ -1111,7 +1092,7 @@ void cHSOperate::subAll()
     }
 }
 
-void cHSOperate::subNone()
+void cHSOperate::on_pushButtonSubNone_clicked()
 {
     cHSOState *pStat = actState(EX_IGNORE);
     if (pStat == nullptr) return;
@@ -1123,22 +1104,17 @@ void cHSOperate::subNone()
     }
 }
 
-void cHSOperate::zoneChanged(int ix)
+void cHSOperate::on_comboBoxZone_currentIndexChanged(int ix)
 {
     if (pPlaceModel == nullptr) return;
     pPlaceModel->setZone(pZoneModel->atId(ix));
 }
 
-void cHSOperate::on_checkBox_stateChanged(int)
-{
-    setButton();
-}
-
-void cHSOperate::clrStat(bool f)
+void cHSOperate::on_checkBoxClrStat_toggled(bool f)
 {
     if (permit <= PERMIT_NO) EXCEPTION(EPROGFAIL);
     (void)f;
-    setButton();
+    setButtonsFromTo();
 }
 
 void cHSOperate::setAlarmButtons(int id)
@@ -1153,11 +1129,11 @@ void cHSOperate::setAlarmButtons(int id)
     else {
         lastAlramButtonId = id;
     }
-    setButton();
+    setButtonsFromTo();
 }
 
 
-void cHSOperate::changePlacePattern(const QString& text)
+void cHSOperate::on_lineEditPlacePattern_textChanged(const QString& text)
 {
     enum eFilterType ft = FT_LIKE;
     if      (text.isEmpty())               ft = FT_NO;
@@ -1166,7 +1142,7 @@ void cHSOperate::changePlacePattern(const QString& text)
     pUi->comboBoxPlaceSelect->setCurrentIndex(0);
 }
 
-void cHSOperate::changeNodePattern(const QString& text)
+void cHSOperate::on_lineEditNodePattern_textChanged(const QString& text)
 {
     enum eFilterType ft = FT_LIKE;
     if      (text.isEmpty())               ft = FT_NO;
@@ -1175,7 +1151,7 @@ void cHSOperate::changeNodePattern(const QString& text)
     pUi->comboBoxNodeSelect->setCurrentIndex(0);
 }
 
-void cHSOperate::changeServicePattern(const QString& text)
+void cHSOperate::on_lineEditServicePattern_textChanged(const QString& text)
 {
     enum eFilterType ft = FT_LIKE;
     if      (text.isEmpty())               ft = FT_NO;
@@ -1184,7 +1160,7 @@ void cHSOperate::changeServicePattern(const QString& text)
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
 }
 
-void cHSOperate::changeSupPattern(const QString& text)
+void cHSOperate::on_lineEditSupPattern_textChanged(const QString& text)
 {
     QString param = text;
     enum eFilterType ft = FT_SQL_WHERE;
@@ -1194,7 +1170,7 @@ void cHSOperate::changeSupPattern(const QString& text)
     pSupModel->setFilter(sql, OT_DEFAULT, ft);
 }
 
-void cHSOperate::doubleClickCell(const QModelIndex& mi)
+void cHSOperate::on_tableWidget_doubleClicked(const QModelIndex& mi)
 {
     int row = mi.row();
     int col = mi.column();
@@ -1263,7 +1239,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
     }
 }
 
-void cHSOperate::back()
+void cHSOperate::on_toolButtonBack_clicked()
 {
     if (states.isEmpty() || stateIx < 0) return;
     if (stateIx > 0) {
@@ -1274,7 +1250,7 @@ void cHSOperate::back()
     }
 }
 
-void cHSOperate::forward()
+void cHSOperate::on_toolButtonForward_clicked()
 {
     if (states.isEmpty() || stateIx < 0) return;
     int last = states.size() -1;
@@ -1286,7 +1262,7 @@ void cHSOperate::forward()
     }
 }
 
-void cHSOperate::clear()
+void cHSOperate::on_toolButtonClearHist_clicked()
 {
     if (states.isEmpty() || stateIx < 0) return;
     cHSOState *pState = states.takeAt(stateIx);
@@ -1295,22 +1271,25 @@ void cHSOperate::clear()
     stateIx = 0;
 }
 
-void cHSOperate::root()
+void cHSOperate::on_pushButtonRoot_clicked()
 {
     pUi->checkBoxPlace->setChecked(false);
     pUi->checkBoxService->setChecked(true);
     pUi->checkBoxNode->setChecked(false);
-    _setCurrentIndex(_sLv2d, pUi->comboBoxServiceSelect);
     pUi->radioButtonServiceSelect->setChecked(true);
-    fetchByFilter();
+    _setCurrentIndex(_sLv2d, pUi->comboBoxServiceSelect);
+    pUi->checkBoxSup->setChecked(true);
+    pUi->radioButtonSupPattern->setChecked(true);
+    pUi->toolButtonSupNull->setChecked(true);
+    on_pushButtonFetch_clicked();
 }
 
 #define MIN_REFRESH_TIME 10
 
-void cHSOperate::startRefresh()
+void cHSOperate::on_pushButtonAutoRefresh_clicked()
 {
     if (refreshTime < MIN_REFRESH_TIME) {
-        changeRefreshInterval(refreshTime);
+        on_spinBoxRefresh_valueChanged(refreshTime);
         return;
     }
     if (timerId > 0) {
@@ -1327,7 +1306,7 @@ void cHSOperate::startRefresh()
     }
 }
 
-void cHSOperate::changeRefreshInterval(int v)
+void cHSOperate::on_spinBoxRefresh_valueChanged(int v)
 {
     refreshTime = v;
     if (v < 10) {
@@ -1345,9 +1324,9 @@ void cHSOperate::changeRefreshInterval(int v)
     }
 }
 
-void cHSOperate::changeJustify()
+void cHSOperate::on_textEditJustify_textChanged()
 {
-    setButton();
+    if (permit < PERMIT_ALL) setButtonsFromTo();
 }
 
 void cHSOperate::on_dateTimeEditFrom_dateTimeChanged(const QDateTime &dateTime)
@@ -1446,58 +1425,159 @@ void cHSOperate::on_toolButtonUnknown_clicked()
 {
     pUi->checkBoxService->setChecked(false);
     pUi->checkBoxNode->setChecked(false);
-    pUi->checkBoxSDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxFiltSDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
 
-    pUi->checkBoxStateOn->setChecked(false);
-    pUi->checkBoxRecovered->setChecked(false);
-    pUi->checkBoxWarning->setChecked(false);
-    pUi->checkBoxCritical->setChecked(false);
-    pUi->checkBoxUnreachable->setChecked(false);
-    pUi->checkBoxDown->setChecked(false);
-    pUi->checkBoxFlapping->setChecked(false);
-    pUi->checkBoxUnknown->setChecked(true);
+    pUi->checkBoxFiltStateOn->setChecked(false);
+    pUi->checkBoxFiltStatRecovered->setChecked(false);
+    pUi->checkBoxFiltStatWarning->setChecked(false);
+    pUi->checkBoxFiltStatCritical->setChecked(false);
+    pUi->checkBoxFiltStatUnreachable->setChecked(false);
+    pUi->checkBoxFiltStatDown->setChecked(false);
+    pUi->checkBoxFiltStatFlapping->setChecked(false);
+    pUi->checkBoxFiltStatUnknown->setChecked(true);
 
-    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
+    QMetaObject::invokeMethod(this, &cHSOperate::on_pushButtonFetch_clicked);
 }
 
 void cHSOperate::on_toolButtonCritical_clicked()
 {
     pUi->checkBoxService->setChecked(false);
     pUi->checkBoxNode->setChecked(false);
-    pUi->checkBoxSDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxFiltSDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
 
-    pUi->checkBoxStateOn->setChecked(false);
-    pUi->checkBoxRecovered->setChecked(false);
-    pUi->checkBoxWarning->setChecked(false);
-    pUi->checkBoxCritical->setChecked(true);
-    pUi->checkBoxUnreachable->setChecked(true);
-    pUi->checkBoxDown->setChecked(true);
-    pUi->checkBoxFlapping->setChecked(true);
-    pUi->checkBoxUnknown->setChecked(true);
+    pUi->checkBoxFiltStateOn->setChecked(false);
+    pUi->checkBoxFiltStatRecovered->setChecked(false);
+    pUi->checkBoxFiltStatWarning->setChecked(false);
+    pUi->checkBoxFiltStatCritical->setChecked(true);
+    pUi->checkBoxFiltStatUnreachable->setChecked(true);
+    pUi->checkBoxFiltStatDown->setChecked(true);
+    pUi->checkBoxFiltStatFlapping->setChecked(true);
+    pUi->checkBoxFiltStatUnknown->setChecked(true);
 
-    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
+    QMetaObject::invokeMethod(this, &cHSOperate::on_pushButtonFetch_clicked);
 }
 
 void cHSOperate::on_toolButtonWarning_clicked()
 {
     pUi->checkBoxService->setChecked(false);
     pUi->checkBoxNode->setChecked(false);
-    pUi->checkBoxSDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
-    pUi->checkBoxHsDisa->setChecked(false);
+    pUi->checkBoxFiltSDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
+    pUi->checkBoxFiltHsDisa->setChecked(false);
 
-    pUi->checkBoxStateOn->setChecked(false);
-    pUi->checkBoxRecovered->setChecked(false);
-    pUi->checkBoxWarning->setChecked(true);
-    pUi->checkBoxCritical->setChecked(true);
-    pUi->checkBoxUnreachable->setChecked(true);
-    pUi->checkBoxDown->setChecked(true);
-    pUi->checkBoxFlapping->setChecked(true);
-    pUi->checkBoxUnknown->setChecked(true);
+    pUi->checkBoxFiltStateOn->setChecked(false);
+    pUi->checkBoxFiltStatRecovered->setChecked(false);
+    pUi->checkBoxFiltStatWarning->setChecked(true);
+    pUi->checkBoxFiltStatCritical->setChecked(true);
+    pUi->checkBoxFiltStatUnreachable->setChecked(true);
+    pUi->checkBoxFiltStatDown->setChecked(true);
+    pUi->checkBoxFiltStatFlapping->setChecked(true);
+    pUi->checkBoxFiltStatUnknown->setChecked(true);
 
-    QMetaObject::invokeMethod(this, &cHSOperate::fetchByFilter);
+    QMetaObject::invokeMethod(this, &cHSOperate::on_pushButtonFetch_clicked);
+}
+
+void cHSOperate::on_checkBoxSup_toggled(bool checked)
+{
+    enableSup(checked, pUi->radioButtonSupPattern->isChecked(), pUi->toolButtonSupNull->isChecked());
+}
+
+void cHSOperate::on_radioButtonSupPattern_toggled(bool checked)
+{
+    enableSup(pUi->checkBoxSup->isChecked(), checked, pUi->toolButtonSupNull->isChecked());
+}
+
+void cHSOperate::on_toolButtonSupNull_toggled(bool checked)
+{
+    enableSup(pUi->checkBoxSup->isChecked(), pUi->radioButtonSupPattern->isChecked(), checked);
+}
+
+void cHSOperate::on_checkBoxPlace_toggled(bool checked)
+{
+    enablePlace(checked, pUi->radioButtonPlacePattern->isChecked());
+}
+
+void cHSOperate::on_radioButtonPlacePattern_toggled(bool checked)
+{
+    enablePlace(pUi->checkBoxPlace->isChecked(), checked);
+}
+
+void cHSOperate::on_checkBoxNode_toggled(bool checked)
+{
+    enableNode(checked, pUi->radioButtonNodePattern->isChecked());
+}
+
+void cHSOperate::on_radioButtonNodePattern_toggled(bool checked)
+{
+    enableNode(pUi->checkBoxNode->isChecked(), checked);
+}
+
+void cHSOperate::on_checkBoxService_toggled(bool checked)
+{
+    enableService(checked, pUi->radioButtonServicePattern->isChecked());
+}
+
+void cHSOperate::on_radioButtonServicePattern_toggled(bool checked)
+{
+    enableService(pUi->checkBoxService->isChecked(), checked);
+}
+
+void cHSOperate::on_checkBoxRemove_toggled(bool checked)
+{
+    pUi->checkBoxDisable->      setDisabled(checked || permit < PERMIT_ALL);
+    pUi->checkBoxDelegate->     setDisabled(checked || permit < PERMIT_ALL);
+    pUi->checkBoxClrStat->      setDisabled(checked || permit < PERMIT_ALL );
+    pUi->checkBoxAlarmOff->     setDisabled(checked || permit < PERMIT_PART);
+    pUi->checkBoxAlarmOn->      setDisabled(checked || permit < PERMIT_PART );
+    pUi->checkBoxSetInterval->  setDisabled(checked || permit < PERMIT_PART);
+    pUi->checkBoxSetFrom->      setDisabled(checked || permit < PERMIT_PART);
+    pUi->checkBoxSetTo->        setDisabled(checked || permit < PERMIT_PART);
+
+    pUi->toolButtonIntervalDef->setDisabled(checked || permit < PERMIT_PART);
+    pUi->toolButtonDateFrom->   setDisabled(checked || permit < PERMIT_PART);
+    pUi->toolButtonDateTo->     setDisabled(checked || permit < PERMIT_PART);
+    pUi->toolButtonRstFrom->    setDisabled(checked || permit < PERMIT_PART);
+    pUi->toolButtonRstTo->      setDisabled(checked || permit < PERMIT_PART);
+
+    pUi->dateTimeEditFrom->     setDisabled(checked || permit < PERMIT_PART);
+    pUi->dateTimeEditTo->       setDisabled(checked || permit < PERMIT_PART);
+
+    pUi->checkBoxClrStat->      setDisabled(checked || permit < PERMIT_ALL);
+    pUi->checkBoxDelAlarm->     setDisabled(checked || permit < PERMIT_ALL);
+    pUi->checkBoxDelStatLog->   setDisabled(checked || permit < PERMIT_ALL);
+    pUi->checkBoxDelMemo->      setDisabled(checked || permit < PERMIT_ALL);
+
+}
+
+void cHSOperate::removeSelected()
+{
+    if (permit != PERMIT_ALL) EXCEPTION(EPROGFAIL);
+    if (cMsgBox::yes(tr("Valóban törölni kívánja a kijelült példánhyokat? A művelet nem visszavonható!"), this)) {
+        int rows = pUi->tableWidget->rowCount();
+        static const QString tn = "HSOparateDel";
+        cError *pe = nullptr;
+        sqlBegin(*pq2, tn);
+        try {
+            for (int row = 0; row < rows; ++row) {
+                cHSORow *pRow = actState()->rows.at(row);
+                if (pRow->set) {
+                    qlonglong hsid = pRow->id;
+                    cHostService hs;
+                    hs.setId(hsid);
+                    hs.remove(*pq2);
+                }
+            }
+        } CATCHS(pe)
+        if (pe != nullptr) {
+            sqlRollback(*pq2, tn);
+            cErrorMessageBox::messageBox(pe, this);
+            on_pushButtonRefresh_clicked();  // Elrontottuk, újra olvassuk
+        }
+        sqlCommit(*pq2, tn);
+        refreshTable();
+    }
 }
