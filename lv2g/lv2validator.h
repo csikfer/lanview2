@@ -120,7 +120,7 @@ signals:
     void changedState(State st) const;
 };
 
-/// @class cINetValidator
+/// @class cCidrValidator
 /// @brief Input validátor a CIDR adattípushoz. (hálózati cím tartomány)
 class LV2GSHARED_EXPORT cCidrValidator : public QValidator {
     Q_OBJECT

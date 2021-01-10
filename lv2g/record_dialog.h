@@ -124,9 +124,10 @@ public:
     cRecordsViewBase  * _pOwnerTable;
     /// Az objektum neve
     const QString           name;
-    ///
-
+    /// Egy mezőre vonatkozó widget objektummal tér vissza.
+    /// @param __fn A mező leíró beli (table_shape_fields) neve, nem az adattábla beli név.
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
+    virtual cFieldEditBase * fieldByTableFieldName(const QString& __fn) = 0;
     virtual void restore(const cRecord *_pRec = nullptr) = 0;
     virtual bool accept() = 0;
 public slots:
@@ -180,6 +181,7 @@ public:
     /// A megjelenített értékek kiolvasása
     virtual bool accept();
     virtual cFieldEditBase * operator[](const QString& __fn);
+    virtual cFieldEditBase * fieldByTableFieldName(const QString& __fn);
 protected:
     QVBoxLayout            *pVBoxLayout;
     //QHBoxLayout            *pHBoxLayout;
@@ -226,6 +228,7 @@ public:
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabeShapes;
     virtual cFieldEditBase * operator[](const QString& __fn);
+    virtual cFieldEditBase * fieldByTableFieldName(const QString& __fn);
     virtual void restore(const cRecord *_pRec = nullptr);
 protected:
     QVBoxLayout            *pVBoxLayout;

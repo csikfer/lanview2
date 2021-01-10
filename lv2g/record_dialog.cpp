@@ -563,6 +563,20 @@ cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
     return nullptr;
 }
 
+cFieldEditBase * cRecordDialog::fieldByTableFieldName(const QString& __fn)
+{
+    _DBGFN() << " " << __fn << endl;
+    QList<cFieldEditBase *>::iterator i;
+    for (i = fields.begin(); i < fields.end(); ++i) {
+        int x = i - fields.begin();
+        cFieldEditBase *p = *i;
+        QString name = p->_fieldShape.getName(_sTableFieldName);
+        PDEB(VVERBOSE) << "#" << x << " : " << name << endl;
+        if (name == __fn) return p;
+    }
+    return nullptr;
+}
+
 /* ***************************************************************************************************** */
 
 cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget * parent)
@@ -655,6 +669,11 @@ bool cRecordDialogInh::accept()
 cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
 {
     return actDialog()[__fn];
+}
+
+cFieldEditBase * cRecordDialogInh::fieldByTableFieldName(const QString& __fn)
+{
+    return actDialog().fieldByTableFieldName(__fn);
 }
 
 void cRecordDialogInh::restore(const cRecord *_pRec)

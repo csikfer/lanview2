@@ -346,40 +346,6 @@ void cROToolButton::mouseReleaseEvent(QMouseEvent *e)
 {
     (void)e;
 }
-/*
-QIcon cValidRTButton::unknown;
-QIcon cValidRTButton::invalid;
-QIcon cValidRTButton::intermediate;
-QIcon cValidRTButton::acceptable;
-
-cValidRTButton::cValidRTButton(QWidget *par)
-    : cROToolButton(par)
-{
-    if (invalid.isNull()) {
-        unknown     = QIcon("");
-        invalid     = QIcon("");
-        intermediate= QIcon("");
-        acceptable  = QIcon("");
-    }
-    setStateOff();
-}
-
-void cValidRTButton::setState(QValidator::State _vst)
-{
-    setChecked(true);
-    switch (_vst) {
-    case QValidator::Invalid:       setIcon(invalid);       break;
-    case QValidator::Intermediate:  setIcon(intermediate);  break;
-    case QValidator::Acceptable:    setIcon(acceptable);    break;
-    }
-}
-
-void cValidRTButton::setStateOff()
-{
-    setChecked(false);
-    setIcon(unknown);
-}
-*/
 
 /* ********************************************************************************************
    ************************************** cFieldEditBase **************************************
@@ -420,6 +386,7 @@ QString fieldWidgetType(int _t)
     case FEW_LTEXT:         return "cLTextWidget";
     case FEW_LTEXT_LONG:    return "cLTextWidget/long";
     case FEW_FEATURES:      return "cFeatureWidget";
+    case FEW_PARAM_VALUE:   return "cParamValueWidget";
     default:                return sInvalidEnum();
     }
 }
@@ -4049,6 +4016,159 @@ void cFeatureWidget::onDelClicked()
     }
     busy = false;
     onChangedCell(0,0);
+}
+
+/* **** **** */
+
+cParamValueWidget::cParamValueWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
+{
+    if (_colDescr.eColType != cColStaticDescr::FT_TEXT) EXCEPTION(ECONTEXT, _colDescr.eColType, _colDescr);
+    lastType = NULL_ID;
+    typeIdIndex = NULL_IX;
+    rawValue = false;
+    pParamType = new cParamType;
+    pSVarType  = nullptr;
+    pLayout = nullptr;
+    pPlainTextEdit = nullptr;
+    pLineEdit = nullptr;
+    pComboBox = nullptr;
+
+    cFieldEditBase *pWType = nullptr;
+    typeIdIndex = _pParentDialog->rDescr.toIndex(_sParamTypeId, EX_IGNORE);     // sys_params, node_params, port_params
+    if (typeIdIndex < 0) {                                                      // service_vars, service_rrd_vars
+        pSVarType = new cServiceVarType;
+        if (_colDescr == _sServiceVarValue) {
+            typeIdIndex = pSVarType->toIndex(_sParamTypeId, EX_IGNORE);
+        }
+        else if (_colDescr == _sRawValue) {
+            typeIdIndex = pSVarType->toIndex(_sRawParamTypeId, EX_IGNORE);
+        }
+        else {
+            EXCEPTION(ECONTEXT);
+        }
+        pWType = _pParentDialog->fieldByTableFieldName(_sServiceVarTypeId);
+    }
+    else {
+        pWType = _pParentDialog->fieldByTableFieldName(_sParamTypeId);
+    }
+    if (pWType == nullptr) EXCEPTION(EPROGFAIL);
+    connect(pWType, SIGNAL(changedValue(cFieldEditBase *)), this, SLOT(_changeType(cFieldEditBase *)));
+    _changeType(pWType);
+}
+
+cParamValueWidget::~cParamValueWidget()
+{
+    pDelete(pParamType);
+    pDelete(pSVarType);
+}
+
+int cParamValueWidget::set(const QVariant& _v)
+{
+    int r = cFieldEditBase::set(_v);
+    if (r) refreshWidget();
+    return r;
+}
+
+void cParamValueWidget::refreshWidget()
+{
+    if (lastType < 0) {
+        if (pLineEdit != nullptr) pLineEdit->setText(_sNul);
+        return;
+    }
+    if (pPlainTextEdit != nullptr) pPlainTextEdit->setPlainText(getName());
+    else if (pLineEdit != nullptr) pLineEdit->setText(getName());
+    else if (pComboBox != nullptr) pComboBox->setCurrentIndex(get().toBool() ? 1 : 0);
+    // ...
+}
+
+
+void cParamValueWidget::_changeType(cFieldEditBase *pTW)
+{
+    qlonglong paramTypeId = NULL_ID;
+    if (pSVarType == nullptr) {     // Changed param_type_id
+        paramTypeId = pTW->getId();
+    }
+    else {                          // Changed service_var_type_id
+        qlonglong varTypeId = pTW->getId();
+        pSVarType->fetchById(*pq, varTypeId);
+        paramTypeId = pSVarType->getId(typeIdIndex);
+    }
+    if (paramTypeId < 0 || !pParamType->fetchById(*pq, paramTypeId)) {  // type is NULL
+        pParamType->clear();
+        lastType = NULL_ID;
+        return;
+    }
+    qlonglong type = pParamType->getId(_sParamTypeType);
+    if (lastType == type) return;
+    lastType = type;
+    pDelete(pLayout);
+    pPlainTextEdit = nullptr;
+    pLineEdit = nullptr;
+    pComboBox = nullptr;
+    pLayout = new QHBoxLayout;
+
+    switch (lastType) {
+    case PT_TEXT:
+        pEditWidget = pPlainTextEdit = new QPlainTextEdit;
+        pLayout->addWidget(pPlainTextEdit);
+        break;
+    case PT_BOOLEAN:
+        pEditWidget = pComboBox = new QComboBox;
+        pComboBox->addItem(langBool(false));
+        pComboBox->addItem(langBool(true));
+        pLayout->addWidget(pComboBox);
+        break;
+    case PT_INTEGER:
+    case PT_REAL:
+    case PT_MAC:
+    case PT_INET:
+    case PT_CIDR:
+        pLineEdit = new QLineEdit;
+        if (_readOnly) {
+            pLineEdit->setReadOnly(true);
+        }
+        else switch (lastType) {
+        case PT_INTEGER:
+            pLineEdit->setValidator(new cIntValidator);
+            break;
+        case PT_REAL:
+            pLineEdit->setValidator(new cRealValidator);
+            break;
+        case PT_MAC:
+            pLineEdit->setValidator(new cMacValidator);
+            break;
+        case PT_INET:
+            pLineEdit->setValidator(new cINetValidator);
+            break;
+        case PT_CIDR:
+            pLineEdit->setValidator(new cCidrValidator);
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+        pLayout->addWidget(pLineEdit);
+        break;
+    case PT_DATE:
+    case PT_TIME:
+    case PT_DATETIME:
+    case PT_INTERVAL:
+    case PT_POINT:
+    case PT_BYTEA:
+    default:
+        pLineEdit = new QLineEdit;
+        pLineEdit->setDisabled(true);
+        dcSetShort(pLineEdit, DC_NOT_PERMIT);
+        pLayout->addWidget(pLineEdit);
+        break;
+    }
+    setLayout(pLayout);
+    set(_value);
+}
+
+void cParamValueWidget::_setFromEdit()
+{
+
 }
 
 /* **** **** */

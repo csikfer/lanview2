@@ -20,6 +20,7 @@
 #include "guidata.h"
 #include "imagedrv.h"
 #include "lv2link.h"
+#include "vardata.h"
 
 _GEX bool pixmap(const cImage& o, QPixmap &_pixmap);
 _GEX bool setPixmap(const cImage& im, QLabel *pw);
@@ -250,21 +251,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
 };
 
-/*
-class LV2GSHARED_EXPORT cValidRTButton : public cROToolButton {
-    Q_OBJECT
-public:
-    cValidRTButton(QWidget *par = nullptr);
-    static QIcon unknown;
-    static QIcon invalid;
-    static QIcon intermediate;
-    static QIcon acceptable;
 
-public slots:
-    void setState(QValidator::State _vst);
-    void setStateOff();
-};
-*/
 enum eFieldWidgetType {
     FEW_UNKNOWN = -1,   ///< ismeretlen/inicializálatlan/hibajelzés
     FEW_SET     =  0,   ///< cSetWidget
@@ -273,7 +260,7 @@ enum eFieldWidgetType {
     FEW_LINE,           ///< cFieldLineWidget
     FEW_LINES,          ///< cFieldLineWidget/long text
     FEW_COMBO_BOX,      ///< cFieldLineWidget/combo box
-    FEW_SPIN_BOX,       ///<
+    FEW_SPIN_BOX,       ///< cFieldSpinBoxWidget
     FEW_ARRAY,          ///< cArrayWidget
     FEW_FKEY_ARRAY,     ///< cFKeyArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
@@ -287,9 +274,10 @@ enum eFieldWidgetType {
     FEW_COLOR,          ///< cColorWidget
     FEW_FONT_FAMILY,    ///< cFontFamilyWidget
     FEW_FONT_ATTR,      ///< cFontAttrWidget
-    FEW_LTEXT,
-    FEW_LTEXT_LONG,
-    FEW_FEATURES
+    FEW_LTEXT,          ///< cLTextWidget
+    FEW_LTEXT_LONG,     ///< cLTextWidget/long
+    FEW_FEATURES,       ///< cFeatureWidget
+    FEW_PARAM_VALUE     ///< cParamValueWidget
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -1055,8 +1043,30 @@ private slots:
     void onChangedCell(int, int);
     void onInsClicked();
     void onDelClicked();
-
 };
+
+class cParamValueWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    cParamValueWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par);
+    ~cParamValueWidget();
+    virtual int set(const QVariant& _v);
+private:
+    void                refreshWidget();
+    int                 typeIdIndex;
+    bool                rawValue;       ///< Ha a rekord service_vars, akkor a szerkesztendő mező a raw_value.
+    cParamType *        pParamType;     ///< Az aktuális paraméter típus rekord
+    cServiceVarType *   pSVarType;      ///< Az aktuális service_var_types rekord (ha a service_vars rekord mezőről van szó)
+    qlonglong           lastType;       ///< Az utolsó/aktuális paraméter típus
+    QLineEdit *         pLineEdit;
+    QPlainTextEdit *    pPlainTextEdit;
+    QComboBox *         pComboBox;
+private slots:
+    void _changeType(cFieldEditBase *pTW);
+    void _setFromEdit();
+};
+
+/* **************************************************************************************************** */
 
 /// Az osztály egy zóna ás hely QComboBox párossal egy hely kiválasztását teszi lehetővé.
 /// Opcionálisan megadható egy QLineEdit objektum is, a hely nevek szűrésének a megadásához.
