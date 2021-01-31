@@ -567,6 +567,15 @@ public:
     bool postInit(QSqlQuery &_q);
     /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
     /// @param q
+    /// @param _rawVal A nyers érték
+    /// @param state Továbbítandó állapot
+    /// @return A vátozó állapota.
+    /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
+    /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
+    /// Ha val értéke NULL/invalid, akkor hívja a noValue() metódust, NULL értéket nem állítbe mint valós értéket.
+    int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
+    /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
+    /// @param q
     /// @param val A nyers érték
     /// @param state Továbbítandó állapot
     /// @param rawChg Közvetlen, feltétel nélküli beállítás
@@ -574,8 +583,6 @@ public:
     /// Ha a változó objektumban rarefaction eggynél nagyobb szám, akkor ennél eggyel kevesebb alkalommal
     /// kihagyja a változó kiszámítását és beállítását, akkor a visszaadott érték RS_INVALID lesz.
     /// Ha val értéke NULL/invalid, akkor hívja a noValue() metódust, NULL értéket nem állítbe mint valós értéket.
-    ///
-    int setValue(QSqlQuery& q, const QVariant& _rawVal, int& state);
     int setValue(QSqlQuery& q, double val, int& state, eTristate rawChg = TS_NULL);
     /// Egy szervíz változó értékének, és állapotának a beállítása, a nyers beolvasott érték alapján.
     /// @param q

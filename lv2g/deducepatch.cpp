@@ -64,8 +64,8 @@ void cDPRow::staticInit()
     if (ixSharedPortId != NULL_IX) return;
 
     ixSharedPortId = cPPort().toIndex(_sSharedPortId);
-    //                          title                           icon        tool tip
-    colHead(CID_INDEX,          "#",                            _sNul,      QObject::tr("A helyi patch port indexek."));
+    //                          title                       icon        tool tip
+    colHead(CID_INDEX,          "#",                        _sNul,      QObject::tr("A helyi patch port indexek."));
     colHead(CID_STATE_WARNING,  QObject::tr("Megjegyzés"),  sIHelp,     QObject::tr("Megjegyzés, hiba üzenetek."));
     colHead(CID_STATE_CONFLICT, QObject::tr("Konfliktus"),  sIConflict, QObject::tr("Ütközések, mentés esetén törlendő linkek."));
     colHead(CID_STATE_TAG,      QObject::tr("Cimke"),       sITagSt,    QObject::tr("A patch port címkék összevetése."));

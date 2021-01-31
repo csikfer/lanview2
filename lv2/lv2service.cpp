@@ -2442,16 +2442,20 @@ void cInspectorVar::_init()
 
 bool cInspectorVar::postInit(QSqlQuery& _q)
 {
-    if (pSrvVar == nullptr) EXCEPTION(EPROGFAIL);
+    if (pSrvVar == nullptr) {
+        EXCEPTION(EPROGFAIL, 0, QObject::tr("pSrvVar is NULL."));
+    }
     if (pInspector == nullptr) {
         EXCEPTION(EPROGFAIL, 0, QObject::tr("pInspector is NULL."));
     }
     if (pInspector->pMergedFeatures == nullptr) {
         EXCEPTION(EPROGFAIL, 0, QObject::tr("pInspector->pMergedFeatures is NULL. Invalid '%1' cInspectror object.").arg(pInspector->name()));
     }
-    if (pSrvVar->isNullId()) {   // create?
+    if (pSrvVar->isNullId()) {   // Exists ?
         pSrvVar->_toReadBack = RB_YES;
-        pSrvVar->insert(_q);
+        if (!pSrvVar->insert(_q)) { // Create
+            EXCEPTION(EPROGFAIL, 0, QObject::tr("Failed to insert service variable . Service name : %1, variable : %2.").arg(pInspector->name(), pSrvVar->getName()));
+        }
         pSrvVar->_toReadBack = RB_MASK;
     }
     pDelete(pVarType);
@@ -2478,7 +2482,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
     rarefaction = (*pMergedFeatures)[_sRarefaction].toInt(&ok);
     if (!ok || rarefaction <= 0) rarefaction = int(pSrvVar->getId(pSrvVar->ixRarefaction()));
     if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
-    skeepCnt = 0;
+    skeepCnt = rarefaction;
     return true;
 }
 

@@ -854,13 +854,6 @@ cLldpScan::cLldpScan(QSqlQuery& _q, bool _parser)
     parser = _parser;
     staticInit();
     pDev = nullptr;
-    if (sIsNoSnmpDev.isEmpty()) {
-        sIsNoSnmpDev     = QObject::tr("A távoli IP-hez tartozó node létezik (%1), de nem egy SNMP eszköz. (%2)");
-        sIsMissingMac    = QObject::tr("Hiányzik az eszköz azonosító MAC cím. (%1)");
-        sIsMissingPName  = QObject::tr("Hiányzik a távoli port azonosító név. (%1)");
-        sIsInvalidPName  = QObject::tr("Nincs %1 nevű távoli port. (%2)");
-        sIsInvalidPIndex = QObject::tr("A '%1' nem értelmezhető port indexként. (%2)");
-    }
 }
 
 #define LLDP_REM_CID_TYPE   0
@@ -876,10 +869,20 @@ inline void staticAddOid(QString __s, int i)
     if (cLldpScan::sOids.size() != i || cLldpScan::oids.size() != i) EXCEPTION(EPROGFAIL);
     cLldpScan::sOids << __s;
     cLldpScan::oids  << cOId(cLldpScan::sOids.last());
-    if (!cLldpScan::oids.last()) EXCEPTION(EOID, i, cLldpScan::sOids.last());
+    if (!cLldpScan::oids.last()) {
+        cLldpScan::sOids.clear();
+        EXCEPTION(EOID, i, __s);
+    }
 }
 
 void cLldpScan::staticInit() {
+    if (sIsNoSnmpDev.isEmpty()) {
+        sIsNoSnmpDev     = QObject::tr("A távoli IP-hez tartozó node létezik (%1), de nem egy SNMP eszköz. (%2)");
+        sIsMissingMac    = QObject::tr("Hiányzik az eszköz azonosító MAC cím. (%1)");
+        sIsMissingPName  = QObject::tr("Hiányzik a távoli port azonosító név. (%1)");
+        sIsInvalidPName  = QObject::tr("Nincs %1 nevű távoli port. (%2)");
+        sIsInvalidPIndex = QObject::tr("A '%1' nem értelmezhető port indexként. (%2)");
+    }
     // One might ask directly to the table, but the exact rows identifiers are also needed.
     if (sOids.isEmpty()) {
         static const QString m = "LLDP-MIB::";
@@ -892,7 +895,11 @@ void cLldpScan::staticInit() {
         staticAddOid(m + "lldpRemSysName",          LLDP_REM_SNAME);
         sAddrOid =   m + "lldpRemManAddrIfId";
         pAddrOid = new cOId(sAddrOid);
-        if (!*pAddrOid) EXCEPTION(EOID, -1, sAddrOid);
+        if (!*pAddrOid) {
+            cLldpScan::sOids.clear();
+            pDelete(pAddrOid);
+            EXCEPTION(EOID, -1, sAddrOid);
+        }
     }
 }
 

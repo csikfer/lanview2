@@ -98,9 +98,9 @@ void cHSORow::staticInit()
 {
     if (pPlaceType == nullptr) {
         QSqlQuery q = getQuery();
-        pPlaceType   = cColEnumType::fetchOrGet(q, "placetype");
         pNoAlarmType = cColEnumType::fetchOrGet(q, "noalarmtype");
         pNotifSwitch = cColEnumType::fetchOrGet(q, _sNotifswitch);
+        pPlaceType   = cColEnumType::fetchOrGet(q, "placetype");
     }
 }
 

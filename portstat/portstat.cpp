@@ -599,18 +599,19 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 if (psv == nullptr) continue;                   // not found, next
                 raw = tab[vname][i].toLongLong();               // Get raw value from SNMP query
                 rs = psv->setValue(q, raw, sstate, TS_NULL);
-                if (psv->pSrvVar->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
                 msg = psv->pSrvVar->getName(_sStateMsg);
-                QString val = psv->pSrvVar->getName(_sServiceVarValue);
-                QString srs = notifSwitch(rs, EX_IGNORE);
-                QString vst = psv->pSrvVar->getName(_sVarState);
-                if (msg.isEmpty() && srs.isEmpty()) {   // skipping (rarefaction)
+                QString val = psv->pSrvVar->getName(_sServiceVarValue);     // Value
+                QString srs = notifSwitch(rs, EX_IGNORE);                   // State for port
+                if (srs.isEmpty()) srs = _sUnKnown;
+                QString vst = psv->pSrvVar->getName(_sVarState);            // Value state
+                if (msg.isEmpty() && r == RS_INVALID) {   // skipping (rarefaction)
                     msg = tr("Var %1 ( = '%2'/'%3') is skipped.").arg(vname, val, vst);
+                    rs = psv->pSrvVar->getId(_sVarState);   // Actual/previous state
                 }
                 else {
-                    if (srs.isEmpty()) srs = _sUnKnown;
                     msg = tr("Var '%1' = '%2'/'%3' >> '%4' : '%5'").arg(vname, val, vst, srs, msg);
                 }
+                if (psv->pSrvVar->getBool(ixDelegatePortState) && rs > pstate) pstate = rs;
                 msgAppend(&vMsg, msg);
             }
             insp.hostService.setState(q, notifSwitch(sstate), vMsg, NULL_ID, parid);
