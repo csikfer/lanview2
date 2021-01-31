@@ -607,6 +607,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                 if (msg.isEmpty() && r == RS_INVALID) {   // skipping (rarefaction)
                     msg = tr("Var %1 ( = '%2'/'%3') is skipped.").arg(vname, val, vst);
                     rs = psv->pSrvVar->getId(_sVarState);   // Actual/previous state
+                    if (sstate < rs) sstate = rs;
                 }
                 else {
                     msg = tr("Var '%1' = '%2'/'%3' >> '%4' : '%5'").arg(vname, val, vst, srs, msg);

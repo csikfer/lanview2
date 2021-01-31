@@ -2482,7 +2482,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
     rarefaction = (*pMergedFeatures)[_sRarefaction].toInt(&ok);
     if (!ok || rarefaction <= 0) rarefaction = int(pSrvVar->getId(pSrvVar->ixRarefaction()));
     if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
-    skeepCnt = rarefaction;
+    skeepCnt = rarefaction / 2;
     return true;
 }
 
