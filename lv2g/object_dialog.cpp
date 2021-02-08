@@ -72,6 +72,7 @@ bool cPPortTableLine::setShared(const QStringList& sl)
 {
     bool shOk = true;
     if (comboBoxPortIx != nullptr) {
+        comboBoxPortIx->clear();
         comboBoxPortIx->addItem(_sNul);
         comboBoxPortIx->addItems(sl);
         if (sharedPortRow >= 0 && listPortIxRow.contains(sharedPortRow)) {
@@ -571,7 +572,7 @@ void cPatchDialog::on_pushButtonAddPorts_clicked()
     on_lineEditName_textChanged(pUi->lineEditName->text());
 }
 
-void cPatchDialog::on_pushButtonDelPorts_clicked()
+void cPatchDialog::on_pushButtonDelPort_clicked()
 {
     QList<int>  rows = selectedRows();   // Törlendő sorok sorszámai, rendezett
     // A hivatkozásokat töröljük a törlendő sorokra

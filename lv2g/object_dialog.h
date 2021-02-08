@@ -111,7 +111,7 @@ private slots:
     void on_pushButtonPort2_clicked();
     void on_pushButtonPort2Shared_clicked();
     void on_pushButtonAddPorts_clicked();
-    void on_pushButtonDelPorts_clicked();
+    void on_pushButtonDelPort_clicked();
     void on_spinBoxFrom_valueChanged(int i);
     void on_spinBoxTo_valueChanged(int i);
     void on_tableWidgetPorts_cellChanged(int row, int col);
