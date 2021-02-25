@@ -242,7 +242,9 @@ cPatch * cPatchDialog::getPatch()
 
 void cPatchDialog::setPatch(const cPatch *pSample)
 {
-    pUi->lineEditID  ->setText(QString::number(pSample->getId()));
+    qlonglong id = pSample->getId();
+    if (id == NULL_ID)  pUi->lineEditID->clear();
+    else                pUi->lineEditID->setText(QString::number(id));
     pUi->lineEditName->setText(pSample->getName());
     pUi->lineEditNote->setText(pSample->getNote());
     if (readOnly) {
@@ -674,6 +676,7 @@ void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection
     pUi->pushButtonDelPort->setDisabled(empty);
     pUi->pushButtonShDel->setDisabled(empty);
     pUi->pushButtonShAB->setDisabled(n < 2 || 0 != (n % 2));
+    pUi->pushButtonShNC->setDisabled(empty);
 }
 
 void cPatchDialog::on_pushButtonShAB_clicked()
@@ -681,8 +684,8 @@ void cPatchDialog::on_pushButtonShAB_clicked()
     QList<int>  rows = selectedRows();   // Kijelölt sorok sorszámai, rendezett
     int i, n = rows.size();
     for (i = 0; (i + 1) < n; i += 2) {
-        int ixA = i;
-        int ixB = i +1;
+        int ixA = rows.at(i);
+        int ixB = rows.at(i +1);
         setPortShare(ixA, ES_A);
         setPortShare(ixB, ES_B);
         cPPortTableLine * rowB = rowsData.at(ixB);
@@ -695,11 +698,19 @@ void cPatchDialog::on_pushButtonShAB_clicked()
 void cPatchDialog::on_pushButtonShDel_clicked()
 {
     QList<int>  rows = selectedRows();   // Kijelölt sorok sorszámai, rendezett
-    int i, n = rows.size();
-    for (i = 0; i < n; i++) {
+    foreach (int i, rows) {
         setPortShare(i   , ES_);
     }
 }
+
+void cPatchDialog::on_pushButtonShNC_clicked()
+{
+    QList<int>  rows = selectedRows();   // Kijelölt sorok sorszámai, rendezett
+    foreach (int i, rows) {
+        setPortShare(i   , ES_NC);
+    }
+}
+
 
 void cPatchDialog::on_buttonBox_clicked(QAbstractButton *button)
 {
@@ -713,6 +724,7 @@ cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {
     cPatchDialog dialog(pPar, false);
     if (pSample != nullptr) {
+        pSample->clearIdsOnly();
         dialog.setPatch(pSample);
     }
     cPatch *p;
@@ -1483,4 +1495,3 @@ cEnumValsEdit::~cEnumValsEdit()
 {
 
 }
-

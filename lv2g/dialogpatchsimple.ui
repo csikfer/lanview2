@@ -394,6 +394,16 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pushButtonShNC">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>NC nincs bekötve</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer_4">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

@@ -118,6 +118,7 @@ private slots:
     void selectionChanged(const QItemSelection &, const QItemSelection &);
     void on_pushButtonShAB_clicked();
     void on_pushButtonShDel_clicked();
+    void on_pushButtonShNC_clicked();
     void on_buttonBox_clicked(QAbstractButton *button);
 };
 
