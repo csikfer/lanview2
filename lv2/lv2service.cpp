@@ -907,13 +907,19 @@ void cInspector::dbNotif(const QString& cmd)
 {
     // Thread esetén ez necces lehet !!!!
     bool ok = false;
+    QObject *po;
     if (0 == cmd.compare(_sTick, Qt::CaseInsensitive)) {
         if (pInspectorThread != nullptr) {
-            ok = QMetaObject::invokeMethod(pInspectorThread, &cInspectorThread::do_timerEvent);
+            po = pInspectorThread;
         }
         else {
-            ok = QMetaObject::invokeMethod(this, &cInspector::do_timerEvent);
+            po = this;
         }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        ok = QMetaObject::invokeMethod(po, &cInspectorThread::do_timerEvent);
+#else
+        ok = QMetaObject::invokeMethod(po, "do_timerEvent", Qt::QueuedConnection);
+#endif
         if (!ok) {
             DERR() << "Invoke timerEvent() is unsuccesful." << endl;
         }
@@ -1945,7 +1951,11 @@ QObject * cInspector::stopTimer()
     // Ha nem fut a thread, akkor feleslegesen strapáljuk magunkat.
     if (pInspectorThread != nullptr) {
         if (!isCurrentThread(pInspectorThread) && pInspectorThread->pThread->isRunning()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
             ok = QMetaObject::invokeMethod(pInspectorThread, &cInspectorThread::on_thread_killTimer);
+#else
+            ok = QMetaObject::invokeMethod(pInspectorThread, "on_thread_killTimer", Qt::QueuedConnection);
+#endif
         }
     }
     // Mélyebben van a thread, már abbol indított inspector, és a gyökérből próbálljuk leállítani.
@@ -1957,7 +1967,11 @@ QObject * cInspector::stopTimer()
             if (pp->pInspectorThread != nullptr) {
                 // Az inspector ebben a szálban van, és fut a szál?
                 if (pp->pInspectorThread->pThread == thread() && pp->pInspectorThread->pThread->isRunning()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
                     ok = QMetaObject::invokeMethod(this, &cInspector::do_killTimer);
+#else
+                    ok = QMetaObject::invokeMethod(this, "do_killTimer", Qt::QueuedConnection);
+#endif
                 }
                 break;
             }

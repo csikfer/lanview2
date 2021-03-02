@@ -475,7 +475,11 @@ inline void emitReset()
 {
     lanView *p = lanView::getInstance();
     if (p != nullptr) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         if (!QMetaObject::invokeMethod(p, &lanView::reSet)) {
+#else
+        if (!QMetaObject::invokeMethod(p, "reSet", Qt::QueuedConnection)) {
+#endif
             DERR() << "Unsuccesfull invoke lanView::reSet() ." << endl;
         }
     }

@@ -23,7 +23,7 @@ cRegExpConverterItem::cRegExpConverterItem(QSqlQuery q)
             ++i;
             continue;
         }
-        substituteMap[i] = substRe.cap(1).front();
+        substituteMap[i] = substRe.cap(1).at(0);
         reverseIndexList.prepend(i);
         pattern.remove(i, 2);
     }
@@ -64,7 +64,7 @@ QString cRegExpConverterItem::compareAndConvert(const QString& s, const QMap<QCh
         // Substitute
         int i = -1;
         while ((i = r.lastIndexOf(substRe, i)) >= 0) {
-            QChar k = substRe.cap(1).front();
+            QChar k = substRe.cap(1).at(0);
             QString su = smap[k];
             r.replace(i, 2, su);
         }
