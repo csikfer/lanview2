@@ -915,11 +915,7 @@ void cInspector::dbNotif(const QString& cmd)
         else {
             po = this;
         }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-        ok = QMetaObject::invokeMethod(po, &cInspectorThread::do_timerEvent);
-#else
-        ok = QMetaObject::invokeMethod(po, "do_timerEvent", Qt::QueuedConnection);
-#endif
+        ok = QMetaObject::invokeMethod(po, "do_timerEvent", Qt::AutoConnection);
         if (!ok) {
             DERR() << "Invoke timerEvent() is unsuccesful." << endl;
         }
