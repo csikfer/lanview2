@@ -385,10 +385,13 @@ protected:
     int getInspectorTiming(const QString &value);
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
-    enum eNotifSwitch parse_nagios(int _ec, const QString &text, QString &runMsg);
+    enum eNotifSwitch parse_nagios(int _ec, QString &text, QString &runMsg);
     enum eNotifSwitch parse_json(int _ec, const QByteArray &text, QString &runMsg);
     enum eNotifSwitch save_text(int _ec, const QString &text);
-    enum eNotifSwitch parse_text(int _ec, const QString &text, QString &runMsg);
+    enum eNotifSwitch parse_text(int _ec, QString &text, QString &runMsg);
+    QStringList text2list(QString &text);
+    enum eNotifSwitch parse_list(int r, QString &text, QString &runMsg);
+    enum eNotifSwitch parse_tagged(int r, QString &text, QString &runMsg);
     enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:

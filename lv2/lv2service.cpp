@@ -1591,7 +1591,7 @@ int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
     return r;
 }
 
-enum eNotifSwitch cInspector::parse_nagios(int _ec, const QString &text, QString& runMsg)
+enum eNotifSwitch cInspector::parse_nagios(int _ec, QString &text, QString& runMsg)
 {
     eNotifSwitch r = RS_DOWN;
     switch (_ec) {
@@ -1706,59 +1706,115 @@ enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
     return _ec == 0 ? RS_ON : RS_WARNING;
 }
 
-enum eNotifSwitch cInspector::parse_text(int _ec, const QString &text, QString &runMsg)
+enum eNotifSwitch cInspector::parse_text(int _ec, QString &text, QString &runMsg)
 {
     int r = RS_ON;
     if (_ec != 0) {
         msgAppend(&runMsg, tr("Command return : %1.").arg(_ec));
         r = RS_WARNING;
     }
-    if (isFeature("list")) {
-        QString sSeparator = feature("separator");
-        QString sRegexp;
-        QStringList values;
-        if (!sSeparator.isEmpty()) {
-            values = text.split(sSeparator, QString::SkipEmptyParts);
-        }
-        else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
-            values = text.split(QRegExp(sRegexp), QString::SkipEmptyParts);
-        }
-        else if (!(sRegexp = feature("regexp")).isEmpty()) {
-            QRegExp regexp(sRegexp);
-            if (regexp.indexIn(text, 0) >= 0) {
-                values = regexp.capturedTexts().mid(1);
-            }
-        }
-        else {
-            msgAppend(&runMsg, tr("Parse text : Important parameters are missing."));
-            return RS_UNREACHABLE;
-        }
-        if (values.isEmpty()) {
-            msgAppend(&runMsg, tr("Parse text : There is no value."));
-            return RS_UNREACHABLE;
-        }
-        bool ok;
-        foreach (QString vname, varsFeatureMap.keys()) {
-            QString sIx = varsFeatureMap[vname];
-            int ix = sIx.toInt(&ok);
-            if (!ok) {
-                msgAppend(&runMsg, tr("Invalid variable index : %1.").arg(sIx));
-                r = RS_UNREACHABLE;
-                break;
-            }
-            --ix;   // 1,2,3,... --> 0,1,2,...
-            if (!isContIx(values, ix)) {
-                msgAppend(&runMsg, tr("Nincs ilyen indexű adat : %1.").arg(ix));
-                r = RS_UNREACHABLE;
-                break;
-            }
-            cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
-            sv.setValue(*pQuery(), values[ix], r);
-        }
-        return eNotifSwitch(r);
-    }
+    if (isFeature("list"))      return parse_list(r, text, runMsg);
+    if (isFeature(_sTagged))    return parse_tagged(r, text, runMsg);
     msgAppend(&runMsg, tr("Parse text : Type is not defined."));
     return RS_UNREACHABLE;
+}
+
+enum eNotifSwitch cInspector::parse_list(int r, QString &text, QString &runMsg)
+{
+    QStringList values = text2list(text);
+    if (values.isEmpty()) {
+        msgAppend(&runMsg, tr("Parse text list: There is no value."));
+        return RS_UNREACHABLE;
+    }
+    bool ok;
+    foreach (QString vname, varsFeatureMap.keys()) {
+        QString sIx = varsFeatureMap[vname];
+        int ix = sIx.toInt(&ok);
+        if (!ok) {
+            msgAppend(&runMsg, tr("Invalid variable index : %1.").arg(sIx));
+            r = RS_UNREACHABLE;
+            break;
+        }
+        --ix;   // 1,2,3,... --> 0,1,2,...
+        if (!isContIx(values, ix)) {
+            msgAppend(&runMsg, tr("Missing data, indexed : %1.").arg(ix));
+            if (r == RS_ON) r = RS_WARNING;
+            continue;
+        }
+        cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
+        sv.setValue(*pQuery(), values[ix], r);
+    }
+    return eNotifSwitch(r);
+
+}
+
+enum eNotifSwitch cInspector::parse_tagged(int r, QString &text, QString &runMsg)
+{
+    QStringList values = text2list(text);
+    if (values.isEmpty()) {
+        msgAppend(&runMsg, tr("Parse tagged text : There is no value."));
+        return RS_UNREACHABLE;
+    }
+    tStringMap vmap;
+    QString tagSeparator;
+    if ((tagSeparator = feature("tag_separator")).isEmpty() == false) {
+        foreach (QString s, values) {
+            QStringList sl = s.split(tagSeparator);
+            if (sl.size() < 2) continue;
+            vmap[sl.first()] = sl.at(1);
+        }
+    }
+    else if ((tagSeparator = feature("tag_regexp")).isEmpty() == false) {
+        QRegExp tagRexp(tagSeparator);
+        foreach (QString s, values) {
+            int ix = tagRexp.indexIn(s);
+            if (ix < 0) continue;
+            QStringList sl = tagRexp.capturedTexts();
+            if (sl.size() != 3) {
+                msgAppend(&runMsg, tr("Invalid regular expression in tag_regexp : %1.").arg(tagSeparator));
+                return RS_UNREACHABLE;
+            }
+            vmap[sl.at(1)] = sl.at(2);
+        }
+    }
+    foreach (QString vname, varsFeatureMap.keys()) {
+        QString sRef = varsFeatureMap[vname];   // Value name in query string
+        if (sRef.isEmpty()) sRef = vname;
+        tStringMap::iterator i = vmap.find(sRef);
+        if (i == vmap.end()) {
+            msgAppend(&runMsg, tr("Missing data : %1 (%2).").arg(vname, sRef));
+            if (r == RS_ON) r = RS_WARNING;
+            continue;
+        }
+        cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
+        sv.setValue(*pQuery(), i.value(), r);
+    }
+    return eNotifSwitch(r);
+}
+
+QStringList cInspector::text2list(QString &text)
+{
+    QString sSeparator = feature("separator");
+    QString sRegexp;
+    QStringList values;
+    if (!sSeparator.isEmpty()) {
+        values = text.split(sSeparator, QString::SkipEmptyParts);
+    }
+    else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
+        values = text.split(QRegExp(sRegexp), QString::SkipEmptyParts);
+    }
+    else if (!(sRegexp = feature(_sRegexp)).isEmpty()) {
+        QRegExp regexp(sRegexp);
+        if (regexp.indexIn(text, 0) >= 0) {
+            values = regexp.capturedTexts().mid(1);
+        }
+    }
+    else {
+        QString line;
+        QTextStream strm(&text, QIODevice::ReadOnly);
+        while ((line = strm.readLine()).isEmpty() == false) values << line;
+    }
+    return values;
 }
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
@@ -2500,6 +2556,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
 int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
+    // Type of raw data
     eParamType ptRaw = eParamType(pSrvVar->rawDataType(q).getId(cParamType::ixParamTypeType()));
     eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
     if (rawChanged == TS_NULL) return RS_UNREACHABLE;

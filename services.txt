@@ -604,6 +604,34 @@ SERVICE "proc_loadavg" {
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "proc_meminfo" {
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "cat $file";
+    FEATURES  {
+        "control" = "tick,reset,exit";
+        "file" = "/proc/meminfo";
+        "method" = "text";
+        "tag_regexp" = "(\\w+):\\s+(\\d+)\\s+kB";
+        "tagged";
+        "timing" = "timed";
+        "variables" =  {
+            "Buffers" = ",memory";
+            "Cached" = ",memory";
+            "Inactive" = ",memory";
+            "MemFree" = ",memory";
+            "MemTotal" = ",memory";
+            "SwapFree" = ",memory";
+            "SwapTotal" = ",memory";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 60;
+    HEARTBEAT TIME 300;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 6;
+    TYPE "querying";
+    OFF LINE GROUPS "admin_net";
+}
 SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
     COMMAND "pstat  -R $host_service_id";
@@ -965,7 +993,7 @@ SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
 }
 SERVICE VAR TYPE "ifmtu" "MTU" {
     TYPE "bytes" "GAUGE";
-    PLAUSIBILITY "interval" "48", "10240";
+    PLAUSIBILITY "interval" "48", "10241";
     CRITICAL "no";
     WARNING "no";
     NO RAW TO RRD;
@@ -1027,12 +1055,13 @@ SERVICE VAR TYPE "load" "CPU Load" {
     NO RAW TO RRD;
     FEATURES ":host.cpu=1:rpn=$host.cpu /:";
 }
-SERVICE VAR TYPE "memory" "Memória kByte" {
+SERVICE VAR TYPE "memory" "Memória Byte (raw kB)" {
     TYPE "bigint" "GAUGE";
     PLAUSIBILITY INVERSE "litle" "0";
     CRITICAL "no";
     WARNING "no";
     NO RAW TO RRD;
+    FEATURES ":rpn=1000 *:";
 }
 SERVICE VAR TYPE "ping_time" {
     TYPE "ping_time" "GAUGE";
