@@ -47,7 +47,7 @@ public:
     /// A teljes sor háttérszíne egy enumeráció típusú mező alapján. Enum típus név:
     QString lineBgColorEnumType;
     QString lineBgColorEnum2Type;
-    /// A teljes sor háttérszíne egy enumeráció típusú mező alapján. Enum típus név:
+    /// A teljes sor háttérszíne egy enumeráció típusú mező alapján.
     int     lineBgColorEnumIx;
     int     lineBgColorEnum2Ix;
     int     lineBgColorEnum2Val;
