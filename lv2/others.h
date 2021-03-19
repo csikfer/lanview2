@@ -228,6 +228,15 @@ public:
     static const QString list_esep;
 };
 
+#define PROCESS_START_TO    2000
+#define PROCESS_STOP_TO    10000
+
+EXT_ const QString _sStartTimeout;
+EXT_ const QString _sStopTimeout;
+
+EXT_ ulong getTimeout(cFeatures& __f, const QString& _key, ulong _def = 0);
+
+
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).
 /// @param v A konvertálandó adat, ha nem konvertálható (és nem null) akkor dob egy kizárást.
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.
@@ -269,15 +278,28 @@ inline QString joinCmd(const QString& cmd, const QStringList& args)
 {
     return cmd + _sSpace + args.join(_sSpace);
 }
-#define PROCESS_START_TO    2000
-#define PROCESS_SOPP_TO    10000
+
 enum eProcError {
     PE_ERROR = -1,
     PE_START_TIME_OUT = -2,
     PE_STOP_TIME_OUT = -3,
 };
-EXT_ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args, QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_SOPP_TO);
-EXT_ int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_SOPP_TO);
+/// Program indítása, és várakozás a befejezésre
+/// @param p A program idításához használt QProcess objektum referenciája.
+/// @param cmd Az indítandó parancs neve, vagy ha args üres, akkor a parancs sor.
+/// @param args Program argumentumok, vagy üres tömb, ha cmd a teljes parancs sor.
+/// @param pMsg Opcionális string objektum pointer az esetleges hibaüzeneteknek.
+/// @param start_to program indítás időkorlát msec, alapértelmezés 2 sec.
+/// @param stop_to program futási idő korlát msec, alapértelmezés 10 sec.
+EXT_ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args = QStringList(), QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_STOP_TO);
+/// Program indítása, és várakozás a befejezésre. A program kimenetét, illetve a hiba csatornáját beolvassa.
+/// @param p A program idításához használt QProcess objektum referenciája.
+/// @param cmd Az indítandó parancs neve, vagy ha args üres, akkor a parancs sor.
+/// @param args Program argumentumok, vagy üres tömb, ha cmd a teljes parancs sor.
+/// @param pMsg Opcionális string objektum pointer a program kimenetének, vagy a hibaüzeneteknek.
+/// @param start_to program indítás időkorlát msec, alapértelmezés 2 sec.
+/// @param stop_to program futási idő korlát msec, alapértelmezés 10 sec.
+EXT_ int startProcessAndWait(const QString& cmd, const QStringList& args = QStringList(), QString *pMsg = nullptr, int start_to = PROCESS_START_TO, int stop_to = PROCESS_STOP_TO);
 
 /* ******************************  ****************************** */
 

@@ -2430,7 +2430,8 @@ void cRecordTable::init()
     }
     flags = 0;
 
-    if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
+// ?    if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
+        if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
     qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
     if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
     switch (st) {
@@ -2498,6 +2499,7 @@ void cRecordTable::init()
         break;
     case ENUM2SET(TS_CHILD):
     case ENUM2SET2(TS_CHILD, TS_SIMPLE):
+    case ENUM2SET2(TS_CHILD, TS_TOOLS):
         if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         buttons.pop_front();    // A close nem kell

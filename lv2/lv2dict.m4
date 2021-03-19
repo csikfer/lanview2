@@ -1061,15 +1061,14 @@ STRDEF(Selects, "selects")
   __SDEF(Empty)
 
 STRDEF(Tools, "tools")
- STRDEF(ToolId, "host_tool_id")
- STRDEF(ToolName, "host_tool_name")
- STRDEF(ToolNote, "host_tool_note")
- STRDEF(ToolType, "host_tool_type")
+ STRDEF(ToolId, "tool_id")
+ STRDEF(ToolName, "tool_name")
+ STRDEF(ToolNote, "tool_note")
+ STRDEF(ToolType, "tool_type")
   STRDEF(Command, "command")
   dnl parse
   STRDEF(Url, "url")
  STRDEF(ToolStmt, "tool_stmt")
- STRDEF(ObjectName, "object_name")
  dnl features, wait, view_rights
  STRDEF(ExecRights, "exec_rights")
  dnl text_id
@@ -1079,7 +1078,7 @@ STRDEF(Tools, "tools")
 
 STRDEF(ToolObjects, "tool_objects")
  STRDEF(ToolObjectId, "tool_object_id")
- dnl object_name
+ STRDEF(ObjectName, "object_name")
  STRDEF(ObjectId, "object_id")
  STRDEF(ToolObjectNote, "tool_object_note")
 

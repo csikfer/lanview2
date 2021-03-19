@@ -434,6 +434,27 @@ void cFeatures::modifyField(cRecordFieldRef& _fr)
 
 /******************************************************************************/
 
+const QString _sStartTimeout = "start_timeout";
+const QString _sStopTimeout  = "stop_timeout";
+
+ulong getTimeout(cFeatures& __f, const QString& _key, ulong _def)
+{
+    ulong r = _def;
+    bool ok;
+    ulong to;
+    QString sto;
+    r = _def;
+    sto = __f.value(_key);
+    if (sto.isEmpty()) sto = __f.value(_sTimeout);
+    if (!sto.isEmpty()) {
+        to = sto.toULong(&ok);
+        if (ok) r = to;
+    }
+    return r;
+}
+
+/******************************************************************************/
+
 qlonglong variantToId(const QVariant& v, eEx _ex, qlonglong def)
 {
     if (v.isNull()) {
@@ -535,7 +556,8 @@ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args
     if (pMsg != nullptr) pMsg->clear();
     QString msg;
     p.setProcessChannelMode(QProcess::MergedChannels);
-    p.start(cmd, args, QIODevice::ReadOnly);
+    if (args.isEmpty()) p.start(cmd, QIODevice::ReadOnly);
+    else          p.start(cmd, args, QIODevice::ReadOnly);
     int r = -1;
     if (p.waitForStarted(start_to)) {
         if (p.waitForFinished(stop_to)) {

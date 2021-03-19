@@ -3749,6 +3749,7 @@ void cFeatureWidgetRow::clickButton(int id)
     case DBT_INSERT:
         if (pListWidget != nullptr) {
             QListWidgetItem *pItem = new QListWidgetItem;
+            pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
             QModelIndexList mil = pListWidget->selectionModel()->selectedRows();
             if (mil.isEmpty()) pListWidget->addItem(pItem);
             else               pListWidget->insertItem(mil.first().row(), pItem);

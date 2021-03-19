@@ -1151,27 +1151,13 @@ getFunc_error_label:
     EXCEPTION(EDATA,0,msg);
 }
 
+
+
 void cInspector::getTimeouts(ulong defaultStart, ulong defaultStop)
 {
-    bool ok;
-    ulong to;
-    QString sto, stod;
-    static const QString sStopTimeout = "stop_timeout";
-    startTimeOut = defaultStart;
-    stopTimeOut  = defaultStop;
-    stod = feature(_sTimeout);
-    sto  = feature("start_timeout");
-    if (sto.isEmpty()) sto = stod;
-    if (!sto.isEmpty()) {
-        to = sto.toULong(&ok);
-        if (ok) startTimeOut = to;
-    }
-    sto  = feature(sStopTimeout);
-    if (sto.isEmpty()) sto = stod;
-    if (!sto.isEmpty()) {
-        to = sto.toULong(&ok);
-        if (ok) stopTimeOut = to;
-    }
+
+    startTimeOut = getTimeout(features(), _sStartTimeout, defaultStart);
+    stopTimeOut  = getTimeout(features(), _sStopTimeout,  defaultStop);
     PDEB(VERBOSE) << VDEB(startTimeOut) << VDEB(stopTimeOut) << endl;
     if (startTimeOut <= 0 || stopTimeOut <= 0) {
         EXCEPTION(EDATA, 0,

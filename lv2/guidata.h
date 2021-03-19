@@ -184,6 +184,12 @@ public:
     virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
     /// Egy table_shapes rekord beszúrása, vagy fellülírása név szerint, ha már létezik
     virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    /// Beállítja a típus mező értékét.
+    /// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek, viszont a megjelenítésnél van szerepük.
+    /// Az alapértelmezett metódus ezeket az értékeket eldobná, természetesen ezek az extra értékek elvesznek,
+    /// ha az objektumoot kiírnámk az adatbázisba. Az objektum státuszában bebillentjük az invalid bitet, ha extra típus lett megadva.
+    /// Az extra értékeket a getId() matódus nem adja vissza, mert a konverziónál elvesznek, csak a get() metódus használható,
+    /// ami egy QStringList -et ad vissza, és a enum2set() és tableShapeType() függvénnyekkel konvertálható qlonglong típussá.
     cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q, bool raw = false);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
@@ -241,6 +247,8 @@ public:
     void addRightShape(QStringList& _sn);
     void setRightShape(QStringList& _sn) { clear(_sRightShapeIds); addRightShape(_sn); }
 
+    cTableShape& setFieldFlags(const QString& __fn, qlonglong _onBts, qlonglong _offBits = 0LL);
+
     /// Visszaadja az _sn nevű table_shapes rekordhoz tartozó _fn nevű table_shape_fields rekordnak a
     /// dialog_title mező értékét. Ha valamelyik rekord hiányzik, és __ex értéke nem EX_WARNING vagy
     /// EX_NOOP, akkor _fn-t adja vissza. Ha hiányzik valamelyik rekord, és __ex értéke EX_WARNING vagy
@@ -250,7 +258,9 @@ public:
     ///
     tTableShapeFields   shapeFields;
 protected:
+    /// Hiba string
     QString emFildsIsEmpty();
+    /// Hiba string
     QString emFieldNotFound(const QString& __f);
     static tStringMap   fieldDialogTitleMap;
     STATICIX(cTableShape, TableShapeType)

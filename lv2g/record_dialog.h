@@ -44,6 +44,7 @@ enum eDialogButtons {
     DBT_HOME,           ///< Home/default
     DBT_EXTENSION,      ///< Objektum kiterjesztése (convertálás a leszármazott objetummá)
     DBT_POPUP,          ///< Popup ablak megjelenítése
+    DBT_EXEC,           ///< Végrehajt
 //  DBT_LTEXT,          ///< Nyelvi szövegek szerkesztése
 //  DBT_TOOLS,          ///< Segédeszköz, egyedi dialogus megjelenítése
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát

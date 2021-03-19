@@ -340,12 +340,6 @@ bool cTableShape::rewrite(QSqlQuery &__q, eEx __ex)
     return r;
 }
 
-/// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek,
-/// viszont a megjelenítésnél van szerepük.
-/// Az alapértelmezett metódus ezeket az értékeket eldobná, természetesen ezek az extra értékek
-/// elvesznek, ha az objektumoot kiírnámk az adatbázisba. Az objektum státuszában bebillentjük az invalid bitet, ha extra tíous lett megadva.
-/// Az extra értékeket a getId() matódus nem adja vissza, mert a konverziónál elvesznek, csak a get() metódus használható,
-/// ami egy QStringList -et ad vissza, és a enum2set() és tableShapeType() függvénnyekkel konvertálható qlonglong típussá.
 cTableShape& cTableShape::setShapeType(qlonglong __t)
 {
     static const qlonglong extraValues = ENUM2SET4(TS_IGROUP, TS_NGROUP, TS_IMEMBER, TS_NMEMBER);
@@ -736,6 +730,15 @@ void cTableShape::addRightShape(QStringList& _snl)
 QString cTableShape::emFildsIsEmpty()
 {
     return tr("A shape Fields konténer üres.");
+}
+
+cTableShape& cTableShape::setFieldFlags(const QString& __fn, qlonglong _onBts, qlonglong _offBits)
+{
+    cTableShapeField * ptsf = shapeFields.get(__fn);
+    if (ptsf == nullptr) EXCEPTION(EPROGFAIL);
+    (*ptsf).setOn(_sFieldFlags, _onBts);
+    (*ptsf).setOff(_sFieldFlags, _offBits);
+    return *this;
 }
 
 QString cTableShape::emFieldNotFound(const QString& __f)
