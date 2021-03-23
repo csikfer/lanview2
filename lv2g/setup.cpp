@@ -23,8 +23,6 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
 
     connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),   this,   SLOT(applicateAndRestart()));
     connect(pUi->PBApplicateAndExit,   SIGNAL(clicked()),   this,   SLOT(applicateAndExit()));
-    connect(pUi->PBCancel,             SIGNAL(clicked()),   this,   SLOT(endIt()));
-    pUi->PBCancel->setDisabled(forced);
     connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),   this,   SLOT(applicateAndClose()));
     pUi->PBApplicateAndClose->setDisabled(forced);
 
@@ -203,7 +201,7 @@ void cSetupWidget::applicateAndExit()
 void cSetupWidget::applicateAndClose()
 {
     applicate();
-    endIt();
+    close();
 }
 
 void cSetupWidget::logToStdOutClicked(bool __b)

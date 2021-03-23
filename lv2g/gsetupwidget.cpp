@@ -24,7 +24,6 @@ cGSetupWidget::cGSetupWidget(QMdiArea *par)
 
     connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
     connect(pUi->PBApplicateAndExit,   SIGNAL(clicked()),    this,   SLOT(applicateAndExit()));
-    connect(pUi->PBCancel,             SIGNAL(clicked()),    this,   SLOT(endIt()));
     connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
     connect(pUi->pushButtonAlarmFile,  SIGNAL(clicked()),    this,   SLOT(selectAlarmFile()));
     connect(pUi->pushButtonAlarmTest,  SIGNAL(clicked()),    this,   SLOT(testAlarmFile()));
@@ -88,7 +87,7 @@ void cGSetupWidget::applicateAndExit()
 void cGSetupWidget::applicateAndClose()
 {
     applicate();
-    endIt();
+    close();
 }
 
 void cGSetupWidget::selectAlarmFile()

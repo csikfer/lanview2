@@ -152,7 +152,6 @@ cMenuAction::~cMenuAction()
 void cMenuAction::initRecordTable()
 {
      pIntSubObj = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
-     connect(pIntSubObj,             SIGNAL(closeIt()),   this, SLOT(removeIt()));
      connect(pIntSubObj->pSubWindow, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
@@ -201,7 +200,6 @@ void cMenuAction::initInt()
     default:
         EXCEPTION(EPROGFAIL);
     }
-    connect(pIntSubObj,      SIGNAL(closeIt()),   this, SLOT(removeIt()));
     connect(pIntSubObj->pSubWindow,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
@@ -228,7 +226,6 @@ void cMenuAction::displayIt()
                 cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
                 QString t = pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName());
                 p->setWindowTitle(t + QString(" (%1)").arg(++cnt));
-                connect(p, SIGNAL(closeIt()), this, SLOT(deleteLater()));
                 pMdiArea->setActiveSubWindow(p->pSubWindow);
                 p->pWidget()->show();
                 return;
@@ -305,6 +302,5 @@ cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea, const cFea
     QHBoxLayout *pHBL = new QHBoxLayout;
     pWidget()->setLayout(pHBL);
     pHBL->addWidget(pRecordsView->pWidget());
-    connect(pRecordsView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
     connect(pRecordsView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }

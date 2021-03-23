@@ -226,11 +226,6 @@ cIntSubObj::cIntSubObj(QMdiArea *par) :QWidget(par)
     }
 }
 
-void cIntSubObj::endIt()
-{
-    closeIt();
-}
-
 cLv2GQApp::cLv2GQApp(int& argc, char ** argv) : QApplication(argc, argv)
 {
     lanView::gui = true;

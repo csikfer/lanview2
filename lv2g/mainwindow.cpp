@@ -145,25 +145,3 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
     DBGFNL();
 }
 
-/*
-void cMainWindow::widgetSplitterOrientation(int index)
-{
-    QWidget *tab = pTabWidget->widget(index);
-    if (tab == NULL) return;
-    // minden tab tartalma egy Widget/layout -ban van, a layout.nak egy eleme van
-    QLayout * ply = tab->layout();
-    if (ply == NULL) return;
-    QLayoutItem *pli =  ply->itemAt(0);
-    if (pli == NULL) return;
-    QWidget *pw = pli->widget();    // Az a widget jeleníti meg a valós tartalmat
-    if (pw == NULL) return;
-    // Ha ő egy splitter, akkor ennek akarjuk az orientációját váltani
-    bool f = pw->inherits("QSplitter");
-    if (!f) return;
-    QSplitter *psp = dynamic_cast<QSplitter *>(pw);
-    switch (psp->orientation()) {
-    case Qt::Horizontal:    psp->setOrientation(Qt::Vertical);   break;
-    case Qt::Vertical:      psp->setOrientation(Qt::Horizontal); break;
-    }
-}
-*/

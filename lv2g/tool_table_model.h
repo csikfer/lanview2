@@ -1,4 +1,0 @@
-#ifndef TOOL_TABLE_MODEL_H
-#define TOOL_TABLE_MODEL_H
-
-#endif // TOOL_TABLE_MODEL_H

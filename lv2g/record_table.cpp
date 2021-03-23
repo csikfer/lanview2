@@ -1390,7 +1390,7 @@ void cRecordsViewBase::close(int r)
         pRecordDialog->_pressed(DBT_CANCEL);
     }
     if (isDialog) dynamic_cast<QDialog *>(_pWidget)->done(r);
-    else closeIt();
+    else pWidget()->close();
 }
 
 void cRecordsViewBase::refresh(bool first)
@@ -2430,8 +2430,7 @@ void cRecordTable::init()
     }
     flags = 0;
 
-// ?    if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
-        if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
     qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
     if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
     switch (st) {
@@ -2442,6 +2441,7 @@ void cRecordTable::init()
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_SIMPLE):
+    case ENUM2SET(TS_TOOLS):
         if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SINGLE;
         initSimple(_pWidget);
@@ -2534,6 +2534,11 @@ void cRecordTable::init()
     refresh();
 }
 
+cRecordViewModelBase * cRecordTable::newModel()
+{
+    return new cRecordTableModel(*this);
+}
+
 /// Inicializálja a táblázatos megjelenítést
 void cRecordTable::initSimple(QWidget * pW)
 {
@@ -2541,7 +2546,7 @@ void cRecordTable::initSimple(QWidget * pW)
     pMainLayout = new QVBoxLayout(pW);
     pTableView  = new QTableView();
     pTableView->horizontalHeader()->setMinimumSectionSize(24); // Icon
-    pModel      = new cRecordTableModel(*this);
+    pModel      = newModel();
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {

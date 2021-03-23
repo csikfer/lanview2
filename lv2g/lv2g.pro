@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += network sql gui xml widgets multimedia printsupport
+QT += webenginewidgets
 
 TARGET = lv2g
 TEMPLATE = lib
@@ -83,7 +84,6 @@ HEADERS +=\
     phslinkform.h \
     findbymac.h \
     tool_table.h \
-    tool_table_model.h \
     workstation.h \
     object_dialog.h \
     deducepatch.h \

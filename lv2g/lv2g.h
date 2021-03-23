@@ -232,13 +232,6 @@ public:
     QWidget *pWidget() { return static_cast<QWidget *>(this); }
 protected:
     QMdiSubWindow *pSubWindow;
-
-signals:
-    // A widget-et be kell csukni, el kell távolítani ...
-    void closeIt();
-public slots:
-    // Egy closeIt() signál
-    void endIt();
 };
 
 /// @class cLv2GQApp

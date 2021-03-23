@@ -1071,6 +1071,8 @@ STRDEF(Tools, "tools")
  STRDEF(ToolStmt, "tool_stmt")
  dnl features, wait, view_rights
  STRDEF(ExecRights, "exec_rights")
+ STRDEF(ObjectNames, "objects_names")
+ STRDEF(Platforms, "platforms")
  dnl text_id
   STRDEF(Title, "title")
   dnl tool_tip

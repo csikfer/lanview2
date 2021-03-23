@@ -245,6 +245,7 @@ static tRecordList<cMenuItem>   menuItems;
 static bool             bSkeep = false;
 static QString          actEnumType;
 static cEnumVal        *pActEnum = nullptr;
+static cRecordAny      *pRecordAny;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
@@ -441,6 +442,7 @@ void downImportParser()
     pDelete(pq2);
     actEnumType.clear();
     pDelete(pActEnum);
+    pDelete(pRecordAny);
 
     c_yyFile::dropp();
     breakParse = false;
@@ -1777,6 +1779,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
 %token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T GLPI_T SYNC_T LIKE_T
+%token      OBJECTS_T PLATFORMS_T WAIT_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1871,6 +1874,7 @@ command : glpi
         | arp
         | link
         | srv
+        | tools
         | delete
         | eqs
         | scan
@@ -2918,6 +2922,47 @@ svar    : FEATURES_T features                   { pServiceVar->setName(_sFeature
         | RAREFACTION_T int ';'                 { pServiceVar->setBool(_sRarefaction, $2); }
         ;
 /*******/
+tools   : tool
+        | obj_tool
+        ;
+tool    : TOOL_T replfl str str_z '{'           { REPOBJ(pRecordAny, cRecordAny(_sTools), $2, $3, $4); }
+          tool_ps '}'                           { writeAndDel(pRecordAny); }
+        ;
+tool_ps :
+        | tool_ps tool_p
+        ;
+tool_p  : NOTE_T str ';'                        { pRecordAny->setNote(sp2s($2)); }
+        | TYPE_T str ';'                        { pRecordAny->setName(_sToolType, sp2s($2)); }
+        | COMMAND_T str ';'                     { pRecordAny->setName(_sToolStmt, sp2s($2)); }
+        | FEATURES_T features                   { pRecordAny->set(_sFeatures, *$2); delete $2; }
+        | OBJECTS_T strs ';'                    { pRecordAny->set(_sObjectNames, slp2sl($2)); }
+        | PLATFORMS_T strs ';'                  { pRecordAny->set(_sPlatforms, slp2sl($2)); }
+        | bool_on WAIT_T ';'                    { pRecordAny->set(_sWait, $1); }
+        | ICON_T str ';'                        { pRecordAny->setName(_sIcon, sp2s($2)); }
+        | TITLE_T str ';'                       { pRecordAny->setText(0, sp2s($2)); }
+        | TOOL_T TIP_T str ';'                  { pRecordAny->setText(1, sp2s($3)); }
+        ;
+obj_tool: TOOL_T replfl str NODE_T str str_z    { cNode o; o.setByName(qq(), sp2s($5));
+                                                  cRecordAny t(_sTools); t.setByName(qq(), sp2s($3));
+                                                  pRecordAny = new cRecordAny(_sToolObjects);
+                                                  pRecordAny->setId(_sToolId, t.getId());
+                                                  pRecordAny->setName(_sObjectName, o.getOriginalDescr(qq())->tableName());
+                                                  pRecordAny->setId(_sObjectId, o.getId());
+                                                  SETNOTE(pRecordAny, $6);
+                                                  setReplace($2);
+                                                }
+          otool_e                               { writeAndDel(pRecordAny); }
+        ;
+otool_e : ';'
+        | '{' otool_ps '}'
+        ;
+otool_ps :
+        | otool_ps otool_p
+        ;
+otool_p : NOTE_T str ';'                        { pRecordAny->setNote(sp2s($2)); }
+        | FEATURES_T features                   { pRecordAny->set(_sFeatures, *$2); delete $2; }
+        ;
+/*******/
 delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
         | DELETE_T PLACE_T GROUP_T strs ';'     { foreach (QString s, *$4) { cPlaceGroup(). delByName(qq(), s, true); }  delete $4; }
         | DELETE_T USER_T strs ';'              { foreach (QString s, *$3) { cUser().  delByName(qq(), s, true); }       delete $3; }
@@ -3421,6 +3466,7 @@ static const struct token {
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
     TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID) TOK(GLPI) TOK(SYNC) TOK(LIKE)
+    TOK(OBJECTS) TOK(PLATFORMS) TOK(WAIT)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },
@@ -3432,6 +3478,7 @@ static const struct token {
     { "CAT",    CATEGORY_T },
     { "FG",     FOREGROUND_T },
     { "BG",     BACKGROUND_T },
+    { "OBJ",    OBJECTS_T },
     TOK(END) TOK(ELSE)
     { nullptr, 0 }
 };

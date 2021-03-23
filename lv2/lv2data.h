@@ -1588,7 +1588,6 @@ public:
     int delCollisionByMac(QSqlQuery &__q);
     int delCollisionByIp(QSqlQuery &__q);
     static cNode * getSelfNodeObjByMac(QSqlQuery& q);
-
 };
 
 class cTable;

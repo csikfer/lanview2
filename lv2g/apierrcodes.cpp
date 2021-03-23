@@ -8,7 +8,6 @@ cErrcodesWidget::cErrcodesWidget(QMdiArea *par)
     pUi = new Ui::apiErrorCodes();
     pUi->setupUi(this);
 
-    connect(pUi->closwPB, SIGNAL(clicked()), this, SLOT(endIt()));
     const QMap<int, QString>& emap = cError::errorMap();
     QList<int> codes = emap.keys();
     std::sort(codes.begin(), codes.end());

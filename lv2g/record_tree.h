@@ -39,6 +39,7 @@ public:
     void restoreRoot();
     void expand();
 
+    virtual cRecordViewModelBase * newModel();
     virtual void initSimple(QWidget * pW);
 
     cRecordTreeModel *  pTreeModel() const { return static_cast<cRecordTreeModel *>(pModel); }

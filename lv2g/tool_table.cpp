@@ -1,12 +1,33 @@
 ﻿#include "tool_table.h"
 #include "popupreport.h"
+#include <QtWebEngineWidgets>
 
 cToolTable::cToolTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
     : cRecordTable(pts, _isDialog, _upper, par)
 {
-    pTableShape->setFieldFlags(_sObjectId, ENUM2SET(FF_READ_ONLY));
-    pTableShape->setFieldFlags(_sObjectName, ENUM2SET(FF_READ_ONLY));
-    buttons << DBT_SPACER << DBT_EXEC;
+    if (pts->getName(_sTableName).compare(_sToolObjects) == 0) {
+        if (pUpper == nullptr) {
+            subType = ST_TOOL_OBJ_ALL;
+            // Edit, insert disabled
+            pTableShape->clear(_sEditRights);
+            pTableShape->clear(_sInsertRights);
+        }
+        else {
+            subType = ST_TOOL_OBJ_CHILD;
+            pTableShape->setFieldFlags(_sObjectId, ENUM2SET(FF_READ_ONLY));
+            pTableShape->setFieldFlags(_sObjectName, ENUM2SET(FF_READ_ONLY));
+            buttons << DBT_SPACER << DBT_EXEC;
+            sProd = QSysInfo::productType();
+            sKern = QSysInfo::kernelType();
+        }
+        return;
+    }
+    EXCEPTION(EDATA, -1, tr("Invalid or not supported shape type."));
+}
+
+cRecordViewModelBase * cToolTable::newModel()
+{
+    return new cToolTableModel(*this);
 }
 
 int cToolTable::ixToForeignKey()
@@ -19,23 +40,28 @@ QStringList cToolTable::where(QVariantList& qParams)
 {
     DBGFN();
     QStringList wl;
-    if (flags & (RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER)
-     || !(flags & RTF_CHILD)) {
+    if (flags & (RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER)) {
         EXCEPTION(ECONTEXT, flags, tr("Invalid table shape type."));
     }
-    if (pUpper == nullptr) EXCEPTION(EPROGFAIL);
-    if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
-        wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
-        return wl;          // Ez egy üres tábla lessz!!
+    switch (subType) {
+    case ST_TOOL_OBJ_ALL:
+        break;
+    case ST_TOOL_OBJ_CHILD:
+        if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
+            wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
+            return wl;          // Ez egy üres tábla lessz!!
+        }
+        int ofix = ixToForeignKey();
+        cRecord *pActOwner = pUpper->actRecord();
+        if (pActOwner == nullptr) EXCEPTION(EPROGFAIL);
+        QString ooname = pActOwner->tableName();
+        wl << dQuoted(_sObjectName) + " = " + quoted(ooname);       // Object (owner) type filter
+        wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id); // Owner id filter
+        break;
     }
-    int ofix = ixToForeignKey();
-    cRecord *pActOwner = pUpper->actRecord();
-    if (pActOwner == nullptr) EXCEPTION(EPROGFAIL);
-    QString ooname = pActOwner->tableName();
-    wl << dQuoted(_sObjectName) + " = " + quoted(ooname);       // Object (owner) type filter
-    wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id); // Owner id filter
     wl << filterWhere(qParams);
     wl << refineWhere(qParams);
+
     DBGFNL();
     return wl;
 }
@@ -187,22 +213,24 @@ void cToolTable::modify(eEx)
 
 void cToolTable::setEditButtons()
 {
-    cRecord *pAct = actRecord();
-    bool enable = pAct != nullptr;
-    if (enable) {
-        QSqlQuery q = getQuery();
-        qlonglong id = pAct->getId(_sToolId);
-        QString sProd = QSysInfo::productType();
-        QString sKern = QSysInfo::kernelType();
-        enable = execSqlBoolFunction(q, "check_platform", id, sKern, sProd);
+    switch (subType) {
+    case ST_TOOL_OBJ_ALL:
+        break;
+    case ST_TOOL_OBJ_CHILD:
+        cRecord *pAct = actRecord();
+        bool enable = pAct != nullptr;
+        if (enable) {
+            qlonglong id = pAct->getId(_sToolId);
+            enable = execSqlBoolFunction(*pq, "check_platform", id, sKern, sProd);
+        }
+        pButtons->button(DBT_EXEC)->setEnabled(enable);
+        break;
     }
-    pButtons->button(DBT_EXEC)->setEnabled(enable);
     cRecordTable::setEditButtons();
 }
 
 bool cToolTable::execute(QString& msg)
 {
-    QSqlQuery q = getQuery();
     QString key;
     // Actual tool_objects record
     pToolObj = actRecord();
@@ -210,10 +238,10 @@ bool cToolTable::execute(QString& msg)
     qlonglong toolId = pToolObj->getId(_sToolId);
     // Tools record
     tool.setType(_sTools);
-    tool.setById(q, toolId);
+    tool.setById(*pq, toolId);
     // Object record
     object.setType(pToolObj->getName(_sObjectName));
-    object.setById(q, owner_id);
+    object.setById(*pq, owner_id);
     // Features
     cFeatures f;
     features.clear();
@@ -230,7 +258,7 @@ bool cToolTable::execute(QString& msg)
     QString stmt = tool.getName(_sToolStmt);
     // substitute $
     eMsg.clear();
-    stmt = substitute(q, this, stmt,
+    stmt = substitute(*pq, this, stmt,
         [] (const QString& key, QSqlQuery& q, void *_p)
             {
                 QString r;
@@ -248,6 +276,9 @@ bool cToolTable::execute(QString& msg)
     if (0 == type.compare(_sCommand)) {
         return exec_command(stmt, features, msg);
     }
+    if (0 == type.compare(_sUrl)) {
+        return exec_url(stmt, features, msg);
+    }
     return false;
 }
 QString cToolTable::getParValue(QSqlQuery& q, const QString& key)
@@ -255,8 +286,9 @@ QString cToolTable::getParValue(QSqlQuery& q, const QString& key)
     if (object.isIndex(key))    return object.getName(key);
     if (pToolObj->isIndex(key)) return pToolObj->getName(key);
     if (tool.isIndex(key))      return tool.getName(key);
-    if (features.contains(key)) {
-        QString val = features.value(key);
+    QString val = features.value(key);
+    if (val.isEmpty()) val = cSysParam::getTextSysParam(q, key);
+    if (!val.isEmpty()) {
         if (val.startsWith("select", Qt::CaseInsensitive)) {
             // 0: "select"
             // 1: selected field name
@@ -310,4 +342,68 @@ bool cToolTable::exec_command(const QString& stmt, cFeatures& __f, QString& msg)
         bool r = QProcess::startDetached(stmt);
         return  r;
     }
+}
+
+bool cToolTable::exec_url(const QString& _url, cFeatures& __f, QString& msg)
+{
+    // bool wait = str2bool(__f.value(_sWait), EX_IGNORE);
+    QWebEngineView *pView = new QWebEngineView();
+    QUrl url(_url);
+    if (url.isEmpty()) {
+        msg += tr("Invalid URL: %1").arg(_url);
+        return false;
+    }
+    pView->setUrl(url);
+    QMdiSubWindow *pSubWindow = new QMdiSubWindow;
+    pSubWindow->setWidget(pView);
+    pSubWindow->setAttribute(Qt::WA_DeleteOnClose);
+    lv2g::pMdiArea()->addSubWindow(pSubWindow);
+    return true;
+}
+
+
+QVariant cToolTableModel::data(const QModelIndex &index, int role) const
+{
+    int row = index.row();      // Sor index a táblázatban
+    if (row >= _records.size()) return QVariant();
+    const cRecord *pr = _records.at(row);
+    int col = index.column();   // oszlop index a táblázatban
+    if (col >= _col2field.size())   return QVariant();
+    int fix = _col2field[col];  // Mező index a (fő)rekordban
+    cToolTable& par = static_cast<cToolTable&>(recordView);
+    switch (par.subType) {
+    case cToolTable::ST_TOOL_OBJ_ALL:
+        if (fix == ixObjectId) {
+            cRecordAny o(pr->getName(ixObjectName));
+            qlonglong oid = pr->getId(ixObjectId);
+            QString n = o.getNameById(*pq, oid, EX_IGNORE);
+            if (role == Qt::DisplayRole) {
+                return n.isEmpty() ? QString("#%1").arg(oid) : n;
+            }
+            else {
+                return dcRole(n.isEmpty() ? DC_ERROR : DC_DERIVED, role);
+            }
+        }
+        break;
+    case cToolTable::ST_TOOL_OBJ_CHILD:
+        if (role == Qt::FontRole) {
+            qlonglong tid = pr->getId(_sToolId);
+            QString sKern = par.sKern;
+            QString sProd = par.sProd;
+            bool enable = execSqlBoolFunction(*pq, "check_platform", tid, sKern, sProd);
+            if (!enable) return dcRole(DC_NOT_PERMIT, Qt::FontRole);
+        }
+        else {
+            if (fix == ixObjectId) {
+                if (role == Qt::DisplayRole) {
+                    cRecordAny o(pr->getName(ixObjectName));
+                    return o.getNameById(*pq, pr->getId(ixObjectId));
+                }
+                else {
+                    return dcRole(DC_DERIVED, role);
+                }
+            }
+        }
+    }
+    return cRecordTableModel::data(index, role);
 }

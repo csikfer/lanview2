@@ -362,7 +362,6 @@ public:
 
     // egy gomb megnyomására hívandó virtuális metódusok
     /// Dialogus ablak esetén hívja a done() metódust a paraméterrel.
-    /// Egyébként a closeIt() hívja.
     virtual void close(int r = QDialog::Accepted);
     /// Újraolvassa az adatbázist
     virtual void refresh(bool all = true);
@@ -412,6 +411,7 @@ public:
     virtual void selectRow(const QModelIndex& mi)   = 0;
     qlonglong   actId(eEx __ex = EX_ERROR);
 
+    virtual cRecordViewModelBase * newModel() = 0;
     void initView();
     void initShape(cTableShape *pts = nullptr);
     void initMaster();
@@ -518,6 +518,7 @@ public:
     /// A táblázatot megjelenítő widget
     QTableView     *pTableView;
     virtual void init();
+    virtual cRecordViewModelBase * newModel();
     virtual void initSimple(QWidget *pW);
     virtual void hideColumn(int ix, bool f = true);
     void _refresh(bool all = true);

@@ -1488,7 +1488,6 @@ cEnumValsEdit::cEnumValsEdit(QMdiArea *par)
     this->setLayout(pLayout);
     pEditWidget = new cEnumValsEditWidget;
     pLayout->addWidget(pEditWidget);
-    connect(pEditWidget, SIGNAL(closeWidget()), this, SLOT(endIt()));
 }
 
 cEnumValsEdit::~cEnumValsEdit()

@@ -54,7 +54,6 @@ cParseWidget::cParseWidget(QMdiArea *par)
     connect(pUi->pushButtonLoad,  SIGNAL(clicked()), this, SLOT(loadClicked()));
     connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(saveClicked()));
     connect(pUi->pushButtonParse, SIGNAL(clicked()), this, SLOT(parseClicked()));
-    connect(pUi->pushButtonClose, SIGNAL(clicked()), this, SLOT(endIt()));
     connect(pUi->pushButtonBreak, SIGNAL(clicked()), this, SLOT(localParseBreak()));
 
     connect(pUi->pushButtonLoadQP,  SIGNAL(clicked()), this, SLOT(loadQPClicked()));
@@ -97,7 +96,6 @@ void cParseWidget::parseClicked()
 
 void cParseWidget::localParse(const QString& src)
 {
-    pUi->pushButtonClose->setDisabled(true);
     pUi->pushButtonParse->setDisabled(true);
     pUi->pushButtonClear->setDisabled(true);
     pUi->pushButtonLoad->setDisabled(true);
@@ -141,7 +139,6 @@ void cParseWidget::localParseFinished()
     pDelete(pLocalParser);
     pDelete(pLocalParsedStr);
 
-    pUi->pushButtonClose->setDisabled(false);
     pUi->pushButtonParse->setDisabled(false);
     pUi->pushButtonClear->setDisabled(false);
     pUi->pushButtonLoad->setDisabled(false);

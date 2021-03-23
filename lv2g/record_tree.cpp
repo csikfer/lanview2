@@ -113,12 +113,17 @@ void cRecordTree::init()
     connect(pTreeView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));
 }
 
+cRecordViewModelBase * cRecordTree::newModel()
+{
+    return new cRecordTreeModel(*this);
+}
+
 void cRecordTree::initSimple(QWidget *pW)
 {
     pButtons    = new cDialogButtons(buttons, pW);
     pMainLayout  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
-    pModel      = new cRecordTreeModel(*this);
+    pModel      = newModel();
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title =  pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {

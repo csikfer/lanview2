@@ -45,7 +45,6 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
     connect(pRecTabAckAct->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgAckAct(QItemSelection,QItemSelection)));
 
-//    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
 //    connect(pRecordTable, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 
     pRightWidget   = new QWidget();                     // Jobb oldali widget ablak a main splitterben

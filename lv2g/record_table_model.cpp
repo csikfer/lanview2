@@ -317,7 +317,7 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     int col = index.column();   // oszlop index a táblázatban
     if (col >= _col2field.size())   return r;
     const cRecord *pr = _records.at(row);
-    int fix = _col2field[col];  // Mező index a (fő)rekordbam
+    int fix = _col2field[col];  // Mező index a (fő)rekordban
     cRecordTableColumn * pColumn = columns[col];
     bool bTxt = pColumn->textIndex != NULL_IX;
     if (!bTxt && recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés miatt)
