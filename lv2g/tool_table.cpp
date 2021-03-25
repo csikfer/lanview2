@@ -346,6 +346,7 @@ bool cToolTable::exec_command(const QString& stmt, cFeatures& __f, QString& msg)
 
 bool cToolTable::exec_url(const QString& _url, cFeatures& __f, QString& msg)
 {
+    (void)__f;
     // bool wait = str2bool(__f.value(_sWait), EX_IGNORE);
     QWebEngineView *pView = new QWebEngineView();
     QUrl url(_url);
@@ -353,11 +354,14 @@ bool cToolTable::exec_url(const QString& _url, cFeatures& __f, QString& msg)
         msg += tr("Invalid URL: %1").arg(_url);
         return false;
     }
-    pView->setUrl(url);
     QMdiSubWindow *pSubWindow = new QMdiSubWindow;
     pSubWindow->setWidget(pView);
     pSubWindow->setAttribute(Qt::WA_DeleteOnClose);
     lv2g::pMdiArea()->addSubWindow(pSubWindow);
+    pView->load(url);
+    pView->show();
+    QString title = object.getName() + " / " + tool.getName() + " (" + _url + ")";
+    pView->setWindowTitle(title);
     return true;
 }
 
