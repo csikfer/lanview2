@@ -12,7 +12,10 @@ void setAppHelp()
     lanView::appHelp += QObject::tr("-o|--aoto-open <menu name> Menüpont aktíválása\n");
     lanView::appHelp += QObject::tr("-f|--fullscreen [<#scrin>] teljes képernyő\n");
     lanView::appHelp += QObject::tr("-m|--maximize              Maximális ablak.\n");
+    lanView::appHelp += QObject::tr("-P|--query-paths           Query paths and exit.\n");
 }
+
+static void printLocations();
 
 int main(int argc, char * argv[])
 {
@@ -36,6 +39,9 @@ int main(int argc, char * argv[])
     app.processEvents();
 #endif
     lanView::snmpNeeded = false;
+    if (0 <= findArg(QChar('P'),QString("query-paths"), arguments)) {
+        printLocations();
+    }
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {
         lv2Gui::_setup = true;
         lanView::sqlNeeded = SN_NO_SQL;
@@ -145,3 +151,32 @@ lv2Gui::~lv2Gui()
     DBGFNL();
 }
 
+#include <QLibraryInfo>
+
+static void printLocations()
+{
+    QDialog *d = new QDialog();
+    QVBoxLayout *l = new QVBoxLayout();
+    d->setLayout(l);
+    QPlainTextEdit *t = new QPlainTextEdit();
+    l->addWidget(t);
+    QString txt;
+    txt +=   "Default prefix                           : " + QLibraryInfo::location(QLibraryInfo::PrefixPath);
+    txt += "\nDocumentation upon install               : " + QLibraryInfo::location(QLibraryInfo::DocumentationPath);
+    txt += "\nAll headers                              : " + QLibraryInfo::location(QLibraryInfo::HeadersPath);
+    txt += "\nInstalled libraries                      : " + QLibraryInfo::location(QLibraryInfo::LibrariesPath);
+    txt += "\nInstalled exec. requ. by lib. at runtime : " + QLibraryInfo::location(QLibraryInfo::LibraryExecutablesPath);
+    txt += "\nInstalled Qt binaries (tools and apps)   : " + QLibraryInfo::location(QLibraryInfo::BinariesPath);
+    txt += "\nInstalled Qt plugins                     : " + QLibraryInfo::location(QLibraryInfo::PluginsPath);
+    txt += "\nInstalled QML ext. to import (QML 1.x)   : " + QLibraryInfo::location(QLibraryInfo::ImportsPath);
+    txt += "\nInstalled QML ext. to import (QML 2.x)   : " + QLibraryInfo::location(QLibraryInfo::Qml2ImportsPath);
+    txt += "\nGeneral architecture-dependent Qt data   : " + QLibraryInfo::location(QLibraryInfo::ArchDataPath);
+    txt += "\nGeneral architecture-independent Qt data : " + QLibraryInfo::location(QLibraryInfo::DataPath);
+    txt += "\nTranslation information for Qt strings   : " + QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+    txt += "\nExamples upon install                    : " + QLibraryInfo::location(QLibraryInfo::ExamplesPath);
+    txt += "\nInstalled Qt testcases                   : " + QLibraryInfo::location(QLibraryInfo::TestsPath);
+    txt += "\nQt settings. Not applicable on Windows   : " + QLibraryInfo::location(QLibraryInfo::SettingsPath);
+    t->setPlainText(txt);
+    d->exec();
+    delete d;
+}
