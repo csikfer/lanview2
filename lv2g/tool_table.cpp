@@ -331,14 +331,17 @@ QString cToolTable::getParValue(QSqlQuery& q, const QString& key)
 
 bool cToolTable::exec_command(const QString& stmt, cFeatures& __f, QString& msg)
 {
+    _DBGFN() << VDEB(stmt) << endl;
     bool wait = str2bool(__f.value(_sWait), EX_IGNORE);
     if (wait) {
         ulong strt_to = getTimeout(__f, _sStartTimeout, PROCESS_START_TO);
         ulong stop_to = getTimeout(__f, _sStopTimeout,  PROCESS_STOP_TO);
+        PDEB(INFO) << "Start and wait : " << dQuoted(stmt) << VDEB(strt_to) << VDEB(stop_to) << endl;
         int r = startProcessAndWait(stmt, QStringList(), &msg, strt_to, stop_to);
         return r == 0;
     }
     else {
+        PDEB(INFO) << "Start dateched : " << dQuoted(stmt) << endl;
         bool r = QProcess::startDetached(stmt);
         return  r;
     }
