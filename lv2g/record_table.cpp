@@ -2430,7 +2430,7 @@ void cRecordTable::init()
     }
     flags = 0;
 
-    if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != nullptr && shapeType < ENUM2SET(TS_UNKNOWN_PAD)) shapeType |= ENUM2SET(TS_CHILD);
     qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
     if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
     switch (st) {
