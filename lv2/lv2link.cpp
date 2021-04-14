@@ -60,6 +60,8 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
         r += unxlinks(__q, getId(_sPortId1), ePhsLinkType(getId(_sPhsLinkType1)), ePortShare(getId(__sPortShared)));
         // Ütköző linkek törlése a jobb oldali porthoz (2)
         r += unxlinks(__q, getId(_sPortId2), ePhsLinkType(getId(_sPhsLinkType2)), ePortShare(getId(__sPortShared)));
+        // User
+        set(_sCreateUserId, lanView::getInstance()->getUserId(EX_IGNORE));
         if (!cRecord::insert(__q, __ex)) {
             sqlRollback(__q, tn);
             reason = R_ERROR;
@@ -389,12 +391,6 @@ QString cPhsLink::show(bool t) const
     if (uid == NULL_ID) r += " ?(";
     else                r += " " + cUser().getNameById(q, uid);
     r += tm + ")";
-    if (!isNull(_sModifyTime)) {
-        QString   tm  = getName(_sModifyTime);
-        qlonglong uid = getId(_sModifyUserId);
-        if (uid == NULL_ID) r += "; ?(";
-        else                r += "; " + cUser().getNameById(q, uid);
-    }
     if (!note.isEmpty()) r += " " + parentheses(note);
     return r;
 }

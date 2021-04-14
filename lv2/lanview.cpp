@@ -179,7 +179,7 @@ void dbOpenPost(QSqlQuery& q, const QString& _tn)
         nn += _sUnderline + _tn;
     }
     if (lanView::getInstance()->pUser != nullptr) {
-        if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q)
+        EXECSQL(q, QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()));
     }
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn))
     settingIntParameter(q, "lock_timeout");

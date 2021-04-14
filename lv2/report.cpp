@@ -641,8 +641,6 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, co
 
          << QObject::tr("Létrehozva")
          << QObject::tr("Felhasználó")
-         << QObject::tr("Modosítva")
-         << QObject::tr("Felhasználó")
 
          << QObject::tr("Megjegyzés");
     table += htmlTableLine(head, "th");
@@ -720,8 +718,6 @@ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap, co
             << type2
             << toHtml(link.getName(_sCreateTime))
             << link.view(q, _sCreateUserId)
-            << toHtml(link.getName(_sModifyTime))
-            << link.view(q, _sModifyUserId)
             << toHtml(link.getNote());
         table += htmlTableLine(col, "td", false);
         delete p2;
