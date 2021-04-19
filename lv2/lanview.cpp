@@ -179,6 +179,7 @@ void dbOpenPost(QSqlQuery& q, const QString& _tn)
         nn += _sUnderline + _tn;
     }
     if (lanView::getInstance()->pUser != nullptr) {
+        // Ez mintha nem működne, vagy nem úgy, ahogy gondoltam
         EXECSQL(q, QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()));
     }
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn))

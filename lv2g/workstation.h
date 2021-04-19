@@ -197,6 +197,10 @@ private slots:
     void on_pushButtonFindMac_clicked();
     void on_pushButtonLocalhost_clicked();
     void on_pushButtonRDP_clicked();
+    void on_toolButtonDnsName_clicked();
+    void on_toolButton_2_clicked();
+    void on_toolButtonLocalName_clicked();
+    void on_toolButtonName2Place_clicked();
 };
 
 #endif // CWORKSTATION_H

@@ -381,9 +381,6 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEditName"/>
-         </item>
          <item row="3" column="0">
           <widget class="QLabel" name="labelNodeType">
            <property name="text">
@@ -451,6 +448,20 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonName2Place">
+             <property name="toolTip">
+              <string>Hely a név alapján</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/filter.ico</normaloff>:/icons/filter.ico</iconset>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item row="6" column="0">
@@ -510,6 +521,27 @@
             <string>Os. verzió :</string>
            </property>
           </widget>
+         </item>
+         <item row="2" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayoutName">
+           <item>
+            <widget class="QLineEdit" name="lineEditName"/>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonDnsName">
+             <property name="toolTip">
+              <string>DNS név lekérdezése az IP alapján</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/language.ico</normaloff>:/icons/language.ico</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -725,7 +757,7 @@
           </spacer>
          </item>
          <item row="6" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,1,1">
+          <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,1,1,0">
            <property name="topMargin">
             <number>0</number>
            </property>
@@ -771,6 +803,20 @@
              </property>
              <property name="text">
               <string>RDP terminál</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonLocalName">
+             <property name="toolTip">
+              <string>A név mező kitöltése a saját host név alapján.</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/local-offer.ico</normaloff>:/icons/local-offer.ico</iconset>
              </property>
             </widget>
            </item>
@@ -1264,7 +1310,6 @@
   <tabstop>comboBoxZone</tabstop>
   <tabstop>lineEditPlacePat</tabstop>
   <tabstop>comboBoxNode</tabstop>
-  <tabstop>lineEditName</tabstop>
   <tabstop>lineEditNodeType</tabstop>
   <tabstop>toolButtonNodeType</tabstop>
   <tabstop>comboBoxPlace</tabstop>

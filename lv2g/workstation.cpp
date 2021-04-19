@@ -14,6 +14,7 @@
 #include "cerrormessagebox.h"
 #include "findbymac.h"
 #include "input_dialog.h"
+#include <QSysInfo>
 
 #include <QNetworkInterface>
 #if defined(Q_OS_WINDOWS)
@@ -348,7 +349,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     filtTypeOn = ENUM2SET(NT_WORKSTATION);
     filtTypeOff= 0;
     nodeType   = ENUM2SET2(NT_HOST, NT_WORKSTATION);
-    excludedNodeType = ENUM2SET4(NT_PATCH, NT_HUB, NT_SNMP, NT_VIRTUAL) | ENUM2SET3(NT_SWITCH, NT_GATEWAY, NT_CLUSTER);
+    excludedNodeType = ENUM2SET2(NT_PATCH, NT_HUB) | ENUM2SET3(NT_SWITCH, NT_GATEWAY, NT_CLUSTER);
     pSetDialogFiltType = new cSetDialog(_sNodetype, true, excludedNodeType, 0, this);
     pSetDialogFiltType->set(filtTypeOn, filtTypeOff);
     pSetDialogType     = new cSetDialog(_sNodetype, false, excludedNodeType, ENUM2SET2(NT_HOST, NT_WORKSTATION), this);
@@ -1570,4 +1571,51 @@ void cWorkstation::on_pushButtonRDP_clicked()
     pIpEditWidget->set(rdpClientAddr);
     ip_go();
 #endif  // defined(Q_OS_WINDOWS)
+}
+
+void cWorkstation::on_toolButtonDnsName_clicked()
+{
+    QHostAddress a;
+    if (pip != nullptr) a = pip->address();
+    if (a.isNull()) {
+        pUi->textEditMsg->append(htmlError(tr("Nincs ismert IP cím")));
+    }
+    else {
+        QHostInfo hi;
+        QString name = a.toString();
+        hi = hi.fromName(name);
+        name = hi.hostName();
+        pUi->lineEditName->setText(name);
+    }
+}
+
+
+void cWorkstation::on_toolButtonLocalName_clicked()
+{
+    QString name = QSysInfo::machineHostName();
+    pUi->lineEditName->setText(name);
+}
+
+void cWorkstation::on_toolButtonName2Place_clicked()
+{
+    QString sRe = cSysParam::getTextSysParam(*pq, "node2place");
+    if (sRe.isEmpty()) {
+        pUi->textEditMsg->append(htmlError(tr("Nincs definiálva konverziós kifejezés a hely meghatározásra a név alapján!")));
+        return;
+    }
+    QString name = pUi->lineEditName->text();
+    QRegExp re(sRe);
+    if (re.indexIn(name) >= 0) {
+        name = re.cap(1);   // $1
+        qlonglong pid = cPlace().getIdByName(*pq, name, EX_IGNORE);
+        if (pid == NULL_ID) {
+            pUi->textEditMsg->append(htmlError(tr("A konvertált elyiség név : %1. Nincs ilyen helyiség!").arg(name)));
+            return;
+        }
+        pSelPlace->setCurrentPlace(pid);
+    }
+    else {
+        pUi->textEditMsg->append(htmlError(tr("A névből nem sikerült helyiség nevet konverálni!").arg(name)));
+        return;
+    }
 }

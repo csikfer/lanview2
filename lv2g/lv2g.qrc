@@ -105,5 +105,7 @@
         <file>icons/open-in-popup-24.png</file>
         <file>icons/system-log-out-2.ico</file>
         <file>icons/identity.ico</file>
+        <file>icons/local-offer.ico</file>
+        <file>icons/language.ico</file>
     </qresource>
 </RCC>
