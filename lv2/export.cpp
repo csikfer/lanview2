@@ -10,13 +10,15 @@ static const QString _sWHATS_THIS   = "WHATS THIS";
 static const QString _sTOOL_TIP     = "TOOL TIP";
 static const QString _sNAME         = "NAME";
 static const QString _sPARAM        = "PARAM";
-static const QString _sFEATURES     = "FEATURES ";
+static const QString _sFEATURES_    = "FEATURES ";
 static const QString _sPLACE        = "PLACE";
 static const QString _sINENTORY     = "INVENTORY NUMBER";
 static const QString _sSERIAL       = "SERIAL NUMBER";
-static const QString _sSET          = "SET ";
-static const QString _sPORT         = "PORT ";
-static const QString _sADD_PORT     = "ADD PORT ";
+static const QString _sSET_         = "SET ";
+static const QString _sPORT_        = "PORT ";
+static const QString _sADD_PORT_    = "ADD PORT ";
+static const QString _sTYPE         = "TYPE";
+static const QString _sCOMMAND      = "COMMAND";
 
 
 QStringList cExport::_exportableObjects;
@@ -206,7 +208,7 @@ QString cExport::lineText(const QString& kw, const cRecord& o, int _tix)
     return r;
 }
 
-QString cExport::lineTitles(const QString& kw, const cRecord& o, int _fr, int _to)
+QString cExport::lineTexts(const QString& kw, const cRecord& o, int _fr, int _to)
 {
     QString r;
     static const QString _sCommaNULL = ",NULL";
@@ -237,13 +239,13 @@ QString cExport::features(const cRecord& o)
         cFeatures features;
         if (!features.split(s, EX_IGNORE)) {
             r  = line(QString("// ") + tr("Invalid features:"));
-            r += line("//" + _sFEATURES + escaped(s) + _sSemicolon);
+            r += line("//" + _sFEATURES_ + escaped(s) + _sSemicolon);
             return r;
         }
         if (s.size() < 32) {
-            return line(_sFEATURES + escaped(s) + _sSemicolon); // Small, print raw string
+            return line(_sFEATURES_ + escaped(s) + _sSemicolon); // Small, print raw string
         }
-        r = lineBeginBlock(_sFEATURES);
+        r = lineBeginBlock(_sFEATURES_);
         QString b;
         QRegExp isMap("\\[\\w+\\s*=\\s*\\w+");
         QStringList keys = features.keys();
@@ -490,8 +492,8 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     if (s != n) r += " " + escaped(s);
     r += " SHAPE " + escaped(n) + str_z(o[_sTableShapeNote]);
     r  = lineBeginBlock(r);
-    r += lineTitles(_sTITLE, o, cTableShape::LTX_TABLE_TITLE, cTableShape::LTX_NOT_MEMBER_TITLE);
-    r += paramLine(q, "TYPE",               o[_sTableShapeType],    QVariant(QStringList()));
+    r += lineTexts(_sTITLE, o, cTableShape::LTX_TABLE_TITLE, cTableShape::LTX_NOT_MEMBER_TITLE);
+    r += paramLine(q, _sTYPE,               o[_sTableShapeType],    QVariant(QStringList()));
     r += features(o);
     r += paramLine(q, "AUTO REFRESH",       o[_sAutoRefresh],       QVariant(0LL));
     r += paramLine(q, "REFINE",             o[_sRefine]);
@@ -539,7 +541,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
         if (!f.getNote().isEmpty()) h += _sSp + quotedString(f.getNote());
         r += lineBeginBlock(h);
         QString b;
-        b  = lineTitles(_sTITLE, f, cTableShapeField::LTX_TABLE_TITLE, cTableShapeField::LTX_DIALOG_TITLE);
+        b  = lineTexts(_sTITLE, f, cTableShapeField::LTX_TABLE_TITLE, cTableShapeField::LTX_DIALOG_TITLE);
         b += lineText(_sTOOL_TIP,   f, cTableShapeField::LTX_TOOL_TIP);
         b += lineText(_sWHATS_THIS, f, cTableShapeField::LTX_WHATS_THIS);
         b += features(f);
@@ -652,7 +654,7 @@ QString cExport::_export(QSqlQuery &q, cMenuItem &o)
         if (p != n) r += line(_sPARAM + _sSp + quotedString(p) + _sSemicolon);
     }
     r += features(o);
-    r += lineTitles(_sTITLE, o, cMenuItem::LTX_MENU_TITLE, cMenuItem::LTX_TAB_TITLE);
+    r += lineTexts(_sTITLE, o, cMenuItem::LTX_MENU_TITLE, cMenuItem::LTX_TAB_TITLE);
     r += lineText(_sTOOL_TIP, o, cMenuItem::LTX_TOOL_TIP);
     r += lineText(_sWHATS_THIS, o, cMenuItem::LTX_WHATS_THIS);
     if (t == MT_MENU) {
@@ -686,7 +688,7 @@ QString cExport::_export(QSqlQuery &q, cEnumVal &o)
     o.fetchText(q);
     r = lineBeginBlock(r);
         QString b;
-        b  = lineTitles("VIEW", o, cEnumVal::LTX_VIEW_LONG, cEnumVal::LTX_VIEW_SHORT);
+        b  = lineTexts("VIEW", o, cEnumVal::LTX_VIEW_LONG, cEnumVal::LTX_VIEW_SHORT);
         b += paramLine(q, "ICON",             o[_sIcon]);
         b += paramLine(q, "BACKGROUND COLOR", o[_sBgColor]);
         b += paramLine(q, "FOREGROUND COLOR", o[_sFgColor]);
@@ -775,7 +777,7 @@ QString cExport::_export(QSqlQuery &q, cService& o)
         QString b;
         b  = paramLine(q, "SUPERIOR SERVICE MASK", o[_sSuperiorServiceMask]);
         b += paramLine(q, "PORT",                  o[_sPort]);
-        b += paramLine(q, "COMMAND",               o[_sCheckCmd]);
+        b += paramLine(q, _sCOMMAND,               o[_sCheckCmd]);
         b += features(o);
         b += paramLine(q, "MAX CHECK ATTEMPTS",    o[_sMaxCheckAttempts]);
         b += paramLine(q, "NORMAL CHECK INTERVAL", o[_sNormalCheckInterval]);
@@ -783,7 +785,7 @@ QString cExport::_export(QSqlQuery &q, cService& o)
         b += paramLine(q, "RETRY CHECK INTERVAL",  o[_sRetryCheckInterval]);
         b += paramLine(q, "FLAPPING INTERVAL",     o[_sFlappingInterval],   flapIval);
         b += paramLine(q, "FLAPPING MAX CHANGE",   o[_sFlappingMaxChange],  flapMax);
-        b += paramLine(q, "TYPE",                  o[_sServiceTypeId],      UNMARKED_SERVICE_TYPE_ID);
+        b += paramLine(q, _sTYPE,                  o[_sServiceTypeId],      UNMARKED_SERVICE_TYPE_ID);
         b += paramLine(q, "ON LINE GROUPS",        o[_sOnLineGroupIds],     cColStaticDescrArray::emptyVariantList);
         b += paramLine(q, "OFF LINE GROUPS",       o[_sOffLineGroupIds],    cColStaticDescrArray::emptyVariantList);
         b += paramLine(q, "TIME PERIODS",          o[_sTimePeriodId],       ALWAYS_TIMEPERIOD_ID);
@@ -1064,13 +1066,13 @@ QString cExport::_export(QSqlQuery& q, cPatch& o, bool only)
             // Shares? Main cable
             else if (sh != ES_ && port.isNull(__sSharedPortId)) shared[port.getId()] = tStringPair(six, portShare(sh)) ;
             if (!six.isEmpty()) six += _sSp;
-            s = _sADD_PORT + six + name(port) + note(port);
+            s = _sADD_PORT_ + six + name(port) + note(port);
             if (!port.isNull(_sPortTag)) s += " TAG " + str(port[_sPortTag], false);
             b += line (s + _sSemicolon);
             b += oParam(pp->params);
         }
         // Not connected list
-        if (!nc.isEmpty()) b += line(_sPORT + nc.join(_sCommaSp) + " NC;");
+        if (!nc.isEmpty()) b += line(_sPORT_ + nc.join(_sCommaSp) + " NC;");
         // Shares
         if (!shared.isEmpty()) {
             // Short ports by share type
@@ -1151,7 +1153,7 @@ QString cExport::nodeCommon(QSqlQuery& q, cNode &o)
 
 QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
 {
-    static const QString sLastPort = _sPORT + "#@";
+    static const QString sLastPort = _sPORT_ + "#@";
     if (!only) {
         qlonglong table_oid = o.fetchTableOId(q);
         if (o.tableoid() != table_oid) {
@@ -1316,7 +1318,7 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
             QString six = pp->getName(_sPortIndex);
             if (!six.isEmpty()) six += _sSp;
             // Port header
-            s = _sADD_PORT + six + escaped(pp->ifType().getName()) + name(*pp) + _sSp;
+            s = _sADD_PORT_ + six + escaped(pp->ifType().getName()) + name(*pp) + _sSp;
             if (isInterface) {
                 if (pif->addresses.isEmpty()) s += _sNULL;
                 else {
@@ -1338,7 +1340,6 @@ QString cExport::_export(QSqlQuery& q, cNode& o, bool only)
     return r;
 }
 
-/// Not supported
 QString cExport::SnmpDevices(eEx __ex, bool only)
 {
     if (only) {
@@ -1383,5 +1384,29 @@ QString cExport::_export(QSqlQuery& q, cSnmpDevice& o)
             r += lineEndBlock();
         }
     }
+    return r;
+}
+
+QString cExport::Tools(eEx __ex)
+{
+    cTool o;
+    return sympleExport(o, o.toIndex(_sToolName), __ex);
+}
+
+QString cExport::_export(QSqlQuery& q, cTool& o)
+{
+    QString r;
+    r = lineBeginBlock(head("TOOLS", o));
+        QString b;
+        b  = paramLine(q, _sTYPE,       o[_sToolType]);
+        b += paramLine(q, _sCOMMAND,    o[_sToolStmt]);
+        b += features(o);
+        b += paramLine(q, "PLATFORMS",  o[_sPlatforms]);
+        b += paramLine(q, "OBJECTS",    o[_sObjectNames]);
+        b += flag     (   "WAIT",       o[_sWait]);
+        b += paramLine(q, "ICON",       o[_sIcon]);
+        b += lineText (   _sTITLE,      o, 0);
+        b += lineText (   _sTOOL_TIP,   o, 1);
+    r  = lineEndBlock(r, b);
     return r;
 }

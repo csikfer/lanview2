@@ -4,6 +4,8 @@
 #include "srvdata.h"
 #include "guidata.h"
 #include "vardata.h"
+#include "lv2tooldata.h"
+
 
 template <typename IX> qlonglong getColDefaultInterval(const QString& tableName, IX ix)
 {
@@ -51,7 +53,8 @@ enum eExportPotential {
     X(ServiceVar,   EXPORT_ANY) \
     X(Patch,        EXPORT_ANY) \
     X(Node,         EXPORT_ANY_INH) \
-    X(SnmpDevice,   EXPORT_ANY_INH)
+    X(SnmpDevice,   EXPORT_ANY_INH) \
+    X(Tool,         EXPORT_ANY)
 
 enum eExportableObjects {
 #define X(e, f)       EO_##e,
@@ -139,7 +142,7 @@ protected:
     /// @param o Bbject
     /// @param _fr First text index
     /// @param _to Last text index
-    QString lineTitles(const QString &kw, const cRecord& o, int _fr, int _to);
+    QString lineTexts(const QString &kw, const cRecord& o, int _fr, int _to);
     QString features(const cRecord &o);
     QString paramLine(QSqlQuery &q, const QString& kw, const cRecordFieldRef& fr, const QVariant &_def = QVariant());
     QString flag(const QString& kw, const cRecordFieldRef& fr, bool inverse = false);
@@ -187,6 +190,9 @@ public:
     QString _export(QSqlQuery& q, cNode& o, bool only = true);
     QString SnmpDevices(eEx __ex, bool only = false);
     QString _export(QSqlQuery& q, cSnmpDevice& o);
+    QString Tools(eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery& q, cTool& o);
+
 private:
     template <class O, class P> QString oParam(tOwnRecords<P, O>& list);
     QString oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first = 0);

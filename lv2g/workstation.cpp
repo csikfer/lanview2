@@ -992,9 +992,11 @@ void cWorkstation::ip_go()
                 break;
             case 1:
                 msg = tr("A %1 IP alapján nem sikerült beolvasni az eszköz adatokat.").arg(ip.toString());
+                on_toolButtonIP2MAC_clicked();
                 break;
             case 0:
                 msg = tr("A %1 IP címmel nincs bejegyzett eszköz.").arg(ip.toString());
+                on_toolButtonIP2MAC_clicked();
                 break;
             default:
                 msg = tr("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());

@@ -3886,3 +3886,4 @@ cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const cMac _val, eEx
     }
     return *this;
 }
+
