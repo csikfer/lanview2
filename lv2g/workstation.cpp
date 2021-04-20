@@ -1598,16 +1598,36 @@ void cWorkstation::on_toolButtonLocalName_clicked()
 
 void cWorkstation::on_toolButtonName2Place_clicked()
 {
-    QString sRe = cSysParam::getTextSysParam(*pq, "node2place");
-    if (sRe.isEmpty()) {
+    QStringList exps = cSysParam::getTextSysParam(*pq, "node2place").split(QRegExp(",\\s?"));
+    if (exps.isEmpty() || exps.first().isEmpty()) {
         pUi->textEditMsg->append(htmlError(tr("Nincs definiálva konverziós kifejezés a hely meghatározásra a név alapján!")));
         return;
     }
     QString name = pUi->lineEditName->text();
-    QRegExp re(sRe);
+    QRegExp re(exps.first());
     if (re.indexIn(name) >= 0) {
         name = re.cap(1);   // $1
-        qlonglong pid = cPlace().getIdByName(*pq, name, EX_IGNORE);
+        enum eConv { C_NO, C_UPPER, C_LOWER, C_INSENSITIVE } c = C_NO;
+        if (exps.size() > 1) {
+            QString sc = exps.at(1);
+            if      (0 == sc.compare("upper",       Qt::CaseInsensitive)) c = C_UPPER;
+            else if (0 == sc.compare("lower",       Qt::CaseInsensitive)) c = C_LOWER;
+            else if (0 == sc.compare("insensitive", Qt::CaseInsensitive)) c = C_INSENSITIVE;
+        }
+        qlonglong pid = NULL_ID;
+        if (c == C_INSENSITIVE) {
+            const QString sql = "SELECT place_id FROM places WHERE place_name ILIKE ?";
+            if (execSql(*pq, sql, name)) pid = pq->value(0).toLongLong();
+            else name = "~" + name; // Hibaüzenetnél jelöljük, hogy nem nagybetű érzékenyen keresünk
+        }
+        else {
+            switch (c) {
+            case C_UPPER:   name = name.toUpper();  break;
+            case C_LOWER:   name = name.toLower();  break;
+            default:        break;
+            }
+            pid = cPlace().getIdByName(*pq, name, EX_IGNORE);
+        }
         if (pid == NULL_ID) {
             pUi->textEditMsg->append(htmlError(tr("A konvertált elyiség név : %1. Nincs ilyen helyiség!").arg(name)));
             return;
