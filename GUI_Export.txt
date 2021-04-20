@@ -269,12 +269,14 @@ ENUM "host_services.delegate_host_state" {
     ICON "go-jump.ico";
     TOOL TIP "false";
      "false" {
-        VIEW "false",@;
+        VIEW "Az állapotot nem örökli az eszköz","nem";
         ICON "dialog-no-2.ico";
+        BACKGROUND COLOR "#ffa8a8";
     }
      "true" {
-        VIEW "true",@;
+        VIEW "Az állapotot örökli az eszköz","igen";
         ICON "go-jump.ico";
+        BACKGROUND COLOR "#8ae234";
     }
 }
 ENUM "host_services.deleted" {
@@ -291,7 +293,7 @@ ENUM "host_services.deleted" {
     }
 }
 ENUM "host_services.disabled" {
-    VIEW "host_services.disabled",@;
+    VIEW NULL;
     ICON "disable.ico";
     TOOL TIP "false";
      "false" "A host_services.disabled boolean mező igaz értékéhez rendelt szín" {
@@ -506,15 +508,16 @@ ENUM "phslinktype" {
     VIEW "phslinktype",@;
      "Back" {
         VIEW "Hátlapi","Bk";
-        BACKGROUND COLOR "#ad7fa8";
+        BACKGROUND COLOR "#ffa8a8";
     }
      "Front" {
         VIEW "Előlapi","Fr";
-        BACKGROUND COLOR "#729fcf";
+        BACKGROUND COLOR "#d6d3ff";
         FONT ATTR "italic";
     }
      "Term" {
         VIEW "Végponti","T";
+        BACKGROUND COLOR "#8ae234";
         FONT ATTR "underline";
     }
 }
@@ -1198,7 +1201,10 @@ TABLE SHAPE "alarm_service_vars" {
 TABLE SHAPE "app_errs" {
     TITLE "Applikáció hiba napló","Applikáció hiba napló bejegyzés";
     TYPE "simple";
-    FEATURES ":bg_color=acknowledged:";
+    FEATURES  {
+        "bg_color" = "acknowledged";
+        "button.copy";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "system";
@@ -1954,14 +1960,14 @@ TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (tábláza
         FLAG "HTML";
     }
     ADD FIELD "disabled" {
-        TITLE "*Letiltva","Minden példánya letiltva";
+        TITLE "*Letiltva","A példány letiltva";
         TOOL TIP "A példány letiltása";
         FLAG "batch_edit", "bg_color", "fg_color", "HTML", "image", "notext";
     }
     ADD FIELD "delegate_host_state" {
         TITLE "*St.tov.","A host örökli az állapotot";
         TOOL TIP "Az eszköz örökli a szolgáltatás példány állapotaát";
-        FLAG "batch_edit", "HTML", "image", "notext";
+        FLAG "batch_edit", "bg_color", "HTML", "image", "notext";
     }
     ADD FIELD "noalarm_flag" {
         TITLE "*Al.tiltáa","noalarm_flag";
@@ -3073,7 +3079,10 @@ TABLE SHAPE "patchs" "Pach panelek és fali csatlakozók" {
 TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     TITLE "Fizikai linkek","Fizikai link, patch";
     TYPE "link";
-    FEATURES ":button.copy:";
+    FEATURES  {
+        "bg_color" = "phs_link_type1";
+        "button.copy";
+    }
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3139,14 +3148,6 @@ TABLE "phs_links_shape" SHAPE "phs_links" "Fizikai linkek" {
     }
     ADD FIELD "create_user_id" {
         TITLE "Létrehozó","A rekordot létrehozta";
-        FLAG "table_hide", "read_only";
-    }
-    ADD FIELD "modify_time" {
-        TITLE "Modosítva","Utolsó modosítás";
-        FLAG "table_hide", "read_only";
-    }
-    ADD FIELD "modify_user_id" {
-        TITLE "Modosította","A rekordot modosította";
         FLAG "table_hide", "read_only";
     }
     FIELD "port_name1", "port_index1", "phs_link_type1" ORD asc, no, desc;
@@ -4211,7 +4212,7 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
     RIGHT SHAPE "hostports","node_params","phs_links","log_links","lldp_links","host_services","mactab_node","node_port_vlan","port_in_mactab";
-    // RIGHT SHAPE "vlan_list_by_host";
+    // RIGHT SHAPE "vlan_list_by_host","tool_objects";
     ADD FIELD "node_id" "node_id" {
         TITLE "node_id",@;
         FLAG "table_hide", "dialog_hide", "read_only", "HTML", "raw";
@@ -4610,8 +4611,41 @@ TABLE SHAPE "timeperiods" "Időintervallumok" {
     FIELD "timeperiod_name" ORD asc, no, desc;
     FIELD ORD SEQUENCE "timeperiod_name";
 }
+TABLE SHAPE "tool_objects" {
+    TITLE "Szerszám példányok","Szerszám példány";
+    TYPE "tools";
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "operator";
+    DELETE RIGHTS "admin";
+    INSERT RIGHTS "operator";
+    ADD FIELD "tool_object_id" {
+        TITLE "tool_object_id",@;
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
+    ADD FIELD "tool_id" {
+        TITLE "tool_id",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "object_name" {
+        TITLE "object_name",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "object_id" {
+        TITLE "object_id",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "tool_object_note" {
+        TITLE "tool_object_note",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "features" {
+        TITLE "features",@;
+        FLAG "HTML";
+    }
+}
 TABLE SHAPE "tools" {
-    TITLE "tools",@,@;
+    TITLE "Szerszámok (tools)","Szerszám (tool)";
     TYPE "simple";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
@@ -4638,10 +4672,6 @@ TABLE SHAPE "tools" {
         TITLE "Érték","Parancs, URL";
         FLAG "HTML";
     }
-    ADD FIELD "object_name" {
-        TITLE "Obj.","Objektum név";
-        FLAG "HTML";
-    }
     ADD FIELD "features" {
         TITLE "Par.","EGyébb paraméterek";
         FLAG "HTML";
@@ -4658,17 +4688,26 @@ TABLE SHAPE "tools" {
         TITLE "Végr.?","Minimális jog a végrehajtáshoz";
         FLAG "HTML";
     }
-    ADD FIELD "text_id" {
-        TITLE "text_id",@;
-        FLAG "HTML";
-    }
     ADD FIELD "icon" {
         TITLE "icon",@;
         FLAG "HTML";
     }
+    ADD FIELD "object_names" {
+        TITLE "Objects","Megengedett objektum (tábla) nevek";
+        FLAG "HTML";
+    }
+    ADD FIELD "platforms" {
+        TITLE "Platformok",@;
+    }
+    ADD FIELD "title" {
+        TITLE "Cimke",@;
+    }
+    ADD FIELD "tool_tip" {
+        TITLE "Tipp","Szerszá tipp";
+    }
     FIELD "tool_name" ORD asc, no, desc;
-    FIELD "tool_type", "tool_stmt", "object_name" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "tool_name", "tool_type", "tool_stmt", "object_name";
+    FIELD "tool_type", "tool_stmt", "object_names", "platforms", "title", "tool_tip" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "object_names", "tool_name", "tool_type", "tool_stmt", "title", "platforms", "tool_tip";
 }
 TABLE SHAPE "tpows" "Időintervallumok, a hét napjaira" {
     TITLE "Rész időintervallumok","Rész időintervallum",NULL,"Tag rész időintervallumok","Nem tag rész időintervallumok";
@@ -5044,6 +5083,7 @@ SET table_shapes["place_groups"].right_shape_ids += ID TABLE SHAPE ("places");
 SET table_shapes["places_topol"].right_shape_ids += ID TABLE SHAPE ("snmpdevices");
 SET table_shapes["places_topol"].right_shape_ids += ID TABLE SHAPE ("users");
 SET table_shapes["snmpdevices"].right_shape_ids += ID TABLE SHAPE ("vlan_list_by_host");
+SET table_shapes["snmpdevices"].right_shape_ids += ID TABLE SHAPE ("tool_objects");
 SET table_shapes["timeperiods"].right_shape_ids += ID TABLE SHAPE ("tpows");
 // Act Language : Magyar; ( default : US English ; failower : Magyar)
 DELETE GUI "indalarm" MENU;
@@ -5247,11 +5287,30 @@ GUI "lv2gui" {
         SHAPE "places" {
             TITLE "Helyek, helyiségek (tábla)",@;
         }
-        SHAPE "services" {
-            TITLE "Szolgáltatások",@;
-        }
-        SHAPE "service_types" {
-            TITLE "Szolgáltatás típusok",@;
+        MENU "services_sub" {
+            TITLE "Szervízek";
+            SHAPE "services" {
+                TITLE "Szolgáltatások",@;
+            }
+            SHAPE "service_types" {
+                TITLE "Szolgáltatás típusok",@;
+            }
+            SHAPE "host_services_t" {
+                PARAM "host_services";
+                FEATURES  {
+                    "multi";
+                    "shape.superior_host_service_id.table_hide" = "true";
+                    "shape.table_shape_type" = "!simple,tree";
+                }
+                TITLE "Szolgáltatás példányok (fa)",@;
+            }
+            SHAPE "host_services" {
+                FEATURES  {
+                    "multi";
+                    "shape.host_service_id.table_hide" = "false";
+                }
+                TITLE "Szolgáltatás példányok (tábla)",@;
+            }
         }
         MENU "service_var_m" {
             TITLE "Szolgáltatás változók";
@@ -5272,22 +5331,6 @@ GUI "lv2gui" {
         SHAPE "query_parsers" {
             TITLE "Lekérdezés fordító",@;
         }
-        SHAPE "host_services_t" {
-            PARAM "host_services";
-            FEATURES  {
-                "multi";
-                "shape.superior_host_service_id.table_hide" = "true";
-                "shape.table_shape_type" = "!simple,tree";
-            }
-            TITLE "Szolgáltatás példányok (fa)",@;
-        }
-        SHAPE "host_services" {
-            FEATURES  {
-                "multi";
-                "shape.host_service_id.table_hide" = "false";
-            }
-            TITLE "Szolgáltatás példányok (tábla)",@;
-        }
         SHAPE "subnets" {
             TITLE "Alhálózatok",@;
         }
@@ -5300,9 +5343,16 @@ GUI "lv2gui" {
         SHAPE "timeperiods" {
             TITLE "Időintervallumok",@;
         }
-        SHAPE "tool_table" {
-            PARAM "tools";
-            TITLE "Eszköz objektumok",@;
+        MENU "tools_sub" {
+            TITLE "Szerszámok (tools)";
+            SHAPE "tool_table" {
+                PARAM "tools";
+                TITLE "Szerszám objektumok",@;
+            }
+            SHAPE "tool_objects_all" {
+                PARAM "tool_objects";
+                TITLE "Szerszám példányok",@;
+            }
         }
     }
     MENU "events" {
