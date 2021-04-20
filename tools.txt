@@ -1,0 +1,27 @@
+TOOLS "HTTP" {
+    TYPE "url";
+    COMMAND "http://$node2ip/";
+    OBJECTS "nodes", "snmpdevices";
+}
+TOOLS "RTSP" {
+    TYPE "command";
+    COMMAND "vlc rtsp://admin:bg1234BG@$node2ip";
+    OBJECTS "nodes", "snmpdevices";
+}
+TOOLS "telnet" {
+    TYPE "command";
+    COMMAND "gnome-terminal -e \"telnet $node2ip\"";
+    PLATFORMS "linux";
+    OBJECTS "nodes", "snmpdevices";
+}
+TOOLS "telnet_putty" {
+    TYPE "command";
+    COMMAND "putty -telnet $node2ip";
+    PLATFORMS "windows";
+    OBJECTS "nodes", "snmpdevices";
+}
+TOOLS "w_nmap" {
+    TYPE "command";
+    COMMAND "zenmap -t  $node2ip";
+    OBJECTS "nodes", "snmpdevices";
+}
