@@ -172,7 +172,7 @@ cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& s
     connect(pNullButton, SIGNAL(toggled(bool)),               this, SLOT(on_NullButton_togled(bool)));
 }
 
-void cComboLineWidget::set(const QVariant& _val)
+void cComboLineWidget::set(const QVariant& _val, Qt::MatchFlags flags)
 {
     val = _val;
     bool _isNull = !_val.isValid();
@@ -180,7 +180,7 @@ void cComboLineWidget::set(const QVariant& _val)
     pComboBox->setDisabled(_isNull);
     if (!_isNull) {
         QString s = val.toString();
-        pModel->setCurrent(s);
+        pModel->setCurrent(s, flags);
     }
 }
 
