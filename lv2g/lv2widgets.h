@@ -145,7 +145,7 @@ public:
     QToolButton * const pNullButton;
 
     void setNullIcon (const QIcon& icon) { pNullButton->setIcon(icon); }
-    void set(const QVariant& val);
+    void set(const QVariant& val, Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly|Qt::MatchCaseSensitive));
     bool isNull()  { return pNullButton->isChecked(); }
     QVariant get() { return isNull() ? QVariant() : QVariant(pComboBox->currentText()); }
     void refresh() { pModel->refresh(); }

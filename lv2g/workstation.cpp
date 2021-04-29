@@ -1546,12 +1546,14 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             iface = interfaces.first();
             addr  = ifaddrs.first();
         }
-        QString name = QHostInfo::localHostName();
+        QString name = QSysInfo::machineHostName();
         pSelNode->reset();
         pUi->lineEditName->setText(name);
         pUi->lineEditPMAC->setText(iface.hardwareAddress());
         pUi->lineEditPName->setText(iface.name());
         if (!addr.isNull()) pIpEditWidget->set(addr);
+        pEditOsName->   set(QSysInfo::productType()   , Qt::MatchFixedString);  // Case insensitíve
+        pEditOsVersion->set(QSysInfo::productVersion(), Qt::MatchFixedString);  // Case insensitíve
     }
     else {                  // registred
         if (TS_FALSE == pSelNode->setCurrentNode(pSelf->getId())) {
@@ -1560,8 +1562,6 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         }
         delete pSelf;
     }
-    pEditOsName->   set(QSysInfo::productType());
-    pEditOsVersion->set(QSysInfo::productVersion());
 }
 
 

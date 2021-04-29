@@ -1067,10 +1067,10 @@ void cRecFieldSetOfValueModel::joinWith(QComboBox *_pComboBox)
     pComboBox->setModel(this);
 }
 
-void cRecFieldSetOfValueModel::setCurrent(const QString& s)
+void cRecFieldSetOfValueModel::setCurrent(const QString& s, Qt::MatchFlags flags)
 {
     if (pComboBox == nullptr) return;
-    int ix = pComboBox->findText(s);
+    int ix = pComboBox->findText(s, flags);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
     else         pComboBox->setCurrentText(s);
 }

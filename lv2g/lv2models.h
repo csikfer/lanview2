@@ -479,7 +479,7 @@ public:
     cRecFieldSetOfValueModel(const cRecordFieldRef _cfr, const QStringList& _feature);
     void refresh();
     void joinWith(QComboBox * _pComboBox);
-    void setCurrent(const QString& s);
+    void setCurrent(const QString& s, Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly|Qt::MatchCaseSensitive));
     int indexOf(const QString& s);
 protected:
     QSqlQuery   q;
