@@ -13,6 +13,7 @@ void setAppHelp()
     lanView::appHelp += QObject::tr("-f|--fullscreen [<#scrin>] teljes képernyő\n");
     lanView::appHelp += QObject::tr("-m|--maximize              Maximális ablak.\n");
     lanView::appHelp += QObject::tr("-P|--query-paths           Query paths and exit.\n");
+    lanView::appHelp += QObject::tr("-A|--auto-login            Auto login.\n");
 }
 
 static void printLocations();
@@ -66,6 +67,9 @@ int main(int argc, char * argv[])
     }
     if (0 <= findArg(QChar('m'),QString("maximize"), arguments)) {
         lv2Gui::_screen = lv2Gui::MAXIMIZE;
+    }
+    if (0 <= findArg(QChar('A'),QString("auto-login"), arguments)) {
+        lv2Gui::_autoLogin = true;
     }
 
     lanView::sqlNeeded  = lv2Gui::_setup ? SN_NO_SQL : SN_SQL_TRY;
@@ -126,8 +130,9 @@ int main(int argc, char * argv[])
 
 bool lv2Gui::_setup = false;
 lv2Gui::eScreen lv2Gui::_screen = lv2Gui::NORMAL;
+bool lv2Gui::_autoLogin = false;
 int  lv2Gui::_nScreen = 1;
-lv2Gui::lv2Gui() : lv2g()
+lv2Gui::lv2Gui() : lv2g(lv2Gui::_autoLogin)
 {
     DBGFN();
     if (lastError == nullptr) {

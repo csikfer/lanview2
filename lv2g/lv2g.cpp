@@ -21,9 +21,7 @@ const QString lv2g::sNativeMenubar          = "nativeMenubar";
 QIcon   lv2g::iconNull;
 QIcon   lv2g::iconDefault;
 
-lv2g::lv2g() :
-    lanView()//,
-//    pDesign(0)
+lv2g::lv2g(bool __autoLogin) : lanView()
 {
     if (lastError != nullptr) return;
     try {
@@ -40,7 +38,19 @@ lv2g::lv2g() :
         if (dbIsOpen()) {
             subsDbNotif(appName);
             splashMessage(QObject::tr("Logon..."));
-            eLogOnResult lor = cLogOn::logOn(zoneNeeded ? &zoneId : nullptr, pMainWindow);
+            eLogOnResult lor = LR_INITED;
+            if (__autoLogin) {
+                QString _myDomainName, _myUserName;
+                cUser * pMyUser = getOsUser(_myDomainName, _myUserName);
+                if (pMyUser != nullptr) {
+                    lor = LR_OK;
+                    lanView::setUser(pMyUser);
+                    zoneId = ALL_PLACE_GROUP_ID;
+                }
+            }
+            if (lor != LR_OK) {
+                lor = cLogOn::logOn(zoneNeeded ? &zoneId : nullptr, pMainWindow);
+            }
             if (lor != LR_OK) {
                 if (lor == LR_INVALID) {
                     EXCEPTION(ELOGON, LR_INVALID, tr("Tul sok hibás bejelentkezési próbálkozás."));

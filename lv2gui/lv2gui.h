@@ -23,6 +23,7 @@ public:
     bool        dbIsOpen;       ///< Ha az adatbázis nyitva, akkor true, egyébként false
     static bool _setup;
     static enum eScreen { NORMAL, MAXIMIZE, FULLSCREEN } _screen;
+    static bool _autoLogin;
     static int  _nScreen;
 };
 

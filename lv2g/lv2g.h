@@ -161,7 +161,7 @@ class cMainWindow;
 class LV2GSHARED_EXPORT lv2g : public lanView {
     Q_OBJECT
 public:
-    lv2g();
+    lv2g(bool __autoLogin = false);
     ~lv2g();
     static lv2g*    getInstance(void) { return static_cast<lv2g *>(lanView::getInstance()); }
     static QMdiArea *pMdiArea();
