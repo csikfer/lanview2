@@ -159,6 +159,7 @@ private:
     bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag) csatlakoztatható
     cPhsLink    pl;     ///< A fizikai link
 #if defined(Q_OS_WINDOWS)
+    bool rdp();
     QHostAddress rdpClientAddr;
 #endif
 private slots:

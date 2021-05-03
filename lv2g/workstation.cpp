@@ -462,6 +462,22 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
 
     // RDP Windows-on, ha ez egy RDP kliens
 #if defined(Q_OS_WINDOWS)
+    if (!rdp()) {
+        pUi->pushButtonRDP->hide();
+    }
+#else   // not defined(Q_OS_WINDOWS)
+    pUi->pushButtonRDP->hide();
+#endif  // defined(Q_OS_WINDOWS)
+}
+
+cWorkstation::~cWorkstation()
+{
+    delete pq;
+}
+
+#if defined(Q_OS_WINDOWS)
+bool cWorkstation::rdp()
+{
     rdpClientAddr.clear();
     LPSTR  pBuffer = nullptr;
     DWORD  bytesReturned;
@@ -483,18 +499,9 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     if (isRDPClient && pBuffer != nullptr) {
         WTSFreeMemory(pBuffer);
     }
-    if (rdpClientAddr.isNull()) {
-        pUi->pushButtonRDP->hide();
-    }
-#else   // not defined(Q_OS_WINDOWS)
-    pUi->pushButtonRDP->hide();
+    return !rdpClientAddr.isNull();
+}
 #endif  // defined(Q_OS_WINDOWS)
-}
-
-cWorkstation::~cWorkstation()
-{
-    delete pq;
-}
 
 void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& fn, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
@@ -1568,6 +1575,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
 void cWorkstation::on_pushButtonRDP_clicked()
 {
 #if defined(Q_OS_WINDOWS)
+    rdp();
     pIpEditWidget->set(rdpClientAddr);
     ip_go();
 #endif  // defined(Q_OS_WINDOWS)

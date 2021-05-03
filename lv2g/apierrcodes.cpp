@@ -1,6 +1,6 @@
 #include "apierrcodes.h"
 
-const enum ePrivilegeLevel cErrcodesWidget::rights = PL_OPERATOR;
+const enum ePrivilegeLevel cErrcodesWidget::rights = PL_VIEWER;
 
 cErrcodesWidget::cErrcodesWidget(QMdiArea *par)
 : cIntSubObj(par)
