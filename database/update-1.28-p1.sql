@@ -441,3 +441,85 @@ BEGIN
     RETURN NEW;
 END;
 $BODY$;
+
+-- Hibajavítás 2021.05.13.
+-- A leltári szám és szériaszám egyediségének az ellenörzése hibás volt
+
+CREATE OR REPLACE FUNCTION public.node_check_before_insert() RETURNS trigger
+    LANGUAGE 'plpgsql' COST 100 VOLATILE NOT LEAKPROOF
+AS $BODY$
+DECLARE
+    n bigint;
+BEGIN
+--  RAISE INFO 'Insert NODE, new id = %', NEW.node_id;
+    SELECT COUNT(*) INTO n FROM patchs WHERE node_id = NEW.node_id;
+    IF n > 0 THEN
+        PERFORM error('IdNotUni', NEW.node_id, 'node_id', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+    END IF;
+    SELECT COUNT(*) INTO n FROM patchs WHERE node_name = NEW.node_name;
+    IF n > 0 THEN
+        PERFORM error('NameNotUni', -1, 'node_name = ' || NEW.node_name, 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+    END IF;
+    IF NEW.serial_number IS NOT NULL THEN
+        SELECT COUNT(*) INTO n FROM patchs WHERE serial_number = NEW.serial_number;
+        IF n > 0 THEN
+            PERFORM error('NameNotUni', NEW.node_id, 'serial_number = ' || NEW.serial_number, 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    IF NEW.inventory_number IS NOT NULL THEN
+        SELECT COUNT(*) INTO n FROM patchs WHERE inventory_number = NEW.inventory_number;
+        IF n > 0 THEN
+            PERFORM error('NameNotUni', NEW.node_id, 'inventory_number = ' || NEW.inventory_number, 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    CASE TG_TABLE_NAME
+        WHEN 'patchs' THEN
+            NEW.node_type = '{patch}';  -- constant field
+        WHEN 'nodes' THEN
+            IF NEW.node_type IS NULL THEN
+                NEW.node_type = '{node}';
+            END IF;
+            IF 'patch'::nodetype = ANY (NEW.node_type) THEN
+                PERFORM error('DataError', NEW.node_id, 'node_type', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+            END IF;
+        WHEN 'snmpdevices' THEN
+            IF NEW.node_type IS NULL THEN
+                NEW.node_type = '{host,snmp}';
+            END IF;
+            IF 'patch'::nodetype = ANY (NEW.node_type) THEN
+                PERFORM error('DataError', NEW.node_id, 'node_type', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+            END IF;
+        ELSE
+            PERFORM error('DataError', NEW.node_id, 'node_id', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+    END CASE;
+    RETURN NEW;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.node_check_before_update() RETURNS trigger
+    LANGUAGE 'plpgsql' COST 100 VOLATILE NOT LEAKPROOF
+AS $BODY$
+DECLARE
+    n bigint;
+BEGIN
+    IF NEW.node_name <> OLD.node_name THEN
+        SELECT COUNT(*) INTO n FROM patchs WHERE node_name = NEW.node_name;
+        IF n > 0 THEN
+            PERFORM error('NameNotUni', NEW.node_id, 'node_name = ' || NEW.node_name, 'node_check_before_update()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    IF NEW.serial_number IS NOT NULL AND COALESCE(NEW.serial_number <> OLD.serial_number, true) THEN
+        SELECT COUNT(*) INTO n FROM patchs WHERE serial_number = NEW.serial_number;
+        IF n > 0 THEN
+            PERFORM error('NameNotUni', NEW.node_id, 'serial_number = ' || NEW.serial_number, 'node_check_before_update()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    IF NEW.inventory_number IS NOT NULL AND COALESCE(NEW.inventory_number <> OLD.inventory_number, true) THEN
+        SELECT COUNT(*) INTO n FROM patchs WHERE inventory_number = NEW.inventory_number;
+        IF n > 0 THEN
+            PERFORM error('NameNotUni', NEW.node_id, 'inventory_number = ' || NEW.inventory_number, 'node_check_before_update()', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$BODY$;
