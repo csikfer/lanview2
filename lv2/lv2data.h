@@ -394,6 +394,8 @@ protected:
 /*!
 @class cTpow
 @brief Az (heti)időintervallumok napi időintervallum elemei
+
+Az időpontok mindíg a helyi időre vonatkoznak.
 */
 class LV2SHARED_EXPORT cTpow : public cRecord {
     CRECORD(cTpow);
@@ -407,9 +409,22 @@ class LV2SHARED_EXPORT cTimePeriod : public cRecord {
     CRECORD(cTimePeriod);
 public:
     bool isOnTime(QSqlQuery &q, const QDateTime& dt = QDateTime::currentDateTime());
+    /// A megadott időpontról kideríti, hogy része-e az adott időintervallumoknak.
+    /// @param q Query objektum az adatbázis művelethez
+    /// @param id A timeperiods rekord/objektum azonosítója.
+    /// @param dt A keresett időpont helyi idő szerint. Alapértelmezetten az aktuális időpont.
+    /// @return Igaz, ha az időpont az időintervallumokon bellül van, egyébként hamis.
+    /// @note Az időintervallumok mindíg helyi időre vonatkoznak. Az QTime helyi és UTC konverziója problémás, függ a dátumtól.
     static bool isOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt = QDateTime::currentDateTime());
     static bool isOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt = QDateTime::currentDateTime());
     QDateTime nextOnTime(QSqlQuery &q, const QDateTime& dt = QDateTime::currentDateTime());
+    /// Feltételezve, hogy a megadott időpont a megadott intervallumokon kívül van, megadja a legközelebbi időpontot
+    /// Az itervallumokon bellül.
+    /// @param q Query objektum az adatbázis művelethez
+    /// @param id A timeperiods rekord/objektum azonosítója.
+    /// @param dt A keresett időpont helyi idő szerint. Alapértelmezetten az aktuális időpont.
+    /// @return A legközelebbi időintervallumokon bellüli időpont, helyi idő szerint.
+    /// @note Az időintervallumok mindíg helyi időre vonatkoznak. Az QTime helyi és UTC konverziója problémás, függ a dátumtól.
     static QDateTime nextOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt = QDateTime::currentDateTime());
     static QDateTime nextOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt = QDateTime::currentDateTime());
 };

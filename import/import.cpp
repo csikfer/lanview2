@@ -152,7 +152,7 @@ void lv2import::fetchAndExec()
         }
         pImp->_toReadBack = RB_NO;
         pImp->setName(_sExecState, _sExecute);
-        pImp->set(_sStarted, QVariant(QDateTime::currentDateTime()));
+        pImp->set(_sStarted, _sNOW);
         pImp->setId(_sPid, QCoreApplication::applicationPid());
         pImp->update(*pQuery, false, pImp->mask(_sExecState, _sStarted, _sPid));
         sDebugLines.clear();
@@ -182,7 +182,7 @@ void lv2import::fetchAndExec()
     if (lastError == nullptr) {    // OK
         pImp->setName(_sExecState, _sOk);
         pImp->setName(_sResultMsg, _sOk);
-        pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
+        pImp->set(_sEnded, _sNOW);
         pImp->clear(_sAppLogId);
         pImp->update(*pQuery, false, ufmask);
     }
@@ -191,7 +191,7 @@ void lv2import::fetchAndExec()
         pImp->setName(_sExecState, _sFaile);
         pImp->setName(_sResultMsg, lastError->msg());
         pDelete(lastError);
-        pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
+        pImp->set(_sEnded, _sNOW);
         pImp->setId(_sAppLogId, eid);
         pImp->update(*pQuery, false, ufmask);
     }

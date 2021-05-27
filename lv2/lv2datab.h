@@ -466,9 +466,39 @@ CSD_INHERITOR(cColStaticDescrTime)
 
 /// @class cColStaticDescrDateTime
 /// Az ős cColStaticDescr osztályt dátum és idő (timestamp) konverziós függvényeivel egészíti ki.
-/// Mindig QDateTime típusban tárolódik kivéve a NULL, és a NOW, ez utóbbi QString.
+/// Mindig QDateTime típusban tárolódik kivéve a NULL, és a NOW, ez utóbbi a "NOW" QString.
+/// Az adatbázisból az időpont UTC-ben jön, a QDateTime-ben tárolt idő viszont localtime !!
 CSD_INHERITOR(cColStaticDescrDateTime)
 };
+
+/// A tört másodperceket eldobja
+/// Időzona: UTC -> local time
+inline QVariant _dateTimeFromSql(const QVariant& _f)
+{
+    if (_f.isValid()) {
+        QDateTime dt = _f.toDateTime();
+        if (dt.isNull()) EXCEPTION(EDATA,-1,"Invalid date-time, data is not NULL");
+        dt.setTimeSpec(Qt::UTC);
+        dt = dt.toLocalTime();
+        return dt;
+    }
+    return _f;
+}
+QVariant dateTimeFromSql(const QVariant& _f);
+/// Időzóna: Local time -> UTC
+inline QVariant  _dateTimeToSql(const QVariant& _f)
+{
+//    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
+    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    QDateTime dt = _f.toDateTime();
+    if (!dt.isNull()) {
+        dt.setTimeSpec(Qt::LocalTime);
+        dt = dt.toUTC();
+        return dt;
+    }
+    return _f;
+}
+QVariant  dateTimeToSql(const QVariant& _f);
 
 /// @class cColStaticDescrInterval
 /// Az ős cColStaticDescr osztályt idő intervallum konverziós függvényeivel egészíti ki.
@@ -476,11 +506,6 @@ CSD_INHERITOR(cColStaticDescrDateTime)
 /// Negatív tartomány nincs értelmezve, és az óra:perc:másodperc formán túl csak a napok megadása támogatott.
 CSD_INHERITOR(cColStaticDescrInterval)
 };
-
-/// Egy adatbázisból beolvasott bool értéket kovertál stringgé
-inline static const QString& boolFromSql(const QVariant& __f) {
-    return __f.isNull() ? _sNul : str2bool(__f.toString(), EX_IGNORE) ? _sTrue : _sFalse;
-}
 
 QString intervalToStr(qlonglong i);
 

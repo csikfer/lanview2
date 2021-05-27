@@ -156,6 +156,13 @@ QTableWidgetItem * cHSORow::item(int vix)
 {
     QVariant v = rec.value(vix);
     if (v.isNull()) return nullptr;
+    switch (v.userType()) {
+    case QMetaType::QDateTime: {
+        v = dateTimeFromSql(v);
+    }   break;
+    default:
+        break;
+    }
     return new QTableWidgetItem(v.toString());
 }
 
@@ -597,11 +604,11 @@ void cHSOperate::refreshTable()
         setCell(row, TC_SOFT_STATE, pRow->item(RX_SOFT_STATE, cHSORow::pNotifSwitch));
         setCell(row, TC_DELEGATE,   pRow->boolItem(RX_DELEGATE, _sHostServices, _sDelegateHostState));
         setCell(row, TC_LAST_TM,    pRow->item(RX_LAST_TOUCHED));
-        setCell(row, TC_CBOX_SELECT,   pRow->getCheckBoxSet());
+        setCell(row, TC_CBOX_SELECT,pRow->getCheckBoxSet());
         setCell(row, TC_NSUB,       pRow->item(RX_NSUB));
         setCell(row, TC_CBOX_NSUB,  pRow->getWidgetSub());
         setCell(row, TC_SUPERIOR,   pRow->item(RX_SUPERIOR_NAME));
-        setCell(row, TC_SEND_CMD,    pRow->getButtonCmd());
+        setCell(row, TC_SEND_CMD,   pRow->getButtonCmd());
         row++;
     }
     bool noSup = actState()->nsup == 0;

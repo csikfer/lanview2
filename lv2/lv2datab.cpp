@@ -1717,25 +1717,34 @@ cColStaticDescr::eValueCheck  cColStaticDescrDateTime::check(const QVariant& _f,
     if (_f.isNull() || isNumNull(_f)) r = checkIfNull();
     else {
         int t = _f.userType();
+        static const QString sNowF = _sNOW + "()";
         if      (t == QMetaType::QDateTime)  r = VC_OK;
+        else if (t == QMetaType::QString && _f.toString().compare(sNowF, Qt::CaseInsensitive) == 0) r = VC_OK;
         else if (_f.canConvert<QDateTime>()) r = VC_CONVERT;
         else if (variantIsNum(_f))           r = VC_CONVERT;
     }
     return ifExcep(r, acceptable, _f);
 }
 
-/// Timezone kezelés nincs, a tört másodperceket eldobja
+QVariant dateTimeFromSql(const QVariant& _f) { return _dateTimeFromSql(_f); }
+
 QVariant  cColStaticDescrDateTime::fromSql(const QVariant& _f) const
 {
 //    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    return _f;
+    return _dateTimeFromSql(_f);
 }
+
+QVariant  dateTimeToSql(const QVariant& _f)
+{
+    return _dateTimeToSql(_f);
+}
+
 QVariant  cColStaticDescrDateTime::toSql(const QVariant& _f) const
 {
-//    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
-    return _f;
+    //    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
+    return _dateTimeToSql(_f);
 }
+
 QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
