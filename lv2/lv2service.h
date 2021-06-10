@@ -19,46 +19,43 @@ enum eTmStat {
 
 /// Az ellenörző eljárás típusa
 enum eInspectorType {
-    IT_CUSTOM               = 0,        ///< Egyedi
+    IT_CUSTOM               = 0x00000000L,  ///< Egyedi
 
-    IT_TIMING_CUSTOM        = 0x0000,   ///< Egy szál, saját időzítés (alapértelmezés)
-    IT_TIMING_TIMED         = 0x0001,   ///< Időzített, a fő szálban
-    IT_TIMING_THREAD        = 0x0002,   ///< Saját szálként
-    IT_TIMING_TIMEDTHREAD   = 0x0003,   ///< Időzített saját szálként
-    IT_TIMING_PASSIVE       = 0x0004,   ///< Inaktív eleme a lekérdezés fának.
-    IT_TIMING_POLLING       = 0x0008,   ///< Időzítés nélkül egyszer fut/szekvenciális
-    IT_TIMING_MASK          = 0x000F,   ///< Maszk: ütemezés
+    IT_TIMING_CUSTOM        = 0x00000000L,  ///< Egy szál, saját időzítés (alapértelmezés)
+    IT_TIMING_TIMED         = 0x00000001L,  ///< Időzített, a fő szálban
+    IT_TIMING_THREAD        = 0x00000002L,  ///< Saját szálként
+    IT_TIMING_TIMEDTHREAD   = 0x00000003L,  ///< Időzített saját szálként
+    IT_TIMING_PASSIVE       = 0x00000004L,  ///< Inaktív eleme a lekérdezés fának.
+    IT_TIMING_POLLING       = 0x00000008L,  ///< Időzítés nélkül egyszer fut/szekvenciális
+    IT_TIMING_MASK          = 0x0000000FL,  ///< Maszk: ütemezés
+    IT_NO_PROCESS           = 0x00000000L,  ///< Nem végrehajtható program hívása
+    IT_PROCESS_RESPAWN      = 0x00000010L,  ///< A program (daemon) újrahívása, ha kilépett
+    IT_PROCESS_CONTINUE     = 0x00000020L,  ///< A program (daemon) csak akkor lép ki, ha hiba van, vagy leállítoják
+    IT_PROCESS_POLLING      = 0x00000030L,  ///< A programot start() indítja, lefut és kilép
+    IT_PROCESS_MASK_NOTIME  = 0x00000030L,  ///< Maszk: Időzítés nélküli indítás
+    IT_PROCESS_TIMED        = 0x00000040L,  ///< A programot időzítve kell indítani
+    IT_PROCESS_ASYNC        = 0x00000080L,  ///< Aszinkron program hívás
+    IT_PROCESS_MASK         = 0x000000F0L,  ///< Maszk: önálló processz indítása
+    IT_METHOD_CUSTOM        = 0x00000000L,  ///< Egyedi
+    IT_METHOD_QPARSE        = 0x00000100L,  ///< Query parser
+    IT_METHOD_PARSER        = 0x00000200L,  ///< Parser szülő objektum a query parser(ek)hez
+    IT_METHOD_SAVE_TEXT     = 0x00000400L,  ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
+    IT_METHOD_PARSE_TEXT    = 0x00000800L,  ///< Program kimenetének értelmezése
+    IT_METHOD_CARRIED       = 0x00010000L,  ///<
+    IT_METHOD_INSPECTOR     = 0x00020000L,  ///< Egy LanView2 service (cInspector) APP
+ // IT_METHOD_MUNIN         = 0x00040000L,  ///< Munin plugin
+    IT_METHOD_PARSE_CMD     = 0X00080000L,  ///< exec by interpreter
+    IT_METHODE_TEXT_DATA    = 0x00F00000L,
+    IT_METHOD_NAGIOS        = 0x00100000L,  ///< NAGIOS plugin
+    IT_METHOD_JSON          = 0x00300000L,  ///< JSON output
 
-    IT_NO_PROCESS           = 0x0000,   ///< Nem végrehajtható program hívása
-    IT_PROCESS_RESPAWN      = 0x0010,   ///< A program (daemon) újrahívása, ha kilépett
-    IT_PROCESS_CONTINUE     = 0x0020,   ///< A program (daemon) csak akkor lép ki, ha hiba van, vagy leállítoják
-    IT_PROCESS_POLLING      = 0x0030,   ///< A programot start() indítja, lefut és kilép
-    IT_PROCESS_MASK_NOTIME  = 0x0030,   ///< Maszk: Időzítés nélküli indítás
-    IT_PROCESS_TIMED        = 0x0040,   ///< A programot időzítve kell indítani
-    IT_PROCESS_ASYNC        = 0x0080,   ///< Aszinkron program hívás
-    IT_PROCESS_MASK         = 0x00F0,   ///< Maszk: önálló processz indítása
+    IT_METHOD_MASK          = 0x00FFF000L,
+    IT_METHOD_MASK_PROCESS  = 0x00F2D000L,
 
-    IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
-    IT_METHOD_QPARSE        = 0x0100,   ///< Query parser
-    IT_METHOD_PARSER        = 0x0200,   ///< Parser szülő objektum a query parser(ek)hez
-    IT_METHOD_SAVE_TEXT     = 0x0400,   ///< Program kimenetének a mentése node_params, vagy port_params rekordba.
-    IT_METHOD_PARSE_TEXT    = 0x0800,   ///< Program kimenetének értelmezése
+    IT_SUPERIOR             = 0x01000000L,   ///< Alárendelt funkciók vannak
+    IT_MAIN                 = 0x02000000L,   ///< Fő folyamat, nincs parent
 
-    IT_METHOD_CARRIED       = 0x1000,   ///<
-    IT_METHOD_INSPECTOR     = 0x2000,   ///< Egy LanView2 service (cInspector) APP
- // IT_METHOD_MUNIN         = 0x4000,   ///< Munin plugin
-
-    IT_METHODE_TEXT_DATA  = 0x0F0000L,
-    IT_METHOD_NAGIOS      = 0x010000L,   ///< NAGIOS plugin
-    IT_METHOD_JSON        = 0x030000L,   ///< JSON output
-
-    IT_METHOD_MASK        = 0x0FFF00L,
-    IT_METHOD_MASK_PROCESS= 0x0F2D00L,
-
-    IT_SUPERIOR           = 0x100000L,   ///< Alárendelt funkciók vannak
-    IT_MAIN               = 0x200000L,   ///< Fő folyamat, nincs parent
-
-    IT_AUTO_TRANSACTION  = 0x8000000L   ///< Automatikus tranzakció kezelés
+    IT_AUTO_TRANSACTION     = 0x08000000L   ///< Automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota
@@ -215,6 +212,8 @@ public:
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual int run(QSqlQuery& q, QString &runMsg);
+    ///
+    int parse_cmd(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
     virtual int parse(int _ec, QIODevice &_text, QString &runMsg);

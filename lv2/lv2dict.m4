@@ -175,6 +175,7 @@ STRDEF(Move, "move")
 STRDEF(Restore, "restore")
 STRDEF(Modify, "modify")
 STRDEF(Update, "update")
+STRDEF(InProgress, "in_progress");
 STRDEF(Unchange, "unchange")
 STRDEF(Found, "found")
 STRDEF(Notfound, "notfound")

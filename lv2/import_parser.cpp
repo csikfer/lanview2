@@ -73,14 +73,12 @@ cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     , iniCmd(_inicmd)
 {
     DBGOBJ();
-    pSrc = nullptr;
+    srcType = ST_QUEUE;
     if (pInstance != nullptr) EXCEPTION(EPROGFAIL);
     pInstance = this;
     setObjectName(_sImportParser);
 }
 
-#define IPT_SHORT_WAIT  5000
-#define IPT_LONG_WAIT  15000
 cImportParseThread::~cImportParseThread()
 {
     DBGOBJ();
@@ -91,6 +89,10 @@ cImportParseThread::~cImportParseThread()
 void cImportParseThread::reset()
 {
     DBGFN();
+    if (isRunning()) {
+        PDEB(WARNING) << "Import parser thread is runing." << endl;
+        stopParser();
+    }
     queue.clear();
     if (0 != dataReady.available()) {
         if (!dataReady.tryAcquire(dataReady.available())) EXCEPTION(ESEM);
@@ -117,18 +119,20 @@ void	cImportParseThread::run()
     }
     PDEB(INFO) << QObject::tr("Start parser (thread) ...") << endl;
     initImportParser();
-    if (pSrc == nullptr) {     // Fordítás a queue-n keresztül
+    switch (srcType) {
+    case ST_SRING:
+        importFileNm = "[stream]";
+        pImportInputStream = new QTextStream(&src);
+        PDEB(VERBOSE) << QObject::tr("Stop parser (thread/stream) ...") << endl;
+        importParse(IPS_THREAD);
+        break;
+    case ST_QUEUE:
         importFileNm = "[queue]";
         importParse(IPS_THREAD);
         PDEB(VERBOSE) << QObject::tr("Stop parser (thread/queue) ...") << endl;
         if (parseReady.available() == 0) parseReady.release();
         else EXCEPTION(EPROGFAIL);
-    }
-    else {
-        importFileNm = "[stream]";
-        pImportInputStream = new QTextStream(pSrc);
-        PDEB(VERBOSE) << QObject::tr("Stop parser (thread/stream) ...") << endl;
-        importParse(IPS_THREAD);
+        break;
     }
     downImportParser();
     PDEB(INFO) << QObject::tr("End parser ((thread)).") << endl;
@@ -140,7 +144,7 @@ void	cImportParseThread::run()
 /// @param src A lefordítandó szöveg.
 /// @param pe Hiba objektum pointer referencia. Hiba esetén a keletkezett hiba objektum pointere kerül bele.
 /// @return a hiba típusa. Ha nem REASON_OK, akkor a hiba objektum pointerét a pe-ben kapjuk vissza, amit a hívónak kell felszabadítani.
-int cImportParseThread::push(const QString& src, cError *& pe)
+int cImportParseThread::push(const QString& src, cError *& pe, int _to)
 {
     _DBGFN() << src << endl;
     int r;
@@ -151,7 +155,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
         dataReady.release();                // pufferben adat
         queueAccess.release();              // puffer hazzáférés szabad
         PDEB(VVERBOSE) << "parseReady.tryAcquire() ..." << endl;
-        bool b = parseReady.tryAcquire(1, IPT_SHORT_WAIT);
+        bool b = parseReady.tryAcquire(1, _to);
         PDEB(VVERBOSE) << "parseReady.tryAcquire() return " << b << endl;
         if (b) {
             pe = importGetLastError();
@@ -201,18 +205,33 @@ QString cImportParseThread::pop()
     return r;
 }
 
-int cImportParseThread::startParser(cError *&pe, QString *_pSrc)
+int cImportParseThread::startParser(cError *&pe, const QString *pSrc)
 {
-    PDEB(INFO) << "Start parser ..._pSrc = " << (_pSrc == nullptr ? _sNULL : quotedString(*_pSrc)) << endl;
-    pSrc = _pSrc;
-    int r;
-    start();
-    if (iniCmd.isEmpty()) {
-        pe = nullptr;
-        r = REASON_OK;
+    PDEB(INFO) << "Start parser ... pSrc = " << (pSrc == nullptr ? _sNULL : quotedString(*pSrc)) << endl;
+    pe = nullptr;
+    if (isRunning()) {
+        pe = NEWCERROR(ECONTEXT);
+        return R_ERROR;
+    }
+    if (pSrc == nullptr) {
+        srcType = ST_QUEUE;
     }
     else {
-        r = push(iniCmd, pe);
+        srcType = ST_SRING;
+        if (pSrc->isEmpty()) src = *pSrc;
+        else                 src = iniCmd + "\n" + *pSrc;
+    }
+    int r = R_IN_PROGRESS;
+    start();
+    switch (srcType) {
+    case ST_QUEUE:
+        if (!iniCmd.isEmpty()) {
+            int rr = push(iniCmd, pe);
+            if (rr != REASON_OK) r = rr;
+        }
+        break;
+    case ST_SRING:
+        break;
     }
     DBGFNL();
     return r;
@@ -236,6 +255,7 @@ void cImportParseThread::stopParser()
         queueAccess.release();
         dataReady.release();
         if (!wait(IPT_LONG_WAIT)) {
+            setTerminationEnabled();
             DERR() << "Import parser thread, nothing exited." << endl;
             terminate();
             if (!wait(IPT_LONG_WAIT)) {

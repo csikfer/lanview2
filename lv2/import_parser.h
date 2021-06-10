@@ -38,16 +38,32 @@ EXT_ void breakImportParser();
 /// @param _except Ha az opcionális paraméter értéke true, akkor törli a flag-et, és dob egy kizárást EBREAK hibaküddal.
 EXT_ bool isBreakImportParser(bool __ex = false);
 
+#define IPT_SHORT_WAIT  5000
+#define IPT_LONG_WAIT  15000
+
+/// @class cImportParseThread
+/// Egy külön szálban indított ill. indítható input  parser objektum.
+/// A parser csak egy példányban és csak egy szálon futatható.
+/// Az objektum is csak egy példányban hozható létre.
 class LV2SHARED_EXPORT cImportParseThread : public QThread {
     friend QString yygetline();
 public:
+    /// Létrehozza az input parser szálat. Nem indítja a parsert.
+    /// @param _inicmd Egy végrehajtandó opcionális parancs a parser indításakor.
+    /// Az itt megadott parancsot minden (újra)indításkor végrehajtja.
+    /// @param par Parent
     cImportParseThread(const QString &_inicmd = QString(), QObject *par = nullptr);
     ~cImportParseThread();
-
-    int push(const QString& srv, cError *&pe);
-    int startParser(cError *&pe, QString *_pSrc = nullptr);
+    /// A parser szál indítása. Végrehajtja a konstruktorban megadott parancsot.
+    /// Ezután a _pSrc értékétől függően, vagy végrehalytja az ott megadot parancsot, és leáll,
+    /// vagy várakozik a további parancsokra a push() metóduson keresztül.
+    /// @param pe Hiba pointer. Hiba esetén itt adja vissza a hiba leírását.
+    /// @param _pSrc Opcionális, ha megadjuk, akkor a parser végrehajtja, és leáll. Ha nem, akkor vár a parancsokra.
+    /// @return redmény: R_IN_PROGRESS vagy a hiba kód (eReason).
+    int startParser(cError *&pe, const QString *pSrc = nullptr);
     int reStartParser(cError *&pe);
     void stopParser();
+    int push(const QString& srv, cError *&pe, int _to = IPT_SHORT_WAIT);
 protected:
     virtual void	run();
     QString pop();
@@ -58,7 +74,9 @@ private:
     QSemaphore      parseReady;     ///< Szemafor: A parser szabad (és nincs adat)
     QQueue<QString> queue;
     QString         iniCmd;
-    QString        *pSrc;
+    QString         src;
+    enum eSrcType   { ST_SRING, ST_QUEUE } srcType;
+
     static cImportParseThread *pInstance;
 public:
     static cImportParseThread& instance()       { if (pInstance == nullptr) EXCEPTION(EPROGFAIL); return *pInstance; }
