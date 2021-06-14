@@ -44,7 +44,7 @@ enum eInspectorType {
     IT_METHOD_CARRIED       = 0x00010000L,  ///<
     IT_METHOD_INSPECTOR     = 0x00020000L,  ///< Egy LanView2 service (cInspector) APP
  // IT_METHOD_MUNIN         = 0x00040000L,  ///< Munin plugin
-    IT_METHOD_PARSE_CMD     = 0X00080000L,  ///< exec by interpreter
+    IT_METHOD_PARSE_CMD     = 0x00080000L,  ///< exec by interpreter
     IT_METHODE_TEXT_DATA    = 0x00F00000L,
     IT_METHOD_NAGIOS        = 0x00100000L,  ///< NAGIOS plugin
     IT_METHOD_JSON          = 0x00300000L,  ///< JSON output

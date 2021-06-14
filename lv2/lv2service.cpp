@@ -803,7 +803,7 @@ void cInspector::postInit(QSqlQuery& q)
     case ALWAYS_TIMEPERIOD_ID:  // The "always", no exclusion, not read.
         break;
     case NEVER_TIMEPERIOD_ID:   // Never run
-        EXCEPTION(NOTODO);
+        EXCEPTION(NOTODO, 0, tr("It never runs."));
 //      break;
     default:
         timeperiod.setById(q, tpid);
@@ -1221,6 +1221,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
+        checkCmd.clear();   // nem hívunk programot, már abban vagyunk.
         switch (r) {
         case IT_METHOD_INSPECTOR:
         case IT_METHOD_CARRIED:
