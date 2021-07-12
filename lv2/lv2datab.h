@@ -113,6 +113,7 @@ enum eReasons {
     R_RESTORE,      ///< Helyreálitás/helyreállítva
     R_MODIFY,       ///< Az elem módosítva (összetetteb módosítás)
     R_UPDATE,       ///< Az elem módosítva
+    R_IN_PROGRESS,  ///< Folyamatban
     R_UNCHANGE,     ///< Nincs változás
     R_FOUND,        ///< Találat, az elem már létezik...
     R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.

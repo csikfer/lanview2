@@ -376,14 +376,20 @@ public:
     /// @param _cmd Parancs
     /// @param _seq Sorrend vagy prioritás
     static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, qlonglong _ra, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
-    void setInspector(cInspector *pInsp);       ///< Inspector mod, közvetlen végrehajtás
-    /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
+    /// Az inspektor objektum beállítása a query parser végrehajtásához, ha az egy inspektor objektum alapján kerül végrehajtásra.
+    void setInspector(cInspector *pInsp);
+    /// Csak fordítás, az interpretert nem hívja. Interaktív módú végrehajtásnál. A kimeneti szöveget a getText() adja vissza.
     /// A konténer a behelyettesítésekhez egy változó listát ad, mivel ilyenkor pInspector értéke NULL, így az azon keresztüli behelyettesítések nem elérhetőek.
     void setMaps(tStringMap *pVM);
+    /// A prep típusú rekord végrehajtása (inspector mód) vagy pufferelése (interaktív mód), ha van
     int prep(cError *&pe);
-    int parse(QString src, cError *&pe);
+    /// A szövek keresése a mintákban, és találat esetén a hozzá tartozó parancs végrehajtása (inspector mód) vagy pufferelése (interaktív mód).
+    int captureAndParse(QString src, cError *&pe);
+    /// A post típusú rekord végrehajtása (inspector mód) vagy pufferelése (interaktív mód), ha van
     int post(cError *&pe);
-    /// Beolvassa az összes megadott _sid -hez tartozó rekordot, és létrehozza, és kitölti a pListCmd és pListRExp kontlnereket,
+    /// Egy közvetlen parancs végrehajtása a parser thread-en. A query_parser rekordoktol független funkció.
+    cError *execParserCmd(QString _cmd, cInspector *pInspector);
+    /// Beolvassa az összes megadott _sid -hez tartozó rekordot, és létrehozza, és kitölti a pListCmd és pListRExp konténereket,
     /// valamit a pPrepCmd és pPostCmd stringeket.
     /// Ha a thread értéke true, akkor beolvassa a prep és post parancsokat is.
     /// @param force Akkor is beolvassa a rekordokat, ha a konténerek léteznek, és _sid nem változott.
@@ -405,7 +411,7 @@ protected:
     cInspector          *pInspector;        ///< Tulajdonos pointere, ha egy szálban fut az interpreter
     cImportParseThread  *pParserThread;     ///< Az interpreter szál pointere, vagy NULL
     tStringMap          *pVarMap;           ///< Változó lista, ha az interpreter nem egy szálban fut, és csak közvetlen végrehajtás van.
-    QString             *pCommands;             ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerólnek, egyébként null.
+    QString             *pCommands;         ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerülnek, egyébként null.
 };
 
 #endif // SRVDATA

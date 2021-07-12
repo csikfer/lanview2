@@ -803,7 +803,7 @@ void cInspector::postInit(QSqlQuery& q)
     case ALWAYS_TIMEPERIOD_ID:  // The "always", no exclusion, not read.
         break;
     case NEVER_TIMEPERIOD_ID:   // Never run
-        EXCEPTION(NOTODO);
+        EXCEPTION(NOTODO, 0, tr("It never runs."));
 //      break;
     default:
         timeperiod.setById(q, tpid);
@@ -817,8 +817,8 @@ void cInspector::postInit(QSqlQuery& q)
     if (interval <=  0 && isTimedType()) {   // Időzített időzítés nélkül ?!
         EXCEPTION(EDATA, interval, QObject::tr("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
-    // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrehozása
-    if (!checkCmd.isEmpty()) {
+    // Ha meg van adva az ellenörző parancs, és nem a parseré, akkor a QProcess objektum létrehozása
+    if (0 == (inspectorType & IT_METHOD_PARSE_CMD) && !checkCmd.isEmpty()) {
         pProcess = newProcess();
     }
     // Saját szál ?
@@ -1167,6 +1167,14 @@ void cInspector::getTimeouts(ulong defaultStart, ulong defaultStop)
 
 }
 
+enum eCmdType {
+    CT_NO_COMMAND,
+    CT_SHELL,
+    CT_PARSER,
+    CT_CALLED
+
+};
+
 int cInspector::getInspectorType(QSqlQuery& q)
 {
     _DBGFN() << name() << " " << endl;
@@ -1187,7 +1195,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
     }
     int r = getCheckCmd(q);
     switch (r) {
-    case  0:        // Nincs program hívás
+    case CT_NO_COMMAND:        // Nincs program hívás
         PDEB(VERBOSE) << tr("Nincs program hívás") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
@@ -1195,7 +1203,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
             EXCEPTION(EDATA, inspectorType, tr("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
         }
         break;
-    case  1:        // Calling a program, we are the caller
+    case CT_SHELL:        // Calling a program, we are the caller
         PDEB(VERBOSE) << tr("A '%1' program hívása").arg(checkCmd + " " + checkCmdArgs.join(" ")) << endl;
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
@@ -1208,21 +1216,33 @@ int cInspector::getInspectorType(QSqlQuery& q)
                 tr("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
         break;
-    case -1:        // We have Check Cmd, but we are in the program to be called
+    case CT_CALLED:        // We have Check Cmd, but we are in the program to be called
         PDEB(VERBOSE) << tr("We're in the called program.") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
+        checkCmd.clear();   // nem hívunk programot, már abban vagyunk.
         switch (r) {
         case IT_METHOD_INSPECTOR:
         case IT_METHOD_CARRIED:
             break;
         default:
             EXCEPTION(EDATA, inspectorType,
-                tr("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
+                tr("Nem értelmezhető inspectorType érték (#2) :\n") + typeErrMsg(q));
         }
         break;
-    default: EXCEPTION(EPROGFAIL, r, name());
+    case CT_PARSER:
+        PDEB(VERBOSE) << tr("A '%1' végrehajytása a parserrel").arg(checkCmd) << endl;
+        r = getInspectorProcess(feature(_sProcess));
+        if (r & (IT_PROCESS_MASK_NOTIME)) {
+            EXCEPTION(EDATA, inspectorType,
+                tr("Nem értelmezhető inspectorType érték (#3) :\n") + typeErrMsg(q));
+        }
+        inspectorType |= r | IT_METHOD_PARSE_CMD;
+        break;
+    default:
+        EXCEPTION(EPROGFAIL, r, name());
+        break;
     }
 
     if (isThreadType()) {   // stopTimeout
@@ -1264,7 +1284,9 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     QString val;
     static const int ixCheckCmd = cService::_descr_cService().toIndex(_sCheckCmd);
 
+    checkCmd.clear();
     checkCmdArgs.clear();
+    // Get check_cmd
     if (pProtoService != nullptr) checkCmd = pProtoService->getName(ixCheckCmd);
     if (pPrimeService != nullptr) {
         val = pPrimeService->getName(ixCheckCmd);
@@ -1286,13 +1308,17 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     checkCmd = checkCmd.trimmed();
     if (checkCmd.isEmpty()) {
         PDEB(VERBOSE) << "Check command is empty ..." << endl;
-        return 0;
+        return CT_NO_COMMAND;
     }
     if (inspectorType & IT_MAIN) {      // Rész fa gyökere, már egy hívott szolgáltatás
-        checkCmd.clear();
-        checkCmdArgs.clear();
         PDEB(VERBOSE) << name() << " : root of the part tree." << endl;
-        return -1;
+        return CT_CALLED;
+    }
+
+    // exec by pareser? First character eq. '&' ?
+    eCmdType r = CT_SHELL;
+    if (checkCmd.startsWith(QChar('&'))) {
+        r = CT_PARSER;
     }
 
     QString checkCmdSubs;   // Command substituted
@@ -1304,6 +1330,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
                 r = p->getParValue(q, key);
                 return r;
             });
+    if (r == CT_PARSER) return r;
     // Split args
     checkCmdArgs = splitArgs(checkCmdSubs);
     QString ccBase = QFileInfo(checkCmdArgs.first()).baseName();
@@ -1369,7 +1396,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
                  (checkCmdArgs.isEmpty() ? " ARGS()"
                                          : " ARGS(\"" + checkCmdArgs.join("\", \"") + "\")")
               << endl;
-    return 1;
+    return r;
 }
 
 void cInspector::timerEvent(QTimerEvent *)
@@ -1545,12 +1572,39 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
 
         return parse(ec, *pProcess, runMsg);
     }
+    else if (inspectorType & IT_METHOD_PARSE_CMD) {
+        return parse_cmd(q, runMsg);
+    }
     else {
         runMsg = tr("Incomplete cInspector (%1) object. No activity specified.").arg(name());
         PDEB(VVERBOSE) << runMsg << endl;
         internalStat = isTimedType() ? IS_SUSPENDED : IS_STOPPED;
     }
     return RS_UNREACHABLE;
+}
+
+int cInspector::parse_cmd(QSqlQuery& q, QString &runMsg)
+{
+    if (pQparser == nullptr) {
+        for (cInspector *pPar = pParent; pPar != nullptr; pPar = pPar->pParent) {
+            pQparser = pPar->pQparser;
+            if (pQparser != nullptr) break;     // Megtaláltuk
+        }
+        if (pQparser == nullptr) {
+            QString msg = tr(
+                        "A '%1' parancs nem hajtható végre.\n"
+                        "A %2 szolgáltatás példány kontexusa hibás\n"
+                        "Nem qparse típus, és nincs qparse típusú szülő sem!"
+                             ).arg(checkCmd, name());
+            EXCEPTION(EFOUND,0,msg);
+        }
+        cError *pe = pQparser->execParserCmd(checkCmd, this);
+        // ...
+        if (pe == nullptr) return RS_ON;
+        else  return RS_UNREACHABLE;
+        // ...
+    }
+
 }
 
 int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
@@ -1839,7 +1893,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
         if (t.isEmpty()) continue;      // Empty line
         if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Comment line
         cError *pe = nullptr;
-        int r = pQparser->parse(t, pe);
+        int r = pQparser->captureAndParse(t, pe);
         // Match?
         if (r == R_NOTFOUND) {
             PDEB(VVERBOSE) << "DROP : " << quotedString(t) << endl;

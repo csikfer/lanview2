@@ -1220,7 +1220,7 @@ int cQueryParser::prep(cError *& pe)
     return REASON_OK;
 }
 
-int cQueryParser::parse(QString src,  cError *&pe)
+int cQueryParser::captureAndParse(QString src,  cError *&pe)
 {
     pe = nullptr;
     // Sanity check
@@ -1271,6 +1271,19 @@ int cQueryParser::post(cError *& pe)
         pDelete(pParserThread);
     }
     return r;
+}
+
+cError * cQueryParser::execParserCmd(QString _cmd, cInspector *pInspector)
+{
+    if (pParserThread == nullptr) EXCEPTION(EPROGFAIL);
+    cError *pe = nullptr;
+    int to = pInspector->stopTimeOut;
+    if (to <= 0) to = IPT_SHORT_WAIT;
+    // ... IO!
+    pParserThread->push(_cmd, pe, to);
+    // ...
+
+    return pe;
 }
 
 cQueryParser *cQueryParser::newChild(cInspector * _isp)

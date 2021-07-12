@@ -49,6 +49,7 @@ int reasons(const QString& _r, eEx __ex)
     if (0 == _r.compare(_sRestore,  Qt::CaseInsensitive)) return R_RESTORE;
     if (0 == _r.compare(_sModify,   Qt::CaseInsensitive)) return R_MODIFY;
     if (0 == _r.compare(_sUpdate,   Qt::CaseInsensitive)) return R_UPDATE;
+    if (0 == _r.compare(_sInProgress,Qt::CaseInsensitive)) return R_IN_PROGRESS;
     if (0 == _r.compare(_sUnchange, Qt::CaseInsensitive)) return R_UNCHANGE;
     if (0 == _r.compare(_sFound,    Qt::CaseInsensitive)) return R_FOUND;
     if (0 == _r.compare(_sNotfound, Qt::CaseInsensitive)) return R_NOTFOUND;
@@ -75,6 +76,7 @@ const QString& reasons(int _r, eEx __ex)
     case R_RESTORE:     return _sRestore;
     case R_MODIFY:      return _sModify;
     case R_UPDATE:      return _sUpdate;
+    case R_IN_PROGRESS: return _sInProgress;
     case R_UNCHANGE:    return _sUnchange;
     case R_FOUND:       return _sFound;
     case R_NOTFOUND:    return _sNotfound;

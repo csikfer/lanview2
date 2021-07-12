@@ -562,3 +562,7 @@ WITH ns AS (
     GROUP BY inventory_number)
 SELECT * FROM ns WHERE n > 1;
 */
+-- 2021.06.10. Modify reasons
+
+ALTER TYPE reasons ADD VALUE IF NOT EXISTS 'in_progress' AFTER 'update';
+

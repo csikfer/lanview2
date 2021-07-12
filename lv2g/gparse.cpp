@@ -302,7 +302,7 @@ void cParseWidget::parseQPClicked()
         qp.prep(pe);
         if (pe == nullptr) {
             foreach (QString line, text.split('\n')) {
-                qp.parse(line.trimmed(), pe);
+                qp.captureAndParse(line.trimmed(), pe);
                 if (pe != nullptr) break;
             }
             if (pe == nullptr) {
