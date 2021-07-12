@@ -749,8 +749,7 @@ void cHSOperate::on_pushButtonFetch_clicked()
     }
 
     // Filter by zone
-    QString zone = pUi->comboBoxZone->currentText();
-    if (zone != _sAll) {
+    if (pUi->checkBoxZone->isChecked() && pUi->comboBoxZone->currentText() != _sAll) {
         int       ci  = pUi->comboBoxZone->currentIndex();
         qlonglong gid = pZoneModel->atId(ci);
         where << " is_place_in_zone(place_id, ?::bigint)";
