@@ -484,7 +484,7 @@ inline QVariant _dateTimeFromSql(const QVariant& _f)
     }
     return _f;
 }
-QVariant dateTimeFromSql(const QVariant& _f);
+EXT_ QVariant dateTimeFromSql(const QVariant& _f);
 /// Időzóna: Local time -> UTC
 inline QVariant  _dateTimeToSql(const QVariant& _f)
 {
@@ -498,7 +498,7 @@ inline QVariant  _dateTimeToSql(const QVariant& _f)
     }
     return _f;
 }
-QVariant  dateTimeToSql(const QVariant& _f);
+EXT_ QVariant  dateTimeToSql(const QVariant& _f);
 
 /// @class cColStaticDescrInterval
 /// Az ős cColStaticDescr osztályt idő intervallum konverziós függvényeivel egészíti ki.
