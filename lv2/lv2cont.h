@@ -387,10 +387,12 @@ public:
     }
     /// Az összes elem ID mezőjének a törlése
     void clearId() {
-        typename QList<T *>::const_iterator    i;
-        int ix = QList<T *>::first()->idIndex();
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
-            (*i)->clear(ix);
+        if (!QList<T *>::isEmpty()) {
+            typename QList<T *>::const_iterator    i;
+            int ix = QList<T *>::first()->idIndex();
+            for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+                (*i)->clear(ix);
+            }
         }
     }
     /// Egy mező értékének a beállítása az összes elemnél a megadott értékre

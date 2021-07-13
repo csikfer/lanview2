@@ -2090,6 +2090,14 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         pButtonEdit = pUiPlace->toolButtonPlaceEdit;
         pButtonAdd  = pUiPlace->toolButtonPlaceAdd;
         pButtonRefresh= pUiPlace->toolButtonRefresh;
+        // nodeName -> place
+        bool n2p = !cSysParam::getTextSysParam(*pq, _sNode2Place).isEmpty() && _tf.isFeature(_sNode2Place);
+        if (n2p) {
+            connect(pUiPlace->toolButtonNode2Place, SIGNAL(clicked()), this, SLOT(node2place()));
+        }
+        else {
+            pUiPlace->toolButtonNode2Place->hide();
+        }
     }
     else if (_filter == F_RPLACE) {
         pUiRPlace = new Ui_fKeyPlaceEd;
@@ -2625,6 +2633,21 @@ void cFKeyWidget::refresh()
     pComboBox->setCurrentIndex(ix);
 }
 
+void cFKeyWidget::node2place()
+{
+    if (_pParentDialog == nullptr) {
+        if (pParentBatchEdit != nullptr) {
+            pParentBatchEdit->done(100);
+        }
+    }
+    else {
+        QString nodeName =_pParentDialog->_pRecord->getName();
+        cPlace place;
+        place.nodeName2place(*pq, nodeName);
+        qlonglong pid = place.getId();
+        if (pid != NULL_ID) pSelectPlace->setCurrentPlace(pid);
+    }
+}
 
 /* **************************************** cDateWidget ****************************************  */
 

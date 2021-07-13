@@ -507,8 +507,17 @@ public:
     /// Ha nincs hozzárendelt category típusú plce_groups rekord, akkor üres stringgel tér vissza.
     /// Ha több is van, akkor az egyik nevével, amit elöszőr visszaad az adatbázis.
     QString placeCategoryName();
+    /// Egy hálózati elem nevéből konvertálja a gelyiség nevet, feltételezve, hogy az tartalmazza a helyiség nevét.
+    /// A konverziót szabályozza a "node2place" rendszerváltozó:
+    /// Ha ez nem létezik, akkor nincs konverzió. Ha létezik, akkor az egy egy tömb, aminek az első eleme
+    /// a "upper", "lower", "insensitive", "sensitive" vagy üres string. A további elemek a
+    /// a konverziót végző reguláris kifelyezések, amik a megadás sorrendjében lesznek illesztve a kiindulási névre.
+    /// Ha nincs konverzió, akkor az egyébként üres objektum NOTE mezőbjébe írja a hiba üzenete.
+    /// Ha van találat, akkor a talált place objektummal tér vissza.
+    cPlace& nodeName2place(QSqlQuery& q, const QString& _nodeName);
 };
 
+EXT_ const QString _sNode2Place;
 
 enum ePlaceGroupType {
     PG_GROUP,       ///< Grouping Places
@@ -539,6 +548,7 @@ typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
 
 #define NONE_PLACE_GROUP_ID 0LL
 #define ALL_PLACE_GROUP_ID  1LL
+
 
 /* ******************************  ****************************** */
 

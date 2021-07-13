@@ -100,6 +100,17 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonName2Place">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/filter.ico</normaloff>:/icons/filter.ico</iconset>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item row="4" column="0">

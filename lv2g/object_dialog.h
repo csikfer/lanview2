@@ -120,6 +120,9 @@ private slots:
     void on_pushButtonShDel_clicked();
     void on_pushButtonShNC_clicked();
     void on_buttonBox_clicked(QAbstractButton *button);
+    void on_toolButtonName2Place_clicked();
+private:
+    void setButtons(eTristate _f = TS_NULL);
 };
 
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);

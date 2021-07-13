@@ -2230,9 +2230,9 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     if (mil.isEmpty()) return true;                                         // nincs kijelölve rekord
 
     QDialog *pDialog = new QDialog(pWidget());
-    Ui_FieldEditDialog *pEd = new Ui_FieldEditDialog;
+    Ui_FieldEditDialog *pEd = new Ui_FieldEditDialog;   // Csak az OK és Cancel gombok.
     pEd->setupUi(pDialog);
-    cRecordAny rec(&recDescr());
+    cRecordAny rec(&recDescr());    // Objektum típus
     QBitArray setMask = _mask(rec.cols(), dataFieldIndexList.first());
     // Addicionális együtt kezelendő mezők
     QString ff = tsf.feature("batch_edit_fields");
@@ -2252,6 +2252,12 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         cRecordFieldRef rfr = rec[dataFieldIndexList[i]];
         const cTableShapeField& sf = *pTableShape->shapeFields[shapeFieldIndexList[i]];
         cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, nullptr);
+        if (feb->wType() == FEW_FKEY) {     // Feature : name2place ?
+            cFKeyWidget *fkw = dynamic_cast<cFKeyWidget *>(feb);
+            if (fkw->pUiPlace != nullptr) {
+                fkw->pParentBatchEdit = pDialog;
+            }
+        }
         febList << feb;
         pEd->verticalLayout->insertWidget(i * 2, feb);
         QLabel *pLabel = new QLabel(sf.getText(cTableShapeField::LTX_DIALOG_TITLE));
@@ -2260,7 +2266,8 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     // Ha modosítottuk a táblát, majd volt rollback
     bool    spoiling = false;
     static const QString tn = "batchEdit";
-    while (pDialog->exec() == QDialog::Accepted) {
+    int r = pDialog->exec();
+    while (r == QDialog::Accepted) {
         sqlBegin(*pq, tn);
         cError  *pe = nullptr;
         bool first = true;
@@ -2303,6 +2310,38 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         sqlCommit(*pq, tn);
         spoiling = false;
         break;
+    }
+    if (r == 100 && dataFieldIndexList.size() == 1) {     // A node2place tool button-nal léptünk ki!!!!
+        sqlBegin(*pq, tn);
+        cError  *pe = nullptr;
+        int fix = dataFieldIndexList.first();
+        foreach (QModelIndex mi, mil) {
+            selectRow(mi);
+            cRecord *ar = actRecord();
+            cPlace place;
+            try {
+                QString name = ar->getName();
+                place.nodeName2place(*pq, name);
+                if (!place.isNullId()) {
+                    ar->setId(fix, place.getId());
+                    ar->update(*pq, false, setMask);
+                }
+            } CATCHS(pe);
+            if (pe != nullptr) {
+                break;
+            }
+        }
+        if (pe != nullptr) {
+            sqlRollback(*pq, tn);
+            cErrorMessageBox::messageBox(pe, pDialog);
+            pDelete(pe);
+            spoiling = true;
+        }
+        else {
+            sqlCommit(*pq, tn);
+            spoiling = false;
+        }
+
     }
     delete pDialog;
     // modosítottunk, frissíteni kell

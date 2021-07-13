@@ -677,6 +677,7 @@ class cSelectNode;
 /// @class cFKeyWidget
 /// Egy távoli kulcs mező megjelenítése, és szerkesztése
 class LV2GSHARED_EXPORT cFKeyWidget : public cFieldEditBase {
+    friend class cRecordsViewBase;
     Q_OBJECT
 public:
     /// Konstruktor Nincs readOnly mód
@@ -704,6 +705,7 @@ protected:
     QAbstractButton    *pButtonAdd;     ///< Új hivatkozott objektum
     QAbstractButton    *pButtonRefresh; ///< Objektum lista frissítése
     QComboBox          *pComboBox;      ///< Objektum lista comboBox
+    QDialog            *pParentBatchEdit;   // Ha batch editből történik a hívás, akkor egy pointer a dialógusra.
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
@@ -734,6 +736,7 @@ protected slots:
     void setPlace(qlonglong _pid);
     void setNode(qlonglong _nid);
     void refresh();
+    void node2place();
 };
 
 

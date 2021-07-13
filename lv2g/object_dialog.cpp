@@ -504,9 +504,7 @@ QList<int>  cPatchDialog::selectedRows() const
 /* SLOTS */
 void cPatchDialog::on_lineEditName_textChanged(const QString& name)
 {
-    bool f = name.isEmpty() || pUi->tableWidgetPorts->rowCount() == 0 || !shOk || !pNamesOk || !pIxOk;
-    pUi->buttonBox->button(QDialogButtonBox::Ok)  ->setDisabled(f);
-    pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(f);
+    setButtons(bool2ts(!name.isEmpty()));
 }
 
 void cPatchDialog::on_pushButtonPort1_clicked()
@@ -522,6 +520,8 @@ void cPatchDialog::on_pushButtonPort1_clicked()
     bool f = pUi->lineEditName->text().isEmpty();
     pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(f);
     UNLOCKSLOTS();
+    pIxOk = pNamesOk = shOk = true;
+    setButtons();
 }
 
 void cPatchDialog::on_pushButtonPort2_clicked()
@@ -535,6 +535,8 @@ void cPatchDialog::on_pushButtonPort2_clicked()
     pItem = new QTableWidgetItem("2");
     pUi->tableWidgetPorts->setItem(1, CPP_INDEX, pItem);
     UNLOCKSLOTS();
+    pIxOk = pNamesOk = shOk = true;
+    setButtons();
 }
 
 void cPatchDialog::on_pushButtonPort2Shared_clicked()
@@ -571,7 +573,7 @@ void cPatchDialog::on_pushButtonAddPorts_clicked()
     }
     UNLOCKSLOTS();
     updatePNameIxOk();
-    on_lineEditName_textChanged(pUi->lineEditName->text());
+    setButtons();
 }
 
 void cPatchDialog::on_pushButtonDelPort_clicked()
@@ -719,6 +721,35 @@ void cPatchDialog::on_buttonBox_clicked(QAbstractButton *button)
     }
 }
 
+void cPatchDialog::on_toolButtonName2Place_clicked()
+{
+    cPlace place;
+    place.nodeName2place(*pq, pUi->lineEditName->text());
+    qlonglong pid = place.getId();
+    if (pid == NULL_ID) {
+        cMsgBox::error(place.getNote());
+    }
+    else {
+        pSelectPlace->setCurrentPlace(pid);
+    }
+}
+
+void cPatchDialog::setButtons(eTristate _f)
+{
+    bool f;
+    switch (_f) {
+    case TS_NULL:
+        f = !pUi->lineEditName->text().isEmpty();
+        break;
+    case TS_TRUE:   f = true;   break;
+    case TS_FALSE:  f = false;  break;
+    }
+
+
+    f = f && pUi->tableWidgetPorts->rowCount() > 0 && shOk && pNamesOk && pIxOk;
+    pUi->buttonBox->button(QDialogButtonBox::Ok)  ->setEnabled(f);
+    pUi->buttonBox->button(QDialogButtonBox::Save)->setEnabled(f);
+}
 
 cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {

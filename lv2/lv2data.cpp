@@ -566,6 +566,59 @@ QString cPlace::placeCategoryName()
     return execSql(q, sql, getId()) ? q.value(0).toString() : _sNul;
 }
 
+const QString _sNode2Place = "node2place";
+
+cPlace& cPlace::nodeName2place(QSqlQuery& q, const QString& _nodeName)
+{
+    clear();
+    QStringList exps = cSysParam::getTextSysParam(q, _sNode2Place).split(QRegExp(",\\s?"));
+    if (exps.isEmpty() || exps.first().isEmpty()) {
+        setNote(tr("Nincs definiálva konverziós kifejezés a hely meghatározásra a név alapján!"));
+        return *this;
+    }
+    QString sc = exps.first();
+    enum eConv { C_SENSITIVE, C_UPPER, C_LOWER, C_INSENSITIVE } c;
+    if      (0 == sc.compare("sensitive",   Qt::CaseInsensitive)) c = C_SENSITIVE;
+    else if (0 == sc.compare("upper",       Qt::CaseInsensitive)) c = C_UPPER;
+    else if (0 == sc.compare("lower",       Qt::CaseInsensitive)) c = C_LOWER;
+    else if (0 == sc.compare("insensitive", Qt::CaseInsensitive)) c = C_INSENSITIVE;
+    else {
+        setNote(tr("Helytelen name2place rendszer paraméter : %1").arg(exps.join(_sCommaSp)));
+        return *this;
+    }
+    exps.pop_front();
+    QString emsg;
+    foreach (QString exp, exps) {
+        QRegExp re(exp);
+        if (re.indexIn(_nodeName) >= 0) {
+            QString name = re.cap(1);   // $1
+            if (c == C_INSENSITIVE) {
+                const QString sql = "SELECT * FROM places WHERE place_name ILIKE ?";
+                if (execSql(q, sql, name)) set(q);
+                else name.prepend(QChar('~'));
+            }
+            else {
+                switch (c) {
+                case C_UPPER:   name = name.toUpper();  break;
+                case C_LOWER:   name = name.toLower();  break;
+                default:        break;
+                }
+                fetchByName(q, name);
+            }
+            if (isNullId()) {
+                msgAppend(&emsg, tr("A konvertált helyiség név : %1. Nincs ilyen helyiség!").arg(name));
+            }
+        }
+        break;
+    }
+    if (isNullId()) {
+        msgAppend(&emsg, tr("A konverziós kifelyezés nem illeszkedik a névre : %1.").arg(_nodeName));
+        setNote(emsg);
+    }
+    return *this;
+}
+
+
 /* ------------------------------ place_froups ------------------------------ */
 
 const QString& placeGroupType(int e, eEx __ex)
