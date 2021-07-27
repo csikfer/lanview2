@@ -114,6 +114,7 @@ int fieldFlag(const QString& n, eEx __ex)
     if (0 == n.compare(_sReadOnly,  Qt::CaseInsensitive)) return FF_READ_ONLY;
     if (0 == n.compare(_sPasswd,    Qt::CaseInsensitive)) return FF_PASSWD;
     if (0 == n.compare(_sHuge,      Qt::CaseInsensitive)) return FF_HUGE;
+    if (0 == n.compare(_sHtmlText,  Qt::CaseInsensitive)) return FF_HTML_TEXT;
     if (0 == n.compare(_sBatchEdit, Qt::CaseInsensitive)) return FF_BATCH_EDIT;
     if (0 == n.compare(_sBgColor,   Qt::CaseInsensitive)) return FF_BG_COLOR;
     if (0 == n.compare(_sFgColor,   Qt::CaseInsensitive)) return FF_FG_COLOR;
@@ -135,6 +136,7 @@ const QString& fieldFlag(int e, eEx __ex)
     case FF_READ_ONLY:  return _sReadOnly;
     case FF_PASSWD:     return _sPasswd;
     case FF_HUGE:       return _sHuge;
+    case FF_HTML_TEXT:  return _sHtmlText;
     case FF_BATCH_EDIT: return _sBatchEdit;
     case FF_BG_COLOR:   return _sBgColor;
     case FF_FG_COLOR:   return _sFgColor;

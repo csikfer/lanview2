@@ -2266,8 +2266,8 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     // Ha modosítottuk a táblát, majd volt rollback
     bool    spoiling = false;
     static const QString tn = "batchEdit";
-    int r = pDialog->exec();
-    while (r == QDialog::Accepted) {
+    int r;
+    while ((r = pDialog->exec()) == QDialog::Accepted) {
         sqlBegin(*pq, tn);
         cError  *pe = nullptr;
         bool first = true;
@@ -2311,7 +2311,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         spoiling = false;
         break;
     }
-    if (r == 100 && dataFieldIndexList.size() == 1) {     // A node2place tool button-nal léptünk ki!!!!
+    if (r == FKEY_BATCHEDIT && dataFieldIndexList.size() == 1) {     // A node2place tool button-nal léptünk ki!!!!
         sqlBegin(*pq, tn);
         cError  *pe = nullptr;
         int fix = dataFieldIndexList.first();

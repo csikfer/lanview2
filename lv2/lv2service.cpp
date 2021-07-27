@@ -1318,6 +1318,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     // exec by pareser? First character eq. '&' ?
     eCmdType r = CT_SHELL;
     if (checkCmd.startsWith(QChar('&'))) {
+        checkCmd.remove(0,1);   // Remove '&' marker
         r = CT_PARSER;
     }
 
@@ -1330,7 +1331,10 @@ int cInspector::getCheckCmd(QSqlQuery& q)
                 r = p->getParValue(q, key);
                 return r;
             });
-    if (r == CT_PARSER) return r;
+    if (r == CT_PARSER) {
+        checkCmd = checkCmdSubs;
+        return r;
+    }
     // Split args
     checkCmdArgs = splitArgs(checkCmdSubs);
     QString ccBase = QFileInfo(checkCmdArgs.first()).baseName();
@@ -1585,26 +1589,35 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
 
 int cInspector::parse_cmd(QSqlQuery& q, QString &runMsg)
 {
+    (void)q;
     if (pQparser == nullptr) {
         for (cInspector *pPar = pParent; pPar != nullptr; pPar = pPar->pParent) {
             pQparser = pPar->pQparser;
             if (pQparser != nullptr) break;     // Megtaláltuk
         }
-        if (pQparser == nullptr) {
-            QString msg = tr(
-                        "A '%1' parancs nem hajtható végre.\n"
-                        "A %2 szolgáltatás példány kontexusa hibás\n"
-                        "Nem qparse típus, és nincs qparse típusú szülő sem!"
-                             ).arg(checkCmd, name());
-            EXCEPTION(EFOUND,0,msg);
-        }
-        cError *pe = pQparser->execParserCmd(checkCmd, this);
-        // ...
-        if (pe == nullptr) return RS_ON;
-        else  return RS_UNREACHABLE;
-        // ...
     }
-
+    if (pQparser == nullptr) {
+        runMsg = tr(
+                    "A '%1' parancs nem hajtható végre.\n"
+                    "A %2 szolgáltatás példány kontexusa hibás\n"
+                    "Nem qparse típus, és nincs qparse típusú szülő sem!"
+                         ).arg(checkCmd, name());
+        return RS_UNREACHABLE;
+    }
+    cError *pe = pQparser->execParserCmd(checkCmd, this);
+    runMsg = pQparser->exportText();
+    if (pe == nullptr) {
+        return RS_ON;
+    }
+    else {
+        msgAppend(&runMsg, tr("********* DEBUG *********"));
+        foreach (QString s, pQparser->debugLines()) {
+            msgAppend(&runMsg, s);
+        }
+        msgAppend(&runMsg, tr("********* ERROR *********"));
+        msgAppend(&runMsg, pe->msg());
+        return RS_UNREACHABLE;
+    }
 }
 
 int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)

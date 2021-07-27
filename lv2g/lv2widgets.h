@@ -259,6 +259,7 @@ enum eFieldWidgetType {
     FEW_ENUM_RADIO,     ///< cEnumRadioWidget
     FEW_LINE,           ///< cFieldLineWidget
     FEW_LINES,          ///< cFieldLineWidget/long text
+    FEW_HTML_LINES,     ///< cFieldLineWidget/long html text
     FEW_COMBO_BOX,      ///< cFieldLineWidget/combo box
     FEW_SPIN_BOX,       ///< cFieldSpinBoxWidget
     FEW_ARRAY,          ///< cArrayWidget
@@ -276,6 +277,7 @@ enum eFieldWidgetType {
     FEW_FONT_ATTR,      ///< cFontAttrWidget
     FEW_LTEXT,          ///< cLTextWidget
     FEW_LTEXT_LONG,     ///< cLTextWidget/long
+    FEW_LTEXT_HTML,     ///< cLTextWidget/html
     FEW_FEATURES,       ///< cFeatureWidget
     FEW_PARAM_VALUE     ///< cParamValueWidget
 };
@@ -536,6 +538,7 @@ protected:
     cFieldLineWidget(const cColStaticDescr& _cd, QWidget * par);
     QLineEdit      *pLineEdit;          ///< One line edit
     QPlainTextEdit *pPlainTextEdit;     ///< Multi line edit (huge flag/features)
+    QTextEdit      *pTextEdit;          ///< Multi line HTML edit (html_text flag/features)
     QComboBox      *pComboBox;          ///< ComboBox (setOfValues features)
     QAbstractItemModel *pModel;
     enum eModelType { NO_MODEL, SETOF_MODEL, ICON_MODEL }   modeltype;
@@ -674,6 +677,8 @@ class Ui_fKeyPortEd;
 class cSelectPlace;
 class cSelectNode;
 
+#define FKEY_BATCHEDIT  100
+
 /// @class cFKeyWidget
 /// Egy távoli kulcs mező megjelenítése, és szerkesztése
 class LV2GSHARED_EXPORT cFKeyWidget : public cFieldEditBase {
@@ -686,7 +691,7 @@ public:
     cFKeyWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par);
     ~cFKeyWidget();
     virtual int set(const QVariant& v);
-    virtual QString getName();
+    virtual QString getName() const;
 protected:
     bool setWidget();
     void setButtons();
@@ -995,8 +1000,9 @@ public:
     ~cLTextWidget();
     virtual int set(const QVariant& v);
 protected:
-    QLineEdit *pLineEdit;
+    QLineEdit      *pLineEdit;
     QPlainTextEdit *pPlainTextEdit;
+    QTextEdit      *pTextEdit;
     int textIndex;
 private slots:
     void _setFromEdit();

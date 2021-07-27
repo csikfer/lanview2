@@ -417,6 +417,21 @@ SERVICE "linux_mem-snmp" {
     TYPE "link";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "LLDP_scan" {
+    SUPERIOR SERVICE MASK "parser";
+    COMMAND "&SCAN LLDP \"$node\";";
+    FEATURES  {
+        "control" = "tick";
+        "stop_timeout" = "00:10:00";
+        "timing" = "timed";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 43200;
+    RETRY CHECK INTERVAL 1800;
+    FLAPPING INTERVAL 86400;
+    FLAPPING MAX CHANGE 3;
+    TYPE "querying";
+}
 SERVICE "local" "local service" {
     SUPERIOR SERVICE MASK "~.";
     FLAPPING INTERVAL 1800;
@@ -1075,6 +1090,13 @@ SERVICE VAR TYPE "runtime" "Egy lkérdezést futásának az ideje" {
     PLAUSIBILITY "no";
     CRITICAL "big" "00:00:30";
     WARNING "big" "00:00:10";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "runtime_long" "Egy lassú lekérdezést futásának az ideje" {
+    TYPE "interval" "GAUGE";
+    PLAUSIBILITY "big" "00:00:01";
+    CRITICAL INVERSE "litle" "00:10:00";
+    WARNING "big" "00:08:00";
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "runtime_slow" "Egy lassú lekérdezést futásának az ideje" {

@@ -547,10 +547,9 @@ public:
     ///  a metódust a szálban kell hívni.
     /// @return A létrehozott példány pointere.
     static cExportQueue *init(bool fromInterpret);
+    static void drop(bool fromInterpret);
 signals:
     void ready();
-private slots:
-    void destroy_mq(QObject *p);
 };
 
 enum eErrorType {

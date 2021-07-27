@@ -447,8 +447,12 @@ ulong getTimeout(cFeatures& __f, const QString& _key, ulong _def)
     sto = __f.value(_key);
     if (sto.isEmpty()) sto = __f.value(_sTimeout);
     if (!sto.isEmpty()) {
-        to = sto.toULong(&ok);
+        to = sto.toULong(&ok);  // Integer [mSec]
         if (ok) r = to;
+        else {                  // Interval string (ISO or SQL)
+            qlonglong _to = parseTimeInterval(sto, &ok);
+            if (ok && _to > 0) r = ulong(_to);
+        }
     }
     return r;
 }

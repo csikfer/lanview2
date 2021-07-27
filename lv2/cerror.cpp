@@ -81,6 +81,7 @@ QMap<int, QString>  cError::mErrorStringMap;
 cError::cError()
     : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
+    , pThread(QThread::currentThread()), pErrorNested(nullptr)
 {
     mSrcLine = mErrorSubCode = mErrorCode = -1;
     mErrorSysCode = errno;
@@ -94,7 +95,7 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
            qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
-    , mDataMsg(), mDataName()
+    , mDataMsg(), mDataName(), pThread(QThread::currentThread()), pErrorNested(nullptr)
 {
     if (mDropAll) {
 //      delete this;
@@ -118,7 +119,7 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
            qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(_mFuncName), mSrcName(_mSrcName), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
-    , mDataMsg(), mDataName()
+    , mDataMsg(), mDataName(), pThread(QThread::currentThread()), pErrorNested(nullptr)
 {
     if (mDropAll) {
 //      delete this;
@@ -138,6 +139,7 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
 
 cError::~cError()
 {
+    pDelete(pErrorNested);
     int i = errorList.removeAll(this);
     if (i != 1) {
         DERR() << "Invalid error object ..." << endl;
@@ -200,29 +202,11 @@ void cError::exception()
 
 QString cError::errorMsg(int __ErrorCode)
 {
-    QMap<int, QString>::const_iterator i = mErrorStringMap.find(__ErrorCode);
+    QMap<int, QString>::iterator i = mErrorStringMap.find(__ErrorCode);
     if (i != mErrorStringMap.end()) {
         return *i;
     }
     return (QObject::tr("Ismeretlen hiba kód"));
-}
-
-cError& cError::nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName)
-{
-    mErrorSubMsg    = msg();
-    mFuncName       = _mFuncName;
-    mSrcName        = _mSrcName;
-    mSrcLine        = _mSrcLine;
-    mErrorSubCode   = mErrorCode;          ///< Error sub code
-    mErrorCode      = eError::ENESTED;
-    pThread         = QThread::currentThread();
-    if (pThread == QCoreApplication::instance()->thread()) {
-        mThreadName = _sMainThread;
-    }
-    else {
-        mThreadName = pThread->objectName();
-    }
-    return *this;
 }
 
 QString cError::msg() const
@@ -263,6 +247,13 @@ QString cError::msg() const
     }
     if (!slBackTrace.isEmpty()) {
         r += QString("\n\nBackTrace:\n") +  slBackTrace.join("\n");
+    }
+    if (!mDebugLines.isEmpty()) {
+        r += QString("\n\nDebug lines :\n") +  mDebugLines;
+    }
+    if (pErrorNested != nullptr) {
+        r += "\n\n" + QString('-', 10) + "\n";
+        r += pErrorNested->msg();
     }
     return r;
 }

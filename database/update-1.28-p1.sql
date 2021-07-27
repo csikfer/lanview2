@@ -292,7 +292,6 @@ A hívás feltételezi, hogy az irányba eső port egy patch port.
 ';
 
 -- A triggerből is eltávolitandó a törölt mező (debug infók kikommentezve)
--- A triggerből is eltávolitandó a törölt mező (debug infók kikommentezve)
 CREATE OR REPLACE FUNCTION public.post_insert_phs_links()
     RETURNS trigger LANGUAGE 'plpgsql' AS $BODY$
 DECLARE
@@ -444,7 +443,6 @@ $BODY$;
 
 -- Hibajavítás 2021.05.13.
 -- A leltári szám és szériaszám egyediségének az ellenörzése hibás volt
-
 CREATE OR REPLACE FUNCTION node_check_before_insert() RETURNS trigger
     LANGUAGE 'plpgsql' COST 100 VOLATILE NOT LEAKPROOF
 AS $BODY$

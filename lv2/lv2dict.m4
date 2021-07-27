@@ -909,6 +909,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
   STRDEF(ReadOnly, "read_only")
   dnl passwd
   STRDEF(Huge, "huge")
+  STRDEF(HtmlText, "html_text")
   STRDEF(BatchEdit, "batch_edit")
   STRDEF(Font, "font")
   STRDEF(HTML, "HTML")

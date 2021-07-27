@@ -365,6 +365,7 @@ const QString& regexpAttr(int e, eEx __ex = EX_ERROR);
 int regexpAttr(const QString& s, eEx __ex = EX_ERROR);
 
 class LV2SHARED_EXPORT cQueryParser : public cRecord {
+    Q_OBJECT
     CRECORD(cQueryParser);
 public:
     /// Egy rekord beszúrása
@@ -388,7 +389,7 @@ public:
     /// A post típusú rekord végrehajtása (inspector mód) vagy pufferelése (interaktív mód), ha van
     int post(cError *&pe);
     /// Egy közvetlen parancs végrehajtása a parser thread-en. A query_parser rekordoktol független funkció.
-    cError *execParserCmd(QString _cmd, cInspector *pInspector);
+    cError *execParserCmd(const QString &_cmd, cInspector *pInspector);
     /// Beolvassa az összes megadott _sid -hez tartozó rekordot, és létrehozza, és kitölti a pListCmd és pListRExp konténereket,
     /// valamit a pPrepCmd és pPostCmd stringeket.
     /// Ha a thread értéke true, akkor beolvassa a prep és post parancsokat is.
@@ -399,6 +400,8 @@ public:
     /// Közvetett végrehajtás esetén pText nem lehet NULL, és pParserThread -nek az értéke NULL.
     QString getCommands() { CHKNULL(pCommands); return *pCommands; }
     cQueryParser *newChild(cInspector * _isp);
+    const QStringList& debugLines() const { return _debugLines; }
+    const QString&     exportText() const { return _exportText; }
 protected:
     QString getParValue(const QString& name, const QStringList &args);
     QString substitutions(const QString& _cmd, const QStringList& args);
@@ -412,6 +415,10 @@ protected:
     cImportParseThread  *pParserThread;     ///< Az interpreter szál pointere, vagy NULL
     tStringMap          *pVarMap;           ///< Változó lista, ha az interpreter nem egy szálban fut, és csak közvetlen végrehajtás van.
     QString             *pCommands;         ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerülnek, egyébként null.
+    QStringList         _debugLines;
+    QString             _exportText;
+protected slots:
+    void debugLineReady();
 };
 
 #endif // SRVDATA

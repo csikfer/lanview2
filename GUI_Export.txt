@@ -1905,7 +1905,7 @@ TABLE SHAPE "host_service_logs" "A szervíz példányok log rekordjai" {
     }
     ADD FIELD "event_note" "event_note" {
         TITLE "event_note",@;
-        FLAG "read_only", "huge", "HTML";
+        FLAG "read_only", "huge", "html_text", "HTML";
     }
     ADD FIELD "superior_alarm_id" "superior_alarm_id" {
         TITLE "superior_alarm_id",@;
@@ -2005,7 +2005,7 @@ TABLE SHAPE "host_services" "A hostokhoz rendelt szervíz példányok (tábláza
     }
     ADD FIELD "state_msg" {
         TITLE "Üzen.","Állapot üzenet";
-        FLAG "huge", "batch_edit";
+        FLAG "huge", "html_text", "batch_edit";
     }
     ADD FIELD "prime_service_id" {
         TITLE "Mód","Módszer azonosító";
@@ -2912,7 +2912,7 @@ TABLE SHAPE "nodes" "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     }
     ADD FIELD "place_id" {
         TITLE "Hely","Az eszköz helye";
-        FEATURES ":filter=places:";
+        FEATURES ":filter=places:node2place:";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "serial_number" {
@@ -4233,7 +4233,7 @@ TABLE SHAPE "snmpdevices" "Hálózati elemek" {
     }
     ADD FIELD "place_id" {
         TITLE "Hely","Az eszköz helye";
-        FEATURES ":filter=places:";
+        FEATURES ":filter=places:node2place:";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "place_id" AS "place_category" {

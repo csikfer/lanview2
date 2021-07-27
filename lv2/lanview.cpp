@@ -1199,24 +1199,30 @@ cExportQueue *cExportQueue::init(bool fromInterpret)
             delete it.value();
             it.value() = p = new cExportQueue;
         }
-        connect(th, SIGNAL(destroyed(QObject*)), p, SLOT(destroy_mq(QObject*)));
     }
     staticMutex.unlock();
     return p;
 }
 
-void cExportQueue::destroy_mq(QObject *p)
+void cExportQueue::drop(bool fromInterpret)
 {
-    QString tn = threadName(static_cast<QThread *>(p));
-    QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
-    if (it == intMap.end()) {
-        // Ettöl a sortol megkergül a fordító :-O
-        // DERR() << tr("Object (thread) name %1 not found").arg(tn) << endl;
+    if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    if (fromInterpret) {
+        if (_pForParser != nullptr) {
+            delete _pForParser;
+        }
+        _pForParser = nullptr;
     }
     else {
-        delete it.value();
-        intMap.remove(tn);
+        QThread *th = QThread::currentThread();
+        QString  tn = threadName(th);
+        QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
+        if (it != intMap.end()) {
+            delete it.value();
+            intMap.remove(tn);
+        }
     }
+    staticMutex.unlock();
 }
 
 const QString sET_       = "errtype";

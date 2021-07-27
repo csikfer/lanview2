@@ -508,7 +508,7 @@ EXT_ QVariant  dateTimeToSql(const QVariant& _f);
 CSD_INHERITOR(cColStaticDescrInterval)
 };
 
-QString intervalToStr(qlonglong i);
+EXT_ QString intervalToStr(qlonglong i);
 
 /* ******************************************************************************************************
    *                                         cColStaticDescrList                                        *

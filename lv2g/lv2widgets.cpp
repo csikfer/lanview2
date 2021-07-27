@@ -637,7 +637,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
-    case_FieldLineWidget:
+      case_FieldLineWidget:
         cFieldLineWidget *p = new cFieldLineWidget(_tm, _tf, _fr, ro, _par);
         _DBGFNL() << " new cFieldLineWidget" << endl;
         return p;
@@ -738,8 +738,18 @@ void cFieldEditBase::_setFromEdit()
         }
         else {
             QPlainTextEdit *pPlainTextEdit = qobject_cast<QPlainTextEdit *>(pEditWidget);
-            if (pPlainTextEdit == nullptr) EXCEPTION(EPROGFAIL);
-            s = pPlainTextEdit->toPlainText();
+            if (pPlainTextEdit != nullptr) {
+                s = pPlainTextEdit->toPlainText();
+            }
+            else {
+                QTextEdit *pTextEdit = qobject_cast<QTextEdit *>(pEditWidget);
+                if (pTextEdit != nullptr) {
+                    s = pTextEdit->toHtml();
+                }
+                else {
+                    EXCEPTION(EPROGFAIL);
+                }
+            }
         }
         v = s;
     }
@@ -1144,6 +1154,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     pLineEdit      = nullptr;
     pPlainTextEdit = nullptr;
+    pTextEdit      = nullptr;
     pComboBox      = nullptr;
     pModel         = nullptr;
     modeltype      = NO_MODEL;
@@ -1153,6 +1164,12 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     setLayout(pLayout);
     bool isText = _colDescr.eColType == cColStaticDescr::FT_TEXT;
     if (isText && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
+        _wType = FEW_HTML_LINES;  // Widget type
+        pEditWidget = pTextEdit = new QTextEdit;
+        pLayout->addWidget(pTextEdit);
+        _height = 4;
+    }
+    else if (isText && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget type
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
 //        QSizePolicy spol = pPlainTextEdit->sizePolicy();
@@ -1225,6 +1242,10 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             pPlainTextEdit->setPlainText(_fr);
             connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
             break;
+        case FEW_HTML_LINES:
+            pTextEdit->setHtml(_fr);
+            connect(pTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
+            break;
         case FEW_COMBO_BOX:
             switch (modeltype) {
             case SETOF_MODEL:
@@ -1254,15 +1275,22 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 else if (_hasDefault) dcSetShort(pLineEdit, DC_DEFAULT);;
             }
         }
-        if (_wType == FEW_LINE) {
+        switch (_wType) {
+        case FEW_LINE:
             pLineEdit->setText(tx);
             pLineEdit->setReadOnly(true);
-        }
-        else if (_wType == FEW_LINES) {
+            break;
+        case FEW_LINES:
             pPlainTextEdit->setPlainText(tx);
             pPlainTextEdit->setReadOnly(true);
+            break;
+        case FEW_HTML_LINES:
+            pTextEdit->setHtml(tx);
+            pTextEdit->setReadOnly(true);
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
         }
-        else EXCEPTION(EPROGFAIL);
     }
 }
 
@@ -1292,6 +1320,9 @@ int cFieldLineWidget::set(const QVariant& v)
             break;
         case FEW_LINES:
             pPlainTextEdit->setPlainText(txt);
+            break;
+        case FEW_HTML_LINES:
+            pTextEdit->setHtml(txt);
             break;
         case FEW_COMBO_BOX:
             switch (modeltype) {
@@ -2337,7 +2368,7 @@ int cFKeyWidget::set(const QVariant& v)
     return r;
 }
 
-QString cFKeyWidget::getName()
+QString cFKeyWidget::getName() const
 {
     QString r;
     if (pModel != nullptr) {
@@ -2637,7 +2668,7 @@ void cFKeyWidget::node2place()
 {
     if (_pParentDialog == nullptr) {
         if (pParentBatchEdit != nullptr) {
-            pParentBatchEdit->done(100);
+            pParentBatchEdit->done(FKEY_BATCHEDIT);
         }
     }
     else {
@@ -3685,9 +3716,18 @@ cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, 
 
     pLineEdit = nullptr;
     pPlainTextEdit = nullptr;
+    pTextEdit = nullptr;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
-    if (_fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
+    if (_fieldShape.getBool(_sFieldFlags, FF_HTML_TEXT)) {
+        _wType = FEW_LTEXT_HTML;  // Widget típus azonosító
+        pTextEdit = new QTextEdit;
+        pLayout->addWidget(pTextEdit);
+        pTextEdit->setText(_value.toString());
+        pTextEdit->setReadOnly(_readOnly);
+        connect(pTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
+    }
+    else if (_fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LTEXT_LONG;  // Widget típus azonosító
         pPlainTextEdit = new QPlainTextEdit;
         pLayout->addWidget(pPlainTextEdit);
@@ -3715,17 +3755,25 @@ int cLTextWidget::set(const QVariant& v)
     QString t = v.toString();
     if (t == _value.toString()) return 0;
     _value = t;
-    changedValue(this);
-    if (_wType == FEW_LTEXT) pLineEdit->setText(t);
-    else                     pPlainTextEdit->setPlainText(t);
+    emit changedValue(this);
+    switch (_wType) {
+    case FEW_LTEXT:         pLineEdit->setText(t);              break;
+    case FEW_LTEXT_LONG:    pPlainTextEdit->setPlainText(t);    break;
+    case FEW_LTEXT_HTML:    pTextEdit->setHtml(t);              break;
+    default:                EXCEPTION(EPROGFAIL);
+    }
     return 1;
 }
 
 void cLTextWidget::_setFromEdit()
 {
     QString  s;
-    if (_wType == FEW_LTEXT) s = pLineEdit->text();
-    else                     s = pPlainTextEdit->toPlainText();
+    switch (_wType) {
+    case FEW_LTEXT:         s = pLineEdit->text();              break;
+    case FEW_LTEXT_LONG:    s = pPlainTextEdit->toPlainText();  break;
+    case FEW_LTEXT_HTML:    s = pTextEdit->toHtml();            break;
+    default:                EXCEPTION(EPROGFAIL);
+    }
     QVariant v; // NULL
     if (!s.isEmpty()) {
         v = QVariant(s);

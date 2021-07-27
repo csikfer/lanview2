@@ -139,7 +139,8 @@ void lv2import::fetchAndExec()
     lastError = nullptr;
     cError *ipe = importGetLastError(); // Töröljük a hiba objektumot, biztos ami biztos.
     if (ipe != nullptr) {  // Ennek NULL-nak kellene lennie !! Nem kezeltünk egy hibát?!
-        ERROR_NESTED(ipe).exception();
+        PDEB(DERROR) << tr("Kezeletlen hiba objektum : ") << ipe->msg() << endl;
+        pDelete(ipe);
     }
     try {
         pImp = new cImport;
@@ -166,14 +167,9 @@ void lv2import::fetchAndExec()
     static const QBitArray ufmask = pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId) | pImp->mask( _sOutMsg, _sExpMsg);
     if (ipe != nullptr) {
         if (lastError != nullptr) {    // Többszörös hiba ??!!
-            QString m = sDebugLines
-                    + QString(40, QChar('-')) + "\n"
-                    + lastError->msg() + "\n"
-                    + QString(40, QChar('*')) + "\n"
-                    + ipe->msg();
-            delete lastError;
-            delete ipe;
-            EXCEPTION(ENESTED, 0, m);
+            lastError->pErrorNested = ipe;
+            lastError->mDebugLines = sDebugLines;
+            lastError->exception();
         }
         lastError = ipe;
     }
@@ -196,7 +192,9 @@ void lv2import::fetchAndExec()
         pImp->update(*pQuery, false, ufmask);
     }
     else {                      // A cImport objektum létrehozása sem sikerült
-        ERROR_NESTED(lastError).exception();
+        ipe = NEWCERROR(ENESTED);
+        ipe->pErrorNested = lastError;
+        ipe->exception();
     }
     pDelete(pImp);
     QCoreApplication::exit(0);

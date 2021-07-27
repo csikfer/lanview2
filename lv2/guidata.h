@@ -105,6 +105,7 @@ enum eFieldFlag {
     FF_READ_ONLY,       ///< Csak olvasható, nem modosítható mező
     FF_PASSWD,          ///< A mező egy jelszó (tartlma rejtett)
     FF_HUGE,            ///< A TEXT típusú mező több soros, vagy enum-nal a hosszú név megjelenítése
+    FF_HTML_TEXT,       ///< HTML TEXT típusú mező, több soros
     FF_BATCH_EDIT,      ///< A mező értéke csoportosan is beállítható
     FF_BG_COLOR,        ///< A mező egy háttérszín
     FF_FG_COLOR,        ///< A mező egy karakterszín

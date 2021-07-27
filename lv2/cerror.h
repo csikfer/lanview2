@@ -177,8 +177,6 @@ Az adattagok inicializálása után hívja a circulation() metódust
     /// Dob egy kizárást a this pointerrel.
     /// @return A metódus nem tér vissza
     virtual LV2_ATR_NORET_ void exception(void);
-    /// Hiba a hiba feldolgozásakor.
-    cError &nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName);
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
     QString shortMsg() { return QObject::tr(" Hiba kód : #%1 / %2").arg(mErrorCode).arg(errorMsg()); }
@@ -232,7 +230,9 @@ Az adattagok inicializálása után hívja a circulation() metódust
     int     mDataPos;
     QString mDataMsg;               ///< Source file name
     QString mDataName;              ///< Source file name
-    QThread *pThread{};               ///< A hibaobjektumot létrehozó szál
+    QThread *pThread{};             ///< A hibaobjektumot létrehozó szál
+    cError * pErrorNested;
+    QString mDebugLines;
     QStringList slBackTrace;
 
     static int errCount() { return errorList.size(); }
@@ -322,8 +322,6 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
 @relates cError
  */
 #define EXCEPTION(ec, ...) cErrorException(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__)
-
-#define ERROR_NESTED(pe) pe->nested(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 #define CHKNULL(p)  if (p == nullptr) EXCEPTION(EPROGFAIL)
 

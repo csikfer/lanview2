@@ -89,10 +89,6 @@ cImportParseThread::~cImportParseThread()
 void cImportParseThread::reset()
 {
     DBGFN();
-    if (isRunning()) {
-        PDEB(WARNING) << "Import parser thread is runing." << endl;
-        stopParser();
-    }
     queue.clear();
     if (0 != dataReady.available()) {
         if (!dataReady.tryAcquire(dataReady.available())) EXCEPTION(ESEM);
@@ -109,6 +105,7 @@ void cImportParseThread::reset()
 
 void	cImportParseThread::run()
 {
+    // printf("*********************\n");
     DBGFN();
     // Alaphelyzetbe állítjuk a sorpuffert, és a szemforokat
     reset();
@@ -177,7 +174,10 @@ int cImportParseThread::push(const QString& src, cError *& pe, int _to)
         reStartParser(rpe);
         if (rpe != nullptr) {
             DERR() << rpe->msg() << endl;
-            delete rpe;
+            if (pe != nullptr) {
+                rpe->pErrorNested = pe;
+            }
+            pe = rpe;
         }
     }
     if (pe == nullptr) {
@@ -223,6 +223,7 @@ int cImportParseThread::startParser(cError *&pe, const QString *pSrc)
     }
     int r = R_IN_PROGRESS;
     start();
+    yieldCurrentThread();   // Help debug
     switch (srcType) {
     case ST_QUEUE:
         if (!iniCmd.isEmpty()) {

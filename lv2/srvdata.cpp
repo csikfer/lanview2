@@ -1273,15 +1273,23 @@ int cQueryParser::post(cError *& pe)
     return r;
 }
 
-cError * cQueryParser::execParserCmd(QString _cmd, cInspector *pInspector)
+cError * cQueryParser::execParserCmd(const QString& _cmd, cInspector *pInspector)
 {
     if (pParserThread == nullptr) EXCEPTION(EPROGFAIL);
     cError *pe = nullptr;
     int to = pInspector->stopTimeOut;
     if (to <= 0) to = IPT_SHORT_WAIT;
-    // ... IO!
+    _debugLines.clear();
+    debugStream *pDS = cDebug::getInstance()->pCout();
+    connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLineReady()));
+    cDebug::getInstance()->setGui();
+    cExportQueue::init(true);
+
     pParserThread->push(_cmd, pe, to);
-    // ...
+
+    _exportText = cExportQueue::toText(true, true);
+    cExportQueue::drop(true);
+    disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLineReady()));
 
     return pe;
 }
@@ -1437,5 +1445,21 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
         EXCEPTION(EPROGFAIL);
     }
     return r;
+}
+
+void cQueryParser::debugLineReady()
+{
+    QString s = cDebug::getInstance()->dequeue();
+    QRegExp  re("^([\\da-f]{8})\\s(.+)$");
+    if (re.exactMatch(s)) {
+//      bool ok;
+//      QString sm = re.cap(1);
+//      qulonglong m = sm.toULongLong(&ok, 16);
+//      if (!ok) EXCEPTION(EPROGFAIL);
+//      if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
+            s = re.cap(2).trimmed();
+            _debugLines << s;
+//      }
+    }
 }
 
