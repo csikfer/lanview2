@@ -351,9 +351,11 @@ public:
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
     QString             viewName;       ///< A TEMP VIEW neve, vagy NULL, ha nincs
     eTableInheritType   tableInhType;
-    cRecordDialogBase  *pRecordDialog;
+    cRecordDialogBase  *pRecordDialog;  ///< Dialog: insert, modify
     QString             foreignKeyName; ///< Foreign key field name by features
     QString             foreignKeyRef;  ///< Foreign key reference field name by features (if not record ID)
+    QString             zoneFieldName;  ///< A zónára utaló mező neve
+    QString             zoneFunctionName;///< A zónán belüliséget magdó függvény neve (első paraméter a zónára utaló mező, második paraméter a zóna ID).
 
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
     const cRecStaticDescr& inhRecDescr(const QString& tn) const;
@@ -436,8 +438,6 @@ public slots:
     void selectionChanged(QItemSelection,QItemSelection);
     /// Indítja az editáló dialogust, a megadostt indexű rekordra.
     void modifyByIndex(const QModelIndex & index);
-signals:
-    void closeIt();
 public:
     static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = nullptr, QWidget *par = nullptr);
     static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = nullptr, QWidget *par = nullptr);
@@ -453,6 +453,28 @@ private:
     void createRightTab();
     /// megallokálja a konténert.
     tRecordList<cTableShape>   *getShapes();
+};
+
+
+/// @class cRecordAsTable
+/// Adatbázis tábla megjelenítésként mutat egy rekord dialógust az al-tábláknak megjelenítéséhez.
+class LV2GSHARED_EXPORT cRecordAsTable : public cRecordsViewBase {
+    Q_OBJECT
+public:
+    cRecordAsTable(cRecordDialogBase * pRv, QWidget * __pWidget);
+    ~cRecordAsTable();
+    virtual void init();
+    virtual void setEditButtons();
+    virtual QModelIndexList selectedRows();
+    virtual QModelIndex actIndex();
+    virtual cRecord *actRecord(const QModelIndex& _mi = QModelIndex());
+    virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1);
+    virtual void selectRow(const QModelIndex& mi);
+    virtual cRecordViewModelBase * newModel();
+    virtual void initSimple(QWidget *pW);
+    virtual void _refresh(bool all = true);
+    virtual void hideColumn(int ix, bool f = true);
 };
 
 

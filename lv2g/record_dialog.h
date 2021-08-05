@@ -78,6 +78,7 @@ protected:
 
 class cRecordDialogInh;
 class cRecordsViewBase;
+class cRecordAsTable;
 class cFKeyWidget;
 /// @class cRecordDialogBase
 /// @brief Rekord szerkesztés dialógus alap objektum
@@ -160,7 +161,7 @@ protected:
     ePrivilegeLevel         _viewRights;
     /// A szerkesztett értékek rekordba másolásakor a hiba üzenetek buffere
     QString                 _errMsg;
- signals:
+signals:
      void buttonPressed(int id);
 };
 
@@ -169,6 +170,7 @@ protected:
 /// Tartalmazza (felépíti) a rekord mezőinek a megjelenítését, ill. a szerkesztést megvalósító widget-eket is.
 class LV2GSHARED_EXPORT cRecordDialog : public cRecordDialogBase {
     friend class cFKeyWidget;
+    Q_OBJECT
 public:
     /// Konstruktor
     /// @param rec Az editálandó adat objktum referenciája
@@ -190,6 +192,13 @@ protected:
     QSplitter              *pSplitter;
     QFormLayout            *pFormLayout;
     QList<cFieldEditBase *> fields;
+    /// Ha vannak gyerek objektumok táblázatosan megjeleníitve a dialógusban
+    bool areChildTable;
+    ///
+    QList<cTableShape *>    tableShapesOnDialog;
+    cRecordAsTable *            pDummyTable;
+    qlonglong                   actId;
+    void recordModified();
 private:
     void init();
 };

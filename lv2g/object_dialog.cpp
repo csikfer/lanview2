@@ -797,6 +797,39 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
     return p;
 }
 
+/* ********************************************************************************************** */
+/*
+cTimeperiodDialog::cTimeperiodDialog(QWidget *parent, bool ro)
+    : QDialog(parent)
+    , pUi(new Ui::timeperiodDialog)
+    , readOnly(ro)
+{
+    pq = newQuery();
+    pShapeTpow = new cTableShape();
+    pShapeTpow->setByName(_sTpows);
+    pShapeTpow->setId(_sTableShapeType, ENUM2SET(TS_SIMPLE));
+    pTableTpow = new cRecordTable(pShapeTpow, false);
+
+
+
+    pUi->setupUi(this);
+}
+
+cTimeperiodDialog::~cTimeperiodDialog()
+{
+    delete pq;
+}
+
+cTimePeriod * cTimeperiodDialog::getTimeperiod()
+{
+
+}
+
+void cTimeperiodDialog::setTimeperiod(const cTimePeriod *pSample)
+{
+
+}
+*/
 
 /* ********************************************************************************************** */
 

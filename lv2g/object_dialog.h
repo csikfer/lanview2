@@ -7,6 +7,7 @@
 #include "record_dialog.h"
 #include "ui_edit_enum_vals.h"
 #include "ui_edit_ip.h"
+#include "record_table.h"
 
 /*
 class LV2GSHARED_EXPORT cObjectDialog : public QDialog {
@@ -27,9 +28,11 @@ protected:
 
 namespace Ui {
     class patchSimpleDialog;
+//    class timeperiodDialog;
 }
 class cPatchDialog;
 class cPPortTableLine;
+// class cTimeperiodDialog;
 
 #if defined(LV2G_LIBRARY)
 #  include "ui_dialogpatchsimple.h"
@@ -67,6 +70,9 @@ class cPPortTableLine;
     enum {
         CPP_NAME, CPP_TAG, CPP_INDEX, CPP_SH_TYPE, CPP_SH_IX, CPP_NOTE
     };
+
+// #   include <ui_dialogtimeperiod.h>
+
 #endif
 
 
@@ -127,6 +133,25 @@ private:
 
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);
 _GEX cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro = false);
+
+/* */
+/*
+class cTimeperiodDialog : public QDialog {
+    Q_OBJECT
+public:
+    cTimeperiodDialog(QWidget *parent = nullptr, bool ro = false);
+    ~cTimeperiodDialog();
+    cTimePeriod * getTimeperiod();
+    void setTimeperiod(const cTimePeriod *pSample);
+private:
+    Ui::timeperiodDialog   *pUi;
+    bool                    readOnly;
+    QSqlQuery              *pq;
+    cTableShape            *pShapeTpow;
+    cRecordTable           *pTableTpow;
+
+};
+*/
 
 namespace Ui { class editIp; }
 class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {

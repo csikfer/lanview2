@@ -124,13 +124,13 @@ void cRecordTree::initSimple(QWidget *pW)
     pMainLayout  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
     pModel      = newModel();
-    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
+//    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title =  pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);
         }
-    }
+//    }
     pMainLayout->addWidget(pTreeView);
 
     // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;

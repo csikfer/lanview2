@@ -165,7 +165,7 @@ void cLogOn::userNameEdited()
     // DBGFNL();
     QSqlQuery q = getQuery();
     QString sql =
-            "SELECT DISTINCT(place_group_id), coalesce(place_group_note, place_group_name) AS name"
+            "SELECT DISTINCT(place_group_id), place_group_name || ' / ' || coalesce(place_group_note, '-') AS name"
             "  FROM group_users"
             "  JOIN groups USING (group_id)"
             "  JOIN place_groups USING(place_group_id)"
@@ -179,11 +179,20 @@ void cLogOn::userNameEdited()
     _zoneIdList.clear();
     bool ok;
     if (q.first()) {
+        QStringList zoneNameList;
         do {
             _zoneIdList << q.value(0).toLongLong(&ok);
             if (!ok) EXCEPTION(EDATA, -1, q.value(0).toString());
-            ui->zoneCB->addItem(q.value(1).toString());
+            zoneNameList << q.value(1).toString();
         } while (q.next());
+        int ix = _zoneIdList.indexOf(ALL_PLACE_GROUP_ID);   // Ha "all" a listában van, az legyen az első/alapértelmezett
+        if (ix > 0) {
+            _zoneIdList.removeAt(ix);
+            zoneNameList.removeAt(ix);
+            _zoneIdList.push_front(ALL_PLACE_GROUP_ID);
+            zoneNameList.push_front(_sAll);
+        }
+        ui->zoneCB->addItems(zoneNameList);
         ui->zoneCB->setCurrentIndex(0);
     }
 }

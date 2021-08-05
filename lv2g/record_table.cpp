@@ -1900,6 +1900,16 @@ void cRecordsViewBase::initShape(cTableShape *pts)
             }
         }
     }
+    QStringList slZone = pTableShape->features().slValue(_sZone);
+    if (!slZone.isEmpty()) {
+        zoneFieldName = slZone.first();
+        if (slZone.size() > 2) zoneFunctionName = slZone.at(1);
+        else                   zoneFunctionName = "is_place_in_zone";
+    }
+    else if (pTableShape->features().contains(_sZone)) {
+        zoneFieldName = _sPlaceId;
+        zoneFunctionName = "is_place_in_zone";
+    }
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
@@ -2023,16 +2033,10 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 /// A legfelső szintű splitter orientációja két féle lehet, hogy elférjrn kisebb képernyőn is.
 /// A második szint (több csak elvileg lehet) mindíg egymás melletti.
 ///
-/// Ha csak egy (child) táblázat van a jobb oldalon:
-/// \diafile    record_table2.dia "Egy child tábla" width=8cm
-/// Ha több (child) táblázat van a jobb oldalon, akkor azok egy tab-ba kerülnek:
 /// \diafile    record_table3.dia "Több child tábla" width=8cm
 void cRecordsViewBase::initMaster()
 {
-    cRecordsViewBase *pRightTable = nullptr;
-    qlonglong id;
     QVariantList vlids;
-    bool ok;
 
     pMasterLayout = new QHBoxLayout(_pWidget);
     if (pUpper == nullptr) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
@@ -2051,19 +2055,12 @@ void cRecordsViewBase::initMaster()
         initGroup(vlids);                       // A két tag-nem tag tábla (egy table_shape objektum, vlids első eleme)
         rightTabs(vlids);                       // A maradék táblák, ha vannak (az első elem törölve a vlids listából)
     }
-    else if (vlids.size() == 1) {               // Ha nem kell a tab widget
-        id = vlids.at(0).toLongLong(&ok);
-        if (!ok) EXCEPTION(EDATA);
-        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this);
-        pRightTable->setParent(this);
-        *pRightTables << pRightTable;
-        pMasterSplitter->addWidget(pRightTable->pWidget());
-    }
     else {
         createRightTab();
         rightTabs(vlids);
     }
 }
+
 
 void cRecordsViewBase::initGroup(QVariantList& vlids)
 {
@@ -2202,6 +2199,11 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     }
     wl << filterWhere(qParams);
     wl << refineWhere(qParams);
+    qlonglong zoneId = lv2g::getInstance()->zoneId;
+    if (zoneId != ALL_PLACE_GROUP_ID && !zoneFieldName.isEmpty()) { // Zone filter
+        wl << zoneFunctionName + "(" + zoneFieldName + ", ?)";
+        qParams << lv2g::getInstance()->zoneId;
+    }
     DBGFNL();
     return wl;
 }
@@ -2399,6 +2401,71 @@ void cRecordsViewBase::hideColumns(void)
 
 /* ----------------------------------------------------------------------------------------------------- */
 
+cRecordAsTable::cRecordAsTable(cRecordDialogBase *pRv, QWidget * __pWidget)
+    : cRecordsViewBase(pRv->tableShape.dup()->reconvert<cTableShape>(), __pWidget)
+{
+    pRecordDialog = pRv;
+    init();
+}
+
+cRecordAsTable::~cRecordAsTable()
+{
+}
+void cRecordAsTable::init()
+{
+    flags = 0;
+    qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
+    if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
+    switch (st) {
+    case 0: // ONLY TS_BARE
+    case ENUM2SET(TS_SIMPLE):
+    case ENUM2SET(TS_TOOLS):
+        flags = RTF_SINGLE;
+        break;
+    case ENUM2SET2(TS_OWNER, TS_MEMBER):
+        flags = RTF_OVNER;
+        LV2_FALLTHROUGH
+    case ENUM2SET(TS_MEMBER):
+        flags |= RTF_MASTER | RTF_MEMBER;
+        break;
+    case ENUM2SET2(TS_OWNER, TS_GROUP):
+        flags = RTF_OVNER;
+        LV2_FALLTHROUGH
+    case ENUM2SET(TS_GROUP):
+        flags |= RTF_MASTER | RTF_GROUP;
+        break;
+    case ENUM2SET(TS_OWNER):
+        flags = RTF_MASTER | RTF_OVNER;
+        break;
+    default:
+        EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
+                  tr("TABLE %1 SHAPE %2 TYPE : %3")
+                  .arg(pTableShape->getName(),
+                       pTableShape->getName(_sTableName),
+                       pTableShape->getName(_sTableShapeType))
+                  );
+    }
+}
+void cRecordAsTable::setEditButtons() { EXCEPTION(ENOTSUPP); }
+QModelIndexList cRecordAsTable::selectedRows() { EXCEPTION(ENOTSUPP); }
+QModelIndex cRecordAsTable::actIndex() { EXCEPTION(ENOTSUPP); }
+cRecord *cRecordAsTable::nextRow(QModelIndex *pMi, int _upRes) { (void)pMi; (void) _upRes; EXCEPTION(ENOTSUPP); }
+cRecord *cRecordAsTable::prevRow(QModelIndex *pMi, int _upRes) { (void)pMi; (void) _upRes; EXCEPTION(ENOTSUPP); }
+void cRecordAsTable::selectRow(const QModelIndex& mi) { (void)mi; EXCEPTION(ENOTSUPP); }
+cRecordViewModelBase * cRecordAsTable::newModel() { EXCEPTION(ENOTSUPP); }
+void cRecordAsTable::initSimple(QWidget *pW) { (void)pW; EXCEPTION(ENOTSUPP); }
+void cRecordAsTable::_refresh(bool all) { (void)all; EXCEPTION(ENOTSUPP); }
+void cRecordAsTable::hideColumn(int ix, bool f) { (void)ix; (void)f; EXCEPTION(ENOTSUPP); }
+
+cRecord *cRecordAsTable::actRecord(const QModelIndex& _mi)
+{
+    if (_mi.isValid() || pRecordDialog == nullptr) EXCEPTION(EPROGFAIL);
+    return &pRecordDialog->record();
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+
+
 inline cTableShape * getTableShapeByName(const QString& _mn)
 {
     cTableShape *p = new cTableShape();
@@ -2586,13 +2653,14 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView  = new QTableView();
     pTableView->horizontalHeader()->setMinimumSectionSize(24); // Icon
     pModel      = newModel();
-    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
+//  A TS_BARE lényegtelen, nem kell a cím, mindíg van TAB.
+//    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);
         }
-    }
+//    }
     pMainLayout->addWidget(pTableView);
     pMainLayout->addWidget(pButtons->pWidget());
     pTableView->setModel(pTableModel());

@@ -371,7 +371,7 @@ void cRecordDialogBase::_pressed(int id)
 cRecord& cRecordDialogBase::record()
 {
     if (_pRecord == nullptr) {
-        _pRecord = new cRecordAny(&rDescr);
+        EXCEPTION(EPROGFAIL);
     }
     return *_pRecord;
 }
@@ -390,6 +390,9 @@ cRecordDialog::cRecordDialog(const cTableShape& __tm, qlonglong _buttons, bool d
     pFormLayout = nullptr;
     if (_isDisabled) return;
     if (tableShape.shapeFields.size() == 0) EXCEPTION(EDATA);
+    areChildTable = false;
+    pDummyTable   = nullptr;
+    actId = NULL_ID;
     init();
 }
 
@@ -404,15 +407,17 @@ inline static QFrame * _frame(QLayout * lay, QWidget * par)
 
 void cRecordDialog::init()
 {
-    int maxFields;
     DBGFN();
     bool ok;
-    maxFields = tableShape.feature(mCat(_sDialog, _sHeight)).toInt(&ok);
-    if (!ok) maxFields = lv2g::getInstance()->dialogRows;    // Default
+
+    // A dialógus ablakban kb. hány sor legyen maximum
+    int maxFields = tableShape.feature(mCat(_sDialog, _sHeight)).toInt(&ok);
+    if (!ok) {
+        maxFields = lv2g::getInstance()->dialogRows;    // Default
+    }
 
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
-//    int n = tableShape.shapeFields.size();
     pSplittLayout = new QBoxLayout(QBoxLayout::LeftToRight);
     pSplitter     = new QSplitter(_pWidget);
     pSplittLayout->addWidget(pSplitter);
@@ -482,15 +487,31 @@ void cRecordDialog::init()
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
         pFormLayout->addRow(mf.getText(cTableShapeField::LTX_DIALOG_TITLE, mf.getName()), pFW);
-        /* hülyeség
-        if (pFW->isText()) {
-            pFW->setName(_pRecord->getText(mf.getName()));
+    }
+
+    // Gyerek táblákat meg kell  jeleníteni?
+    QVariantList chilTableIds = tableShape.get(_sTablesOnDialogIds).toList();
+    areChildTable = !chilTableIds.isEmpty();
+    if (areChildTable) {
+        pDummyTable = new cRecordAsTable(this, _pWidget);
+        cTableShape *pts = new cTableShape;
+        QTabWidget *pChildTab = new QTabWidget();
+        pSplitter->addWidget(pChildTab);
+        cRecordsViewBase * childTable;
+        qlonglong tst = pts->getId(_sTableShapeType);
+        if ((pDummyTable->flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
+            pDummyTable->pRightTabWidget = pChildTab;
+            pDummyTable->pRightTables    = new tRecordsViewBaseList;
+            pDummyTable->initGroup(chilTableIds);
         }
-        else {
-            if (!_pRecord->isNull(fieldIx)) {
-                pFW->set(_pRecord->get(fieldIx));
-            }
-        } */
+        foreach (QVariant childTableId, chilTableIds) {
+            pts->setById(*pq, childTableId.toLongLong(&ok));
+            childTable = cRecordsViewBase::newRecordView(pts, pDummyTable);
+            childTable->setParent(this);
+            pChildTab->addTab(childTable->pWidget(), pts->getText(cTableShape::LTX_TABLE_TITLE, pts->getName()));
+            *pDummyTable->pRightTables << childTable;
+        }
+
     }
     _pWidget->adjustSize();
     DBGFNL();
@@ -498,8 +519,10 @@ void cRecordDialog::init()
 
 void cRecordDialog::restore(const cRecord *_pRec)
 {
-    pDelete(_pRecord);
-    _pRecord = new cRecordAny(&rDescr);;
+    if (_pRecord == nullptr) {
+        EXCEPTION(EPROGFAIL);
+    }
+    _pRecord->clear();
     if (_pRec != nullptr) {
         _pRecord->set(*_pRec);
         _pRecord->setTexts(_pRec->getTexts());
@@ -516,6 +539,7 @@ void cRecordDialog::restore(const cRecord *_pRec)
             if (ix != NULL_IX) field.set(_pRecord->get(ix));
         }
     }
+    recordModified();
 }
 
 bool cRecordDialog::accept()
@@ -577,6 +601,21 @@ cFieldEditBase * cRecordDialog::fieldByTableFieldName(const QString& __fn)
     }
     return nullptr;
 }
+
+void cRecordDialog::recordModified()
+{
+    if (pDummyTable != nullptr) {
+        qlonglong newId = record().getId();
+        if (actId != newId) {
+            actId = newId;
+            foreach (cRecordsViewBase *pt, *pDummyTable->pRightTables) {
+                pt->setOwnerId(actId);
+                pt->refresh();
+            }
+        }
+    }
+}
+
 
 /* ***************************************************************************************************** */
 
