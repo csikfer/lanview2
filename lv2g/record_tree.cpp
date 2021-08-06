@@ -124,19 +124,19 @@ void cRecordTree::initSimple(QWidget *pW)
     pMainLayout  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
     pModel      = newModel();
-//    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
+/*
+    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title =  pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);
         }
-//    }
+    }
+*/
     pMainLayout->addWidget(pTreeView);
-
-    // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
-
     pMainLayout->addWidget(pButtons->pWidget());
     pTreeView->setModel(pTreeModel());
+
     pTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);     // Csak sor jelölhető ki
     pTreeView->setSelectionMode(QAbstractItemView::SingleSelection);    // Egyszerre csak egy sor kijelölése
     pTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -147,9 +147,11 @@ void cRecordTree::initSimple(QWidget *pW)
     if (!isReadOnly) {
         connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
+/*  ??!!
     if (pMaster != nullptr) {
         pMaster->pMasterSplitter->addWidget(_pWidget);
     }
+*/
     pTreeView->header()->setSectionsClickable(true);
     connect(pTreeView->header(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
     connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));

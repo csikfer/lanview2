@@ -65,15 +65,15 @@ public:
     void disable(qlonglong __idSet);
     void disableExcept(qlonglong __idSet = ENUM2SET2(DBT_CANCEL, DBT_CLOSE));
     QAbstractButton *addPB(int id, QWidget *par);
+    static QStringList      buttonNames;
+    static QList<QIcon>     icons;
+    static QList<int>       keys;
 protected:
     void init(int buttons, QBoxLayout *pL);
     static void staticInit();
     QWidget     *_pWidget;
     QBoxLayout  *_pLayout;
     static int _buttonNumbers;
-    static QStringList      buttonNames;
-    static QList<QIcon>     icons;
-    static QList<int>       keys;
 };
 
 class cRecordDialogInh;
@@ -196,8 +196,9 @@ protected:
     bool areChildTable;
     ///
     QList<cTableShape *>    tableShapesOnDialog;
-    cRecordAsTable *            pDummyTable;
-    qlonglong                   actId;
+    cRecordAsTable *        pDummyTable;
+    QTabWidget *            pChildTab;
+    qlonglong               actId;
     void recordModified();
 private:
     void init();

@@ -246,7 +246,7 @@ void cDialogButtons::disableExcept(qlonglong __idSet)
 cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *par)
     : QObject(par)
     , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
-    , name(tableShape.getName())
+    , name(__tm.getName())
     , _errMsg()
 {
     _isDialog = dialog;
@@ -313,7 +313,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons
     }
     _pWidget->setObjectName(name + "_Widget");
 
-    if (_isDisabled) {  // Neki tltva, csak egy egy üzenet erről.
+    if (_isDisabled) {  // Neki tiltva, csak egy egy üzenet erről.
         Ui::noRightsForm *noRighrs = noRightsSetup(_pWidget, _viewRights, objectName());
         if (_pOwnerDialog == nullptr) {
             connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(cancel()));
@@ -494,24 +494,23 @@ void cRecordDialog::init()
     areChildTable = !chilTableIds.isEmpty();
     if (areChildTable) {
         pDummyTable = new cRecordAsTable(this, _pWidget);
-        cTableShape *pts = new cTableShape;
-        QTabWidget *pChildTab = new QTabWidget();
+        pDummyTable->pRightTabWidget = pChildTab = new QTabWidget();
         pSplitter->addWidget(pChildTab);
         cRecordsViewBase * childTable;
-        qlonglong tst = pts->getId(_sTableShapeType);
+        pDummyTable->pRightTables    = new tRecordsViewBaseList;
         if ((pDummyTable->flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
-            pDummyTable->pRightTabWidget = pChildTab;
-            pDummyTable->pRightTables    = new tRecordsViewBaseList;
             pDummyTable->initGroup(chilTableIds);
         }
         foreach (QVariant childTableId, chilTableIds) {
+            cTableShape *pts = new cTableShape;
             pts->setById(*pq, childTableId.toLongLong(&ok));
             childTable = cRecordsViewBase::newRecordView(pts, pDummyTable);
             childTable->setParent(this);
             pChildTab->addTab(childTable->pWidget(), pts->getText(cTableShape::LTX_TABLE_TITLE, pts->getName()));
             *pDummyTable->pRightTables << childTable;
         }
-
+        // Jelenleg nem ismert a rekord ID, ezért a táblát eltüntetjük.
+        pChildTab->hide();
     }
     _pWidget->adjustSize();
     DBGFNL();
@@ -612,6 +611,8 @@ void cRecordDialog::recordModified()
                 pt->setOwnerId(actId);
                 pt->refresh();
             }
+            if (actId == NULL_ID) pChildTab->hide();
+            else                  pChildTab->show();
         }
     }
 }
@@ -655,18 +656,6 @@ void cRecordDialogInh::init()
     for (i = 0; i < n; ++i) {
         cTableShape& shape = *tabeShapes[i];
         cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, this, _pOwnerTable, pTabWidget);
-/*      cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
-        if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
-            int oix = pRec->descr().ixToOwner();
-            pRec->setId(oix, _pOwnerTable->owner_id);
-        }
-        if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
-            int pix = pRec->descr().ixToParent(EX_IGNORE);
-            if (pix != NULL_IX) pRec->setId(pix, _pOwnerTable->parent_id);
-            pDlg->_isReadOnly = true;// ??
-        }
-        pDlg->_pRecord = pRec;
-        pDlg->restore(); */
         tabs << pDlg;
         shape.fetchText(*pq, false);
         pTabWidget->addTab(pDlg->pWidget(), shape.getText(cTableShape::LTX_DIALOG_TAB_TITLE, shape.getName(_sTableName)));
@@ -734,7 +723,7 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 /// @param q
 /// @param ts A table_shape objektum (beolvasott mező leírókkal, text-eket beolvassa, ha kell)
 /// @param pPar parent widgewt pointere
-/// @param pSample minta rekord
+/// @param pSample minta rekord, ha értéke NULL, akkor új rekordot hozunk létre (ro = edit = false)
 /// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
 /// @param edit Ha értéke true, akkor rekord modosítás történik, ekkor pSample tartalmazza a modosítandó létező rekordot, és nem lehet NULL.
 _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const cRecord *pSample , bool ro, bool edit)
@@ -745,17 +734,17 @@ _GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const 
     // A dialógusban megjelenítendő nyomógombok. (Csak az explicit read-only van lekezelve!!))
     qlonglong buttons;
     if (ts.getBool(_sTableShapeType, TS_READ_ONLY)) {
-        buttons = enum2set(DBT_CANCEL);
+        buttons = ENUM2SET(DBT_CANCEL);
     }
     else {
-        buttons = enum2set(DBT_OK, DBT_CANCEL);
+        buttons = ENUM2SET2(DBT_OK, DBT_CANCEL);
     }
     cRecordDialog   rd(ts, buttons, true, nullptr, nullptr, pPar);  // A rekord szerkesztő dialógus
     if (pSample != nullptr) {
         if (edit && pSample->idIndex(EX_IGNORE) != NULL_IX && !pSample->isNullId()) {
             cRecord *pr = pSample->dup();
             pr->clearId();
-            rd.restore(pSample);
+            rd.restore(pr);
             delete pr;
         }
         else {

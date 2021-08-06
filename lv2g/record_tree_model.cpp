@@ -138,12 +138,11 @@ int         cRecordTreeModel::columnCount(const QModelIndex & parent) const
 
 QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 {
-    QVariant r;
-    if (!index.isValid()) return r;
+    if (!index.isValid()) return QVariant();
     cTreeNode *node = nodeFromIndex(index);
-    if (node == nullptr) return r;
+    if (node == nullptr) return QVariant();
     int col = index.column();
-    if (!isContIx(_col2field, col)) return r;
+    if (!isContIx(_col2field, col)) return QVariant();
     int fix = _col2field[col];  // Mező index a rekordbam
     cRecord *pr = node->pData;
     cRecordTableColumn * pColumn = columns[col];

@@ -1591,7 +1591,7 @@ void cRecordsViewBase::modify(eEx __ex)
         pRecordDialog = pRd;
         break;
     case TIT_LISTED_REV: {
-        pShapes = getShapes();
+        pShapes = getShapes();  // megallokálja a konténert, és beolvassa az objektum listát
         pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, true, nullptr, this, pWidget());
         pRecordDialog = pRdt;
         if (pRdt->disabled()) {
@@ -1774,6 +1774,7 @@ void cRecordsViewBase::report()
     if (mil.size() == 1) {       // Report single record
         cRecord *po = actRecord();
         QString name = pTableShape->feature(_sReport);
+        if (name.isEmpty()) name = po->tableName();
         tStringPair sp = htmlReport(*pq, *po, name, pTableShape);
         popupReportWindow(_pWidget, sp.second, sp.first);
     }
@@ -2039,8 +2040,11 @@ void cRecordsViewBase::initMaster()
     QVariantList vlids;
 
     pMasterLayout = new QHBoxLayout(_pWidget);
-    if (pUpper == nullptr) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
-    else                   pMasterSplitter = new QSplitter(Qt::Horizontal);
+    enum Qt::Orientation orientation;
+    if (pUpper == nullptr)                                  orientation = lv2g::getInstance()->defaultSplitOrientation;
+    else if (typeid (*pUpper) == typeid (cRecordAsTable))   orientation = Qt::Vertical;
+    else                                                    orientation = Qt::Horizontal;
+    pMasterSplitter = new QSplitter(orientation);
     pMasterLayout->addWidget(pMasterSplitter);
 
     pLeftWidget   = new QWidget();
@@ -2653,14 +2657,15 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView  = new QTableView();
     pTableView->horizontalHeader()->setMinimumSectionSize(24); // Icon
     pModel      = newModel();
-//  A TS_BARE lényegtelen, nem kell a cím, mindíg van TAB.
-//    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
+/*  A TS_BARE lényegtelen, nem kell a cím, mindíg van TAB.
+    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);
         }
-//    }
+    }
+*/
     pMainLayout->addWidget(pTableView);
     pMainLayout->addWidget(pButtons->pWidget());
     pTableView->setModel(pTableModel());

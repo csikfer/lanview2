@@ -709,6 +709,7 @@ protected:
     QAbstractButton    *pButtonEdit;    ///< Hivatkozott objektum modosítása
     QAbstractButton    *pButtonAdd;     ///< Új hivatkozott objektum
     QAbstractButton    *pButtonRefresh; ///< Objektum lista frissítése
+    QAbstractButton    *pButtonInfo;    ///< objektum info/riport
     QComboBox          *pComboBox;      ///< Objektum lista comboBox
     QDialog            *pParentBatchEdit;   // Ha batch editből történik a hívás, akkor egy pointer a dialógusra.
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
@@ -742,6 +743,8 @@ protected slots:
     void setNode(qlonglong _nid);
     void refresh();
     void node2place();
+    // Ráböktek az info (popup report) gombra.
+    void info();
 };
 
 
