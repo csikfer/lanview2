@@ -604,12 +604,12 @@ QString cRecordTableOrd::ord()
 
 void cRecordTableOrd::up()
 {
-    moveUp(this);
+    emit moveUp(this);
 }
 
 void cRecordTableOrd::down()
 {
-    moveDown(this);
+    emit moveDown(this);
 }
 
 /* ***************************************************************************************************** */
@@ -767,16 +767,17 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     pLineEdit1 = nullptr;
     pLineEdit2 = nullptr;
     pToTypeModel = nullptr;
+    pCheckBoxI = nullptr;
     (void)*pq;
-    pForm = new Ui::dialogTabFiltOrd();
-    pForm->setupUi(this);
+    pFOTabForm = new Ui::dialogTabFiltOrd();
+    pFOTabForm->setupUi(this);
 
     tRecordTableColumns::ConstIterator i, n = recordView.fields.cend();
     QStringList cols;
     for (i = recordView.fields.cbegin(); i != n; ++i) {
         cTableShapeField& tsf = (*i)->shapeField;
         qlonglong ord = tsf.getId(_sOrdTypes);
-        if (ord & ~enum2set(OT_NO)) {
+        if (ord & ~ENUM2SET(OT_NO)) {
             cRecordTableOrd *pOrd = new cRecordTableOrd(*this, **i, ord);
             ords << pOrd;
             connect(pOrd, SIGNAL(moveUp(cRecordTableOrd*)),   this, SLOT(ordMoveUp(cRecordTableOrd*)));
@@ -795,20 +796,20 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     PDEB(VERBOSE) << tr("Shape : %1 ; filtered fields : %2")
                      .arg(recordView.tableShape().getName(), cols.join(_sCommaSp))
                   << endl;
-    pForm->comboBoxCol->addItems(cols);
-    connect(pForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
-    connect(pForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
+    pFOTabForm->comboBoxCol->addItems(cols);
+    connect(pFOTabForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
+    connect(pFOTabForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
     std::sort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
     setGridLayoutOrder();
     iSelFilterCol  = -1;
     iSelFilterType = -1;
     pSelFilter = nullptr;
-    pForm->comboBoxCol->setCurrentIndex(0);
-    connect(pForm->comboBoxCol,    SIGNAL(currentIndexChanged(int)),   this, SLOT(filtCol(int)));
-    connect(pForm->comboBoxFilt,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
+    pFOTabForm->comboBoxCol->setCurrentIndex(0);
+    connect(pFOTabForm->comboBoxCol,    SIGNAL(currentIndexChanged(int)),   this, SLOT(filtCol(int)));
+    connect(pFOTabForm->comboBoxFilt,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
     filtCol(filters.isEmpty() ? -1 : 0);
-    pForm->pushButton_Default->setDisabled(true);   // Nincs implementálva !
-    pForm->tabWidget->addTab(new cRecordTableHideRows(this), tr("Oszlopok láthatósága"));
+    pFOTabForm->pushButton_Default->setDisabled(true);   // Nincs implementálva !
+    pFOTabForm->tabWidget->addTab(new cRecordTableHideRows(this), tr("Oszlopok láthatósága"));
 }
 
 cRecordTableFODialog::~cRecordTableFODialog()
@@ -855,7 +856,7 @@ int cRecordTableFODialog::indexOf(cRecordTableOrd * _po)
 void cRecordTableFODialog::setGridLayoutOrder()
 {
     if (ords.isEmpty()) return;
-    QGridLayout *pGrid = pForm->gridLayout_Order;
+    QGridLayout *pGrid = pFOTabForm->gridLayout_Order;
     int row = 0;
     foreach (cRecordTableOrd *pOrd, ords) {
         pGrid->addWidget(pOrd->pRowName, row, 0);
@@ -881,17 +882,17 @@ QString cRecordTableFODialog::sCheckInverse;
 
 void cRecordTableFODialog::setFilterDialog()
 {
-    QGridLayout *pGrid = pForm->gridLayoutFilter;
+    QGridLayout *pGrid = pFOTabForm->gridLayoutFilter;
     clearWidgets(pGrid);
     if (sCheckInverse.isEmpty()) {
         sCheckInverse = QObject::tr("Fordított logika");
     }
+    // A fenti clearWidgets()-e töröltük, ha volt:
     pTextEdit = nullptr;   // Long text (param1)
-    pLineEdit1 = nullptr;  // Filter param1
-    pLineEdit2 = nullptr;  // Filter param2
-    pToTypeModel = nullptr;
-    QLabel *pLabel = nullptr;
-    QCheckBox *pCheckBoxI = nullptr;
+    pLineEdit1 = pLineEdit2 = nullptr;  // Filter param 1-2
+    pToTypeModel = nullptr;//
+    pLabel1 = pLabel2 = nullptr;
+    pCheckBoxI = pCheckBoxCS = pCheckBoxEq1 = pCheckBoxEq2 = nullptr;
     if (iSelFilterCol < 0 || iSelFilterType < 0) return;    // skeep
     filter().setFilter(iSelFilterType);
     const cEnumVal *pType = filter().pActFilterType();
@@ -899,7 +900,7 @@ void cRecordTableFODialog::setFilterDialog()
     PDEB(VERBOSE) << QString("%1 : Filter #%2/%3 :")
                      .arg(recordView.tableShape().getName()).arg(iSelFilterCol).arg(iSelFilterType)
                   << s << endl;
-    pForm->lineEditFilt->setText(s);
+    pFOTabForm->lineEditFilt->setText(s);
     //Szűrési paraméter szöveges beviteli mezők:
     int fType = pType->toInt();         // Filter type
     int dType = filter().fieldType();   // Column type
@@ -919,9 +920,9 @@ void cRecordTableFODialog::setFilterDialog()
         setFilterDialogComp(fType, dType);
         break;
     case FT_SQL_WHERE:
-        pLabel    = new QLabel(tr("SQL kifejezés :"));
+        pLabel1    = new QLabel(tr("SQL kifejezés :"));
         pTextEdit = new QPlainTextEdit(filter().param1.toString());
-        pGrid->addWidget(pLabel,    0, 0);
+        pGrid->addWidget(pLabel1,    0, 0);
         pGrid->addWidget(pTextEdit, 0, 1);
         connect(pTextEdit, SIGNAL(textChanged()), &filter(), SLOT(changedText()));
         break;
@@ -943,13 +944,13 @@ void cRecordTableFODialog::setFilterDialogPattern(int fType, int dType)
     static const QString sLabelPattern = tr("Minta :");
     static const QString sCheckCaseSen = tr("Nagybetű érzékeny");
     int row = 0;
-    QLabel *   pLabel      = new QLabel(sLabelPattern);
-    QLineEdit *pLineEditP1 = new QLineEdit(filter().param1.toString());
-    QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);
-    QCheckBox *pCheckBoxCS = new QCheckBox(sCheckCaseSen);
-    QGridLayout *pGrid = pForm->gridLayoutFilter;
-    pGrid->addWidget(pLabel,      row, 0);
-    pGrid->addWidget(pLineEditP1, row, 1);  ++row;
+    pLabel1     = new QLabel(sLabelPattern);
+    pLineEdit1  = new QLineEdit(filter().param1.toString());
+    pCheckBoxI  = new QCheckBox(sCheckInverse);
+    pCheckBoxCS = new QCheckBox(sCheckCaseSen);
+    QGridLayout *pGrid = pFOTabForm->gridLayoutFilter;
+    pGrid->addWidget(pLabel1,      row, 0);
+    pGrid->addWidget(pLineEdit1, row, 1);  ++row;
     pGrid->addWidget(pCheckBoxI,  row, 1);  ++row;
     pGrid->addWidget(pCheckBoxCS, row, 1);  ++row;
     pCheckBoxCS->setChecked(true);
@@ -959,7 +960,7 @@ void cRecordTableFODialog::setFilterDialogPattern(int fType, int dType)
     else {
        connect(pCheckBoxCS, SIGNAL(toggled(bool)), &filter(), SLOT(togledCaseSen(bool)));
     }
-    connect(pLineEditP1, SIGNAL(textChanged(QString)), &filter(), SLOT(changedParam1(QString)));
+    connect(pLineEdit1, SIGNAL(textChanged(QString)), &filter(), SLOT(changedParam1(QString)));
     connect(pCheckBoxI,  SIGNAL(toggled(bool)),        &filter(), SLOT(togledInverse(bool)));
     if (dType & cColStaticDescr::FT_ARRAY) {
         pGrid->addWidget(comboBoxAnyAll(), row, 1);
@@ -974,12 +975,8 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
     static const QString sCheckEq = tr("vagy egyenlő");
     static const QString sLabelTy = tr("Típus mint :");
     int row = 0;
-    QLabel *   pLabel1     = nullptr;
-    QLabel *   pLabel2     = nullptr;
-    QCheckBox *pCheckBoxEq1= nullptr;
-    QCheckBox *pCheckBoxEq2= nullptr;
-    QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);;
-    QGridLayout *pGrid = pForm->gridLayoutFilter;
+    pCheckBoxI  = new QCheckBox(sCheckInverse);;
+    QGridLayout *pGrid = pFOTabForm->gridLayoutFilter;
     switch (fType) {
     case FT_EQUAL:
         pLabel1     = new QLabel(sLabelEq);
@@ -1040,13 +1037,12 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
 void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et, bool _enum)
 {
     cRecordTableFilter& f = filter();
-    QGridLayout *pGrid = pForm->gridLayoutFilter;
+    QGridLayout *pGrid = pFOTabForm->gridLayoutFilter;
     int i;
     for (i = 0; i < et.enumValues.size(); ++i) {
         QString se  = et.enum2str(i);
         QString svs = cEnumVal::viewShort(et, i, se);
         QString svl = cEnumVal::viewLong( et, i, se);
-        QString stt = cEnumVal::toolTip(  et, i);
         cEnumCheckBox *pCheckBox = new cEnumCheckBox(i, &f.setOn, _enum ? nullptr : &f.setOff, svs);
         const cEnumVal& ev = cEnumVal::enumVal(et, i, EX_IGNORE);
         QString sIcon = ev.getName(_sIcon);
@@ -1095,16 +1091,16 @@ void cRecordTableFODialog::filtCol(int _c)
     if (_c != -1) { // If there is any filter
         if (!isContIx(filters, _c)) EXCEPTION(EDATA, _c);
         pSelFilter = filters[_c];
-        pForm->lineEditCol->setText(filter().field.shapeField.getText(cTableShapeField::LTX_DIALOG_TITLE,
+        pFOTabForm->lineEditCol->setText(filter().field.shapeField.getText(cTableShapeField::LTX_DIALOG_TITLE,
                                                                       filter().field.shapeField.getName()));
         QStringList items;
         foreach (const cEnumVal *pe, pSelFilter->filterTypeList) {
             items << pe->getText(cEnumVal::LTX_VIEW_SHORT, pe->getName());
         }
-        pForm->comboBoxFilt->clear();
-        pForm->comboBoxFilt->addItems(items);
+        pFOTabForm->comboBoxFilt->clear();
+        pFOTabForm->comboBoxFilt->addItems(items);
         iSelFilterType = filter().iFilter;
-        pForm->comboBoxFilt->setCurrentIndex(iSelFilterType);
+        pFOTabForm->comboBoxFilt->setCurrentIndex(iSelFilterType);
         iSelFilterCol = _c;
     }
     filtType(iSelFilterType);
@@ -1333,7 +1329,7 @@ cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableSha
 const cRecStaticDescr& cRecordsViewBase::inhRecDescr(qlonglong i) const
 {
     if (pInhRecDescr == nullptr) EXCEPTION(EPROGFAIL);
-    if (pInhRecDescr->find(i) == pInhRecDescr->constEnd()) EXCEPTION(EDATA, i);
+    if (pInhRecDescr->find(i) == pInhRecDescr->end()) EXCEPTION(EDATA, i);
     return *pInhRecDescr->value(i);
 }
 
@@ -1381,8 +1377,6 @@ void cRecordsViewBase::buttonPressed(int id)
     }
     DBGFNL();
 }
-
-// PushButton -> virtual f()
 
 void cRecordsViewBase::close(int r)
 {
@@ -1436,7 +1430,7 @@ void cRecordsViewBase::insert(bool _similar)
             parent_id = pARec->getId();
         }
     }
-    // Egyedi dialógus ablak
+    // Egyedi dialógus ablak van megadva a features mezőben ?
     if (!sInsertDialog.isEmpty()) {
         cRecord *pRec = nullptr;
         cRecordAny sample;
@@ -1455,6 +1449,22 @@ void cRecordsViewBase::insert(bool _similar)
         refresh();
         return;
     }
+    // Hasonló rekord felvétele esetén a tiltott tulajváltás engedélyezése
+    cRecordFieldRef *clearRoRef = nullptr;  // Vissza is kell majd állítani, referencia objektum a mezőre.
+    if (_similar && owner_id != NULL_ID) {
+        int fkix = ixToForeignKey();
+        QString fkn = pRecDescr->columnName(fkix);
+        clearRoRef = new cRecordFieldRef(tableShape().shapeFields.get(fkn)->operator[](_sFieldFlags));
+        qlonglong ff = (*clearRoRef);
+        if (ff & ENUM2SET(FF_READ_ONLY)) {
+            ff &= ~ENUM2SET(FF_READ_ONLY);
+            (*clearRoRef) = ff;
+        }
+        else {  // mégse ...
+            pDelete(clearRoRef);
+        }
+    }
+
     // Dialógus a leíró szerint összeállítva
     // A dialógusban megjelenítendő nyomógombok.
     qlonglong buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
@@ -1542,6 +1552,12 @@ void cRecordsViewBase::insert(bool _similar)
         EXCEPTION(ENOTSUPP);
     }
     pRecordDialog = nullptr;
+    if (clearRoRef != nullptr) {
+        qlonglong ff = (*clearRoRef);
+        ff |= ENUM2SET(FF_READ_ONLY);
+        (*clearRoRef) = ff;
+        delete clearRoRef;
+    }
 }
 
 void cRecordsViewBase::modify(eEx __ex)
@@ -2419,6 +2435,7 @@ void cRecordAsTable::init()
 {
     flags = 0;
     qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
+    st &= ENUM2SET(TS_UNKNOWN_PAD) -1;
     if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
     switch (st) {
     case 0: // ONLY TS_BARE
@@ -2866,7 +2883,6 @@ void cRecordTable::groupDialog(bool __add)
         if (!dmil.isEmpty()) {
             QBitArray memberMap, groupMap;
             cRecordTable *memberTable, * groupTable;
-            QString title;
             qlonglong type = pTableShape->getId(_sTableShapeType);
             if      (type & ENUM2SET(TS_MEMBER)) {  // Add selected members to selected groups in the dialog
                 memberTable = this;

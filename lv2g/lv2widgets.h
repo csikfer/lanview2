@@ -1082,6 +1082,7 @@ private slots:
 
 /// Az osztály egy zóna ás hely QComboBox párossal egy hely kiválasztását teszi lehetővé.
 /// Opcionálisan megadható egy QLineEdit objektum is, a hely nevek szűrésének a megadásához.
+/// A form elemeit paraméterként kell átadni a konstruktornak. Az opcionális elemek utána állíthatóak be.
 class LV2GSHARED_EXPORT cSelectPlace : public QObject {
     Q_OBJECT
 public:
@@ -1092,7 +1093,7 @@ public:
     /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez (típus : FT_SQL_WHERE).
     /// @param _par Parent objektum
     /// A zóna kiválasztásánál nincs szűrési lehetőség, bármelyik zóna kiválasztható lessz,
-    /// az aktuális kiválasztott zóna pedig az "all" lessz.
+    /// az aktuális kiválasztott zóna pedig az "all" lesz, vagy az aktuális zóna.
     /// A hely kiválasztásakor, a NULL megengedett, és ez lessz az aktuálisan kiválasztott.
     cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = nullptr, const QString& _constFilt = QString(), QWidget *_par = nullptr);
     /// Az aktuálisan kiválasztott zóna neve

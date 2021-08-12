@@ -79,5 +79,78 @@ END
 $$;
 
 -- -------------------------------
+-- 2021.08.09
 
+DROP TABLE IF EXISTS place_group_params;
+CREATE TABLE IF NOT EXISTS place_group_params
+(
+    place_group_param_id    bigserial   NOT NULL PRIMARY KEY,
+    place_group_param_name  text        NOT NULL,
+    place_group_param_note  text,
+    place_group_id          bigint      NOT NULL
+        REFERENCES place_groups (place_group_id) MATCH FULL
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    param_type_id           bigint      NOT NULL
+        REFERENCES public.param_types (param_type_id) MATCH FULL
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    param_value             text,
+    flag                    boolean     DEFAULT false,
+    date_of                 timestamp   DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (place_group_param_name, place_group_param_id)
+);
+
+CREATE TRIGGER place_group_param_check_value
+    BEFORE INSERT OR UPDATE 
+    ON public.place_group_params
+    FOR EACH ROW
+    EXECUTE FUNCTION public.check_before_param_value();
+
+CREATE OR REPLACE FUNCTION place_group_param(pgid bigint, pname text) RETURNS text LANGUAGE 'plpgsql' AS $$
+BEGIN
+    RETURN param_value FROM place_group_params WHERE place_group_id = pgid AND place_group_param_name = pname;
+END;
+$$;
+
+DROP TABLE IF EXISTS place_params;
+CREATE TABLE IF NOT EXISTS place_params
+(
+    place_param_id    bigserial   NOT NULL PRIMARY KEY,
+    place_param_name  text        NOT NULL,
+    place_param_note  text,
+    place_id          bigint      NOT NULL
+        REFERENCES places (place_id) MATCH FULL
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    param_type_id           bigint      NOT NULL
+        REFERENCES public.param_types (param_type_id) MATCH FULL
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    param_value             text,
+    flag                    boolean     DEFAULT false,
+    date_of                 timestamp   DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (place_param_name, place_param_id)
+);
+
+CREATE TRIGGER place_param_check_value
+    BEFORE INSERT OR UPDATE 
+    ON public.place_params
+    FOR EACH ROW
+    EXECUTE FUNCTION public.check_before_param_value();
+
+CREATE OR REPLACE FUNCTION place_param(pid bigint, pname text) RETURNS text LANGUAGE 'plpgsql' AS $$
+DECLARE
+    val     text;
+BEGIN
+    SELECT param_value INTO val FROM place_params WHERE place_id = pid AND place_param_name = pname;
+    IF NOT FOUND THEN
+        SELECT param_value INTO val
+            FROM place_group_params
+            JOIN place_group_places USING (place_group_id)
+            JOIN place_groups       USING (place_group_id)
+            WHERE place_id = pid AND place_group_param_name = pname AND place_group_type = 'category'::placegrouptype
+            LIMIT 1;
+    END IF;
+    RETURN val;
+END;
+$$;
+
+-- -------------------------------
 SELECT set_db_version(1, 29);

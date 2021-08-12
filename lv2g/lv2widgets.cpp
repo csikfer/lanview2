@@ -1163,7 +1163,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     bool isText = _colDescr.eColType == cColStaticDescr::FT_TEXT;
-    if (isText && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
+    if (isText && _fieldShape.getBool(_sFieldFlags, FF_HTML_TEXT)) {
         _wType = FEW_HTML_LINES;  // Widget type
         pEditWidget = pTextEdit = new QTextEdit;
         pLayout->addWidget(pTextEdit);
@@ -4315,6 +4315,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     pSlave = nullptr;
     pModelZone = new cZoneListModel(this);
     pModelZone->joinWith(pComboBoxZone);
+    if (lv2g::getInstance()->zoneId != NULL_ID) pModelZone->setCurrent(lv2g::getInstance()->zoneId);
     pModelPlace = new cPlacesInZoneModel(this);
     pModelPlace->joinWith(pComboBoxPLace);
     pComboBoxPLace->setCurrentIndex(0);

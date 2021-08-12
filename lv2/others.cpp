@@ -831,6 +831,7 @@ void cCommaSeparatedValues::clear()
     csv.clear();
     line.clear();
     pStream = new QTextStream(&csv, QIODevice::ReadWrite);
+    (*pStream) << bom;  // BOM / UTF8
 }
 
 const QString& cCommaSeparatedValues::toString() const

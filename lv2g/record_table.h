@@ -170,11 +170,14 @@ public slots:
 
 
 class cRecordsViewBase;
-/// Szűrések és rendezés dialógus.
+/// Szűrések, rendezés és oszlopok láthatósága dialógus.
 /// A rendezés és szűrések állpota
 class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
+    /// Konstruktor
+    /// @param pq Query objektum pointer (nem használt)
+    /// @param _rt A rekordokat megjelenító objektum, tulajdonos.
     cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
     cRecordsViewBase&           recordView;
@@ -191,11 +194,17 @@ public:
     int                         iSelFilterCol;
     /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlophoz tartozó kiválasztott szűrés típus index
     int                         iSelFilterType;
-    QList<cRecordTableOrd *>    ords;
-    Ui::dialogTabFiltOrd *      pForm;  ///< Dialógus form
+    QList<cRecordTableOrd *>    ords;           ///< Rendezés. Lista, soronként a rendezés objektum.
+    Ui::dialogTabFiltOrd *      pFOTabForm;     ///< A dialógus form-ja. (Csak két tab-ot tartalmaz.)
     QPlainTextEdit *            pTextEdit;
-    QLineEdit *                 pLineEdit1;
-    QLineEdit *                 pLineEdit2;
+    QLineEdit *                 pLineEdit1;     ///< Szűrési paraméter 1.
+    QLineEdit *                 pLineEdit2;     ///< Szűrési paraméter 2.
+    QCheckBox *                 pCheckBoxI;     ///< A feltétel inverze
+    QCheckBox *                 pCheckBoxCS;
+    QLabel *                    pLabel1;
+    QLabel *                    pLabel2;
+    QCheckBox *                 pCheckBoxEq1;
+    QCheckBox *                 pCheckBoxEq2;
     cEnumListModel *            pToTypeModel;
 private:
     int indexOf(cRecordTableOrd * _po);
