@@ -196,7 +196,7 @@ void cComboLineWidget::on_NullButton_togled(bool f)
     QVariant newVal = get();
     if (val == newVal) return;
     val = newVal;
-    changed(val);
+    emit changed(val);
 }
 
 void cComboLineWidget::on_ComboBox_textChanged(const QString& s)
@@ -205,18 +205,17 @@ void cComboLineWidget::on_ComboBox_textChanged(const QString& s)
     QVariant newVal = get();
     if (val == newVal) return;
     val = newVal;
-    changed(val);
+    emit changed(val);
 }
 
 /* **************************************** cImageWidget **************************************** */
 
+double cImageWidget::scale = 1.0;
+
 cImageWidget::cImageWidget(QWidget *__par)
     : QScrollArea(__par)
     , image()
-//  , draws()
 {
-    scaleStep = 0.50;
-    scale = 0;
     pLabel = nullptr;
 }
 
@@ -228,7 +227,6 @@ cImageWidget::~cImageWidget()
 bool cImageWidget::setImage(const QString& __fn, const QString& __t)
 {
     hide();
-    scale = 0;
     QString title = __t;
     if (title.isEmpty()) title = "IMAGE : " + __fn;
     setWindowTitle(title);
@@ -244,14 +242,11 @@ bool cImageWidget::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
     return setImage(im, __t);
 }
 
-bool cImageWidget::setImage(const cImage& __o, const QString& __t)
+bool cImageWidget::setImage(const cImage& __o, const QString &__t)
 {
     hide();
-    scale = 0;
     if (!pixmap(__o, image)) return false;
-    QString title = __t;
-    if (title.isEmpty()) title = __o.getNote();
-    setWindowTitle(title);
+    setWindowTitle(__t.isEmpty() ? __o.getName() : __t);
     return resetImage();
 }
 
@@ -278,8 +273,7 @@ void cImageWidget::center(QPoint p)
 
 bool cImageWidget::resetImage()
 {
-    if (scale < 0) image.setDevicePixelRatio(1.0 + (scale * scaleStep));
-    else           image.setDevicePixelRatio(1.0/(1.0 + (scale * scaleStep)));
+    image.setDevicePixelRatio(scale);
     draw();
     pLabel = new QLabel();
     pLabel->setPixmap(image);
@@ -323,14 +317,10 @@ void cImageWidget::draw(QPainter& painter, QVariant& d)
 }
 
 
-void cImageWidget::zoomIn()
+void cImageWidget::zoom(double z)
 {
-    ++scale;
-    resetImage();
-}
-void cImageWidget::zoomOut()
-{
-    --scale;
+    if (z > 0.1) scale = 1/z;
+    else         scale = 10;
     resetImage();
 }
 
@@ -3024,18 +3014,20 @@ cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf
 cBinaryWidget::~cBinaryWidget()
 {
     pDelete(pCImage);
-    pDelete(pImageWidget);
+    if (!pCheckBoxDetach->isChecked()) {
+        pDelete(pImageWidget);
+    }
 }
 
 void cBinaryWidget::_init()
 {
     _wType = FEW_BINARY;
     pLayout         = nullptr;
-    pRadioButtonNULL    = nullptr;
-    pLoadButton     = nullptr;
+    pRadioButtonNULL= nullptr;
+    pUpLoadButton   = nullptr;
+    pDownLoadButton = nullptr;
     pViewButton     = nullptr;
-    pZoomInButton   = nullptr;
-    pZoomOutButton  = nullptr;
+    pDoubleSpinBoxZoom= nullptr;
     pImageWidget    = nullptr;
     pCImage         = nullptr;
     const cRecStaticDescr& cidescr = cImage().descr();
@@ -3047,24 +3039,35 @@ void cBinaryWidget::_init()
     pRadioButtonNULL->setDisabled(_readOnly);
     pLayout->addWidget(pRadioButtonNULL);
     if (!_readOnly) {
-        pLoadButton  = new QPushButton(tr("Betölt"));
-        pLayout->addWidget(pLoadButton);
+        pUpLoadButton = new QPushButton(QIcon("://icons/db_comit.ico"), tr("Feltölt"));
+        pUpLoadButton->setToolTip(tr("A bináris adat ill. kép betöltése egy fájlból."));
+        pLayout->addWidget(pUpLoadButton);
         connect(pRadioButtonNULL, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
-        connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
+        connect(pUpLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
     }
+    pDownLoadButton = new QPushButton(QIcon("://icons/db_update.ico"), tr("Letölt"));
+    pUpLoadButton->setToolTip(tr("A bináris adat ill. kép letöltése egy fájlba."));
+    pLayout->addWidget(pDownLoadButton);
+    connect(pDownLoadButton, SIGNAL(pressed()), this, SLOT(saveDataToFile()));
     if (isCImage) {     // Ha egy cImage objektum része, akkor meg tudjuk jeleníteni.
-        pViewButton     = new QPushButton(tr("Megjelenít"));
+        pViewButton     = new QPushButton(QIcon("://icons/view-preview.ico"), tr("Megjelenít"));
         pViewButton->setDefault(true);
         pLayout->addWidget(pViewButton);
-        pZoomInButton   = new QPushButton(tr("+"));
-        pZoomInButton->setDisabled(true);
-        pLayout->addWidget(pZoomInButton);
-        pZoomOutButton  = new QPushButton(tr("-"));
-        pZoomOutButton->setDisabled(true);
-        pLayout->addWidget(pZoomOutButton);
+        pLayout->addWidget(new QLabel(tr("Nagyít :")));
+        pDoubleSpinBoxZoom  = new QDoubleSpinBox;
+        pDoubleSpinBoxZoom->setValue(cImageWidget::scale);
+        pDoubleSpinBoxZoom->setMinimum(0.1);
+        pDoubleSpinBoxZoom->setMaximum(10);
+        pDoubleSpinBoxZoom->setStepType(QAbstractSpinBox::AdaptiveDecimalStepType);
+        pLayout->addWidget(pDoubleSpinBoxZoom);
         connect(pViewButton, SIGNAL(pressed()), this, SLOT(viewPic()));
         // Ha jó a mező sorrend, akkor ezek a mezők már megvannak.
         connect(anotherField(_sImageType), SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changedAnyField(cFieldEditBase*)));
+        pCheckBoxDetach = new QCheckBox(tr("Leválaszt"));
+        pCheckBoxDetach->setToolTip(tr("A megjelenített kép leválasztása a dialógusról. A kép a dialógus bezárása után is nyitva marad."));
+        pCheckBoxDetach->setChecked(false);
+        pCheckBoxDetach->setDisabled(true);
+        pLayout->addWidget(pCheckBoxDetach);
     }
 }
 
@@ -3131,6 +3134,17 @@ void cBinaryWidget::loadDataFromFile()
     pRadioButtonNULL->setCheckable(true);
     setFromWidget(QVariant(data));
     setCImage();
+    f.close();
+}
+
+void cBinaryWidget::saveDataToFile()
+{
+    QString fn = QFileDialog::getSaveFileName(this);
+    if (fn.isEmpty()) return;
+    QFile f(fn);
+    if (!cMsgBox::tryOpenWrite(f, this)) return;
+    f.write(data);
+    f.close();
 }
 
 void cBinaryWidget::setNull()
@@ -3157,22 +3171,22 @@ void cBinaryWidget::nullChecked(bool checked)
 void cBinaryWidget::closePic()
 {
     if (pImageWidget == nullptr) EXCEPTION(EPROGFAIL);
-    pZoomInButton->setDisabled(true);
-    pZoomOutButton->setDisabled(true);
+    pDoubleSpinBoxZoom->setDisabled(true);
     pImageWidget->close();
     pDelete(pImageWidget);
+    pCheckBoxDetach->setChecked(false);
+    pCheckBoxDetach->setDisabled(true);
 }
 
 void cBinaryWidget::openPic()
 {
     if (pImageWidget) EXCEPTION(EPROGFAIL);
-    pImageWidget = new cImageWidget;
+    cImageWidget::scale = pDoubleSpinBoxZoom->value();
+    pImageWidget = new cImageWidget();
     pImageWidget->setImage(*pCImage);
-    pZoomInButton->setEnabled(true);
-    pZoomOutButton->setEnabled(true);
-    connect(pImageWidget,   SIGNAL(destroyed(QObject*)), this, SLOT(destroyedImage(QObject*)));
-    connect(pZoomInButton,  SIGNAL(pressed()), pImageWidget, SLOT(zoomIn()));
-    connect(pZoomOutButton, SIGNAL(pressed()), pImageWidget, SLOT(zoomOut()));
+    connect(pDoubleSpinBoxZoom, SIGNAL(valueChanged(double)), pImageWidget, SLOT(zoom(double)));
+    // connect(pImageWidget,       SIGNAL(destroyed(QObject*)),  this,         SLOT(destroyedImage(QObject*)));
+    pCheckBoxDetach->setDisabled(false);
 }
 
 void cBinaryWidget::viewPic()

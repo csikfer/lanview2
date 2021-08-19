@@ -198,12 +198,12 @@ public:
     /// Az ablak tartaémának a betöltése az adatbázisból
     /// @par __q Az adatbázis lekérdezéshez használlt objektum.
     /// @par __id A kép rekord ID-je
-    /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
+    /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image név mező lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(QSqlQuery __q, qlonglong __id, const QString& __t = QString());
     /// Az ablak tartaémának a betöltése egy cImage objektumból
     /// @par __o A kép et tartalmazó frltöltött cImage objektum referenciája
-    /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
+    /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image neve lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(const cImage& __o, const QString& __t = QString());
     /// Egy szöveg megjelenítése a kép helyett.
@@ -212,8 +212,7 @@ public:
     virtual void mousePressEvent(QMouseEvent * ev);
     ///
     void center(QPoint p);
-    /// Zoom szorzó
-    double          scaleStep;
+    static double   scale;
 protected:
     bool resetImage();
     void draw();
@@ -221,7 +220,6 @@ protected:
     QLabel *        pLabel;
     /// Az eredeti kép objektum
     QPixmap         image;
-    int             scale;
     QVariantList    draws;
     QBrush          brush;
     QPen            pen;
@@ -236,9 +234,7 @@ signals:
     /// @param A kattintáskori egér pozíció a képen.
     void mousePressed(const QPoint& __p);
 public slots:
-    void zoomIn();
-    void zoomOut();
-
+    void zoom(double z);
 };
 
 /// @class cROToolButton
@@ -850,10 +846,11 @@ protected:
     void openPic();
     QHBoxLayout    *pLayout;
     QRadioButton   *pRadioButtonNULL;
-    QPushButton    *pLoadButton;
+    QPushButton    *pUpLoadButton;
+    QPushButton    *pDownLoadButton;
     QPushButton    *pViewButton;
-    QPushButton    *pZoomInButton;
-    QPushButton    *pZoomOutButton;
+    QDoubleSpinBox *pDoubleSpinBoxZoom;
+    QCheckBox      *pCheckBoxDetach;
     cImageWidget   *pImageWidget;
     QByteArray      data;
     /// A flag értéke true, ha a mező a cImage objektum része
@@ -861,6 +858,7 @@ protected:
     cImage         *pCImage;
 private slots:
     void loadDataFromFile();
+    void saveDataToFile();
     void nullChecked(bool checked);
     void viewPic();
     void changedAnyField(cFieldEditBase * p);

@@ -109,5 +109,7 @@
         <file>icons/language.ico</file>
         <file>icons/disabled.ico</file>
         <file>icons/enabled.ico</file>
+        <file>icons/db_comit.ico</file>
+        <file>icons/db_update.ico</file>
     </qresource>
 </RCC>
