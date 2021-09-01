@@ -127,8 +127,11 @@ private slots:
     void on_pushButtonShNC_clicked();
     void on_buttonBox_clicked(QAbstractButton *button);
     void on_toolButtonName2Place_clicked();
+    void on_pushButtonPortReName_clicked();
+    void on_pushButtonPortReTag_clicked();
 private:
     void setButtons(eTristate _f = TS_NULL);
+    cPPortTableLine * rowByIx(int __ix);
 };
 
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = nullptr);

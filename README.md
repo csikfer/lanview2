@@ -1,6 +1,7 @@
 Hálózat nyilvántartó, monitorozó és vagyonvédelmi szoftver Qt/C++ alapokon.
 
-Vagyonvédelmi hardver eszközökkel kiegészítve.
+A program alapja egy adatbázis, ami leképezi a teljes hálózatot. Erre épül egy lekérdező rendszer, melynek kettős feladata van. Egyrészt adatot gyüjt, feltöltve az adatbázist a lekérdezhető elemekkel, másrészt támogatja a manuális adatbevitelt. Ezen fellül a lekérdező rendszer hasonló feladatokat is elláthat, mint a Nagios rendszer. Végül a rendelkezésre álló állapot adatok lehetővé teszik, hogy vagyonvédelmi funkciókat is ellásson. A rendszer ki lett egészítve hardwer elemekkel, a nem aktív hálózati elemek védelmére.
+
 A program azoknak lehet hasznos, akik nagyobb kliens ill. végpont számú hálózatot menedzselnek, és nem csak a szerverek működésére kiváncsiak.
 
 A dokumentáció folyamatosan készül, akár naponta változhat.
@@ -26,7 +27,7 @@ lv2d	A lanview2 rendszer szerver keret programja.
 
 import	A rendszer interpretere, ill. interpreter távoli végrehajtás szerver pr.
 
-portstat Switch portok állapot lekérdező pr.
+portstat (pstat) Switch portok állapot lekérdező pr.
 
 portvlan Switch portok VLAN kiosztásának a lekérdezése.
 

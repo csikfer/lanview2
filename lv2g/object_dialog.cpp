@@ -751,6 +751,67 @@ void cPatchDialog::setButtons(eTristate _f)
     pUi->buttonBox->button(QDialogButtonBox::Save)->setEnabled(f);
 }
 
+cPPortTableLine * cPatchDialog::rowByIx(int __ix)
+{
+    cPPortTableLine * r = nullptr;
+    foreach (cPPortTableLine * row, rowsData) {
+        bool ok;
+        QTableWidgetItem *pItem = row->tableWidget->item(row->row, CPP_INDEX);
+        if (pItem != nullptr) {
+            int ix = pItem->text().toInt(&ok);
+            if (ok && ix == __ix) {
+                r = row;
+                break;
+            }
+        }
+    }
+    return r;
+}
+
+void cPatchDialog::on_pushButtonPortReName_clicked()
+{
+    int from = pUi->spinBoxFrom->value();
+    int to   = pUi->spinBoxTo->value();
+    int n = to - from +1;
+    if (n <= 0) return;
+    LOCKSLOTS();
+    QString namePattern = pUi->lineEditNamePattern->text();
+    int nameOffs = pUi->spinBoxNameOffs->value();
+    QTableWidgetItem *pItem;
+    for (int i = from; i <= to; i++) {
+        cPPortTableLine *row = rowByIx(i);
+        if (row != nullptr) {
+            QString name = nameAndNumber(namePattern, i + nameOffs);
+            pItem = new QTableWidgetItem(name);
+            row->tableWidget->setItem(row->row, CPP_NAME, pItem);
+        }
+    }
+    UNLOCKSLOTS();
+}
+
+
+void cPatchDialog::on_pushButtonPortReTag_clicked()
+{
+    int from = pUi->spinBoxFrom->value();
+    int to   = pUi->spinBoxTo->value();
+    int n = to - from +1;
+    if (n <= 0) return;
+    LOCKSLOTS();
+    QString tagPattern = pUi->lineEditTagPattern->text();
+    int tagOffs = pUi->spinBoxTagOffs->value();
+    QTableWidgetItem *pItem;
+    for (int i = from; i <= to; i++) {
+        cPPortTableLine *row = rowByIx(i);
+        if (row != nullptr) {
+            QString tag = nameAndNumber(tagPattern, i + tagOffs);
+            pItem = new QTableWidgetItem(tag);
+            row->tableWidget->setItem(row->row, CPP_TAG, pItem);
+        }
+    }
+    UNLOCKSLOTS();
+}
+
+
 cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {
     cPatchDialog dialog(pPar, false);
@@ -1558,3 +1619,4 @@ cEnumValsEdit::~cEnumValsEdit()
 {
 
 }
+
