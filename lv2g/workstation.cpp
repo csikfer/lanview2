@@ -1616,3 +1616,42 @@ void cWorkstation::on_toolButtonName2Place_clicked()
         pSelPlace->setCurrentPlace(pid);
     }
 }
+
+void cWorkstation::on_pushButtonAddDispl_clicked()
+{
+    cTableShape nodeTs;
+    nodeTs.setByName(*pq, _sNodes);
+    nodeTs.fetchFields(*pq);
+    qlonglong buttons = enum2set(DBT_OK, DBT_CANCEL);
+    cRecordDialog * nodeDialog = new cRecordDialog(nodeTs, buttons);
+    cNode sample;
+    QStringList w2d = cSysParam::getTextSysParam(*pq, "workstation2display").split(",");
+    if (!w2d.isEmpty() && !w2d.first().isEmpty()) {
+        QRegExp pattern(w2d.first());
+        if (pattern.isValid()) {
+            QString name = pUi->lineEditName->text();
+            name.replace(pattern, w2d.size() > 1 ? w2d.at(1) : _sNul);
+            sample.setName(name);
+            if (!sample.fetchByName(*pq)) sample.setName(name);
+        }
+    }
+    sample.setId(_sNodeType, ENUM2SET2(NT_NODE, NT_DISPLAY));
+    sample.setId(_sPlaceId, pSelPlace->currentPlaceId());
+    nodeDialog->restore(&sample);
+    while (true) {
+        int r = nodeDialog->exec();
+        if (r == DBT_OK) {
+            bool ok = nodeDialog->accept();
+            if (ok) {
+                cRecord& rec = nodeDialog->record();
+                ok = cErrorMessageBox::condMsgBox(rec.isNullId() ?
+                            rec.tryInsert(*pq, TS_NULL, false) :
+                            rec.tryRewriteById(*pq, TS_NULL, false));
+                if (ok) break;
+            }
+            continue;
+        }
+        break;
+    }
+}
+

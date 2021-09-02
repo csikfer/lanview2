@@ -201,6 +201,7 @@ private slots:
     void on_toolButtonDnsName_clicked();
     void on_toolButtonLocalName_clicked();
     void on_toolButtonName2Place_clicked();
+    void on_pushButtonAddDispl_clicked();
 };
 
 #endif // CWORKSTATION_H
