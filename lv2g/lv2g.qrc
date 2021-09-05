@@ -111,5 +111,7 @@
         <file>icons/enabled.ico</file>
         <file>icons/db_comit.ico</file>
         <file>icons/db_update.ico</file>
+        <file>icons/hwinfo.ico</file>
+        <file>icons/zenmap.ico</file>
     </qresource>
 </RCC>

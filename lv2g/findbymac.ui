@@ -141,6 +141,10 @@
          <property name="text">
           <string>Keres a MAC alapján az adatbázisban</string>
          </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/db_update.ico</normaloff>:/icons/db_update.ico</iconset>
+         </property>
         </widget>
        </item>
        <item>
@@ -167,6 +171,45 @@
          <property name="text">
           <string>Keresés az IP alapján az adatbázisban</string>
          </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/db_update.ico</normaloff>:/icons/db_update.ico</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="pushButtonLocalhost">
+         <property name="text">
+          <string>Localhost</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/hwinfo.ico</normaloff>:/icons/hwinfo.ico</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxLoMac">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxLoIp">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -183,6 +226,10 @@
          </property>
          <property name="text">
           <string>Felderítés</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/measure.png</normaloff>:/icons/measure.png</iconset>
          </property>
         </widget>
        </item>
@@ -216,6 +263,10 @@
          </property>
          <property name="text">
           <string>Letapogatás</string>
+         </property>
+         <property name="icon">
+          <iconset resource="lv2g.qrc">
+           <normaloff>:/icons/zenmap.ico</normaloff>:/icons/zenmap.ico</iconset>
          </property>
         </widget>
        </item>

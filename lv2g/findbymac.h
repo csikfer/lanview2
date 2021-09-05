@@ -57,7 +57,10 @@ private:
     cFBMExpThread *pThread;
     QSqlQuery *pq;
     bool    fMAC, fIP, fSw;
+    QString sReport;    // Report (html) text
     static eTristate nmapExists;
+    QList<QNetworkInterface>    myInterfaces;
+    void appendReport(const QString &s);
 private slots:
     void on_comboBoxMAC_currentTextChanged(const QString& s);
     void on_comboBoxIP_currentTextChanged(const QString& s);
@@ -70,6 +73,9 @@ private slots:
     void finished();
     void on_pushButtonFindIp_clicked();
     void on_pushButtonNMap_clicked();
+    void on_pushButtonLocalhost_clicked();
+    void on_comboBoxLoIp_activated(const QString &arg1);
+    void on_comboBoxLoMac_activated(int index);
 };
 
 

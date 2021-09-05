@@ -1622,6 +1622,9 @@ void cWorkstation::on_pushButtonAddDispl_clicked()
     cTableShape nodeTs;
     nodeTs.setByName(*pq, _sNodes);
     nodeTs.fetchFields(*pq);
+    static const QString sSetofvalue = "setofvalue";
+    nodeTs.shapeFields.get(_sModelName)  ->features()[sSetofvalue] = "'display' = ANY (node_type), nodes";
+    nodeTs.shapeFields.get(_sModelNumber)->features()[sSetofvalue] = "'display' = ANY (node_type), nodes";
     qlonglong buttons = enum2set(DBT_OK, DBT_CANCEL);
     cRecordDialog * nodeDialog = new cRecordDialog(nodeTs, buttons);
     cNode sample;

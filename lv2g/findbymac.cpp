@@ -201,6 +201,14 @@ void cFindByMac::setButtons()
     pUi->toolButtonIP2MAC->setEnabled(fIP);
 }
 
+void cFindByMac::appendReport(const QString& s)
+{
+    if (!sReport.isEmpty()) sReport += sHtmlBr;
+    sReport += s;
+    pUi->textEdit->setHtml(sHtmlHead + sReport + sHtmlTail);
+}
+
+
 void cFindByMac::on_comboBoxMAC_currentTextChanged(const QString& s)
 {
     fMAC = cMac::isValid(s);
@@ -215,15 +223,21 @@ void cFindByMac::on_comboBoxIP_currentTextChanged(const QString& s)
 
 void cFindByMac::on_pushButtonClear_clicked()
 {
+    pUi->pushButtonLocalhost->setEnabled(true);
+    pUi->comboBoxLoMac->setDisabled(true);
+    pUi->comboBoxLoMac->clear();
+    pUi->comboBoxLoIp->setDisabled(true);
+    pUi->comboBoxLoIp->clear();
     setAllMac();
     pUi->comboBoxIP->clear();
+    sReport.clear();
 }
 
 void cFindByMac::on_pushButtonFindMac_clicked()
 {
     QString sMac = pUi->comboBoxMAC->currentText();
     QString text = htmlReportByMac(*pq, sMac);
-    pUi->textEdit->append(text);
+    appendReport(text);
 }
 
 void cFindByMac::on_pushButtonExplore_clicked()
@@ -235,7 +249,7 @@ void cFindByMac::on_pushButtonExplore_clicked()
     QString swName = pUi->comboBoxSw->currentText();
     cSnmpDevice sw;
     if (ip.isNull() || !mac.isValid() || !sw.fetchByName(q, swName)) {
-        pUi->textEdit->append(htmlError(tr("Hibás adatok.")));
+        appendReport(htmlError(tr("Hibás adatok.")));
         return;
     }
     pThread = new cFBMExpThread(mac, ip, sw, this);
@@ -269,7 +283,7 @@ void cFindByMac::on_toolButtonMAC2IP_clicked()
 
 void cFindByMac::expLine(QString s)
 {
-    pUi->textEdit->append(s);
+    appendReport(s);
 }
 
 void cFindByMac::finished()
@@ -283,11 +297,58 @@ void cFindByMac::on_pushButtonFindIp_clicked()
 {
     QString sIp = pUi->comboBoxIP->currentText();
     QString text = htmlReportByIp(*pq, sIp);
-    pUi->textEdit->append(text);
+    appendReport(text);
 }
 
 void cFindByMac::on_pushButtonNMap_clicked()
 {
     QString sIp = pUi->comboBoxIP->currentText();
     new cPopUpNMap(this, sIp);
+}
+
+void cFindByMac::on_pushButtonLocalhost_clicked()
+{
+    pUi->pushButtonLocalhost->setDisabled(true);
+    myInterfaces = QNetworkInterface::allInterfaces();
+    QMutableListIterator<QNetworkInterface>    i(myInterfaces);
+    cMac    mac;
+    while (i.hasNext()) {
+        QNetworkInterface &iface = i.next();
+        mac = iface.hardwareAddress();
+        if (mac.isValid()) {
+            pUi->comboBoxLoMac->addItem(mac.toString());
+        }
+        else {
+            i.remove();
+        }
+    }
+    bool e = !myInterfaces.isEmpty();
+    pUi->comboBoxLoMac->setEnabled(e);
+    if (e) {
+        pUi->comboBoxLoMac->setCurrentIndex(0);
+        on_comboBoxLoMac_activated(0);
+    }
+}
+
+void cFindByMac::on_comboBoxLoMac_activated(int index)
+{
+    pUi->comboBoxMAC->setCurrentText(myInterfaces.at(index).hardwareAddress());
+    bool e = false;
+    foreach (QNetworkAddressEntry ae, myInterfaces.at(index).addressEntries()) {
+        QHostAddress a = ae.ip();
+        if (!a.isNull()) {
+            pUi->comboBoxLoIp->addItem(a.toString());
+            e = true;
+        }
+    }
+    pUi->comboBoxLoIp->setEnabled(e);
+    if (e) {
+        pUi->comboBoxLoIp->setCurrentIndex(0);
+        on_comboBoxLoIp_activated(pUi->comboBoxLoIp->currentText());
+    }
+}
+
+void cFindByMac::on_comboBoxLoIp_activated(const QString &arg1)
+{
+    pUi->comboBoxIP->setCurrentText(arg1);
 }

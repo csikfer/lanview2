@@ -16,7 +16,7 @@ const QString sHtmlBr     = "<br>\n";
 const QString sHtmlBRed   = "<b><span style=\"color:red\"> %1 </span></b>";
 const QString sHtmlBGreen = "<b><span style=\"color:green\"> %1 </span></b>";
 const QString sHtmlNbsp   = " &nbsp; ";
-const QString sVoid   = " - ";
+const QString sVoid       = " - ";
 const QString sSpColonSp  = " : ";
 
 
