@@ -3,6 +3,10 @@
 #include "lanview.h"
 #include "others.h"
 // #include "lv2types.h"
+#if defined(Q_OS_WINDOWS)
+#  include <Windows.h>
+#  include <wtsapi32.h>
+#endif  // defined(Q_OS_WINDOWS)
 
 /*!
 @file lv2datab.h

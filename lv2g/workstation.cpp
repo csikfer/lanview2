@@ -459,7 +459,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // RDP Windows-on, ha ez egy RDP kliens
 #if defined(Q_OS_WINDOWS)
     rdpClientAddr = rdpClientAddress();
-    if (!rdpClientAddr.isValid()) {
+    if (rdpClientAddr.isNull()) {
         pUi->pushButtonRDP->hide();
     }
 #else   // not defined(Q_OS_WINDOWS)
@@ -471,34 +471,6 @@ cWorkstation::~cWorkstation()
 {
     delete pq;
 }
-
-#if defined(Q_OS_WINDOWS)
-bool cWorkstation::rdp()
-{
-    rdpClientAddr.clear();
-    LPSTR  pBuffer = nullptr;
-    DWORD  bytesReturned;
-    BOOL isRDPClient = WTSQuerySessionInformationA(
-                WTS_CURRENT_SERVER_HANDLE,
-                WTS_CURRENT_SESSION,
-                WTSClientAddress,
-                &pBuffer,
-                &bytesReturned);
-    if (isRDPClient && pBuffer != nullptr && bytesReturned == sizeof (WTS_CLIENT_ADDRESS)) {
-        WTS_CLIENT_ADDRESS& car = *(WTS_CLIENT_ADDRESS *)pBuffer;
-        if (car.AddressFamily == AF_INET) {
-            // QString sa = (char *)car.Address;    // A leírás szerint ennek a kliens címnek kellene lennie
-            // de nem stringként hanem binárisan van benne a cím: 3-6 byte, és fordítva, mint ahogy a setAddress() várja.
-            quint32 a = qFromBigEndian(*(quint32 *)(car.Address +2));
-            rdpClientAddr.setAddress(a);
-        }
-    }
-    if (isRDPClient && pBuffer != nullptr) {
-        WTSFreeMemory(pBuffer);
-    }
-    return !rdpClientAddr.isNull();
-}
-#endif  // defined(Q_OS_WINDOWS)
 
 void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& fn, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
@@ -1572,7 +1544,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
 void cWorkstation::on_pushButtonRDP_clicked()
 {
 #if defined(Q_OS_WINDOWS)
-    rdp();
+    rdpClientAddr = rdpClientAddress();
     pIpEditWidget->set(rdpClientAddr);
     ip_go();
 #endif  // defined(Q_OS_WINDOWS)

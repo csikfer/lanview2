@@ -9,9 +9,6 @@
 #include <QBitArray>
 #include <QSqlQuery>
 #include <QHostAddress>
-#if defined(Q_OS_WINDOWS)
-#  include <wtsapi32.h>
-#endif  // defined(Q_OS_WINDOWS)
 
 inline bool isNumNull(const QVariant v)
 {

@@ -123,7 +123,7 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     // RDP Windows-on, ha ez egy RDP kliens
 #if defined(Q_OS_WINDOWS)
     rdpClientAddr = rdpClientAddress();
-    if (!rdpClientAddr.isValid()) {
+    if (rdpClientAddr.isNull()) {
         pUi->pushButtonRDP->hide();
     }
 #else   // not defined(Q_OS_WINDOWS)
@@ -366,6 +366,7 @@ void cFindByMac::on_comboBoxLoIp_activated(const QString &arg1)
 void cFindByMac::on_pushButtonRDP_clicked()
 {
 #if defined(Q_OS_WINDOWS)
+    rdpClientAddr = rdpClientAddress();
     pUi->comboBoxIP->setCurrentText(rdpClientAddr.toString());
     on_toolButtonIP2MAC_clicked();
 #endif  // defined(Q_OS_WINDOWS)
