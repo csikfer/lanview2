@@ -188,15 +188,26 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="pushButtonLocalhost">
-         <property name="text">
-          <string>Localhost</string>
-         </property>
-         <property name="icon">
-          <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/hwinfo.ico</normaloff>:/icons/hwinfo.ico</iconset>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QPushButton" name="pushButtonLocalhost">
+           <property name="text">
+            <string>Localhost</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/hwinfo.ico</normaloff>:/icons/hwinfo.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonRDP">
+           <property name="text">
+            <string>RDP terminál</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QComboBox" name="comboBoxLoMac">

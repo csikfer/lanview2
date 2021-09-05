@@ -120,6 +120,16 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     fMAC = fIP = fSw = false;
     pUi->setupUi(this);
     setAllMac();
+    // RDP Windows-on, ha ez egy RDP kliens
+#if defined(Q_OS_WINDOWS)
+    rdpClientAddr = rdpClientAddress();
+    if (!rdpClientAddr.isValid()) {
+        pUi->pushButtonRDP->hide();
+    }
+#else   // not defined(Q_OS_WINDOWS)
+    pUi->pushButtonRDP->hide();
+#endif  // defined(Q_OS_WINDOWS)
+
 #ifdef SNMP_IS_EXISTS
     setSwitchs();
 #else   // SNMP_IS_EXISTS
@@ -352,3 +362,12 @@ void cFindByMac::on_comboBoxLoIp_activated(const QString &arg1)
 {
     pUi->comboBoxIP->setCurrentText(arg1);
 }
+
+void cFindByMac::on_pushButtonRDP_clicked()
+{
+#if defined(Q_OS_WINDOWS)
+    pUi->comboBoxIP->setCurrentText(rdpClientAddr.toString());
+    on_toolButtonIP2MAC_clicked();
+#endif  // defined(Q_OS_WINDOWS)
+}
+

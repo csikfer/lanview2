@@ -979,3 +979,30 @@ void cCommaSeparatedValues::splitLine()
     }
 }
 
+QHostAddress rdpClientAddress()
+{
+    QHostAddress rdpClientAddr;
+#if defined(Q_OS_WINDOWS)
+    LPSTR  pBuffer = nullptr;
+    DWORD  bytesReturned;
+    BOOL isRDPClient = WTSQuerySessionInformationA(
+                WTS_CURRENT_SERVER_HANDLE,
+                WTS_CURRENT_SESSION,
+                WTSClientAddress,
+                &pBuffer,
+                &bytesReturned);
+    if (isRDPClient && pBuffer != nullptr && bytesReturned == sizeof (WTS_CLIENT_ADDRESS)) {
+        WTS_CLIENT_ADDRESS& car = *(WTS_CLIENT_ADDRESS *)pBuffer;
+        if (car.AddressFamily == AF_INET) {
+            // QString sa = (char *)car.Address;    // A leírás szerint ennek a kliens címnek kellene lennie
+            // de nem stringként hanem binárisan van benne a cím: 3-6 byte, és fordítva, mint ahogy a setAddress() várja.
+            quint32 a = qFromBigEndian(*(quint32 *)(car.Address +2));
+            rdpClientAddr.setAddress(a);
+        }
+    }
+    if (isRDPClient && pBuffer != nullptr) {
+        WTSFreeMemory(pBuffer);
+    }
+#endif  // defined(Q_OS_WINDOWS)
+    return rdpClientAddr;
+}

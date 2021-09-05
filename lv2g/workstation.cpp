@@ -15,11 +15,7 @@
 #include "findbymac.h"
 #include "input_dialog.h"
 #include <QSysInfo>
-
 #include <QNetworkInterface>
-#if defined(Q_OS_WINDOWS)
-#  include <wtsapi32.h>
-#endif  // defined(Q_OS_WINDOWS)
 
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
@@ -462,7 +458,8 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
 
     // RDP Windows-on, ha ez egy RDP kliens
 #if defined(Q_OS_WINDOWS)
-    if (!rdp()) {
+    rdpClientAddr = rdpClientAddress();
+    if (!rdpClientAddr.isValid()) {
         pUi->pushButtonRDP->hide();
     }
 #else   // not defined(Q_OS_WINDOWS)
