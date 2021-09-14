@@ -113,5 +113,6 @@
         <file>icons/db_update.ico</file>
         <file>icons/hwinfo.ico</file>
         <file>icons/zenmap.ico</file>
+        <file>icons/gnome-rdp.ico</file>
     </qresource>
 </RCC>

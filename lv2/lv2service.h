@@ -49,7 +49,7 @@ enum eInspectorType {
     IT_METHOD_NAGIOS        = 0x00100000L,  ///< NAGIOS plugin
     IT_METHOD_JSON          = 0x00300000L,  ///< JSON output
 
-    IT_METHOD_MASK          = 0x00FFF000L,
+    IT_METHOD_MASK          = 0x00FFFF00L,
     IT_METHOD_MASK_PROCESS  = 0x00F2D000L,
 
     IT_SUPERIOR             = 0x01000000L,   ///< Alárendelt funkciók vannak

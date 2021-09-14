@@ -1543,8 +1543,13 @@ bool cInspector::doRun(bool __timed)
         if (plv->lastError == lastError) plv->lastError = nullptr;
         pDelete(lastError);
         statMsg = msgCat(statMsg, tr("Hiba, ld.: app_errs.applog_id = %1").arg(id));
-        setState(*pQuery(), _sUnreachable, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
+        try {
+            setState(*pQuery(), _sUnreachable, statMsg, parentId(EX_IGNORE));
+        }  catch (...) {
+            PDEB(DERROR) << name() << " : " << statMsg << endl;
+            internalStat = IS_ERROR;
+        }
     }
     else {
         if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pQuery(), tn);
@@ -1630,22 +1635,29 @@ int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
         return r;
     }
     QByteArray bytes = _text.readAll();
+    PDEB(VVERBOSE) << "Parsing text : \n" << bytes << endl;
     int method = inspectorType & IT_METHOD_MASK;
     if (method != 0) {
         QString text = QString::fromUtf8(bytes);
-        if (method & IT_METHOD_SAVE_TEXT)  r = save_text(_ec, text);
-        if (method & IT_METHOD_PARSE_TEXT) r = parse_text(_ec, text, runMsg);
+        if (method & IT_METHOD_SAVE_TEXT) {
+            r = save_text(_ec, text);
+        }
+        if (method & IT_METHOD_PARSE_TEXT) {
+            r = parse_text(_ec, text, runMsg);
+        }
         switch (method & IT_METHODE_TEXT_DATA) {
         case IT_METHOD_NAGIOS:  r = parse_nagios(_ec, text, runMsg);    break;
         case IT_METHOD_JSON:    r = parse_json(_ec, bytes, runMsg);     break;
         }
         if (method & IT_METHOD_QPARSE) r = parse_qparse(_ec, text);
     }
+    _DBGFNL() << r << endl;
     return r;
 }
 
 enum eNotifSwitch cInspector::parse_nagios(int _ec, QString &text, QString& runMsg)
 {
+    _DBGFN() <<  name() << endl;
     eNotifSwitch r = RS_DOWN;
     switch (_ec) {
     case NR_OK:         r = RS_ON;           break;
@@ -1715,6 +1727,7 @@ static QJsonValue searchJsonValue(const QJsonValue& o, const QString& keys)
 
 enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text, QString &runMsg)
 {
+    _DBGFN() <<  name() << endl;
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(text, &err);
     int st = _ec == 0 ? RS_ON : RS_WARNING;
@@ -1739,6 +1752,7 @@ enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text, QStrin
 
 enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
 {
+    _DBGFN() <<  name() << endl;
     cRecord *pParam;
     if (pPort != nullptr) {
         pParam = new cPortParam;
@@ -1761,27 +1775,35 @@ enum eNotifSwitch cInspector::save_text(int _ec, const QString &text)
 
 enum eNotifSwitch cInspector::parse_text(int _ec, QString &text, QString &runMsg)
 {
+    _DBGFN() <<  name() << endl;
     int r = RS_ON;
     if (_ec != 0) {
         msgAppend(&runMsg, tr("Command return : %1.").arg(_ec));
         r = RS_WARNING;
     }
-    if (isFeature("list"))      return parse_list(r, text, runMsg);
-    if (isFeature(_sTagged))    return parse_tagged(r, text, runMsg);
+    if (isFeature("list")) {
+        return parse_list(r, text, runMsg);
+    }
+    if (isFeature(_sTagged)) {
+        return parse_tagged(r, text, runMsg);
+    }
     msgAppend(&runMsg, tr("Parse text : Type is not defined."));
     return RS_UNREACHABLE;
 }
 
 enum eNotifSwitch cInspector::parse_list(int r, QString &text, QString &runMsg)
 {
+    _DBGFN() <<  name() << endl;
     QStringList values = text2list(text);
     if (values.isEmpty()) {
         msgAppend(&runMsg, tr("Parse text list: There is no value."));
         return RS_UNREACHABLE;
     }
     bool ok;
-    foreach (QString vname, varsFeatureMap.keys()) {
-        QString sIx = varsFeatureMap[vname];
+    QMapIterator<QString, QString> i(varsFeatureMap);
+    while (i.hasNext()) {      i.next();
+        const QString& vname = i.key();
+        const QString& sIx   = i.value();
         int ix = sIx.toInt(&ok);
         if (!ok) {
             msgAppend(&runMsg, tr("Invalid variable index : %1.").arg(sIx));
@@ -1803,6 +1825,7 @@ enum eNotifSwitch cInspector::parse_list(int r, QString &text, QString &runMsg)
 
 enum eNotifSwitch cInspector::parse_tagged(int r, QString &text, QString &runMsg)
 {
+    _DBGFN() <<  name() << endl;
     QStringList values = text2list(text);
     if (values.isEmpty()) {
         msgAppend(&runMsg, tr("Parse tagged text : There is no value."));
