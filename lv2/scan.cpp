@@ -121,8 +121,12 @@ QList<QHostAddress> cArpTable::operator[](const cMac& __a) const
 QString cArpTable::toString() const
 {
     QString r;
-    QSet<cMac> set = values().toSet();
-    foreach (cMac mac, set) {
+    QList<cMac> macs = values();
+    std::sort(macs.begin(), macs.end());
+    cMac lastMac;
+    foreach (cMac mac, macs) {
+        if (lastMac == mac) continue;
+        lastMac = mac;
         QList<QHostAddress> al = (*this)[mac];
         r += mac.toString() + " - ";
         if (al.size() == 1) r += al[0].toString();
@@ -467,7 +471,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             cOId oidAddr = name - oid;
             if (!oidAddr) break;    // Ha a végére értünk
             int  i    = snmp.value().toInt(&ok);
-            if (!ok) EX(EDATA, -1, QString("SNMP index: %1 '%2'").arg(name.toString()).arg(snmp.value().toString()));
+            if (!ok) EX(EDATA, -1, QString("SNMP index: %1 '%2'").arg(name.toString(), snmp.value().toString()));
             QString sAddr = oidAddr.toNumString();  // IP address string
             QHostAddress addr(sAddr);               // check
             if (addr.isNull()) EX(EDATA, -1, QString("%1/%2").arg(sAddr, oidAddr.toNumString()));
@@ -496,12 +500,13 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
         int             ifType  = (*ptab)[_sIfType] [i].toInt(&ok);
         // ifType is numeric ?
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg((*ptab)[_sIfType][i].toString()));
+        const cIfType  *pIfType = cIfType::fromIana(ifType);
         int             ifIndex = (*ptab)[_sIfIndex][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifIndex: '%1'").arg((*ptab)[_sIfIndex][i].toString()));
         // If ifname is empty, then ifName is ifDescr
-        if (ifName.isEmpty()) ifName = ifDescr;
+        if (ifName.isEmpty()) ifName = ifDescr;     // Ha nincs ifName, akkor a név az ifDescr
+        if (ifName.isEmpty()) ifName = QString("%1-%2").arg(pIfType->getName()).arg(ifIndex);   // Ha még mindíg nincs név.
         // IANA type (ifType) -->  port object type
-        const cIfType  *pIfType = cIfType::fromIana(ifType);
         if (pIfType == nullptr) {
             QString msg = QObject::tr("Unhandled interface type %1 : #%2 %3")
                     .arg(ifType).arg(ifIndex).arg(ifName);
@@ -510,7 +515,6 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             continue;
         }
         ifName.prepend(pIfType->getName(_sIfNamePrefix));  // Set name prefix, avoid name collisions
-        QString         ifTypeName = pIfType->getName();
         cNPort *pPort = cNPort::newPortObj(*pIfType);
         if (pPort->descr().tableName() != _sInterfaces) {
             EX(EDATA, -1, QObject::tr("Invalid port object type"));
@@ -610,7 +614,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             const cIfType  *pIfType = cIfType::fromIana(type);
             if (pIfType == nullptr) {  // Unknown types. This was discarded in the first round
                 QHostAddress    addr((*ptab)[_sIpAdEntAddr][i].toString());
-                if (addr.isNull()) continue;    // If there is no address, then we will drop it now
+                if (addr.isNull() || addr.isLoopback()) continue;    // If there is no address, then we will drop it now
                 pIfType = &cIfType::ifType(_sVEth);  // The address belongs to this, then it should be virtual ethernet
                 QString         name = (*ptab)[_sIfName][i].toString();
                 cNPort *pPort = cNPort::newPortObj(*pIfType);
@@ -636,13 +640,34 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             }
         }
     }
-    if (!found) EX(EDATA, -1, QString("IP is not found"));
-    if (!foundMyIp) {
-        expWarning(QObject::tr("A lekérdezés nem adta vissza a lekérdezéshez használlt %1 IP címet.").arg(hostAddr.toString()));
+    if (!found) {   // Még mindíg nincs IP cím, tippelünk az ARP tábla alapján
+        QListIterator<cNPort *> i(node.ports);
+        while (i.hasNext()) {
+            cNPort *pPort = i.next();
+            if (pPort->chkObjType<cInterface>(EX_IGNORE) >= 0) {
+                cMac mac = pPort->getMac(_sHwAddress);
+                if (mac.isValid()) {
+                    QHostAddress addr = mac2ipByArpTable(mac);
+                    if (!addr.isNull()) {
+                        expWarning(QObject::tr("Az ARP táblák alapján tippelt IP cím: %1 -> %2.").arg(mac.toString(), addr.toString()));
+                        found = true;
+                        portSetAddress(q, node, hostAddr, *pPort, addr, found, foundMyIp, foundJoint);
+                    }
+                }
+            }
+        }
     }
-    if (foundJoint && !node.getBool(_sNodeType, NT_CLUSTER)) {
-        expWarning(QObject::tr("Az eszköznél nem volt megadva a 'cluster' kapcsoló, ugyanakkor találtunk 'joint' típusú címet."));
-        node.enum2setOn(_sNodeType, NT_CLUSTER);
+    if (!found) {
+        expWarning(QObject::tr("A lekérdezés nem adtott vissza semmilyen IP címet."));
+    }
+    else {
+        if (!foundMyIp) {
+            expWarning(QObject::tr("A lekérdezés nem adta vissza a lekérdezéshez használlt %1 IP címet.").arg(hostAddr.toString()));
+        }
+        if (foundJoint && !node.getBool(_sNodeType, NT_CLUSTER)) {
+            expWarning(QObject::tr("Az eszköznél nem volt megadva a 'cluster' kapcsoló, ugyanakkor találtunk 'joint' típusú címet."));
+            node.enum2setOn(_sNodeType, NT_CLUSTER);
+        }
     }
     _DBGFNL() << "OK, node : " << node.toString() << endl;
     if (_pTable == nullptr) delete ptab;
@@ -690,7 +715,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
     cSnmp   snmp(ma, node.getName(_sCommunityRd), node.snmpVersion());
 
     if (!snmp.isOpened()) {
-        es = QObject::tr("SNMP open(%1, %2) error. ").arg(ma).arg(node.getName(_sCommunityRd));
+        es = QObject::tr("SNMP open(%1, %2) error. ").arg(ma, node.getName(_sCommunityRd));
         if (__ex) EXCEPTION(EDATA, -1, es);
         DERR() << es << endl;
         if (pEs != nullptr) *pEs += es;
@@ -832,19 +857,11 @@ cOId        *cLldpScan::pAddrOid = nullptr;
 QString cLldpScan::rowData::toString()
 {
     QString r;
-    r  = QString("Name/Descr = %1/%2; ")
-            .arg(quotedString(name))
-            .arg(quotedString(descr));
-    r += QString("CLocal = %1; ")
-            .arg(quotedString(clocal));
-    r  = QString("Port Name/Descr = %1/%2; ")
-            .arg(quotedString(pname))
-            .arg(quotedString(pdescr));
-    r += QString("MAC = %1/%2; ")
-            .arg(cmac.isValid() ? cmac.toString() : _sNULL)
-            .arg(cmac.isValid() ? pmac.toString() : _sNULL);
-    r += QString("IP = ")
-            .arg(addr.isNull() ? _sNULL : addr.toString());
+    r  = QString("Name/Descr = %1/%2; ").arg(quotedString(name),quotedString(descr));
+    r += QString("CLocal = %1; ").arg(quotedString(clocal));
+    r  = QString("Port Name/Descr = %1/%2; ").arg(quotedString(pname), quotedString(pdescr));
+    r += QString("MAC = %1/%2; ").arg(cmac.isValid() ? cmac.toString() : _sNULL, cmac.isValid() ? pmac.toString() : _sNULL);
+    r += QString("IP = ").arg(addr.isNull() ? _sNULL : addr.toString());
     return r;
 }
 
@@ -909,9 +926,7 @@ bool cLldpScan::updateLink(cAppMemo &em)
 {
     DBGFNL();
 
-    QString tl = QObject::tr("%1:%2 <==> %3:%4")
-            .arg(pDev->getName(), lPort.getName())
-            .arg(rHost.getName(), rPort.getName());
+    QString tl = QObject::tr("%1:%2 <==> %3:%4").arg(pDev->getName(), lPort.getName(), rHost.getName(), rPort.getName());
     lnk.clear();
     qlonglong lId = lPort.getId();
     qlonglong rId = rPort.getId();
@@ -1225,8 +1240,8 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
                        "Nem egyezik a MAC %1/%2 alapján : %3\n\t"
                        "az IP %4 alapján talált eszközzel : %5\n\t"
                        )
-                   .arg(row.cmac.toString(), row.pmac.toString(), pp->identifying())
-                   .arg(row.addr.toString(),                     pp2->identifying());
+                   .arg(row.cmac.toString(), row.pmac.toString(), pp->identifying(),
+                        row.addr.toString(),                     pp2->identifying());
             pDelete(pp2);
             if (rIpPort.isNull()) { // töröltük
                 mm += QObject::tr("Az Ip alapján talált eszközön az IP cím törölve lessz!");
@@ -1537,7 +1552,7 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                         }
                         sa.chop(2);
                     }
-                    QString ln = QObject::tr("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
+                    QString ln = QObject::tr("\nLocal node %1 (%2)").arg(pDev->getName(), sa);
                     QString line = "\nSNMP LINE : ";
                     snmp.first();   line += snmp.name().toString() + ", ";
                     snmp.next();    line += snmp.name().toNumString() + ", ";
@@ -2359,6 +2374,64 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
 }
 
 #else
-#error "Invalid projects file ?"
+
 #endif // SNMP_IS_EXISTS
+
+// ARP
+cMac ip2macByArpTable(const QHostAddress& a)
+{
+    cMac r;
+    QString sa = a.toString();
+#if defined(Q_OS_WINDOWS)
+
+#else   // !defined(Q_OS_WINDOWS)
+    static const QString arpFileName = "/proc/net/arp";
+    QRegExp sep("\\s+");
+    QFile   fArp(arpFileName);
+    if (fArp.open(QIODevice::ReadOnly)) {
+        QTextStream str(&fArp);
+        QString line;
+        while (!(line = str.readLine()).isEmpty()) {
+            QStringList sl = line.split(sep);
+            if (sl.size() >= 4 && 0 == sl.first().compare(sa)) {
+                r.set(sl.at(3));
+                break;
+            }
+        }
+    }
+    else {
+        PDEB(DERROR) << "Open error : " << arpFileName << endl;
+    }
+#endif  // defined(Q_OS_WINDOWS)
+    return r;
+}
+
+QHostAddress mac2ipByArpTable(const cMac& a)
+{
+    QHostAddress r;
+    QString sa = a.toString();
+#if defined(Q_OS_WINDOWS)
+#else   // !defined(Q_OS_WINDOWS)
+    static const QString arpFileName = "/proc/net/arp";
+    QRegExp sep("\\s+");
+    QFile   fArp(arpFileName);
+    if (fArp.open(QIODevice::ReadOnly)) {
+        QTextStream str(&fArp);
+        QString line;
+        while (!(line = str.readLine()).isEmpty()) {
+            QStringList sl = line.split(sep);
+            if (sl.size() >= 4 && 0 == sl.at(3).compare(sa, Qt::CaseInsensitive)) {
+                r.setAddress(sl.first());
+                break;
+            }
+        }
+    }
+    else {
+        PDEB(DERROR) << "Open error : " << arpFileName << endl;
+    }
+#endif  // defined(Q_OS_WINDOWS)
+    return r;
+}
+
+
 

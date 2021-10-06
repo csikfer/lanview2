@@ -13,7 +13,7 @@ cSnmpDevQPort::cSnmpDevQPort(cSnmpDevQuery * _par, int _r, cNPort *_pp)
     , pTableWidget(_par->ui->tableWidget)
     , table(_par->table)
     , row(_r)
-    , pPort(_pp)
+    , pPort(_pp)    // Original port by name, if exists
     , mac(table[_sIfPhysAddress][row].toByteArray())
 {
     pInterface = nullptr;

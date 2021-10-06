@@ -427,5 +427,7 @@ inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSepa
 { return (*__pf)(__s); }
 
 EXT_ QHostAddress rdpClientAddress();
+
+
 #endif // OTHERS_H
 

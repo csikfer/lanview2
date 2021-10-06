@@ -108,4 +108,7 @@ inline void exploreByAddress(cMac, QHostAddress, cSnmpDevice&) { EXCEPTION(ENOTS
 
 #endif // SNMP_IS_EXIST
 
+EXT_ cMac ip2macByArpTable(const QHostAddress& a);
+EXT_ QHostAddress mac2ipByArpTable(const cMac& a);
+
 #endif // SCAN_H

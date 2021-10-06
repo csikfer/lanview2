@@ -7,6 +7,7 @@
 #  include <Windows.h>
 #  include <wtsapi32.h>
 #endif  // defined(Q_OS_WINDOWS)
+#include <QTextStream>
 
 /*!
 @file lv2datab.h
@@ -1010,3 +1011,5 @@ QHostAddress rdpClientAddress()
 #endif  // defined(Q_OS_WINDOWS)
     return rdpClientAddr;
 }
+
+

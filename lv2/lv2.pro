@@ -94,7 +94,8 @@ SOURCES += \
     report.cpp \
     lv2mariadb.cpp \
     lv2glpi.cpp \
-    qtelnet.cpp
+    qtelnet.cpp \
+    scan.cpp
 
 HEADERS += \
     lv2_global.h \
@@ -134,7 +135,6 @@ unix:{
     SOURCES += usignal.cpp
     HEADERS += usignal.h
     exists(/usr/include/net-snmp) {
-        SOURCES += scan.cpp
         LIBS += -lsnmp
         DEFINES += SNMP_IS_EXISTS
     }

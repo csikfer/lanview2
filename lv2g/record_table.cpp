@@ -2434,7 +2434,7 @@ cRecordAsTable::~cRecordAsTable()
 void cRecordAsTable::init()
 {
     flags = 0;
-    qlonglong st = shapeType & ~ENUM2SET3(TS_TABLE, TS_READ_ONLY, TS_BARE);
+    qlonglong st = shapeType & ~ENUM2SET5(TS_TABLE, TS_READ_ONLY, TS_BARE, TS_TREE, TS_CHILD);
     st &= ENUM2SET(TS_UNKNOWN_PAD) -1;
     if (st == 0 && 0 == (shapeType & ENUM2SET(TS_BARE))) st = ENUM2SET(TS_SIMPLE);
     switch (st) {

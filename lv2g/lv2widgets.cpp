@@ -2601,7 +2601,10 @@ void cFKeyWidget::insertF()
             if (!pDialog->accept()) continue;
             if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq, TS_NULL, true))) continue;
             pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
-            pUi->comboBox->setCurrentIndex(pModel->indexOf(pDialog->record().getId()));
+            cRecord& r = pDialog->record();
+            qlonglong id = r.getId();
+            int ix = pModel->indexOf(id);
+            pUi->comboBox->setCurrentIndex(ix);
             break;
         }
         pDialog->close();
