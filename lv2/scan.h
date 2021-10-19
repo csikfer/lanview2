@@ -3,10 +3,11 @@
 
 #include    "lanview.h"
 
+class cSnmpDevice;
+
 #ifdef SNMP_IS_EXISTS
 
 class cArp;
-class cSnmpDevice;
 
 /// @class cArpTable
 /// @brief MAC and IP address pairs query from different sources
