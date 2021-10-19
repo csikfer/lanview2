@@ -1822,7 +1822,7 @@ void cRecordsViewBase::initView()
     foreach (QString tn, inheritTableList) {
         const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
         pInhRecDescr->insert(p->tableoid(), p);
-        sql += "\nUNION ALL\n SELECT tableoid";
+        sql += "\nUNION ALL\n SELECT tableoid";     // Az első mező a tableoid
         const cRecStaticDescr& d = inhRecDescr(tn);
         int i, n = recDescr().cols();
         for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
@@ -1914,6 +1914,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
                 foreignKeyName = sl.first();
                 foreignKeyRef  = sl.at(1);
                 if (foreignKeyRef == _sAt) foreignKeyRef = foreignKeyName;
+                if (sl.size() > 2) foreignKeyExpr = sl.at(2);
             }
         }
     }
@@ -1952,6 +1953,7 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
         r = new cRecordTable(pts, false, own, par);
     }
     r->init();
+    if (own == nullptr) r->refresh();
     return r;
 }
 
@@ -2032,16 +2034,37 @@ tRecordList<cTableShape> *cRecordsViewBase::getShapes()
 
 void cRecordsViewBase::rightTabs(QVariantList& vlids)
 {
+    bool first = true;
     foreach (QVariant vid, vlids) {
         bool ok;
         qlonglong id = vid.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
         cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this);
+        if (first) {
+            first = false;
+        }
+        else {
+            prvb->pWidget()->setUpdatesEnabled(false);
+        }
         prvb->setParent(this);
         *pRightTables << prvb;
         pRightTabWidget->addTab(prvb->pWidget(),
                                 prvb->tableShape().getText(cTableShape::LTX_TABLE_TITLE,
                                                         prvb->tableShape().getName()));
+    }
+    if (pRightTables->size() > 1) {
+        connect(pRightTabWidget, SIGNAL(currentChanged(int)), this, SLOT(slaveTabChanged(int)));
+    }
+}
+
+void cRecordsViewBase::slaveTabChanged(int ix)
+{
+    if (isContIx(*pRightTables, ix)) {
+        pRightTabWidget->widget(ix)->setUpdatesEnabled(true);
+        pRightTables->at(ix)->refresh();
+    }
+    else {
+        EXCEPTION(EPROGFAIL, ix, tr("Invalid right tab index."));
     }
 }
 
@@ -2191,7 +2214,12 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
         switch (f) {
         case RTF_CHILD: {
             int ofix = ixToForeignKey();
-            wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
+            if (foreignKeyExpr.isEmpty()) {
+                wl << recDescr().columnNameQ(ofix) +  " = " + QString::number(owner_id);
+            }
+            else {
+                wl << foreignKeyExpr.arg(owner_id).arg(recDescr().columnNameQ(ofix));
+            }
         }   break;
         case RTF_IGROUP:
         case RTF_NGROUP: {
@@ -2388,16 +2416,20 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
     if (flags & (RTF_OVNER | RTF_MEMBER | RTF_GROUP)) {
         qlonglong _actId = NULL_ID;
         if (pRightTables == nullptr) {                              // A konstruktorból hívva még lehet NULL
-            if (selectedRows().size() > 0)EXCEPTION(EPROGFAIL); // Ha van kijelölt sor, nem valószínű hogy konstruktorban vagyunk.
+            if (selectedRows().size() > 0) EXCEPTION(EPROGFAIL);    // Ha van kijelölt sor, nem valószínű hogy konstruktorban vagyunk.
         }
         else {
             if (selectedRows().size() == 1) _actId = actId();
-            foreach (cRecordsViewBase *pRightTable, *pRightTables) {
+            int ix = pRightTabWidget->currentIndex();
+            for (int i = 0; i < pRightTables->size(); ++i) {
+                cRecordsViewBase *pRightTable = pRightTables->at(i);
                 pRightTable->setOwnerId(_actId);
-                qlonglong __actId = pRightTable->actId(EX_IGNORE);
-                pRightTable->refresh();
-                if (__actId != pRightTable->actId(EX_IGNORE)) {
-                    pRightTable->selectionChanged(QItemSelection(), QItemSelection());
+                if (i == ix) {
+                    qlonglong __actId = pRightTable->actId(EX_IGNORE);
+                    pRightTable->refresh();
+                    if (__actId != pRightTable->actId(EX_IGNORE)) {
+                        pRightTable->selectionChanged(QItemSelection(), QItemSelection());
+                    }
                 }
             }
         }
@@ -2658,7 +2690,7 @@ void cRecordTable::init()
     }
 /*  pTableView->setDragDropMode(QAbstractItemView::DragOnly);
     pTableView->setDragEnabled(true); */
-    refresh();
+    // refresh();
 }
 
 cRecordViewModelBase * cRecordTable::newModel()
@@ -2674,15 +2706,6 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView  = new QTableView();
     pTableView->horizontalHeader()->setMinimumSectionSize(24); // Icon
     pModel      = newModel();
-/*  A TS_BARE lényegtelen, nem kell a cím, mindíg van TAB.
-    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
-        QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
-        if (title.size() > 0) {
-            QLabel *pl = new QLabel(title);
-            pMainLayout->addWidget(pl);
-        }
-    }
-*/
     pMainLayout->addWidget(pTableView);
     pMainLayout->addWidget(pButtons->pWidget());
     pTableView->setModel(pTableModel());
@@ -3133,7 +3156,7 @@ QModelIndex cRecordTable::actIndex()
 {
     QModelIndexList mil = pTableView->selectionModel()->selectedRows();
     if (mil.size() != 1 ) {
-        DERR() << endl;
+//      DERR() << endl;
         return QModelIndex();
     }
     return mil.first();

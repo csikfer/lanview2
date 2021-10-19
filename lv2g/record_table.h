@@ -363,6 +363,7 @@ public:
     cRecordDialogBase  *pRecordDialog;  ///< Dialog: insert, modify
     QString             foreignKeyName; ///< Foreign key field name by features
     QString             foreignKeyRef;  ///< Foreign key reference field name by features (if not record ID)
+    QString             foreignKeyExpr;
     QString             zoneFieldName;  ///< A zónára utaló mező neve
     QString             zoneFunctionName;///< A zónán belüliséget magdó függvény neve (első paraméter a zónára utaló mező, második paraméter a zóna ID).
 
@@ -462,6 +463,8 @@ private:
     void createRightTab();
     /// megallokálja a konténert.
     tRecordList<cTableShape>   *getShapes();
+private slots:
+    void slaveTabChanged(int ix);
 };
 
 

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += network sql gui xml widgets multimedia printsupport
+QT += network sql gui xml widgets multimedia printsupport
 QT += webenginewidgets
 
 TARGET = lv2g
@@ -115,6 +115,7 @@ FORMS += \
     hsoperate.ui \
     phslinkform.ui \
     findbymac.ui \
+    terminal.ui \
     wstform.ui \
     dialogpatchsimple.ui \
     edit_enum_vals.ui \
@@ -143,6 +144,7 @@ unix:{
     exists(/usr/include/net-snmp) {
         DEFINES += SNMP_IS_EXISTS
     }
+    LIBS += -lqtermwidget5
 }
 else {
     LIBS += -lSecur32 -lWtsapi32

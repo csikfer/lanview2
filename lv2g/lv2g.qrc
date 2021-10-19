@@ -114,5 +114,8 @@
         <file>icons/hwinfo.ico</file>
         <file>icons/zenmap.ico</file>
         <file>icons/gnome-rdp.ico</file>
+        <file>icons/zoom-in-3.ico</file>
+        <file>icons/zoom-out-3.ico</file>
+        <file>icons/edit-clear-3.ico</file>
     </qresource>
 </RCC>

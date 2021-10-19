@@ -1069,6 +1069,7 @@ STRDEF(Tools, "tools")
   STRDEF(Command, "command")
   dnl parse
   STRDEF(Url, "url")
+  STRDEF(Terminal, "terminal")
  STRDEF(ToolStmt, "tool_stmt")
  dnl features, wait, view_rights
  STRDEF(ExecRights, "exec_rights")

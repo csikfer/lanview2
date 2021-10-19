@@ -8,6 +8,7 @@ const QString& toolType(int e, eEx __ex)
     case TT_COMMAND:   return _sCommand;
     case TT_URL:       return _sUrl;
     case TT_PARSE:     return _sParse;
+    case TT_TERMINAL:  return _sTerminal;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
@@ -18,6 +19,7 @@ int toolType(const QString& n, eEx __ex)
     if (0 == n.compare(_sCommand, Qt::CaseInsensitive)) return TT_COMMAND;
     if (0 == n.compare(_sUrl,     Qt::CaseInsensitive)) return TT_URL;
     if (0 == n.compare(_sParse,   Qt::CaseInsensitive)) return TT_PARSE;
+    if (0 == n.compare(_sTerminal,Qt::CaseInsensitive)) return TT_TERMINAL;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return ENUM_INVALID;
 }

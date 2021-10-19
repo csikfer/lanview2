@@ -372,3 +372,9 @@ void cFindByMac::on_pushButtonRDP_clicked()
 #endif  // defined(Q_OS_WINDOWS)
 }
 
+
+void cFindByMac::on_pushButtonSave_clicked()
+{
+    static QString fileName;
+    cFileDialog::textEditToFile(fileName, pUi->textEdit, this);
+}

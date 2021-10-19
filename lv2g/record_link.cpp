@@ -80,7 +80,7 @@ void cRecordLink::init()
     pTableView->setModel(pm);
     delete pModel;
     pModel = pm;
-    refresh();
+    // refresh();
 }
 
 

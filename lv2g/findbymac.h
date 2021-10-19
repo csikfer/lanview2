@@ -80,6 +80,7 @@ private slots:
     void on_comboBoxLoIp_activated(const QString &arg1);
     void on_comboBoxLoMac_activated(int index);
     void on_pushButtonRDP_clicked();
+    void on_pushButtonSave_clicked();
 };
 
 

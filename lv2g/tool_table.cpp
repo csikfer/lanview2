@@ -273,6 +273,11 @@ bool cToolTable::execute(QString& msg)
         return false;
     }
     if (!features.contains(_sWait)) features[_sWait] = tool.getName(_sWait);
+#if defined(Q_CC_GNU)
+    if (0 == type.compare(_sTerminal)) {
+        return exec_term(stmt, features, msg);
+    }
+#endif
     if (0 == type.compare(_sCommand)) {
         return exec_command(stmt, features, msg);
     }
@@ -351,12 +356,12 @@ bool cToolTable::exec_url(const QString& _url, cFeatures& __f, QString& msg)
 {
     (void)__f;
     // bool wait = str2bool(__f.value(_sWait), EX_IGNORE);
-    QWebEngineView *pView = new QWebEngineView();
     QUrl url(_url);
     if (url.isEmpty()) {
         msg += tr("Invalid URL: %1").arg(_url);
         return false;
     }
+    QWebEngineView *pView = new QWebEngineView();
     QMdiSubWindow *pSubWindow = new QMdiSubWindow;
     pSubWindow->setWidget(pView);
     pSubWindow->setAttribute(Qt::WA_DeleteOnClose);
@@ -368,6 +373,76 @@ bool cToolTable::exec_url(const QString& _url, cFeatures& __f, QString& msg)
     return true;
 }
 
+#if defined(Q_CC_GNU)
+
+cTerminal::cTerminal(const QString& stmt, cFeatures& __f, QString& msg)
+    : QWidget(), pUi(new Ui::Terminal), pTerminal(new QTermWidget(0))
+{
+    (void)__f;
+    (void)msg;
+    pUi->setupUi(this);
+    QFont font = QApplication::font();
+    font.setFamily("Monospace");
+    font.setPointSize(12);
+    pTerminal->setTerminalFont(font);
+    pTerminal->setArgs(QStringList() << "-c" << stmt);
+    pTerminal->setShellProgram("bash");
+
+    pTerminal->setAutoClose(true);
+    pTerminal->startShellProgram();
+    pUi->verticalLayout->insertWidget(0, pTerminal);
+
+    connect(pUi->toolButtonZoomIn, SIGNAL(clicked()), pTerminal, SLOT(zoomIn()));
+    connect(pUi->toolButtonZoomOut,SIGNAL(clicked()), pTerminal, SLOT(zoomOut()));
+    connect(pUi->toolButtonClear,  SIGNAL(clicked()), pTerminal, SLOT(clear()));
+    connect(pTerminal, SIGNAL(receivedData(QString)), this, SLOT(appendBuffer(QString)));
+    connect(pUi->pushButtonSaveLog, SIGNAL(clicked()), this, SLOT(save()));
+    connect(pUi->toolButtonClearLog, SIGNAL(clicked()), this, SLOT(clearLog()));
+
+    pTerminal->show();
+}
+
+void cTerminal::appendBuffer(const QString& text)
+{
+    if (pUi->checkBoxLog->isChecked()) {
+        buffer += text;
+        pUi->pushButtonSaveLog->setDisabled(buffer.isEmpty());
+    }
+}
+
+void cTerminal::save()
+{
+    static QString fileName;
+    cFileDialog::textToFile(fileName, buffer, this);
+}
+
+void cTerminal::clearLog()
+{
+    buffer.clear();
+    pUi->pushButtonSaveLog->setDisabled(true);
+}
+
+bool cToolTable::exec_term(const QString& stmt, cFeatures& __f, QString& msg)
+{
+
+    (void)__f;
+    (void)msg;
+    cTerminal *pTerminal = new cTerminal(stmt, __f, msg);
+
+    QMdiSubWindow *pSubWindow = new QMdiSubWindow;
+    lv2g::pMdiArea()->addSubWindow(pSubWindow);
+    pSubWindow->setWidget(pTerminal);
+    pSubWindow->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(pTerminal->pTerminal, SIGNAL(finished()), pSubWindow, SLOT(close()));
+
+    QString title = object.getName() + " / " + tool.getName() + " (terminal)";
+    pSubWindow->setWindowTitle(title);
+    pSubWindow->show();
+    lv2g::pMdiArea()->setActiveSubWindow(pSubWindow);
+    return true;
+}
+#endif
 
 QVariant cToolTableModel::data(const QModelIndex &index, int role) const
 {

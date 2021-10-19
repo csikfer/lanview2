@@ -347,7 +347,7 @@ static const QString _sHide         = "hide";
 static const QString _sAutoset      = "autoset";
 static const QString _sCollision    = "collision";
 static const QString _sColumn       = "column";
-static const QString _sFilter       = "filter";
+static const QString _sWidgetFilter = "widget_filter";
 // _sRefine
 
 QString fieldWidgetType(int _t)
@@ -2067,8 +2067,8 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     // A tábla leíró objektuma.
     pRDescr = cRecStaticDescr::get(fkTable);
     // A "filter" feature változó alapján az altípus (_filter) kiválasztása
-    if (_tf.isFeature(_sFilter)) {
-        QString sFilter = _tf.feature(_sFilter);
+    if (_tf.isFeature(_sWidgetFilter)) {
+        QString sFilter = _tf.feature(_sWidgetFilter);
         _height = 2;
         if (sFilter.isEmpty()) {        // SIMPLE: Az ui-ban definiált egyszerű szűrő az objektum neve alapján
             _filter = F_SIMPLE;
@@ -2288,7 +2288,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             }
             if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
-        if (_tf.isFeature(_sFilter)) {
+        if (_tf.isFeature(_sWidgetFilter)) {
             _filter = F_SIMPLE;
             _height = 2;
         }

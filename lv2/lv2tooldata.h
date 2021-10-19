@@ -7,6 +7,7 @@ enum eToolType {
     TT_COMMAND,
     TT_PARSE,
     TT_URL,
+    TT_TERMINAL
 };
 
 EXT_ const QString& toolType(int e, eEx __ex);
