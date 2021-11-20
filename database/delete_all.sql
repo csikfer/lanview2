@@ -24,6 +24,7 @@ DELETE FROM app_errs;
 DELETE FROM service_vars;
 DELETE FROM host_services;
 ALTER SEQUENCE host_services_host_service_id_seq RESTART WITH 1;
+TRUNCATE tool_objects;
 
 DELETE FROM nports;
 ALTER SEQUENCE nports_port_id_seq RESTART WITH 1;
@@ -40,6 +41,7 @@ ALTER SEQUENCE users_user_id_seq RESTART WITH 1;
 DELETE FROM images WHERE 'map' = ANY (usabilityes);
 
 DELETE FROM places WHERE place_type = 'real';
+TRUNCATE place_params;
 DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'office', 'schoolroom', 'student', 'technical_room');
 
 INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
