@@ -40,8 +40,9 @@ DELETE FROM users;
 ALTER SEQUENCE users_user_id_seq RESTART WITH 1;
 DELETE FROM images WHERE 'map' = ANY (usabilityes);
 
-DELETE FROM places WHERE place_type = 'real';
 TRUNCATE place_params;
+TRUNCATE place_group_params;
+DELETE FROM places WHERE place_type = 'real';
 DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'office', 'schoolroom', 'student', 'technical_room');
 
 INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
