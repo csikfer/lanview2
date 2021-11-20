@@ -435,8 +435,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->radioButtonSupPattern->setChecked(true);
 
     pButtonGroupAlarm   = new QButtonGroup(this);
-    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOn,     NAT_OFF);
-    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOff,    NAT_ON);
+    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOn,     NAT_ON);
+    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOff,    NAT_OFF);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetTo,       NAT_TO);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetFrom,     NAT_FROM);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetInterval, NAT_FROM_TO);
