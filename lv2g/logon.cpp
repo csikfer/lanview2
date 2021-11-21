@@ -109,7 +109,7 @@ void cLogOn::ok()
                 return;
             }
             QSqlQuery q = getQuery();
-            lanView::getInstance()->pUser->set(_sPasswd, np).update(q, false);
+            lanView::getInstance()->pUser->changePassword(q, np);
         }
         accept();
         return;
@@ -118,7 +118,6 @@ void cLogOn::ok()
         if (_probes < _maxProbes) {
             _probes++;
             ui->msgLBL->setText(tr("Nem megfelelő felhasználónév, vagy jelszó. Próbálja újra!"));
-            return;
             return;
         }
     }

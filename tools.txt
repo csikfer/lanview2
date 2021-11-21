@@ -5,7 +5,7 @@ TOOLS "HTTP" {
 }
 TOOLS "RTSP" {
     TYPE "command";
-    COMMAND "vlc rtsp://admin:bg1234BG@$node2ip";
+    COMMAND "vlc rtsp://$user:$passwd@$node2ip";
     OBJECTS "nodes", "snmpdevices";
 }
 TOOLS "telnet" {
