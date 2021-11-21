@@ -109,7 +109,7 @@ void cLogOn::ok()
                 return;
             }
             QSqlQuery q = getQuery();
-            lanView::getInstance()->pUser->changePassword(q, np);
+            lanView::getInstance()->pUser->setName(_sPasswd, np).update(q, false);
         }
         accept();
         return;

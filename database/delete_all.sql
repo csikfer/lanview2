@@ -40,9 +40,8 @@ DELETE FROM users;
 ALTER SEQUENCE users_user_id_seq RESTART WITH 1;
 DELETE FROM images WHERE 'map' = ANY (usabilityes);
 
-TRUNCATE place_params;
-TRUNCATE place_group_params;
 DELETE FROM places WHERE place_type = 'real';
+TRUNCATE place_params;
 DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'office', 'schoolroom', 'student', 'technical_room');
 
 INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
@@ -57,8 +56,8 @@ SELECT setval('groups_group_id_seq', 5);
 INSERT INTO users(user_id, user_name, user_note, passwd) VALUES
     ( 0, 'nobody',  'Unknown user', NULL),
     ( 1, 'system',  'system',       NULL),
-    ( 2, 'admin',   'Administrator',crypt('admin',    gen_salt('bf'))),
-    ( 3, 'operator','Operator',     crypt('operator', gen_salt('bf'))),
+    ( 2, 'admin',   'Administrator','admin'),
+    ( 3, 'operator','Operator',     'operator'),
     ( 4, 'viewer',  'Viewer',       NULL);
 
 SELECT setval('users_user_id_seq', 5);

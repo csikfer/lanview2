@@ -29,8 +29,6 @@ class LV2SHARED_EXPORT cGroup : public cRecord {
 class LV2SHARED_EXPORT cUser : public cRecord {
     CRECORD(cUser);
 public:
-    /// Lecseréli a jelszót. Az objektumot a ID azonosítja, nem lehet NULL.
-    bool changePassword(QSqlQuery &_q, const QString& _psw);
     /// Ellenörzi a jelszót. A felhasználót azonosító user_id-t vagy a felhasználó nevet (user_name) az objektum tartalmazza,
     /// vagyis legalább ezt az egyik mezőt ki kell tölteni az objektumban. Az user_id az elsődleges.
     /// Ha mindkét fenti mező értéke NULL, akkor hibát dob a metódus.

@@ -55,17 +55,6 @@ cUser::cUser(const cUser& __o) : cRecord()
     _privilegeLevel = __o._privilegeLevel;
 }
 
-bool cUser::changePassword(QSqlQuery& _q, const QString& _psw)
-{
-    if (isNullId()) return false;
-    const QString sql = "UPDATE users SET passwd = crypt(?, gen_salt('bf')) WHERE user_id = ? RETURNING *";
-    if (execSql(_q, sql, _psw, getId())) {
-        set(_q);
-        return true;
-    }
-    return false;
-}
-
 bool cUser::checkPassword(QSqlQuery& q, const QString &__passwd) const
 {
     QString sql;
