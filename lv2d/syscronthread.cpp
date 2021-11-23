@@ -49,6 +49,7 @@ void cSysInspector::timerEvent(QTimerEvent *e)
     smsCron();
     setState(*pQuery(), notifSwitch(state), statMsg);
     internalStat = IS_SUSPENDED;
+    DBGFNL();
 }
 
 void cSysInspector::dbCron()
@@ -67,6 +68,7 @@ void cSysInspector::dbCron()
     else {
         statMsg += tr("dbCron() OK.");
     }
+    DBGFNL();
 }
 
 /// Elküldésre váró levelek kézbesítése a riasztásokról.
@@ -79,7 +81,7 @@ void cSysInspector::mailCron()
     bool r = true;
     QSqlQuery& q = *pQuery();
     if (!statMsg.isEmpty()) statMsg += "\n\n";
-    // alrms, and user events
+    // alarms, and user events
     cUserEvent e;
     cError *pe = nullptr;
     try {
@@ -101,9 +103,10 @@ void cSysInspector::mailCron()
         }
         // Set message(s)
         QMap<qlonglong, QString >  MsgMapByUid;         // Messages map by user ID(s)
-        foreach (aid, uidMapByAid.keys()) {             // For each all alarm ID(s)
+        for (auto i = uidMapByAid.begin(); i != uidMapByAid.end(); ++i) {
+            qlonglong aid = i.key();
             QString msg = cAlarm::htmlText(q, aid);
-            foreach (uid, uidMapByAid[aid]) {
+            foreach (uid, i.value()) {
                 QString emsg = MsgMapByUid[uid];
                 if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>"; // Line separator
                 MsgMapByUid[uid] = emsg + msg;
@@ -124,34 +127,38 @@ void cSysInspector::mailCron()
             }
             mailServer = sl.first();
         }
-        SimpleMail::Sender sendmail(mailServer, port, SimpleMail::Sender::TcpConnection);
         // sender e-mail address
         QString sSenderAddress = cSysParam::getTextSysParam(q, "SenderAddress");
         SimpleMail::EmailAddress senderAddress(sSenderAddress, ORGNAME);
 
         // Send mesage(s) to recipient(s)
-        foreach (uid, aidMapByUid.keys()) {
+        for (auto i = aidMapByUid.begin(); i != aidMapByUid.end(); ++i) {
+            qlonglong uid = i.key();
             cUser u; u.setById(q, uid);
             QStringList addresses = u.getStringList(_sAddresses);
             if (addresses.isEmpty()) {
+                PDEB(INFO) << "Nothing send mail to " << u.getName() << ", unknown address." << endl;
                 cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, tr("Not specified address"));
                 r = false;
             }
             else {
-                SimpleMail::MimeHtml htmlText;
-                htmlText.setHtml(MsgMapByUid[uid]);
+                PDEB(INFO) << "Send mail to " << u.getName() << endl;
+                SimpleMail::Sender sendmail(mailServer, port, SimpleMail::Sender::TcpConnection);
+                SimpleMail::MimeHtml *pHtmlText = new SimpleMail::MimeHtml;
+                pHtmlText->setHtml(MsgMapByUid[uid]);
                 SimpleMail::MimeMessage message;
                 message.setSender(senderAddress);
                 foreach (QString ea, addresses) {
                     SimpleMail::EmailAddress to(ea, u.fullName());
                     message.addTo(to);
                 }
-                message.addPart(&htmlText);
+                message.addPart(pHtmlText);
                 message.setSubject("Alarm");
                 bool     res = sendmail.sendMail(message);
                 QString  msg = sendmail.responseText();
+                PDEB(INFO) << "Sendmail " << VDEBBOOL(res) << " ; " << msg << endl;
                 r = r && res;
-                foreach (aid, aidMapByUid[uid]) {
+                foreach (aid, i.value()) {
                     bool rr;
                     if (res) rr = cUserEvent::happened(q, uid, aid, UE_SENDMAIL, msg);
                     else     rr = cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, msg);
@@ -162,6 +169,7 @@ void cSysInspector::mailCron()
                                 .arg(userEventState(res ? UE_HAPPENED : UE_DROPPED));
                     }
                 }
+                sendmail.quit();
             }
         }
         if (!r) statMsg += "Sendmail error. ";
@@ -172,6 +180,7 @@ void cSysInspector::mailCron()
         statMsg += tr("ERROR in dbCron() send mail : ") + pe->msg();
         delete pe;
     }
+    DBGFNL();
 }
 
 void cSysInspector::smsCron()

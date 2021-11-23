@@ -2057,7 +2057,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pRDescr   = nullptr;
     pSelectPlace= nullptr;
     pSelectNode=nullptr;
-    pTableShape = nullptr;
+    pFKeyTableShape = nullptr;
     owner_ix = NULL_IX;
     ownerId  = NULL_ID;
     ixRPlaceId= NULL_IX;
@@ -2226,22 +2226,22 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         if (pRDescr->nameIndex(EX_IGNORE) < 0) pModel->setToNameF(_colDescr.fnToName);
         pModel->joinWith(pComboBox);;
 
-        pTableShape = new cTableShape();
+        pFKeyTableShape = new cTableShape();
         // Dialógus leíró neve a feature mezőben
         QString tsn = _fieldShape.feature(_sDialog);
         // ha ott nincs megadva, akkor a megjelenítő neve azonos a tulajdonság rekord nevével
         if (tsn.isEmpty()) tsn = _colDescr.fKeyTable;
-        if (pTableShape->fetchByName(tsn)) {   // Ha meg tudjuk jeleníteni
+        if (pFKeyTableShape->fetchByName(tsn)) {   // Ha meg tudjuk jeleníteni
             // Nem lehet öröklés !!
-            qlonglong tit = pTableShape->getId(_sTableInheritType);
+            qlonglong tit = pFKeyTableShape->getId(_sTableInheritType);
             if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
-            pTableShape->fetchFields(*pq);
+            pFKeyTableShape->fetchFields(*pq);
             pButtonAdd->setEnabled(true);
             connect(pButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
             connect(pButtonAdd,  SIGNAL(pressed()), this, SLOT(insertF()));
         }
         else {
-            pDelete(pTableShape);
+            pDelete(pFKeyTableShape);
             pButtonEdit->setDisabled(true);
             pButtonAdd->setDisabled(true);
         }
@@ -2337,7 +2337,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 
 cFKeyWidget::~cFKeyWidget()
 {
-    pDelete(pTableShape);
+    pDelete(pFKeyTableShape);
 }
 
 bool cFKeyWidget::setWidget()
@@ -2432,14 +2432,14 @@ void cFKeyWidget::setFromEdit(qlonglong id)
 
 void cFKeyWidget::setButtons()
 {
-    bool disa = _readOnly;
+    bool null = pFKeyTableShape == nullptr;
+    bool disa = _readOnly || null;
     switch (_filter) {
     case F_NO:
     case F_SIMPLE:
-        disa = disa || pTableShape == nullptr;
-        pButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
-        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
-        pButtonInfo->setDisabled(_actValueIsNULL ||         !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
+        pButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights)));
+        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pFKeyTableShape->getId(_sInsertRights)));
+        pButtonInfo->setDisabled(_actValueIsNULL || null || !lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights)));
         break;
     case F_PLACE:           // Rights ???!!!
         pUiPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || disa);
@@ -2448,13 +2448,13 @@ void cFKeyWidget::setButtons()
     case F_RPLACE:
         pUiRPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || disa);
         pUiRPlace->toolButtonPlaceAdd->setDisabled(disa);
-        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
-        pButtonInfo->setDisabled(_actValueIsNULL ||         !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
+        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pFKeyTableShape->getId(_sInsertRights)));
+        pButtonInfo->setDisabled(_actValueIsNULL || null || !lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights)));
         break;
     case F_PORT:
-        pButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
-        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pTableShape->getId(_sEditRights)));
-        pButtonInfo->setDisabled(_actValueIsNULL ||         !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
+        pButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights)));
+        pButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pFKeyTableShape->getId(_sEditRights)));
+        pButtonInfo->setDisabled(_actValueIsNULL || null || !lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights)));
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -2593,8 +2593,8 @@ void cFKeyWidget::setNode(qlonglong _nid)
 /// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::insertF()
 {
-    if (pModel != nullptr && pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
-        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+    if (pModel != nullptr && pFKeyTableShape != nullptr && lanView::isAuthorized(pFKeyTableShape->getId(_sInsertRights))) {
+        cRecordDialog *pDialog = new cRecordDialog(*pFKeyTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         while (1) {
             int keyId = pDialog->exec(false);
             if (keyId == DBT_CANCEL) break;
@@ -2617,9 +2617,9 @@ void cFKeyWidget::insertF()
 
 void cFKeyWidget::modifyF()
 {
-    if (pModel != nullptr && pTableShape != nullptr && lanView::isAuthorized(pTableShape->getId(_sViewRights))) {
+    if (pModel != nullptr && pFKeyTableShape != nullptr && lanView::isAuthorized(pFKeyTableShape->getId(_sViewRights))) {
         cRecordAny rec(pRDescr);
-        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+        cRecordDialog *pDialog = new cRecordDialog(*pFKeyTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         int cix = pComboBox->currentIndex();
         qlonglong id = pModel->atId(cix);
         if (!rec.fetchById(*pq, id)) return;
@@ -2724,9 +2724,9 @@ void cFKeyWidget::info()
     if (id != NULL_ID) {
         cRecord *po = new cRecordAny(pRDescr);
         po->setById(*pq, id);
-        QString name = pTableShape->feature(_sReport);
+        QString name = pFKeyTableShape->feature(_sReport);
         if (name.isEmpty()) name = pRDescr->tableName();
-        tStringPair sp = htmlReport(*pq, *po, name, pTableShape);
+        tStringPair sp = htmlReport(*pq, *po, name, pFKeyTableShape);
         delete po;
         popupReportWindow(_pParentDialog->pWidget(), sp.second, sp.first);
     }

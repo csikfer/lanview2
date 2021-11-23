@@ -485,7 +485,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     _DBGFN() << QChar(' ') << name() << endl;
     qlonglong parid = parentId(EX_IGNORE);
     if (!snmp.isOpened()) {
-        EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
+        EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg, name())));
     }
     cTable      tab;    // Interface table container
     QElapsedTimer timer;
@@ -555,7 +555,6 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         change = changeStringField(ifDescr, ixIfdescr,   iface, bitsSet);
         change = changeStringField(opstat,  ixPortOStat, iface, bitsSet) || change;
         change = changeStringField(adstat,  ixPortAStat, iface, bitsSet) || change;
-        bitsSet.setBit(ixLastTouched, change);
 
         // rlinkstat if exists
         if (portstat.pRlinkStat != nullptr) {

@@ -711,7 +711,7 @@ protected:
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
-    cTableShape *   pTableShape;
+    cTableShape *   pFKeyTableShape;
     qlonglong       actId;
     /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
     int             owner_ix;
