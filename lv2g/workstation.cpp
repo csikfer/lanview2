@@ -509,9 +509,12 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
 
 void cWorkstation::setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    (void)f;
+    if (!f) return;
+    if (pSelNode->currentNodeId() != NULL_ID && pif != nullptr && pip != nullptr) {
+        QString msg = checkNodeByArp(pif->mac(), pip->address());
+        if (!msg.isEmpty()) sInfs << htmlError(msg, true);
+    }
     (void)sErrs;
-    (void)sInfs;
     (void)isOk;
 }
 
@@ -941,28 +944,50 @@ void cWorkstation::ip_info()
     popupReportByIp(this, *pq, a.toString());
 }
 
+QString cWorkstation::checkNodeByArp(const cMac& nodeMac, const QHostAddress& nodeIp)
+{
+    QString r;
+    if (nodeMac.isValid() && !nodeIp.isNull()) {
+        QList<QHostAddress> addrByArp = cArp::mac2ips(*pq, nodeMac);
+        cMac macByArp  = cArp::ip2mac(*pq, nodeIp, EX_ERROR);
+        if (!addrByArp.contains(nodeIp)) {
+            QString ips;
+            foreach (QHostAddress a, addrByArp) {
+                ips += a.toString() + _sCommaSp;
+            }
+            ips.chop(_sCommaSp.size());
+            r += tr("Az eszköz IP címét a MAC alapján az ARP táblákból nem sikerült visszaigazolni. A talált IP-k : %1 .\n").arg(ips);
+        }
+        if (!(nodeMac == macByArp)) {
+            r += tr("Az eszköz MAC címét az IP alapján az ARP táblákból nem sikerült visszaigazolni. A talált MAC : %1 .\n").arg(macByArp.toString());
+        }
+    }
+    return r;
+}
 
 void cWorkstation::ip_go()
 {
     if (pip != nullptr) {
         bool set = false;
+        QString msg;
         QHostAddress ip = pip->address();
         int cnt = -1;
+        cNode n;
         if (!ip.isNull()) {
-            cNode n;
             cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
             if (1 == cnt) {
                 QString t = QString("%1 IP").arg(ip.toString());
                 if (!checkSelectedNode(n, t)) return;
                 pSelNode->setCurrentNode(n.getId());
                 set = n.getId() == pSelNode->currentNodeId();
-                if (set) {
-                    pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
-                }
             }
         }
-        if (!set) {
-            QString msg;
+        if (set) {
+            pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
+            if (pif == nullptr) EXCEPTION(EDATA); // ?
+            msg = checkNodeByArp(pif->mac(), pip->address());
+        }
+        else {
             switch (cnt) {
             case -1:
                 msg = tr("A IP nem valós cím.");
@@ -979,7 +1004,9 @@ void cWorkstation::ip_go()
                 msg = tr("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());
                 break;
             }
-            pUi->textEditMsg->append(htmlError(msg));
+        }
+        if (!msg.isEmpty()) {
+            pUi->textEditMsg->append(htmlError(msg, true));
         }
     }
 }
@@ -1128,11 +1155,6 @@ void cWorkstation::on_toolButtonErrRefr_clicked()
     bbNode.enforce(true);
 }
 
-void cWorkstation::on_toolButtonInfRefr_clicked()
-{
-    bbNode.referState();
-}
-
 void cWorkstation::on_toolButtonReportMAC_clicked()
 {
     QString sMac = pUi->lineEditPMAC->text();
@@ -1189,21 +1211,22 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
         bool set = false;
         cMac mac = pif->mac();
         int cnt = -1;
+        cNode n;
         if (mac.isValid()) {
-            cNode n;
             cnt = n.fetchByMac(*pq, mac, EX_ERROR);
             if (1 == cnt) {
                 QString t = QString("%1 MAC").arg(mac.toString());
                 if (!checkSelectedNode(n, t)) return;
                 pSelNode->setCurrentNode(n.getId());
                 set = n.getId() == pSelNode->currentNodeId();
-                if (set) {
-                    pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
-                }
             }
         }
-        if (!set) {
-            QString msg;
+        QString msg;
+        if (set) {
+            pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
+            msg = checkNodeByArp(mac, pip->address());
+        }
+        else {
             switch (cnt) {
             case -1:
                 msg = tr("A MAC nem valós cím.");
@@ -1218,7 +1241,9 @@ void cWorkstation::on_toolButtonSelectByMAC_clicked()
                 msg = tr("A %1 MAC címmel több bejegyzett eszköz is van.").arg(mac.toString());
                 break;
             }
-            pUi->textEditMsg->append(htmlError(msg));
+        }
+        if (!msg.isEmpty()) {
+            pUi->textEditMsg->append(htmlError(msg, true));
         }
     }
 }
@@ -1532,9 +1557,18 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         pEditOsVersion->set(QSysInfo::productVersion(), Qt::MatchFixedString);  // Case insensitíve
     }
     else {                  // registred
-        if (TS_FALSE == pSelNode->setCurrentNode(pSelf->getId())) {
-            QString msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy nem egy IP címe, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
-            pUi->textEditMsg->append(htmlError(msg));
+        QString msg;
+        switch (pSelNode->setCurrentNode(pSelf->getId())) {
+        case TS_FALSE:
+            msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy nem egy IP címe, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
+            break;
+        case TS_TRUE:
+            msg = checkNodeByArp(pif->mac(), pip->address());
+        case TS_NULL:
+            break;
+        }
+        if (!msg.isNull()) {
+            pUi->textEditMsg->append(htmlError(msg, true));
         }
         delete pSelf;
     }

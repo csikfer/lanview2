@@ -105,7 +105,8 @@ private:
     void msgEmpty(const QVariant &val, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
 
     /// Az állapot kiértékelése a node-ra.
-    /// Üres metódus, a cBatchBlocker hívja, az alá tartozó kiértékelő funkciókók tevékenységén túl nincs további funkciója.
+    /// A cBatchBlocker hívja.
+    /// Ha ki van választva eszküz, akkor visszaellenörzi a címeket az ARP táblák alapján.
     void setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
     /// Az állpot kiértékelése a node nevével kapcsolatban.
       void setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
@@ -122,6 +123,7 @@ private:
     void node2gui(bool setModOn);
     bool setModButtons(qlonglong _id);
     bool checkSelectedNode(cNode& n, const QString& _t);
+    QString checkNodeByArp(const cMac& nodeMac, const QHostAddress& nodeIp);
 
     bool isModify;
     Ui::wstWidget   *pUi;
@@ -178,7 +180,6 @@ private slots:
     void modelNameChanged(const QVariant &arg1);
     void modelNumberChanged(const QVariant &arg1);
     void on_toolButtonErrRefr_clicked();
-    void on_toolButtonInfRefr_clicked();
     void on_toolButtonReportMAC_clicked();
     void on_toolButtonNodeTypeFilt_clicked();
     void on_toolButtonNodeType_clicked();

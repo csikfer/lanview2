@@ -1250,17 +1250,6 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QToolButton" name="toolButtonInfRefr">
-           <property name="text">
-            <string>...</string>
-           </property>
-           <property name="icon">
-            <iconset resource="lv2g.qrc">
-             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -1348,7 +1337,6 @@
   <tabstop>radioButtonLinkFront</tabstop>
   <tabstop>radioButtonLinkBack</tabstop>
   <tabstop>toolButtonErrRefr</tabstop>
-  <tabstop>toolButtonInfRefr</tabstop>
   <tabstop>textEditErr</tabstop>
   <tabstop>textEditMsg</tabstop>
   <tabstop>pushButtonSave</tabstop>
