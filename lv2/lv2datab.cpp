@@ -3677,7 +3677,7 @@ bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
 {
     QBitArray fm = _fm;
     QString sql = queryString(__only, fm, __ord, __lim, __off, __s, __w);
-    query(__q, sql, _fm);
+    query(__q, sql, fm);
     return __q.first();
 }
 

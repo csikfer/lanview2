@@ -46,7 +46,7 @@ ENUM "app_errs.acknowledged" {
     }
 }
 ENUM "app_memos.acknowledged" {
-    VIEW NULL;
+    VIEW "app_memos.acknowledged",@;
     TOOL TIP "false";
      "false" {
         VIEW "false",@;
@@ -185,7 +185,7 @@ ENUM "db_errs.acknowledged" {
     }
 }
 ENUM "dyn_addr_ranges.exclude" {
-    VIEW NULL;
+    VIEW "dyn_addr_ranges.exclude",@;
     TOOL TIP "false";
      "false" {
         VIEW "nem",@;
@@ -265,7 +265,7 @@ ENUM "filtertype" "filtertype" {
     }
 }
 ENUM "host_services.delegate_host_state" {
-    VIEW NULL;
+    VIEW "host_services.delegate_host_state",@;
     ICON "go-jump.ico";
     TOOL TIP "false";
      "false" {
@@ -293,7 +293,7 @@ ENUM "host_services.deleted" {
     }
 }
 ENUM "host_services.disabled" {
-    VIEW NULL;
+    VIEW "host_services.disabled",@;
     ICON "disable.ico";
     TOOL TIP "false";
      "false" "A host_services.disabled boolean mező igaz értékéhez rendelt szín" {
@@ -390,7 +390,7 @@ ENUM "iftypes.preferred" {
     }
 }
 ENUM "interfaces.delegate_admin_stat" {
-    VIEW NULL;
+    VIEW "interfaces.delegate_admin_stat",@;
     TOOL TIP "Az admin statusz továbbítása az eszköz állapotba.";
      "false" {
         VIEW "false",@;
@@ -404,7 +404,7 @@ ENUM "interfaces.delegate_admin_stat" {
     }
 }
 ENUM "interfaces.delegate_oper_stat" {
-    VIEW NULL;
+    VIEW "interfaces.delegate_oper_stat",@;
     TOOL TIP "A port operativ állapot (link)  továbítása az eszköz állapotba";
      "false" {
         VIEW "false",@;
@@ -418,7 +418,7 @@ ENUM "interfaces.delegate_oper_stat" {
     }
 }
 ENUM "interfaces.deleted" {
-    VIEW NULL;
+    VIEW "interfaces.deleted",@;
     TOOL TIP "false";
      "false" {
         VIEW "nem",@;
@@ -538,7 +538,9 @@ ENUM "placegrouptype" {
     }
 }
 ENUM "portshare" {
-    VIEW "portshare",@;
+    VIEW NULL;
+    BACKGROUND COLOR "#ffffff";
+    FONT ATTR "bold";
      "" {
         VIEW NULL;
         BACKGROUND COLOR "#ffffff";
@@ -590,45 +592,6 @@ ENUM "portshare" {
         VIEW "NC",@;
         BACKGROUND COLOR "#babdb6";
         FONT ATTR "strikeout";
-    }
-}
-ENUM "portvars.delegate_port_state" {
-    VIEW "portvars.delegate_port_state",@;
-    ICON "go-jump-3.ico";
-    TOOL TIP "false";
-     "false" {
-        VIEW "nem",@;
-        ICON "disable.ico";
-    }
-     "true" {
-        VIEW "igen",@;
-        ICON "dialog-ok-2.ico";
-    }
-}
-ENUM "portvars.delegate_service_state" {
-    VIEW "portvars.delegate_service_state",@;
-    ICON "go-jump.ico";
-    TOOL TIP "false";
-     "false" {
-        VIEW "nem",@;
-        ICON "disable.ico";
-    }
-     "true" {
-        VIEW "igen",@;
-        ICON "dialog-ok-2.ico";
-    }
-}
-ENUM "portvars.disabled" {
-    VIEW "portvars.disabled",@;
-    ICON "disable.ico";
-    TOOL TIP "false";
-     "false" {
-        VIEW "nem",@;
-        ICON "dialog-ok-2.ico";
-    }
-     "true" {
-        VIEW "igen",@;
-        ICON "disable.ico";
     }
 }
 ENUM "reasons" {
