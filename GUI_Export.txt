@@ -546,7 +546,8 @@ ENUM "portshare" {
     }
      "A" {
         VIEW "A",@;
-        BACKGROUND COLOR "#79ff78";
+        BACKGROUND COLOR "#ffff00";
+        FOREGROUND COLOR "#204a87";
         FONT ATTR "italic";
     }
      "AA" {
@@ -561,7 +562,8 @@ ENUM "portshare" {
     }
      "B" {
         VIEW "B",@;
-        BACKGROUND COLOR "#ff8080";
+        BACKGROUND COLOR "#ffa8a8";
+        FOREGROUND COLOR "#4e9a06";
         FONT ATTR "italic";
     }
      "BA" {
@@ -1754,7 +1756,7 @@ TABLE "interfaces" SHAPE "hostports" {
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
-    // RIGHT SHAPE "ip_addresses","port_params","mactab_port","phs_links","log_links","lldp_links","portvars","port_vlans","port_in_mactab";
+    // RIGHT SHAPE "ip_addresses","port_params","mactab_port","phs_links","log_links","lldp_links","port_vlans","port_in_mactab","service_rrd_vars";
     ADD FIELD "port_name" "port_name" {
         TITLE "Név",@;
     }
@@ -1947,12 +1949,12 @@ TABLE SHAPE "host_services" {
     ADD FIELD "node_id" {
         TITLE "Eszköz","Eszköz (node)";
         TOOL TIP "Egyedi azonosító kulcs";
-        FEATURES ":filter=places:";
+        FEATURES ":widget_filter=places:";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "service_id" {
         TITLE "Szolgáltatás azonosító","Szolgáltatás";
-        FEATURES ":filter:";
+        FEATURES ":widget_filter:";
         FLAG "HTML";
     }
     ADD FIELD "port_id" {
@@ -2022,8 +2024,8 @@ TABLE SHAPE "host_services" {
         TITLE "Sup.","Felsőbb szintű példány";
         TOOL TIP "Felsőbb szintű példány";
         FEATURES  {
-            "filter";
             "refine" = "service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id";
+            "widget_filter";
         }
         FLAG "batch_edit";
     }
@@ -2498,8 +2500,9 @@ TABLE "mactab_shape" SHAPE "mactab" {
         FLAG "read_only";
     }
     FIELD "hwaddress" ORD asc, no, desc;
-    FIELD "node_name", "port_name", "set_type", "r_node_name", "r_port_name" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "hwaddress", "node_name", "port_name", "r_node_name", "r_port_name", "set_type";
+    FIELD "first_time" ORD desc, no, asc;
+    FIELD "node_name", "port_name", "last_time", "set_type", "r_node_name", "r_port_name" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "first_time", "hwaddress", "node_name", "port_name", "r_node_name", "r_port_name", "set_type", "last_time";
 }
 TABLE SHAPE "mactab_logs" {
     TITLE "mactab_logs",@,@;
@@ -2913,7 +2916,10 @@ TABLE SHAPE "nodes" {
     }
     ADD FIELD "place_id" {
         TITLE "Hely","Az eszköz helye";
-        FEATURES ":filter=places:node2place:";
+        FEATURES  {
+            "node2place";
+            "widget_filter" = "places";
+        }
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "serial_number" {
@@ -2954,7 +2960,7 @@ TABLE SHAPE "nports" {
     INSERT RIGHTS "operator";
     ADD FIELD "port_id" "port_id" {
         TITLE "port_id",@;
-        FLAG "table_hide", "dialog_hide", "read_only";
+        FLAG "table_hide", "read_only";
     }
     ADD FIELD "port_name" "port_name" {
         TITLE "Név",@;
@@ -3080,10 +3086,7 @@ TABLE SHAPE "patchs" {
 TABLE "phs_links_shape" SHAPE "phs_links" {
     TITLE "Fizikai linkek","Fizikai link, patch";
     TYPE "link";
-    FEATURES  {
-        "bg_color" = "phs_link_type1";
-        "button.copy";
-    }
+    FEATURES ":button.copy:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
@@ -3095,9 +3098,11 @@ TABLE "phs_links_shape" SHAPE "phs_links" {
     }
     ADD FIELD "node_name1" {
         TITLE "Linked","Linked elem";
+        FLAG "HTML";
     }
     ADD FIELD "port_name1" {
         TITLE "Port","Port név";
+        FLAG "HTML";
     }
     ADD FIELD "port_index1" {
         TITLE "Index","Port index";
@@ -3107,7 +3112,7 @@ TABLE "phs_links_shape" SHAPE "phs_links" {
     }
     ADD FIELD "phs_link_type1" {
         TITLE "Típus",@;
-        FLAG "bg_color";
+        FLAG "bg_color", "HTML";
     }
     ADD FIELD "port_shared1" {
         TITLE "Megosztás",@;
@@ -3115,13 +3120,15 @@ TABLE "phs_links_shape" SHAPE "phs_links" {
     }
     ADD FIELD "port_id2" {
         TITLE "port_id2",@;
-        FLAG "table_hide", "read_only";
+        FLAG "table_hide", "read_only", "HTML";
     }
     ADD FIELD "node_name2" {
         TITLE "Linked","Linked elem";
+        FLAG "HTML";
     }
     ADD FIELD "port_name2" {
         TITLE "port","Linked port";
+        FLAG "HTML";
     }
     ADD FIELD "port_index2" {
         TITLE "index","Linked port index";
@@ -3131,7 +3138,7 @@ TABLE "phs_links_shape" SHAPE "phs_links" {
     }
     ADD FIELD "phs_link_type2" {
         TITLE "Típus",@;
-        FLAG "bg_color";
+        FLAG "bg_color", "HTML";
     }
     ADD FIELD "port_shared2" {
         TITLE "Megosztás",@;
@@ -3139,24 +3146,25 @@ TABLE "phs_links_shape" SHAPE "phs_links" {
     }
     ADD FIELD "link_type" {
         TITLE "Busz",@;
+        FLAG "fg_color";
     }
     ADD FIELD "phs_link_note" {
         TITLE "Megjegyzés",@;
     }
     ADD FIELD "create_time" {
         TITLE "Létrehozva","A rekord létrehozva";
-        FLAG "table_hide", "read_only";
+        FLAG "table_hide", "read_only", "HTML";
     }
     ADD FIELD "create_user_id" {
         TITLE "Létrehozó","A rekordot létrehozta";
-        FLAG "table_hide", "read_only";
+        FLAG "table_hide", "read_only", "HTML";
     }
     FIELD "port_name1", "port_index1", "phs_link_type1" ORD asc, no, desc;
     FIELD "port_id1", "node_name1", "port_tag1", "port_id2", "node_name2", "port_name2", "port_index2", "port_tag2", "phs_link_type2" ORD no, asc, desc;
     FIELD ORD SEQUENCE "node_name1", "port_index1", "port_name1", "phs_link_type1", "node_name2", "port_name2", "port_index2", "phs_link_type2", "port_tag1", "port_id1", "port_tag2", "port_id2";
 }
 TABLE "patchs" SHAPE "phsnodes" {
-    TITLE "phsnodes",@,@;
+    TITLE "Hálózati elemek",@,"Hálózati elem";
     TYPE "owner", "read_only";
     FEATURES ":button.copy:";
     INHERIT TYPE "on";
@@ -3203,6 +3211,49 @@ TABLE "patchs" SHAPE "phsnodes" {
     FIELD "node_note", "inventory_number", "serial_number", "model_number", "model_name", "place_id" ORD no, asc, desc;
     FIELD ORD SEQUENCE "model_name", "node_name", "node_note", "place_id", "inventory_number", "serial_number", "model_number";
 }
+TABLE SHAPE "place_group_params" {
+    TITLE "Hely cs. paraméterek","A hely csoporthoz rendelt paraméter";
+    TYPE "simple";
+    FEATURES ":button.copy:report:";
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "operator";
+    DELETE RIGHTS "operator";
+    INSERT RIGHTS "operator";
+    ADD FIELD "place_group_param_id" {
+        TITLE "ID","Numerikus egyedi azonosító";
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
+    ADD FIELD "place_group_param_name" {
+        TITLE "Név","Paraméter neve";
+        FLAG "HTML";
+    }
+    ADD FIELD "place_group_id" {
+        TITLE "Hely cs.","Hely csoport";
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "param_type_id" {
+        TITLE "Típus",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "date_of" {
+        TITLE "Időpont",@;
+    }
+    ADD FIELD "param_value" {
+        TITLE "Érték",@;
+        FLAG "huge", "HTML";
+    }
+    ADD FIELD "place_group_param_note" {
+        TITLE "Megj.","Megjegyzés";
+    }
+    ADD FIELD "flag" {
+        TITLE "flag",@;
+        FLAG "table_hide", "dialog_hide";
+    }
+    FIELD "place_group_param_name", "place_group_id", "param_type_id", "date_of" ORD asc, no, desc;
+    FIELD "param_value" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "date_of", "place_group_param_name", "place_group_id", "param_type_id", "param_value";
+}
 TABLE SHAPE "place_groups" {
     TITLE "Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna","place_groups","Csoport tagja(i)","Coportoknak nem tagja(i)";
     TYPE "group";
@@ -3212,6 +3263,7 @@ TABLE SHAPE "place_groups" {
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
+    RIGHT SHAPE "place_group_params";
     // RIGHT SHAPE "places";
     ADD FIELD "place_group_id" {
         TITLE "place_group_id",@;
@@ -3232,6 +3284,49 @@ TABLE SHAPE "place_groups" {
     FIELD "place_group_name" ORD asc, no, desc;
     FIELD ORD SEQUENCE "place_group_name";
 }
+TABLE SHAPE "place_params" {
+    TITLE "Hely paraméterek","A helyhez rendelt paraméter";
+    TYPE "simple";
+    FEATURES ":button.copy:report:";
+    INHERIT TYPE "no";
+    VIEW RIGHTS "viewer";
+    EDIT RIGHTS "operator";
+    DELETE RIGHTS "operator";
+    INSERT RIGHTS "operator";
+    ADD FIELD "place_param_id" {
+        TITLE "ID","Numerikus egyedi azonosító";
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
+    ADD FIELD "place_param_name" {
+        TITLE "Név","Paraméter neve";
+        FLAG "HTML";
+    }
+    ADD FIELD "place_id" {
+        TITLE "Hely",@;
+        FLAG "table_hide", "read_only";
+    }
+    ADD FIELD "param_type_id" {
+        TITLE "Típus",@;
+        FLAG "HTML";
+    }
+    ADD FIELD "date_of" {
+        TITLE "Időpont",@;
+    }
+    ADD FIELD "param_value" {
+        TITLE "Érték",@;
+        FLAG "huge", "HTML";
+    }
+    ADD FIELD "place_param_note" {
+        TITLE "Megj.","Megjegyzés";
+    }
+    ADD FIELD "flag" {
+        TITLE "flag",@;
+        FLAG "table_hide", "dialog_hide";
+    }
+    FIELD "place_param_name", "place_id", "param_type_id", "date_of" ORD asc, no, desc;
+    FIELD "param_value" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "date_of", "place_param_name", "place_id", "param_type_id", "param_value";
+}
 TABLE SHAPE "places" {
     TITLE "Helyek, helyiségek","Hely, helyiség","places","Csoportoknak tagja","Csoportoknak nem tagja";
     TYPE "member";
@@ -3246,7 +3341,7 @@ TABLE SHAPE "places" {
     EDIT RIGHTS "operator";
     DELETE RIGHTS "operator";
     INSERT RIGHTS "operator";
-    RIGHT SHAPE "place_groups";
+    RIGHT SHAPE "place_groups","place_params";
     ADD FIELD "place_name" "place_name" {
         TITLE "Név","Hely helyiség neve";
         FLAG "HTML";
@@ -3273,7 +3368,7 @@ TABLE SHAPE "places" {
     }
     ADD FIELD "parent_id" "parent_id" {
         TITLE "Helye","Felsőbb szintú hely";
-        FEATURES ":filter=places:";
+        FEATURES ":widget_filter=places:";
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "image_id" "image_id" {
@@ -3293,14 +3388,14 @@ TABLE SHAPE "places" {
 }
 TABLE "places" SHAPE "places_topol" {
     TITLE "places_topol",@,@;
-    TYPE "tree", "owner", "read_only";
-    FEATURES ":report:";
+    TYPE "owner", "read_only";
+    FEATURES ":button.copy:report:zone:";
     INHERIT TYPE "no";
     VIEW RIGHTS "viewer";
     EDIT RIGHTS "operator";
     DELETE RIGHTS "admin";
     INSERT RIGHTS "operator";
-    RIGHT SHAPE "phsnodes","patchs";
+    RIGHT SHAPE "phsnodes","patchs","place_params";
     // RIGHT SHAPE "snmpdevices","users";
     ADD FIELD "place_name" "place_name" {
         TITLE "place_name",@;
@@ -3310,6 +3405,13 @@ TABLE "places" SHAPE "places_topol" {
     }
     ADD FIELD "place_type" "place_type" {
         TITLE "place_type",@;
+    }
+    ADD FIELD "place_id" AS "place_category" {
+        TITLE "Hely kat.","Hely kategória";
+        FEATURES  {
+            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND  place_group_type = 'category')\\,'\\,')";
+        }
+        FLAG "dialog_hide", "read_only", "HTML";
     }
     ADD FIELD "parent_id" "parent_id" {
         TITLE "parent_id",@;
@@ -3330,8 +3432,16 @@ TABLE "places" SHAPE "places_topol" {
         TITLE "place_id",@;
         FLAG "table_hide", "dialog_hide", "read_only";
     }
+    ADD FIELD "place_id" AS "place_port" {
+        TITLE "Port","Végponti portok";
+        FEATURES  {
+            "view_expr" = "place_param(?\\,'port')";
+        }
+        FLAG "table_hide", "dialog_hide", "read_only";
+    }
     FIELD "place_name" ORD asc, no, desc;
-    FIELD ORD SEQUENCE "place_name";
+    FIELD "place_category", "place_port" ORD no, asc, desc;
+    FIELD ORD SEQUENCE "place_name", "place_category", "place_port";
 }
 TABLE SHAPE "port_in_mactab" {
     TITLE "port_in_mactab",@,@;
@@ -3431,78 +3541,6 @@ TABLE SHAPE "port_params" {
     FIELD "port_id" ORD no, asc, desc;
     FIELD ORD SEQUENCE "date_of", "port_param_name", "port_id", "param_type_id", "param_value";
 }
-TABLE SHAPE "portvars" {
-    TITLE "portvars",@,@;
-    TYPE "child";
-    FEATURES  {
-        "bg_color" = "var_state,disabled";
-        "vlan_list_by_host.owner" = "vlan_id";
-    }
-    INHERIT TYPE "no";
-    VIEW RIGHTS "viewer";
-    EDIT RIGHTS "operator";
-    DELETE RIGHTS "admin";
-    INSERT RIGHTS "operator";
-    ADD FIELD "portvar_id" "portvar_id" {
-        TITLE "portvar_id",@;
-        FLAG "table_hide", "read_only";
-    }
-    ADD FIELD "service_var_name" "service_var_name" {
-        TITLE "service_var_name",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "service_var_type_id" "service_var_type_id" {
-        TITLE "service_var_type_id",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "service_var_value" "service_var_value" {
-        TITLE "service_var_value",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "raw_value" "raw_value" {
-        TITLE "raw_value",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "host_service_id" "host_service_id" {
-        TITLE "host_service_id",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "port_id" "port_id" {
-        TITLE "port_id",@;
-        FLAG "table_hide", "read_only";
-    }
-    ADD FIELD "var_state" "var_state" {
-        TITLE "var_state",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "last_time" "last_time" {
-        TITLE "last_time",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "features" "features" {
-        TITLE "features",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "delegate_service_state" "delegate_service_state" {
-        TITLE "delegate_service_state",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "state_msg" {
-        TITLE "state_msg",@;
-        FLAG "huge";
-    }
-    ADD FIELD "disabled" {
-        TITLE "Letiltva",@;
-        FLAG "read_only";
-    }
-    ADD FIELD "service_var_note" "service_var_note" {
-        TITLE "service_var_note",@;
-        FLAG "read_only";
-    }
-    FIELD "service_var_name" ORD asc, no, desc;
-    FIELD "service_var_type_id" ORD no, asc, desc;
-    FIELD ORD SEQUENCE "service_var_name", "service_var_type_id";
-}
 TABLE SHAPE "port_vlan_logs" {
     TITLE "Port - VLAN változások","Port-VLAN log rekord";
     TYPE "simple", "read_only";
@@ -3567,8 +3605,8 @@ TABLE SHAPE "port_vlans" {
     ADD FIELD "port_id" {
         TITLE "Port",@;
         FEATURES  {
-            "filter" = "port.node";
             "view_func" = "port_id2full_name";
+            "widget_filter" = "port.node";
         }
     }
     ADD FIELD "vlan_id" AS "vlan_id_raw" {
@@ -3826,6 +3864,7 @@ TABLE SHAPE "service_rrd_vars" {
         "bg_color" = "var_state,disabled";
         "copy";
         "extension" = "service_var2service_rrd_var";
+        "hostports.owner" = "host_service_id,port_id,is_port_of_host_service(%1\\,%2)";
         "report";
     }
     INHERIT TYPE "listed_rev";
@@ -4206,6 +4245,7 @@ TABLE SHAPE "snmpdevices" {
         "bg_color" = "node_stat";
         "button.copy";
         "report";
+        "zone";
     }
     INHERIT TYPE "listed_rev";
     INHERIT TABLE NAMES "nodes";
@@ -4235,13 +4275,16 @@ TABLE SHAPE "snmpdevices" {
     }
     ADD FIELD "place_id" {
         TITLE "Hely","Az eszköz helye";
-        FEATURES ":filter=places:node2place:";
+        FEATURES  {
+            "node2place";
+            "widget_filter" = "places";
+        }
         FLAG "batch_edit", "HTML";
     }
     ADD FIELD "place_id" AS "place_category" {
         TITLE "Hely kat.","Hely kategória";
         FEATURES  {
-            "view_expr" = "array_to_string(ARRAY(SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_id = ? AND  place_group_type = 'category')\\,'\\,')";
+            "view_expr" = "place_id2category(?)";
         }
         FLAG "dialog_hide", "read_only", "HTML";
     }
@@ -4492,7 +4535,7 @@ TABLE SHAPE "table_shape_fields" {
 TABLE SHAPE "table_shapes" {
     TITLE "Adattábla megjelenítés leírók","Adattábla megjelenítés leíró","table_shapes";
     TYPE "owner";
-    FEATURES ":report:";
+    FEATURES ":button.copy:report:";
     INHERIT TYPE "no";
     VIEW RIGHTS "operator";
     EDIT RIGHTS "admin";
@@ -4698,12 +4741,12 @@ TABLE SHAPE "tools" {
         TITLE "icon",@;
         FLAG "HTML";
     }
+    ADD FIELD "platforms" {
+        TITLE "Platformok",@;
+    }
     ADD FIELD "object_names" {
         TITLE "Objects","Megengedett objektum (tábla) nevek";
         FLAG "HTML";
-    }
-    ADD FIELD "platforms" {
-        TITLE "Platformok",@;
     }
     ADD FIELD "title" {
         TITLE "Cimke",@;
@@ -4712,7 +4755,7 @@ TABLE SHAPE "tools" {
         TITLE "Tipp","Szerszá tipp";
     }
     FIELD "tool_name" ORD asc, no, desc;
-    FIELD "tool_type", "tool_stmt", "object_names", "platforms", "title", "tool_tip" ORD no, asc, desc;
+    FIELD "tool_type", "tool_stmt", "platforms", "object_names", "title", "tool_tip" ORD no, asc, desc;
     FIELD ORD SEQUENCE "object_names", "tool_name", "tool_type", "tool_stmt", "title", "platforms", "tool_tip";
 }
 TABLE SHAPE "tpows" {
@@ -5079,9 +5122,9 @@ SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("mactab_port");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("phs_links");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("log_links");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("lldp_links");
-SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("portvars");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("port_vlans");
 SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("port_in_mactab");
+SET table_shapes["hostports"].right_shape_ids += ID TABLE SHAPE ("service_rrd_vars");
 SET table_shapes["host_services"].right_shape_ids += ID TABLE SHAPE ("service_rrd_vars");
 SET table_shapes["patchs"].right_shape_ids += ID TABLE SHAPE ("pports");
 SET table_shapes["patchs"].right_shape_ids += ID TABLE SHAPE ("phs_links");
@@ -5283,15 +5326,19 @@ GUI "lv2gui" {
                 TITLE "Eszközök (devices)",@;
             }
         }
-        SHAPE "places_t" {
-            PARAM "places";
-            FEATURES  {
-                "shape.table_shape_type" = "!simple,tree";
+        MENU "places" {
+            TITLE "Helyek, helyiségek";
+            SHAPE "places_tree" {
+                PARAM "places";
+                FEATURES  {
+                    "shape.table_shape_type" = "!simple,tree";
+                }
+                TITLE "Helyek, helyiségek (fa)",@;
             }
-            TITLE "Helyek, helyiségek (fa)",@;
-        }
-        SHAPE "places" {
-            TITLE "Helyek, helyiségek (tábla)",@;
+            SHAPE "places_tab" {
+                PARAM "places";
+                TITLE "Helyek, helyiségek (tábla)",@;
+            }
         }
         MENU "services_sub" {
             TITLE "Szervízek";
@@ -5401,9 +5448,17 @@ GUI "lv2gui" {
         SHAPE "phsnodes" {
             TITLE "Hálózati csomópontok",@;
         }
-        SHAPE "place_topol" {
-            PARAM "places_topol";
-            TITLE "Helyiségek","Helyiségekben található objektumok";
+        MENU "place_topol" {
+            TITLE "Helyiségek";
+            SHAPE "place_topol_tab" {
+                PARAM "places_topol";
+                TITLE "Helyiségek","Helyiségekben található objektumok";
+            }
+            SHAPE "place_topol_try" {
+                PARAM "places_topol";
+                FEATURES ":shape.table_shape_type=tree:";
+                TITLE "Helyiségek (fa)","Helyiségekben található objektumok";
+            }
         }
         SHAPE "all_phs_links" {
             PARAM "phs_links";
@@ -5463,6 +5518,15 @@ GUI "lv2gui" {
             }
             TITLE "Port paraméterek",@;
             TOOL TIP "A port paraméterek teljes listája.";
+        }
+        SHAPE "all_place_gruup_params" {
+            PARAM "place_group_params";
+            FEATURES  {
+                "shape.place_group_id.dialog_hide" = "!!!";
+                "shape.place_group_id.table_hide" = "!!!";
+            }
+            TITLE "Hely csoport paraméterek",@;
+            TOOL TIP "A hely csoportok (zóna, kategoria) paraméterek teljes listája.";
         }
     }
     MENU "internals" {

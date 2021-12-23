@@ -91,9 +91,14 @@ SERVICE "check_disk" {
     FEATURES  {
         "c" = "4%";
         "control" = "tick,reset,exit";
-        "method" = "nagios";
+        "list";
+        "method" = "nagios,text";
+        "regexp" = "\\((\\d+)\\D+(\\d+)";
         "timing" = "timed";
-        "vol" = "/";
+        "variables" =  {
+            "disk_free_percent" = "1,free_percent";
+            "inode_free_percent" = "2,free_percent";
+        }
         "w" = "8%";
     }
     MAX CHECK ATTEMPTS 2;
@@ -228,6 +233,62 @@ SERVICE "check_ups" "UPS check by NUT" {
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 15;
     OFF LINE GROUPS "admin_net";
+}
+SERVICE "dev_sda" "Csak a diszket azonosítja (sda)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sda:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdb" "Csak a diszket azonosítja (sdb)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdb:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdc" "Csak a diszket azonosítja (sdc)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdc:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdd" "Csak a diszket azonosítja (sdd)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdd:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sde" "Csak a diszket azonosítja (sde)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sde:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdf" "Csak a diszket azonosítja (sdf)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdf:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdg" "Csak a diszket azonosítja (sdg)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdg:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "dev_sdh" "Csak a diszket azonosítja (sdh)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":dev=/dev/sdh:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
 }
 SERVICE "dhcp_conf" "DHCP config fájl, local vagy ssh-n keresztül" {
     SUPERIOR SERVICE MASK "~.";
@@ -522,6 +583,7 @@ SERVICE "portmac" "Device port address table query daemon" {
         "superior";
         "timing" = "passive";
     }
+    MAX CHECK ATTEMPTS 2;
     NORMAL CHECK INTERVAL 300;
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 5;
@@ -728,62 +790,6 @@ SERVICE "rs485" "RS485 BUS interface or gateway" {
     TYPE "life_contr";
     OFF LINE GROUPS "admin_net";
 }
-SERVICE "sda" "Csak a diszket azonosítja (sda)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sda:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdb" "Csak a diszket azonosítja (sdb)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdb:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdc" "Csak a diszket azonosítja (sdc)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdc:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdd" "Csak a diszket azonosítja (sdd)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdd:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sde" "Csak a diszket azonosítja (sde)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sde:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdf" "Csak a diszket azonosítja (sdf)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdf:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdg" "Csak a diszket azonosítja (sdg)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdg:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
-SERVICE "sdh" "Csak a diszket azonosítja (sdh)" {
-    SUPERIOR SERVICE MASK "~.";
-    FEATURES ":dev=/dev/sdh:";
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
-    TYPE "mode";
-}
 SERVICE "snmp" "SNMP" {
     SUPERIOR SERVICE MASK "~.";
     PORT 161;
@@ -868,6 +874,26 @@ SERVICE "tcp.rs" "TCP serial port gateway" {
     FLAPPING MAX CHANGE 15;
     TYPE "protocol";
 }
+SERVICE "temp_core_rpi" "Raspberry Pi mag hőmérséklet" {
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "sh -c 'echo \\$((`cat /sys/class/thermal/thermal_zone0/temp`/1000))'";
+    FEATURES  {
+        "control" = "tick,reset,exit";
+        "list";
+        "method" = "text";
+        "timing" = "timed";
+        "variables" =  {
+            "temp_core" = "1,temp_core";
+        }
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 10;
+    TYPE "querying";
+    OFF LINE GROUPS "admin_net";
+}
 SERVICE "temp_owget" "Temp by OWFS" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "owget $paths";
@@ -887,20 +913,24 @@ SERVICE "temp_owget" "Temp by OWFS" {
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
-SERVICE "temp.raspb" "Temp by raspbian" {
-    SUPERIOR SERVICE MASK "^parser$";
-    COMMAND "sh -c 'echo \\$((`cat /sys/class/thermal/thermal_zone0/temp`/1000))'";
+SERVICE "temp_w1_rpi" "Raspberry Pi mag hőmérséklet" {
+    SUPERIOR SERVICE MASK "^(lv2d|group)$";
+    COMMAND "sh -c 'echo \\$((`cat /sys/bus/w1/devices/$devid/temperature`/1000))'";
     FEATURES  {
         "control" = "tick,reset,exit";
-        "method" = "qparse,carried";
+        "list";
+        "method" = "text";
+        "stop_timeout" = "3000";
         "timing" = "timed";
-        "varname" = "temp";
+        "variables" =  {
+            "temp" = "1,temp";
+        }
     }
     MAX CHECK ATTEMPTS 2;
-    NORMAL CHECK INTERVAL 120;
-    RETRY CHECK INTERVAL 30;
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 10;
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
@@ -944,6 +974,27 @@ SERVICE "UPS-MIB" {
     TYPE "link";
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "vol_root" "Csak a kötetet azonosítja (/)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":vol=/:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "vol_srv" "Csak a kötetet azonosítja (/)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":vol=/srv:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
+SERVICE "vol_var" "Csak a kötetet azonosítja (/)" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":vol=/var:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
 SERVICE "win_dhcp_conf" "DHCP konfiguráció a netsh-n keresztül" {
     SUPERIOR SERVICE MASK "parser";
     COMMAND "netsh dhcp server \\\\\\\\$node dump all";
@@ -972,6 +1023,7 @@ PARAM "double precision" TYPE "real";
 PARAM "HPE_Case" "HPE Support, Switch csere" TYPE "text";
 PARAM "inet" TYPE "inet";
 PARAM "interval" TYPE "interval";
+PARAM "ipercent" TYPE "integer" "%";
 PARAM "minute" TYPE "integer" "minute";
 PARAM "node_name" TYPE "text";
 PARAM "note" TYPE "text";
@@ -997,6 +1049,13 @@ SERVICE VAR TYPE "cpuPercent" {
     PLAUSIBILITY "interval" "-0.0001", "100.0001";
     CRITICAL "no";
     WARNING "big" "90";
+    NO RAW TO RRD;
+}
+SERVICE VAR TYPE "free_percent" {
+    TYPE "ipercent", "bigint" "GAUGE";
+    PLAUSIBILITY "interval" "-1", "101";
+    CRITICAL "litle" "5";
+    WARNING "litle" "10";
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "ifbytes" "Input/output bytes" {
@@ -1114,6 +1173,13 @@ SERVICE VAR TYPE "sysUpTimeInstance" {
     NO RAW TO RRD;
     FEATURES ":rpn=10 *:";
 }
+SERVICE VAR TYPE "temp" {
+    TYPE "temp" "GAUGE";
+    PLAUSIBILITY "interval" "5", "110";
+    CRITICAL "no";
+    WARNING "no";
+    NO RAW TO RRD;
+}
 SERVICE VAR TYPE "temp_core" "CPU/SOC core temp." {
     TYPE "temp" "GAUGE";
     PLAUSIBILITY "interval" "5", "110";
@@ -1183,7 +1249,7 @@ SERVICE VAR TYPE "upsBatteryVoltage" "service : UPS-MIB" {
     FEATURES ":rpn=10 /:";
 }
 SERVICE VAR TYPE "upsEstimatedChargeRemaining" "service : UPS-MIB" {
-    TYPE "percent", "bigint" "GAUGE";
+    TYPE "ipercent", "bigint" "GAUGE";
     PLAUSIBILITY "interval" "-1", "101";
     CRITICAL "litle" "15";
     WARNING "litle" "50";
@@ -1205,7 +1271,7 @@ SERVICE VAR TYPE "upsInputVoltage" "service : UPS-MIB" {
     NO RAW TO RRD;
 }
 SERVICE VAR TYPE "upsOutputPercentLoad" "service : UPS-MIB" {
-    TYPE "percent", "bigint" "GAUGE";
+    TYPE "ipercent", "bigint" "GAUGE";
     PLAUSIBILITY "interval" "-1", "120";
     CRITICAL "big" "95";
     WARNING "big" "80";
