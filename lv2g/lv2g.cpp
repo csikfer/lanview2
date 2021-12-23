@@ -323,6 +323,7 @@ template <class T> const T& enumCacheFunction(const QString& _t, int _e, int _fi
 
 const QColor& bgColorByEnum(const QString& __t, int e)
 {
+    _DBGFN() << VDEB(__t) << VDEB(e) << endl;
     static QMap<QString, QVector<QColor> > colorCache;
     static const QColor defCol(Qt::white);
     return enumCacheFunction(__t, e, cEnumVal::ixBgColor(), colorCache, defCol);

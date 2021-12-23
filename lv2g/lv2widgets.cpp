@@ -2656,7 +2656,7 @@ void cFKeyWidget::_refresh()
     if (_pParentDialog != nullptr) {
         QStringList constFilter = _fieldShape.features().slValue(_sRefine);
         if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
-            if (pUi == nullptr) EXCEPTION(EPROGFAIL);
+            // ? if (pUi == nullptr) EXCEPTION(EPROGFAIL);
             QString sql = constFilter.first();
             constFilter.pop_front();
             foreach (QString s, constFilter) {
