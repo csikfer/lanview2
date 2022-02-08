@@ -16,7 +16,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 30
+#define DB_VERSION_MINOR 31
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -115,8 +115,6 @@ qlonglong sendError(const cError *pe, lanView *_instance)
         return NULL_ID;
     }
     QSqlQuery   q(*pInst->pDb);
-    // sqlRollback(q, false);
-    // sqlBegin(q);
     cNamedList  fields;
     fields.add(_sAppName,       lanView::appName);
     if (pInst->pSelfNode != nullptr && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
@@ -157,7 +155,6 @@ qlonglong sendError(const cError *pe, lanView *_instance)
     }
     qlonglong   eid = NULL_ID;
     if (q.first()) eid = variantToId(q.value(0));
-    // sqlCommit(q);
     return eid;
 }
 

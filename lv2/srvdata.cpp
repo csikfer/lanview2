@@ -235,6 +235,8 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
     return R_ERROR;
 }
 
+#define SET_STATE_IS_TRANSACTION 0
+
 cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted, bool forced)
 {
     if (sFulName.isEmpty()) {
@@ -266,21 +268,29 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
         vl << QVariant(forced ? _sTrue : _sFalse);
 
     }
+#if SET_STATE_IS_TRANSACTION
     bool tf = trFlag(TS_NULL) == TS_TRUE;
     QString sTrFulName = toSqlName(sFulName);
+#endif
     int cnt = 0;
     while (true) {
+#if SET_STATE_IS_TRANSACTION
         if (tf) sqlBegin(__q, sTrFulName);
+#endif
         int r = _execSql(__q, sql, vl);
         if (r == 0) {   // Nincs adat ?!
+#if SET_STATE_IS_TRANSACTION
             if (tf) sqlRollback(__q, sTrFulName, EX_IGNORE);
+#endif
             EXCEPTION(EENODATA, 0, tr("SQL függvény: %1(%2,%3,%4,%5)")
                       .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
                       );
         }
         if (r < 0) {    // prepare or exec error
             QSqlError le = __q.lastError();
+#if SET_STATE_IS_TRANSACTION
             if (tf) sqlRollback(__q, sTrFulName);
+#endif
             QString s = le.databaseText().split('\n').first();  // első sor
             // deleted ?
             if (s.contains("IdNotFound", Qt::CaseInsensitive)) {
@@ -290,7 +300,7 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
                 return nullptr;
             }
             cnt++;
-            // deadlock ?
+            // deadlock ?   ???
             if (s.contains("deadlock", Qt::CaseInsensitive) && cnt <= setStateMaxTry) {
                 DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.nativeErrorCode()).arg(cnt)
                     << tr("driverText   : ") << le.driverText() << "\n"
@@ -305,7 +315,9 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
             for (int i = 0; i < readBackFieldIxs.size(); ++i) {
                 setq(readBackFieldIxs.at(i), __q, i);
             }
+#if SET_STATE_IS_TRANSACTION
             if (tf) sqlCommit(__q, sTrFulName);
+#endif
             _DBGFNL() << toString() << endl;
             if (getBool(_sDisabled) && _resetIfDeleted) emitReset();
             break;

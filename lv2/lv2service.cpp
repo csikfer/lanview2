@@ -183,7 +183,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
 
     if ((s = inspector.feature(_sRestartMax)).size()) {
         reStartMax = s.toInt(&ok);
-        if (!ok) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sRestartMax).arg(s));
+        if (!ok) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sRestartMax, s));
     }
     else ok = false;
     if (!ok) {
@@ -216,7 +216,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
         if ((s = inspector.feature(_sLogrot)).isEmpty() == false) {
             QRegExp m("(\\d+)([kMG]?)[,;]?(\\d*)");
             if (!m.isValid()) EXCEPTION(EPROGFAIL, 0, m.pattern());
-            if (!m.exactMatch(s)) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot).arg(s));
+            if (!m.exactMatch(s)) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot, s));
             s = m.cap(1);   // $1
             maxLogSize = s.toInt(&ok);
             if (!ok) EXCEPTION(EPROGFAIL, 0, s);
@@ -328,7 +328,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     }
     // Error
     inspector.internalStat = IS_ERROR;
-    msg = tr("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
+    msg = tr("A '%1' program elszállt : %2").arg(inspector.checkCmd, ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
     inspector.setState(*inspector.pQuery(), _sCritical, msg);
     return -1;
@@ -355,8 +355,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
             bool statIsSet    = false;  // A statusz beállítva
             bool statSetRetry = false;  // Időzítés modosítása retry-re
             cError *pe = nullptr;
+            bool isTransaction =  0 != (inspector.inspectorType & IT_AUTO_TRANSACTION);
             try {
-                if (inspector.inspectorType & IT_AUTO_TRANSACTION) sqlBegin(*inspector.pQuery(), tn);
+                if (isTransaction) sqlBegin(*inspector.pQuery(), tn);
                 if (exitStatus == NormalExit) {
                     retStat = inspector.parse(exitCode(), *this, statMsg);
                     statIsSet    = retStat & RS_STAT_SETTED;
@@ -370,7 +371,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
             } CATCHS(pe);
             qlonglong elapsed = inspector.lastRun.elapsed();
             if (pe != nullptr) {
-                if (inspector.inspectorType & IT_AUTO_TRANSACTION) sqlRollback(*inspector.pQuery(), tn);  // Hiba volt, inkább visszacsináljuk az egészet.
+                if (isTransaction) sqlRollback(*inspector.pQuery(), tn);  // Hiba volt, inkább visszacsináljuk az egészet.
                 // A hibárol LOG az adatbázisba, amugy töröljük a hibát
                 lanView  *plv = lanView::getInstance();
                 qlonglong id = sendError(pe);
@@ -381,7 +382,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                 inspector.internalStat = IS_STOPPED;
             }
             else {
-                if (inspector.inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*inspector.pQuery(), tn);
+                if (isTransaction) sqlCommit(*inspector.pQuery(), tn);
                 if (retStat < RS_WARNING
                  && ((inspector.interval > 0 && inspector.lastRun.hasExpired(inspector.interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
                     statMsg = msgCat(statMsg, tr("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
@@ -884,8 +885,8 @@ bool cInspector::variablesListFeature(QSqlQuery &q, const QString& _name)
 
 void cInspector::variablesListCreateOrCheck(QSqlQuery &q)
 {
-    QString vName;
-    foreach (vName, varsListMap.keys()) {
+    for (QMap<QString, QStringList>::const_iterator i = varsListMap.constBegin(); i != varsListMap.constEnd(); ++i) {
+        const QString& vName = i.key();
         threadChkAbort();
         variablePostInitCreateOrCheck(q, vName);
     }
@@ -1370,7 +1371,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     if (isFullPath) {
         QFileInfo   fcmd(checkCmd);
         if (!fcmd.isExecutable()) {
-            EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));
+            EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd, name()));
         }
     }
     else {
@@ -1392,7 +1393,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
                 fcmd.setFile(d, checkCmd);
                 if (fcmd.isExecutable()) break;      // megtaláltuk
             }
-            if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));  // nem volt a path-on sem
+            if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, tr("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd, name()));  // nem volt a path-on sem
         }
         checkCmd = fcmd.absoluteFilePath();
     }
@@ -1517,10 +1518,11 @@ bool cInspector::doRun(bool __timed)
         lastRun.start();
     }
     QString statMsg;
-    // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz, hacsak le nem tiltották
+    // Tesszük a dolgunkat bármi legyen is az. Ha engedélyezett, akkor tranzakcióban.
     QString tn = toSqlName(name());
+    bool isTransaction = 0 != (inspectorType & IT_AUTO_TRANSACTION);
     try {
-        if (inspectorType & IT_AUTO_TRANSACTION) sqlBegin(*pQuery(), tn);
+        if (isTransaction) sqlBegin(*pQuery(), tn);
         retStat      = run(*pQuery(), statMsg);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
@@ -1533,7 +1535,7 @@ bool cInspector::doRun(bool __timed)
         statMsg = msgCat(statMsg, tr("Az időzítés csúszott: %1 > %2").arg(lastElapsedTime).arg(interval));
     }
     if (lastError != nullptr) {   // Ha hívtuk a run metódust, és dobott egy hátast
-        if (inspectorType & IT_AUTO_TRANSACTION) sqlRollback(*pQuery(), tn);  // Hiba volt, inkább visszacsináljuk az egészet.
+        if (isTransaction) sqlRollback(*pQuery(), tn);  // Hiba volt, inkább visszacsináljuk az egészet.
         if (pProcess != nullptr && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
         }
@@ -1552,7 +1554,7 @@ bool cInspector::doRun(bool __timed)
         }
     }
     else {
-        if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pQuery(), tn);
+        if (isTransaction) sqlCommit(*pQuery(), tn);
         if (retStat < RS_WARNING
          && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
             statMsg = msgCat(statMsg, tr("Időtúllépés, futási idö %1 ezred másodperc").arg(elapsed));
@@ -1740,9 +1742,10 @@ enum eNotifSwitch cInspector::parse_json(int _ec, const QByteArray &text, QStrin
     QJsonValue jvBase = jsonDocToVal(doc);
     QString keys = feature("json_base");
     jvBase = searchJsonValue(jvBase, keys);
-    foreach (QString vname, varsFeatureMap.keys()) {
+    for (tStringMap::const_iterator i = varsFeatureMap.constBegin(); i != varsFeatureMap.constEnd(); ++i) {
+        const QString& vname = i.key();
         cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
-        keys = varsFeatureMap[vname];
+        keys = i.value();
         QJsonValue jv = searchJsonValue(jvBase, keys);
         QVariant v = jv.toVariant();
         sv.setValue(*pQuery(), v, st);
@@ -1853,17 +1856,18 @@ enum eNotifSwitch cInspector::parse_tagged(int r, QString &text, QString &runMsg
             vmap[sl.at(1)] = sl.at(2);
         }
     }
-    foreach (QString vname, varsFeatureMap.keys()) {
-        QString sRef = varsFeatureMap[vname];   // Value name in query string
+    for (tStringMap::const_iterator i = varsFeatureMap.constBegin(); i != varsFeatureMap.constEnd(); ++i) {
+        const QString& vname = i.key();
+        QString sRef = i.value();       // Value name in query string
         if (sRef.isEmpty()) sRef = vname;
-        tStringMap::iterator i = vmap.find(sRef);
-        if (i == vmap.end()) {
+        tStringMap::iterator j = vmap.find(sRef);
+        if (j == vmap.end()) {
             msgAppend(&runMsg, tr("Missing data : %1 (%2).").arg(vname, sRef));
             if (r == RS_ON) r = RS_WARNING;
             continue;
         }
         cInspectorVar& sv = *getInspectorVar(vname, EX_ERROR);
-        sv.setValue(*pQuery(), i.value(), r);
+        sv.setValue(*pQuery(), j.value(), r);
     }
     return eNotifSwitch(r);
 }

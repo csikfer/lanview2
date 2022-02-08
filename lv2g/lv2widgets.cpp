@@ -1767,7 +1767,7 @@ bool cPolygonWidget::getImage(bool refresh)
     case IS_PLACE_REC:
         if (parentOrPlace_id != NULL_ID) {
             bool ok;
-            iid = execSqlIntFunction(*pq, &ok, "get_image", parentOrPlace_id);
+            iid = execSqlIntFunction(*pq, &ok, "get_image_id_by_place_id", parentOrPlace_id);
             if (!ok || iid == 0) {  // Valamiért 0-val tér vissza, NULL helyett :-o
                 iid = NULL_ID;
             }

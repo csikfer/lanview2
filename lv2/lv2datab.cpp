@@ -2454,7 +2454,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
     QString sFnToName = sIdName + "2name"; // Az alapértelmezett név
     // Csak a nevet ellenőrizzük, ilyen neve ne legyen més függvénynek !!
     QString sql = QString("SELECT COUNT(*) FROM  information_schema.routines WHERE routine_schema = '%1' AND routine_name = '%2'")
-            .arg(sSchemaName).arg(sFnToName);
+            .arg(sSchemaName, sFnToName);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first() || q.value(0).toInt() == 1) return sFnToName;    // Definiálva van a keresett függvény, OK
     const QString& sNameName   = nameName(EX_IGNORE);
@@ -2465,21 +2465,21 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
     }
     DWAR() << QObject::tr("Function %1 not found, create ...").arg(sFnToName) << endl;
     sql = QString(
-         "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS text AS $$"
-        " DECLARE"
-            " name text;"
-        " BEGIN"
-            " IF $1 IS NULL THEN"
-                " RETURN NULL; "
-            " END IF;"
-            " SELECT %4 INTO name FROM %2 WHERE %3 = $1;"
-            " IF NOT FOUND THEN"
-                " PERFORM error('IdNotFound', $1, '%3', '%1', '%2');"
-            " END IF;"
-            " RETURN name;"
-        " END"
-        " $$ LANGUAGE plpgsql"
-            ).arg(sFnToName).arg(sTableName).arg(sIdName).arg(sNameName);
+        "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS text LANGUAGE 'plpgsql' STABLE PARALLEL SAFE AS $$\n"
+        "DECLARE\n"
+        "  name text;\n"
+        "BEGIN\n"
+        "  IF $1 IS NULL THEN\n"
+        "    RETURN NULL;\n"
+        "  END IF;\n"
+        "  SELECT %4 INTO name FROM %2 WHERE %3 = $1;\n"
+        "  IF NOT FOUND THEN\n"
+        "    name = '#' || $1::text;\n"
+        " END IF;\n"
+        " RETURN name;\n"
+        " END\n"
+        " $$\n"
+            ).arg(sFnToName, sTableName , sIdName, sNameName);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     // PDEB(INFO) << QObject::tr("Created procedure : %1").arg(quotedString(sql)) << endl;
     return sFnToName;
