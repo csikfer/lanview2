@@ -324,10 +324,9 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
     args << daemonOption;
     args << "-s" << QString::number(rrdBeat.getId(_sStep) / 1000); // step [sec], getId(_sStep) returns millisec
     args << QString("DS:%1:%2:%3:%4:%5")
-            .arg(i.value().varName)                 // name
-            .arg(serviceVarType.getName(_sServiceVarType))    // Type
-            .arg(rrdBeat.getId(_sHeartbeat) / 1000)    // heatrbeat [sec]
-            .arg(min, max);                         // min, max
+            .arg(i.value().varName, serviceVarType.getName(_sServiceVarType))  // name, Type
+            .arg(rrdBeat.getId(_sHeartbeat) / 1000)         // heatrbeat [sec]
+            .arg(min, max);                                 // min, max
     for (int rra = 0; rra < RRA_NUMBER; rra++) {
         QStringList averages = rrdBeat.getStringList(indexes[rra][FXX_AGREGATES]);
         qlonglong step = rrdBeat.getId(indexes[rra][FXX_STEP]);
@@ -345,7 +344,12 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
         PDEB(DERROR) << msg << endl;
         return false;
     }
-    return true;
+    else {
+        msg = tr("Create the %1 RRD file.").arg(i.value().fileName);
+        APPMEMO(q, msg, RS_ON);
+        PDEB(INFO) << msg << endl;
+        return true;
+    }
 }
 
 QString cRrdHelper::getErrorMessages()

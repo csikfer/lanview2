@@ -32,7 +32,7 @@ BEGIN
     RETURN name;
 END;
 $BODY$;
-CREATE OR REPLACE FUNCTION public.enum_val_id2name(bigint) RETURNS text
+CREATE OR REPLACE FUNCTION enum_val_id2name(bigint) RETURNS text
     LANGUAGE 'plpgsql' STABLE PARALLEL SAFE AS $BODY$
 DECLARE
     name text;
@@ -231,7 +231,7 @@ $BODY$;
 DROP FUNCTION IF EXISTS service_type_id2name(bigint); -- Automatikusan generált, kód modosítva
 ALTER FUNCTION service_value2text(text, bigint, boolean) STABLE PARALLEL SAFE;
 -- Hibajavítás
-CREATE OR REPLACE FUNCTION public.service_var2service_rrd_var(vid bigint) RETURNS service_rrd_vars
+CREATE OR REPLACE FUNCTION service_var2service_rrd_var(vid bigint) RETURNS service_rrd_vars
     LANGUAGE 'plpgsql' VOLATILE PARALLEL UNSAFE AS $BODY$
 DECLARE
     sv  service_vars;
@@ -266,7 +266,7 @@ DROP FUNCTION IF EXISTS table_or_view_is_exists(text); -- nem használt
 DROP FUNCTION IF EXISTS table_shape_field_id2name(bigint); -- Automatikusan generált, kód modosítva
 DROP FUNCTION IF EXISTS table_shape_field_name2id(text, text); -- nem használt
 DROP FUNCTION IF EXISTS table_shape_id2name(bigint); -- Automatikusan generált, kód modosítva
-CREATE OR REPLACE FUNCTION public.table_shape_id2name(bigint[]) RETURNS text
+CREATE OR REPLACE FUNCTION table_shape_id2name(bigint[]) RETURNS text
     LANGUAGE 'plpgsql' STABLE PARALLEL SAFE AS $BODY$
 DECLARE
     tsid bigint;
@@ -304,7 +304,7 @@ ALTER FUNCTION check_before_param_value() STABLE;
 ALTER FUNCTION check_insert_menu_items() STABLE;
 ALTER FUNCTION check_shape_field() IMMUTABLE;
 ALTER FUNCTION crypt_user_password() STABLE;
-CREATE OR REPLACE FUNCTION public.delete_node_post() RETURNS trigger
+CREATE OR REPLACE FUNCTION delete_node_post() RETURNS trigger
     LANGUAGE 'plpgsql' VOLATILE AS $BODY$
 BEGIN
     DELETE FROM nports          WHERE node_id = OLD.node_id;
@@ -314,6 +314,30 @@ BEGIN
         AND object_name = ANY (ARRAY['nodes', 'snmpdevices']);
     RETURN OLD;
 END;
+$BODY$;
+ALTER FUNCTION set_image_hash_if_null() STABLE;
+ALTER FUNCTION user_events_before() STABLE;
+
+-- A régi log rekordok törlése
+CREATE OR REPLACE FUNCTION cut_down_old_logs() RETURNS VOID
+    LANGUAGE 'plpgsql' VOLATILE PARALLEL UNSAFE AS $BODY$
+DECLARE
+    min_time    timestamp;
+BEGIN
+    min_time := NOW() - COALESCE(get_interval_sys_param('log_max_age'), '90 Days'::interval);
+    DELETE FROM app_errs WHERE date_of < min_time;
+    DELETE FROM app_memos WHERE date_of < min_time;
+    DELETE FROM arp_logs WHERE date_of < min_time;
+    DELETE FROM db_errs WHERE date_of < min_time;
+    DELETE FROM dyn_ipaddress_logs WHERE date_of < min_time;
+    DELETE FROM host_service_logs WHERE date_of < min_time;
+    DELETE FROM host_service_noalarms WHERE date_of < min_time;
+    DELETE FROM imports WHERE date_of < min_time;
+    DELETE FROM ip_address_logs WHERE date_of < min_time;
+    DELETE FROM mactab_logs WHERE date_of < min_time;
+    DELETE FROM port_vlan_logs WHERE date_of < min_time;
+    DELETE FROM user_events WHERE created < min_time;
+END
 $BODY$;
 
 SELECT set_db_version(1, 31);
