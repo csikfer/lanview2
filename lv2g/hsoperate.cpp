@@ -1215,6 +1215,18 @@ void cHSOperate::on_tableWidget_doubleClicked(const QModelIndex& mi)
         }
         break;
       }
+    case TC_STATE: {
+        const QString sql = "SELECT host_service_id2name(host_service_id), state_msg FROM host_services WHERE host_service_id = ?";
+        QVariant hsid = actState()->rows.at(row)->rec.value(RX_ID);
+        if (execSql(*pq2, sql, hsid)) {
+            QString sStatMsg = pq2->value(1).toString();
+            if (!sStatMsg.isEmpty()) {
+                QString title = tr("A %1 szervízpéldány utolsó statusz üzenet").arg(pq2->value(0).toString());
+                cMsgBox::text(title , sStatMsg);
+            }
+        }
+        break;
+     }
     case TC_PLACE: {
         cPlace p;
         p.setByName(*pq2, s);

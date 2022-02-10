@@ -150,6 +150,15 @@ void cMsgBox::settingDetailedText(const QString &_dt)
     grid->addItem(horizontalSpacer, grid->rowCount(), 0, 1, grid->columnCount());
 }
 
+void cMsgBox::text(const QString& _t, const QString& _m, QWidget *par, const QString &_dt)
+{
+    cMsgBox o(DC_INFO, par);
+    o.setWindowTitle(_t);
+    o.setText(_m);
+    if (!_dt.isEmpty()) o.settingDetailedText(_dt);
+    o.exec();
+}
+
 void cMsgBox::info(const QString& _m, QWidget *par, const QString &_dt)
 {
     cMsgBox o(DC_INFO, par);

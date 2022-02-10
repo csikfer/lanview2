@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1365</width>
+    <width>1389</width>
     <height>872</height>
    </rect>
   </property>
@@ -340,7 +340,7 @@
            <string>ID</string>
           </property>
           <property name="toolTip">
-           <string>A szolgáltatás példány egyedi azonosítója.</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás példány egyedi azonosítója.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes szolgáltatás példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="whatsThis">
            <string/>
@@ -348,10 +348,10 @@
          </column>
          <column>
           <property name="text">
-           <string>Hoszt</string>
+           <string>Host</string>
           </property>
           <property name="toolTip">
-           <string>Eszköz hivatkozás a szolgáltatás példányban.</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Eszköz hivatkozás a szolgáltatás példányban.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes eszköz példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="whatsThis">
            <string/>
@@ -374,7 +374,7 @@
            <string>Szolgáltatás</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatásvagy tevékenység neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatásvagy tevékenység neve.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a szolgáltatást (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="whatsThis">
            <string/>
@@ -396,7 +396,7 @@
            <string>Ext.</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, és/vagy matódust azonosító opcionális szolgáltatások neve(i). Ezek a szolgáltatás típusú objektumok módosítják, ill. kiegészítik a példány működését további paraméterekkel, vagy protokollal.&lt;/p&gt;&lt;p&gt;A két érték kettösponttal van elválasztva, a kettőspont előtt a protokol, utána a mód azonosító. A 'nil' nincs megjelenítve.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes szolgáltatás példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, és/vagy matódust azonosító opcionális szolgáltatások neve(i). Ezek a szolgáltatás típusú objektumok módosítják, ill. kiegészítik a példány működését további paraméterekkel, vagy protokollal.&lt;/p&gt;&lt;p&gt;A két érték kettösponttal van elválasztva, a kettőspont előtt a protokol, utána a mód azonosító. A 'nil' nincs megjelenítve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="whatsThis">
            <string/>
@@ -407,7 +407,7 @@
            <string>Hely</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Az eszköz helye, a hely vagy helyiség neve.&lt;/p&gt;&lt;p&gt;Ha nincs megadva, akkor 'unknown'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Az eszköz helye, a hely vagy helyiség neve.&lt;/p&gt;&lt;p&gt;Ha nincs megadva, akkor 'unknown'.&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a helyet (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>

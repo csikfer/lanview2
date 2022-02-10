@@ -42,6 +42,7 @@ class LV2GSHARED_EXPORT cMsgBox : public QMessageBox {
 public:
     cMsgBox(eDataCharacter _dc, QWidget *par = nullptr);
     void settingDetailedText(const QString& _dt);
+    static void text(const QString& _t, const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
     static void info(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
     static void warning(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);
     static void error(const QString& _m, QWidget *par = nullptr, const QString &_dt = _sNul);

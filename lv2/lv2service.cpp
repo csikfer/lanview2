@@ -256,6 +256,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     if (isRuning) {
         msg = tr("Service %1 : Process %2 already runing, skeep.").arg(inspector.name(), inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "));
         APPMEMO(*inspector.pQuery(), msg, RS_WARNING);
+        return -1;
     }
     else {
         PDEB(VERBOSE) << "START program : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ")
@@ -2133,9 +2134,8 @@ int cInspector::firstDelay()
 {
     qint64 t;
     QDateTime last;
-    bool ok;
-    t = feature("delay").toLongLong(&ok);
-    if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
+    t = getTimeout(features(), "delay", 0);
+    if (t <= 0) {    // Ha nincs magadva késleltetés
         if (!hostService.isNull(_sLastTouched)) {
             last = hostService.get(_sLastTouched).toDateTime();
             qint64 ms = last.msecsTo(QDateTime::currentDateTime());

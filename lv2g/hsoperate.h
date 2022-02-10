@@ -140,6 +140,7 @@ private slots:
     void on_lineEditNodePattern_textChanged(const QString& text);
     void on_lineEditServicePattern_textChanged(const QString& text);
     void on_lineEditSupPattern_textChanged(const QString& text);
+    /// Kettős klik a szervíz példányok táblázat egy celláján
     void on_tableWidget_doubleClicked(const QModelIndex& mi);
     /// Egyyel visszalépés, az előző lekérdezésre (nem olvassa újra)
     void on_toolButtonBack_clicked();

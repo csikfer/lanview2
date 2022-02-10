@@ -538,9 +538,25 @@ QString getSysError(int eCode)
 
 void appReStart()
 {
+#ifdef Q_OS_LINUX
+    QStringList args = qApp->arguments();
+    int n = args.size();
+    int i;
+    QString arg;
+    char ** cArgs = (char **)malloc((n +1) + sizeof (char*));
+    for (i = 0; i < n; ++i) {
+        arg = args[i];
+        cArgs[i] = strdup(arg.toStdString().c_str());
+    }
+    cArgs[i] = nullptr;
+    execv(QCoreApplication::applicationFilePath().toStdString().c_str(), cArgs);
+    // Error
+    EXCEPTION(EPROGFAIL);
+#else
     QProcess::startDetached(QCoreApplication::applicationFilePath(), qApp->arguments());
     printf(" -- appReStart(): EXIT 123\n");
     exit(123);
+#endif
 }
 
 int startProcessAndWait(const QString& cmd, const QStringList& args, QString *pMsg, int start_to, int stop_to)

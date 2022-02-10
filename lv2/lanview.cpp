@@ -760,14 +760,13 @@ static void subSrvDbNotif(cInspector * _pi, const QList<qlonglong>& hsids, const
 void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
     if (ONDB(INFO)) {
-        QString src;
+        QString src = _sUnknown;
         switch (source) {
         case QSqlDriver::SelfSource:    src = _sSelf;       break;
         case QSqlDriver::OtherSource:   src = _sOther;      break;
-        case QSqlDriver::UnknownSource:
-     /* default:  */                    src = _sUnknown;    break;
+        case QSqlDriver::UnknownSource:                     break;
         }
-        cDebug::cout() << HEAD() << QObject::tr("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+        cDebug::cout() << HEAD() << QObject::tr("Database notifycation : %1, source %2, payload :").arg(name, src) << debVariantToString(payload) << endl;
     }
     QString sPayload = payload.toString();
     if (sPayload.isNull()) return;
@@ -777,7 +776,7 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
     QList<qlonglong> hsids;
     foreach (QString shsid, shsids) {
         bool ok;
-        qlonglong hsid = shsid.toInt(&ok);
+        qlonglong hsid = shsid.toLongLong(&ok);
         if (ok) hsids << hsid;
     }
     if (hsids.isEmpty()) return; // No specified any valid host_service_id
@@ -787,13 +786,20 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
             reSet();
             return;
         }
-        else if (0 == QString(_sExit).compare(cmd,  Qt::CaseInsensitive)) {
+        else if (0 == _sExit.compare(cmd,  Qt::CaseInsensitive)) {
             PDEB(WARNING) << tr("NOTIFY %1  %2; exit ...").arg(name, sPayload) << endl;
             down();
             printf(" -- dbNotif(...): EXIT 0\n");
             QCoreApplication::exit(0);
             return;
         }
+#ifdef Q_OS_LINUX
+        else if (0 == QString("reload").compare(cmd,  Qt::CaseInsensitive)) {
+            PDEB(WARNING) << tr("NOTIFY %1  %2; Reload ...").arg(name, sPayload) << endl;
+            appReStart();
+            return;
+        }
+#endif
     }
     // command to cInspector object, sub services ?
     subSrvDbNotif(pSelfInspector, hsids, cmd);
