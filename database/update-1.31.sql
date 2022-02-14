@@ -325,6 +325,7 @@ DECLARE
     min_time    timestamp;
 BEGIN
     min_time := NOW() - COALESCE(get_interval_sys_param('log_max_age'), '90 Days'::interval);
+    DELETE FROM alarms WHERE begin_time < min_time;
     DELETE FROM app_errs WHERE date_of < min_time;
     DELETE FROM app_memos WHERE date_of < min_time;
     DELETE FROM arp_logs WHERE date_of < min_time;

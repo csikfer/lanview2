@@ -909,15 +909,13 @@ void cInspector::dbNotif(const QString& cmd)
 {
     // Thread esetén ez necces lehet !!!!
     bool ok = false;
-    QObject *po;
     if (0 == cmd.compare(_sTick, Qt::CaseInsensitive)) {
         if (pInspectorThread != nullptr) {
-            po = pInspectorThread;
+            ok = QMetaObject::invokeMethod(pInspectorThread, "do_timerEvent", Qt::AutoConnection);
         }
         else {
-            po = this;
+            ok = QMetaObject::invokeMethod(this, "do_timerEvent", Qt::AutoConnection);
         }
-        ok = QMetaObject::invokeMethod(po, "do_timerEvent", Qt::AutoConnection);
         if (!ok) {
             DERR() << "Invoke timerEvent() is unsuccesful." << endl;
         }
@@ -928,12 +926,11 @@ void cInspector::dbNotif(const QString& cmd)
         if (pParent == nullptr) {
             DERR() << QString("Invalid ReSet notification to %1 main inspector.").arg(name()) << endl;
         }
-
         else if (pParent->pInspectorThread != nullptr) {
-            ok = QMetaObject::invokeMethod(pParent->pInspectorThread, "do_reset_sub",  Q_ARG(cInspector *, this), Q_ARG(bool, reStartFlg));
+            ok = QMetaObject::invokeMethod(pParent->pInspectorThread, "do_reset_sub",  Q_ARG(cInspector*, this), Q_ARG(bool, reStartFlg));
         }
         else {
-            ok = QMetaObject::invokeMethod(pParent, "do_reset_sub",  Q_ARG(cInspector *, this), Q_ARG(bool, reStartFlg));
+            ok = QMetaObject::invokeMethod(pParent, "do_reset_sub",  Q_ARG(cInspector*, this), Q_ARG(bool, reStartFlg));
         }
         if (!ok) {
             DERR() << "Invoke do_reset_sub() is unsuccesful." << endl;
