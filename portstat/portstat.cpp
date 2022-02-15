@@ -532,7 +532,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         if (ifi == ifMap.end())
             continue;   // Not found
         cPortStat& portstat = **ifi;
-        QBitArray bitsSet = iface.mask(ixLastTouched);              // bits: Field is changed
+        QBitArray bitsSet = iface.mask(ixLastTouched);              // bits: Interfaces field is changed
         iface.set(ixLastTouched, QDateTime::currentDateTime());     // utolsó status állítás ideje, most.
         iface.set(ixLastChanged, QDateTime::currentDateTime());     // Last changed, if changed any state.
         QString eMsg;
@@ -623,10 +623,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         // Write interface states
         int un = iface.update(q, false, bitsSet);
         if (un != 1) {
-            QString msg = tr("Az update visszatérési érték %1 hiba, Service : %2, interface : %3")
-                    .arg(un)
-                    .arg(iface.identifying(false))
-                    .arg(hostService.fullName(q, EX_IGNORE));
+            QString msg = tr("Az update visszatérési érték %1 hiba, Service : %2, interface : %3").arg(un).arg(iface.identifying(false), hostService.fullName(q, EX_IGNORE));
             APPMEMO(q, msg, RS_CRITICAL);
         }
     }

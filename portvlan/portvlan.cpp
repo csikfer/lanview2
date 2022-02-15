@@ -144,6 +144,7 @@ cPortVLans::~cPortVLans()
 
 void cPortVLans::postInit(QSqlQuery &q)
 {
+    _DBGFN() << name() << endl;
     // Current VLAN settings (dynamic)
     setOid(dot1qVlanCurrentEgressPorts,             "SNMPv2-SMI::mib-2.17.7.1.4.2.1.4.0");
     setOid(dot1qVlanCurrentUntaggedPorts,           "SNMPv2-SMI::mib-2.17.7.1.4.2.1.5.0");
@@ -208,6 +209,7 @@ cDevicePV::~cDevicePV()
 
 void cDevicePV::postInit(QSqlQuery& q)
 {
+    _DBGFN() << name() << endl;
     cInspector::postInit(q);
     node().fetchPorts(q);
 
@@ -407,10 +409,12 @@ inline static bool maps2bool(const QMap<int, QBitArray>& maps, int mapix, int bi
 
 int cDevicePV::run(QSqlQuery& q, QString &runMsg)
 {
+    _DBGFN() << name() << endl;
     int rs = RS_ON;
     int r;
-    const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());
-    ctVlan = ctUnchg = ctMod = ctNew = ctIns = ctUnkn = ctRm = ctErr = 0;
+    const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());      // Parent cInspector object
+    ctVlan = ctUnchg = ctMod = ctNew = ctIns = ctUnkn = ctRm = ctErr = 0;   // Reset all counters
+    // Clear all container
     currentEgres.clear();
     currentUntagged.clear();
     staticEgres.clear();
@@ -425,6 +429,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(q, sql, nodeId());
+    // SNMP QUERY
     if (f_hpicfDot1xAuthenticator) {
         PDEB(VERBOSE) << "SNMP Query : hpicfDot1xAuthenticator " << endl;
         cTable table;
@@ -460,8 +465,10 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         s += "\n";
         msgAppend(&runMsg, s);
     }
+    // SNMP QUERY
     switch (staticOnly) {
     case TS_NULL:   // Test
+        PDEB(VERBOSE) << "SNMP Query : Test static/dynamic " << endl;
         r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,   currentEgres);
         if (r == 0 && !mNoUntaggedBitmap) r = snmp.getBitMaps(par.dot1qVlanCurrentUntaggedPorts, currentUntagged);
         if (0 != r) {
@@ -572,6 +579,7 @@ void cDevicePV::updatePortVlan(QSqlQuery& q, qlonglong portId, int vlanId, const
 int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& par)
 {
     // SNMP query
+    PDEB(VERBOSE) << "SNMP Query : static " << endl;
     int r = 0;
     if (r != 0
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticEgres))
@@ -670,6 +678,7 @@ int cDevicePV::runSnmpStatic(QSqlQuery& q, QString &runMsg, const cPortVLans& pa
 int cDevicePV::runSnmpDynamic(QSqlQuery& q, QString &runMsg, const cPortVLans& par)
 {
     // SNMP query
+    PDEB(VERBOSE) << "SNMP Query : Test dynamic " << endl;
     int r = 0;
     if (currentEgres.isEmpty() || currentUntagged.isEmpty()) {
         r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,   currentEgres);
