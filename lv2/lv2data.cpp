@@ -2638,6 +2638,9 @@ bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
             "(SELECT port_id FROM nports WHERE node_id = ?)";
     qlonglong id = getId();
     execSql(__q, sql, id);
+    // Törölni kell az adatbázisban a port_index mezőket, mert ha változott a sorrend, akkor az probléma.
+    sql = "UPDATE pports SET port_index = NULL WHERE node_id = ?";
+    execSql(__q, sql, id);
     // Ütköző objektumok feltételes törlése
     delCollisionByIp(__q);
     delCollisionByMac(__q);

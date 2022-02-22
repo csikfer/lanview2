@@ -83,6 +83,11 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, tVariantVector >
     /// ennyi üres sor lessz.
     /// @param __cn Az oszlop neve. Egyedi kell hogy legyen egy konténeren bellül.
     cTable& operator<<(const QString& __cn);
+    /// Üres oszlopok hozzáadása a konténerhez.
+    /// Ha volt első oszlop, és abban voltak sorok, akkor az új oszlopokban is
+    /// ennyi üres sor lessz.
+    /// @param __cnl Az oszlop név lista. Minden név egyedi kell hogy legyen egy konténeren bellül.
+    cTable& operator<<(const QStringList& __cnl);
     /// A konténer tartalmár striggé konvertálja.
     QString toString(void) const;
 };

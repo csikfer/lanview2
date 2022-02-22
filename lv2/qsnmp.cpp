@@ -90,6 +90,14 @@ cTable& cTable::operator<<(const QString& __cn)
     return *this;
 }
 
+cTable& cTable::operator<<(const QStringList& __cnl)
+{
+    for (QListIterator<QString> i(__cnl); i.hasNext();) {
+        *this << i.next();
+    }
+    return *this;
+}
+
 QString cTable::toString(void) const
 {
     QStringList keylst = keys();

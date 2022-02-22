@@ -266,9 +266,9 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     ui->labelModelName->  setText(pDevShape->shapeFields.get(_sModelName)->      getText(cTableShapeField::LTX_DIALOG_TITLE));
     ui->labelOsName->     setText(pDevShape->shapeFields.get(_sOsName)->         getText(cTableShapeField::LTX_DIALOG_TITLE));
     ui->labelOsVersion->  setText(pDevShape->shapeFields.get(_sOsVersion)->      getText(cTableShapeField::LTX_DIALOG_TITLE));
-    pButtobGroupSnmpV = new QButtonGroup(this);
-    pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV1);
-    pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV2c);
+    pButtonGroupSnmpV = new QButtonGroup(this);
+    pButtonGroupSnmpV->addButton(ui->radioButtonSnmpV1);
+    pButtonGroupSnmpV->addButton(ui->radioButtonSnmpV2c);
     QValidator *pVal = new cINetValidator(false);
     ui->comboBoxIp->setValidator(pVal);
     pSelectNode = new cSelectNode(ui->comboBoxZone, ui->comboBoxPlace, ui->comboBoxNode,
@@ -278,14 +278,7 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     ui->verticalLayoutType->addWidget(pTypeWidget);
     convertToSnmp = false;
 
-    // connected: on_pushButtonSave_clicked()
-    // connected: on_pushButtonQuery_clicked()
-    // connected: on_lineEditName_textChanged(QString)
     connect(pSelectNode,            SIGNAL(nodeNameChanged(QString)),   this, SLOT(nodeNameChange(QString)));
-    // connected: on_comboBoxIp_currentIndexChanged(QString)
-    // connected: on_comboBoxIp_currentTextChanged(QString)
-    // connected: on_checkBoxToSnmp_toggled(bool)
-
 }
 
 cSnmpDevQuery::~cSnmpDevQuery()
@@ -298,6 +291,7 @@ cSnmpDevQuery::~cSnmpDevQuery()
 
 }
 
+/// Egy mező érték beállítása a QLineEdit widget aktuális értéke alapján.
 inline void setTextField(cRecord *po, const QString fn, QLineEdit *pLE)
 {
     QString txt = pLE->text();
@@ -305,9 +299,10 @@ inline void setTextField(cRecord *po, const QString fn, QLineEdit *pLE)
     else               po->setName(fn, txt);
 }
 
+/// Slot: Megnyomták a "Save" gombot.
 void cSnmpDevQuery::on_pushButtonSave_clicked()
 {
-    if (pDev == nullptr) return;
+    if (pDev == nullptr) return;    // Téves? Nem kéne aktívnak lennie a "Save" gombnak.
     QString msg;
     QString name = ui->lineEditName->text();
     bool isInsert = pHost == nullptr;
@@ -368,6 +363,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
     }
 }
 
+/// Slot: SNMP lekérdezés
 void cSnmpDevQuery::on_pushButtonQuery_clicked()
 {
     clearPorts();
@@ -398,8 +394,8 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
             int validPorts = 0;
             setTrunkPortList();
             for (int row = 0; row < rows; ++row) {
-                QString name = table[_sIfName][row].toString();
-                cNPort *p = pDev->ports.get(name, EX_IGNORE);
+                QVariant pix = table[_sIfIndex][row].toULongLong();
+                cNPort *p = pDev->ports.get(_sPortIndex, pix, EX_IGNORE);
                 portRows << new cSnmpDevQPort(this, row, p);
                 if (p != nullptr) validPorts++;
             }

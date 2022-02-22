@@ -424,7 +424,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
     bool    foundJoint = false;
     // A gyátrói baromságok kezeléséhez kell
     QString sysdescr = node.getName(_sSysDescr);
-    // A portot töröljük, azt majd a lekérdezés teljes adatatartalommal felveszi
+    // A portokat töröljük, azt majd a lekérdezés teljes adatatartalommal felveszi
     node.ports.clear();
     if (hostAddr.isNull()) {
         if (__ex) EXCEPTION(EDATA,-1, es);
@@ -436,7 +436,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
     cTable     *ptab = _pTable == nullptr ? new cTable : _pTable;    // Interface table container
     QStringList cols;   // Table col names container
-    cols << _sIfIndex << _sIfDescr << _sIfType << /* _sIfMtu << _sIfSpeed << */ _sIfPhysAddress;
+    cols << _sIfIndex << _sIfDescr << _sIfType << _sIfPhysAddress;
     int r = snmp.getTable(_sIfMib, cols, *ptab);
     if (r) EX(ESNMP, r, snmp.emsg);
     PDEB(VVERBOSE) << "*************************************************" << endl;
@@ -520,16 +520,29 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             EX(EDATA, -1, QObject::tr("Invalid port object type"));
         }
         cMac mac = portSetMac(q, node, *pPort, *ptab, i, note);
+        // ***** Kivételek
         // Host is windows
         if (node.getBool(_sNodeType, NT_WINDOWS)) {
             // The name can be accented, but not unicode
             QByteArray ban = (*ptab)[_sIfDescr][i].toByteArray();
-            ifName = QString::fromLatin1(ban);
+            if (ifName == ifDescr) ifName = QString::fromLatin1(ban);   // ???
+            ifDescr = ban;
             if (ifType == IFTYPE_IANA_ID_ETH) {    // Guess at who the real Ethernet interfaces
                 QRegExp pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
                 if (0 > pat.indexIn(ifName)) {
                     pIfType = &cIfType::ifType("veth"); // Is virtual (maybe)
                 }
+            }
+        }
+        // Linux
+        else if (node.getBool(_sNodeType, NT_UNIX_LIKE)) {
+            if (ifType == 6) {  // 6 = ethernet
+                if      (ifName.startsWith('e'))    ;
+                else if (ifName.startsWith('v'))    pIfType = &cIfType::ifType(_sVirtual);
+                else if (ifName.startsWith('w'))    pIfType = &cIfType::ifType(_sWireless);
+                else if (ifName.startsWith("bond")) pIfType = &cIfType::ifType(_sMultiplexor);
+                else if (ifName.startsWith("br"))   pIfType = &cIfType::ifType(_sVEth);
+                else if (ifName.startsWith('t'))    pIfType = &cIfType::ifType(_sTunnel);
             }
         }
         // SonicWall returns useless portnames, catches the comment section
@@ -2377,6 +2390,7 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
 
 #endif // SNMP_IS_EXISTS
 
+/**********************************************************************************************/
 // ARP
 cMac ip2macByArpTable(const QHostAddress& a)
 {
@@ -2432,6 +2446,59 @@ QHostAddress mac2ipByArpTable(const cMac& a)
 #endif  // defined(Q_OS_WINDOWS)
     return r;
 }
+
+/**********************************************************************************************/
+
+// Nincs tesztelve, (még) nem használt
+bool parseProcTable(const QString& _fname, cTable& table, QString *pMsg, const QString& sFSep, const QString& sSSep, int headSize)
+{
+    table.clear();
+    QString fname = _fname;
+    if (!fname.startsWith('\\')) fname.prepend("\\proc\\");
+    QFile file(fname);
+    if (file.open(QIODevice::ReadOnly)) {
+        msgAppend(pMsg, QObject::tr("File '%1' open error :").arg(fname) + file.errorString());
+        return false;
+    }
+    QTextStream strm(&file);
+    QString line;           // Egy beolvasott sor
+    QStringList slHead;     // A fejléc
+    switch (headSize) {
+    case 1:
+        line = strm.readLine();
+        slHead = slSimplified(line.split(QRegExp(sFSep)));
+        break;
+    case 2: {
+        line = strm.readLine();
+        QStringList slSect1 = slSimplified(line.split(QRegExp(sSSep)));
+        line = strm.readLine();
+        QStringList slSect2 = slSimplified(line.split(QRegExp(sSSep)));
+        QString s = slSect1.takeFirst() + slSect2.takeFirst();
+        s.remove(QChar('-'));
+        slHead << s;
+        while (!slSect1.isEmpty()) {
+            QStringList sl = slSimplified(slSect2.takeFirst().split(QRegExp(sFSep)));
+            sl = slPrepend(sl, slSect1.takeFirst().simplified().prepend("-"));
+            slHead << sl;
+        }
+    }   break;
+    default:
+        msgAppend(pMsg, QObject::tr("Invalid parameter : headSize = %1").arg(headSize));
+        return false;
+    }
+    table << slHead;
+    int rows = table.rows();
+    while (!(line = strm.readLine()).isEmpty()) {
+        QStringList row = slSimplified(line.split(QRegExp(sFSep)));
+        int n = row.size();
+        for (int i = 0; i < rows; ++i) {
+            QString key = slHead[i];
+            table[key] << (i < n ? row[i] : QVariant());
+        }
+    }
+    return true;
+}
+
 
 
 

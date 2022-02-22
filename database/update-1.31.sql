@@ -319,7 +319,8 @@ ALTER FUNCTION set_image_hash_if_null() STABLE;
 ALTER FUNCTION user_events_before() STABLE;
 
 -- A régi log rekordok törlése
-CREATE OR REPLACE FUNCTION cut_down_old_logs() RETURNS VOID
+DROP FUNCTION IF EXISTS cut_down_old_logs();
+CREATE FUNCTION cut_down_old_logs() RETURNS timestamp
     LANGUAGE 'plpgsql' VOLATILE PARALLEL UNSAFE AS $BODY$
 DECLARE
     min_time    timestamp;
@@ -338,7 +339,31 @@ BEGIN
     DELETE FROM mactab_logs WHERE date_of < min_time;
     DELETE FROM port_vlan_logs WHERE date_of < min_time;
     DELETE FROM user_events WHERE created < min_time;
+    RETURN min_time;
 END
 $BODY$;
 
 SELECT set_db_version(1, 31);
+
+-- Hibajavítások 2022.02.17.
+
+DROP TRIGGER IF EXISTS intergaces_check_interface ON interfaces;    -- volt egy elírás
+DROP TRIGGER IF EXISTS interfaces_check_interface ON interfaces;
+
+CREATE OR REPLACE FUNCTION check_interface() RETURNS trigger
+    LANGUAGE 'plpgsql' AS $BODY$
+BEGIN
+    IF NEW.hwaddress IS NOT NULL AND 0 < COUNT(*) FROM interfaces WHERE node_id <> NEW.node_id AND hwaddress = NEW.hwaddress THEN
+        PERFORM error('IdNotUni', NEW.port_id, NEW.hwaddress::text, 'check_interface()', TG_TABLE_NAME, TG_OP);
+        RETURN NULL;
+    END IF;
+    RETURN NEW;
+END;
+$BODY$;
+
+CREATE TRIGGER interfaces_check_interface BEFORE INSERT OR UPDATE 
+    ON interfaces FOR EACH ROW EXECUTE FUNCTION check_interface();
+
+DROP INDEX IF EXISTS interfaces_port_index_index;
+CREATE UNIQUE INDEX interfaces_port_index_index ON interfaces (port_index, node_id) WHERE port_index IS NOT NULL;
+

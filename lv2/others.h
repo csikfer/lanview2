@@ -428,6 +428,9 @@ inline cCommaSeparatedValues& operator<< (cCommaSeparatedValues& __s, cCommaSepa
 
 EXT_ QHostAddress rdpClientAddress();
 
+EXT_ QStringList slSimplified(const QStringList& sl);
+EXT_ QStringList slPrepend(const QStringList& sl, QString s);
+
 
 #endif // OTHERS_H
 

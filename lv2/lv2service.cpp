@@ -1635,10 +1635,15 @@ int cInspector::parse(int _ec, QIODevice& _text, QString& runMsg)
         return r;
     }
     QByteArray bytes = _text.readAll();
-    PDEB(VVERBOSE) << "Parsing text : \n" << bytes << endl;
+    QString text = QString::fromUtf8(bytes);
+    PDEB(VVERBOSE) << "Parsing text : \n" << text << endl;
     int method = inspectorType & IT_METHOD_MASK;
-    if (method != 0) {
-        QString text = QString::fromUtf8(bytes);
+    if (method == 0) {  // Nincs előírás
+        msgAppend(&runMsg, tr("Return code %1").arg(_ec));
+        msgAppend(&runMsg, text);
+        r = _ec == 0 ? RS_ON : RS_CRITICAL;
+    }
+    else {
         if (method & IT_METHOD_SAVE_TEXT) {
             r = save_text(_ec, text);
         }

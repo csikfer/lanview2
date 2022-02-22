@@ -87,7 +87,7 @@ protected:
     cSnmpDevice        *pDev;
     cTableShape        *pDevShape;
     cSetWidget         *pTypeWidget;
-    QButtonGroup       *pButtobGroupSnmpV;
+    QButtonGroup       *pButtonGroupSnmpV;
     QHostAddress        a;
     QList<QHostAddress> listA;
     bool                convertToSnmp;

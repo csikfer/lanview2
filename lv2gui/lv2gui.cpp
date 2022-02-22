@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
             foreach (QString a, slAutoOpen) {
                 QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(a);
                 if (i != cMenuAction::actionsMap.end()) {
-                    (*i)->triggered();
+                    emit (*i)->triggered();
                 }
             }
             app.exec();

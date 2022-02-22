@@ -112,4 +112,6 @@ inline void exploreByAddress(cMac, QHostAddress, cSnmpDevice&) { EXCEPTION(ENOTS
 EXT_ cMac ip2macByArpTable(const QHostAddress& a);
 EXT_ QHostAddress mac2ipByArpTable(const cMac& a);
 
+EXT_ bool parseProcTable(const QString& _fname, cTable& table, QString *pMsg = nullptr, const QString& sFSep = QString("\\s"), const QString& sSSep = QString(), int headSize = 1);
+
 #endif // SCAN_H

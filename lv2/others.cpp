@@ -1028,4 +1028,22 @@ QHostAddress rdpClientAddress()
     return rdpClientAddr;
 }
 
+QStringList slSimplified(const QStringList& sl)
+{
+    QStringList r;
+    for (QListIterator<QString> i(sl); i.hasNext();) {
+        r << i.next().simplified();
+    }
+    return r;
+}
+
+QStringList slPrepend(const QStringList& sl, QString s)
+{
+    QStringList r;
+    for (QListIterator<QString> i(sl); i.hasNext();) {
+        r << i.next();
+        r.last().prepend(s);
+    }
+    return r;
+}
 
