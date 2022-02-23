@@ -479,8 +479,12 @@ inline QVariant _dateTimeFromSql(const QVariant& _f)
     if (_f.isValid()) {
         QDateTime dt = _f.toDateTime();
         if (dt.isNull()) EXCEPTION(EDATA,-1,"Invalid date-time, data is not NULL");
+        /*****************************************************************************************
+         * Ez majd akkor kell, ha tényleg, mindíg UTC-ben lessz az idő az adatbázisban (Lásd: NOW)
+         *****************************************************************************************
         dt.setTimeSpec(Qt::UTC);
         dt = dt.toLocalTime();
+        ******************************************************************************************/
         return dt;
     }
     return _f;
@@ -493,8 +497,12 @@ inline QVariant  _dateTimeToSql(const QVariant& _f)
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     QDateTime dt = _f.toDateTime();
     if (!dt.isNull()) {
+        /*****************************************************************************************
+         * Ez majd akkor kell, ha tényleg, mindíg UTC-ben lessz az idő az adatbázisban (Lásd: NOW)
+         *****************************************************************************************
         dt.setTimeSpec(Qt::LocalTime);
         dt = dt.toUTC();
+        ******************************************************************************************/
         return dt;
     }
     return _f;
