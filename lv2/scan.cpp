@@ -1620,6 +1620,10 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             QHostAddress a = o.toIPV4();
             if (!a.isNull()) rRows[index].addr = a;
         }
+        if (o.size() > 12 && o[3] == 1 && o[4] == 4) {   // ?.index.?.1.4.(IPV4:ASCII string)
+            QHostAddress a = o.toIPV4ASCII(5);
+            if (!a.isNull()) rRows[index].addr = a;
+        }
         // IPV6 ????
         continue;
 scanByLldpDev_errorA:

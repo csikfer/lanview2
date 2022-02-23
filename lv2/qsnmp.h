@@ -226,8 +226,11 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     cMac toMac() const;
     /// Az utolsó négy elemet megpróbálja IPV4 címként értelmezni.
     /// Ha nincs 4 eleme az objektumnak, vagy az utolsó 4 elem nem a 0-255 tartományba esik, akkor egy üres objektummal tér vissza.
-    /// @param _in Ha megadjuk, akkor az ODI végén ennyi elemet hagy figyelmen kívül a konverzió elött.
-    QHostAddress toIPV4(uint _in = 0) const;
+    QHostAddress toIPV4() const;
+    /// Az utolsó elemeket megpróbálja ASCII karakterekkel leírt IPV4 címként értelmezni.
+    /// Ha nem tudja értelmezni a címet, akkor egy üres objektummal tér vissza.
+    /// @param _in Az ODI-ből ennyi elemet hagy figyelmen kívül a konverzió elött.
+    QHostAddress toIPV4ASCII(uint _in) const;
     // QString toFullString() const;
     bool    chkSize(size_t __len);
 };
