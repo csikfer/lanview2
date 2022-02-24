@@ -172,7 +172,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     setObjectName(inspector.name() + "::cInspectorProcess");
     _DBGFN() << objectName() << endl;
 
-    bool ok;
+    bool ok = false;
     QString s;
 
     reStartCnt = 0;
@@ -185,7 +185,6 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
         reStartMax = s.toInt(&ok);
         if (!ok) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sRestartMax, s));
     }
-    else ok = false;
     if (!ok) {
         reStartMax = int(cSysParam::getIntegerSysParam(*inspector.pQuery(), _sRestartMax, DEF_RESTART_MAX));
     }
@@ -247,6 +246,14 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
 }
 
+enum eStartProcessResult {
+    SPR_ERROR_START = -1,
+    SPR_ERROR_STOP  = -2,
+    SPR_SKIP_START  = -3,
+    SPR_CRASH       = -4,
+    SPR_NO_WAIT     = 0x80000,
+};
+
 int cInspectorProcess::startProcess(int startTo, int stopTo)
 {
     _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
@@ -254,16 +261,14 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     bool isRuning = state() == QProcess::Running;
     if (isRuning) {
-        msg = tr("Service %1 : Process %2 already runing, skeep.").arg(inspector.name(), inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "));
+        msg = tr("Service %1 : Process %2 already runing, no start.").arg(inspector.name(), inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "));
         APPMEMO(*inspector.pQuery(), msg, RS_WARNING);
-        return -1;
+        return SPR_SKIP_START;
     }
-    else {
-        PDEB(VERBOSE) << "START program : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ")
-                       << (isAsync ? "; Asyncron (no wait for exit)" :
-                                    (stopTo == 0) ? "; no wait for exit" : "; Syncron (wait for exit)")
-                       << endl;
-    }
+    PDEB(VERBOSE) << "START program : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ")
+                   << (isAsync ? "; Asyncron (no wait for exit)" :
+                                (stopTo == 0) ? "; no wait for exit" : "; Syncron (wait for exit)")
+                   << endl;
     if (isAsync || stopTo == 0) {  // No wait for terminate, asyncron call
         if (!bProcessFinished) {
             // connect(this, SIGNAL(finished(int, ExitStatus)), this, SLOT(processFinished(int, ExitStatus))); // Ez nem működik !?
@@ -281,28 +286,22 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
             EXCEPTION(EPROGFAIL,0, msg);
         }
     }
-    if (!isRuning) {
-        lastStart.invalidate();
-        lastStart.start();
-        start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
-    }
+    lastStart.invalidate();
+    lastStart.start();
+    start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     internalStat = IS_RUN;
     if (!waitForStarted(startTo)) {
         kill();
         msg = tr("'waitForStarted(%1)' hiba : %2").arg(startTo).arg(ProcessError2Message(error()));
         inspector.setState(*inspector.pQuery(), _sUnreachable, msg);
         internalStat = IS_ERROR;
-        return -1;
-    }
-    if (isAsync) {
-        PDEB(VVERBOSE) << "Program started, no wait for finished." << endl;
-        return -1;
+        return SPR_ERROR_START;
     }
     switch (state()) {
     case QProcess::Running:
-        if (stopTo == 0) {
+        if (isAsync || stopTo == 0) {
             PDEB(VVERBOSE) << "Runing and continue ..." << endl;
-            return -1; // RUN...
+            return SPR_NO_WAIT;
         }
         PDEB(VVERBOSE) << "Program runing, wait for finished ..." << endl;
         if (!waitForFinished(stopTo)) {
@@ -311,8 +310,10 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
                     .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
             inspector.setState(*inspector.pQuery(), _sUnreachable, msg);
+            kill();
+            if (QProcess::Running == state()) waitForFinished(10000);
             internalStat = IS_ERROR;
-            return -1;
+            return SPR_ERROR_STOP;
         }
         internalStat = IS_SUSPENDED;
         break;              // EXITED
@@ -332,7 +333,7 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
     msg = tr("A '%1' program elszállt : %2").arg(inspector.checkCmd, ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
     inspector.setState(*inspector.pQuery(), _sCritical, msg);
-    return -1;
+    return SPR_CRASH;
 }
 
 #define RESTART_FAILURE -1
@@ -346,7 +347,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
         return;
     }
     lastElapsed = lastStart.isValid() ? lastStart.elapsed() : NULL_ID;
-    if (isAsync) {
+    if (isAsync) {  // Vártunk, hogy befejezze.
         if (internalStat == IS_RUN) {
             internalStat = IS_SUSPENDED;
             setCurrentReadChannel(QProcess::StandardOutput);
@@ -405,7 +406,10 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     else if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         QString msg = "?";
         while (true) {
-            if (lastElapsed > errCntClearTime) reStartCnt = 0;
+            if (lastElapsed > errCntClearTime) {
+                lastElapsed = reStartCnt = 0;
+                if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL);
+            }
             if (exitStatus != RESTART_FAILURE) {
                 processReadyRead();
                 switch (exitStatus) {
@@ -435,11 +439,11 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                 }
                 else {
                     inspector.setState(*inspector.pQuery(), _sWarning, msg + tr("Újraindítási kíérlet (#%1).").arg(reStartCnt));
-                    PDEB(INFO) << "ReStart : " << inspector.checkCmd << endl;
+                    PDEB(INFO) << QString("ReStart %1 (< %2) : ").arg(reStartCnt).arg(reStartMax) << inspector.checkCmd << endl;
                     inspector.internalStat = IS_RUN;
                     int r = startProcess(int(inspector.startTimeOut), 0);
                     if (r == 0) break;
-                    msg = tr("A %1 program újraindítása sikertelen.").arg(inspector.checkCmd);
+                    msg = tr("A %1 program újraindítása sikertelen : #%2").arg(inspector.checkCmd).arg(r);
                     exitStatus = RESTART_FAILURE;
                 }
             }
