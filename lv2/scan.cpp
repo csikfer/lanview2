@@ -1308,12 +1308,21 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         QFile f("lldp_test_rows.csv");
         f.open(QIODevice::WriteOnly | QIODevice::Append);
         QTextStream strm(&f);
-        strm << quotedString(pDev->getName()) << ";" << port_ix << ";"
-             << choice << ";"
-             << quotedString(row.name)  << ";" << row.addr.toString() << ";" << quotedString(row.descr) << ";"
-             << quotedString(row.pname) << ";" << quotedString(row.pdescr) << ";"
-             << row.cmac.toString() << ";" << row.pmac.toString()
-             << endl;
+        static bool first = true;
+        const QString sep = ";";
+        if (first) {
+            first = false;
+            strm << "Host" << sep << "Index" << sep
+                 << "Choice" << sep
+                 << "name"  << sep << "address" << sep << "descr" << sep
+                 << "pname" << sep << "pdescr" << sep
+                 << "cmac" << sep << "pmac" << endl;
+        }
+        strm << quotedString(pDev->getName()) << sep << port_ix << sep
+             << choice << sep
+             << quotedString(row.name)  << sep << row.addr.toString() << sep << quotedString(row.descr) << sep
+             << quotedString(row.pname) << sep << quotedString(row.pdescr) << sep
+             << row.cmac.toString() << sep << row.pmac.toString() << endl;
         f.close();
     }
 #endif
@@ -1472,6 +1481,18 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
             QFile f("lldp_test_gets.csv");
             f.open(QIODevice::WriteOnly | QIODevice::Append);
             QTextStream strm(&f);
+            static bool first = true;
+            if (first) {
+                first = false;
+                strm << "Host" << sep << "Index" << sep
+                     << "RemChassisIdSubtype" << sep
+                     << "RemChasisId" << sep << "dump" << sep
+                     << "RemPortIdSubtype" << sep
+                     << "RemPortId" << sep << "dump" << sep
+                     << "RemPortDesc" << sep
+                     << "RemSysDesc" << sep
+                     << "RemSysName" << endl;
+            }
             strm << quotedString(pDev->getName()) << sep << index << sep
                  << sRemChassisIdSubtype << sep
                  << quotedString(RemChasisId.toString()) << sep << dump(RemChasisId.toByteArray()) << sep

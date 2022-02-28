@@ -75,7 +75,7 @@ QString dump(const QByteArray& __a)
 {
     QString r = "[";
     foreach (char b, __a) {
-        r += QString("%1,").arg(int(uchar(b)),2,16,QChar('0'));
+        r += QString("%1 ").arg(int(uchar(b)),2,16,QChar('0'));
     }
     r.chop(1);
     return r + "]";
