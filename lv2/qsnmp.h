@@ -231,6 +231,9 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     /// Ha nem tudja értelmezni a címet, akkor egy üres objektummal tér vissza.
     /// @param _in Az ODI-ből ennyi elemet hagy figyelmen kívül a konverzió elött.
     QHostAddress toIPV4ASCII(uint _in) const;
+    /// Az utolsó elemeket megpróbálja ASCII karakterekként értelmezni.
+    /// @param _in Az ODI-ből ennyi elemet hagy figyelmen kívül a konverzió elött.
+    QString ascii(uint _in) const;
     // QString toFullString() const;
     bool    chkSize(size_t __len);
 };

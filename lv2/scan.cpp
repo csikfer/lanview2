@@ -1237,10 +1237,11 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
                    .arg(row.cmac.toString(), row.pmac.toString(), pp->identifying(), row.addr.toString()), RS_WARNING);
             memo(em, q, port_ix, row);
         }
-        else if (nidByMac == NULL_ID) { // Nem találtuk a cím alapján
+        else if (nidByMac == NULL_ID) { // Nem találtuk a MAC alapján
             nid = nidByIp;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
-            if (choice.compare(_s3Com, Qt::CaseInsensitive) != 0) { // 3Com-nal egy fiktív MAC-ot ad, amire nem lessz találat.
+            if (choice.compare(_s3Com, Qt::CaseInsensitive) != 0        // 3Com-nal egy fiktív MAC-ot ad, amire nem lessz találat.
+             || choice.compare(_sLinux, Qt::CaseInsensitive) != 0) {    // Linux, ha bond port van, akkor nem lesz találat a member portra
                 HEREINWE(em, lPrefix + QObject::tr("A távoli eszköz %1 IP cím alapján :\n\t%2\n\tA %3/%4 MAC alapján nics találat")
                        .arg(row.addr.toString(), pp->identifying(), row.cmac.toString(), row.pmac.toString()), RS_WARNING);
                 memo(em, q, port_ix, row);
@@ -1306,9 +1307,9 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
 #if LLDP_WRITE_CSV
     {
         QFile f("lldp_test_rows.csv");
-        f.open(QIODevice::WriteOnly | QIODevice::Append);
-        QTextStream strm(&f);
         static bool first = true;
+        f.open(first ? QIODevice::WriteOnly | QIODevice::Truncate : QIODevice::WriteOnly | QIODevice::Append);
+        QTextStream strm(&f);
         const QString sep = ";";
         if (first) {
             first = false;
@@ -1385,7 +1386,7 @@ inline int snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix)
                             else if (rr == -1) goto scanByLldpDev_error; \
                         }
 
-inline int snmpGetNext(cSnmp& snmp, bool first, cOIdVector& oids)
+inline int snmpGetNext(cSnmp& snmp, bool first, const cOIdVector& oids)
 {
     if (first) {    // First row
         return snmp.getNext(oids);
@@ -1426,9 +1427,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         r = snmpGetNext(snmp, first, oids);
         if (r) {
             em = QObject::tr("SNMP get-%1 (%2) hiba #%3, '%4'")
-                      .arg(first ? "first" : "next")
-                      .arg(sOids.join(_sCommaSp))
-                      .arg(r).arg(snmp.emsg);
+                      .arg((first ? "first" : "next"), sOids.join(_sCommaSp)).arg(r).arg(snmp.emsg);
             goto scanByLldpDev_error;
         }
         first = false;
@@ -1479,9 +1478,9 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
             }
             const QString sep = ";";
             QFile f("lldp_test_gets.csv");
-            f.open(QIODevice::WriteOnly | QIODevice::Append);
-            QTextStream strm(&f);
             static bool first = true;
+            f.open(first ? QIODevice::WriteOnly | QIODevice::Truncate : QIODevice::WriteOnly | QIODevice::Append);
+            QTextStream strm(&f);
             if (first) {
                 first = false;
                 strm << "Host" << sep << "Index" << sep
@@ -1607,13 +1606,9 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         r = snmpGetNext(snmp, first, aoi);
         if (r) {
             em = QObject::tr("SNMP get - %1(%2) error #%3, %4)")
-                      .arg(pDev->toString())
-                      .arg(first ? "first" : "next")
-                      .arg(sAddrOid)
+                      .arg(pDev->toString(), (first ? "first" : "next"), sAddrOid)
                       .arg(r);
-            PDEB(WARNING) << QObject::tr("SNMP %1 %2 (%3) lekérdezési hiba #%4")
-                             .arg(pDev->getName(), sAddrOid, (first ? "first" : "next")).arg(r)
-                          << endl;
+            PDEB(WARNING) << em << endl;
             if (!first) {
                 break;
             }
@@ -1628,7 +1623,7 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                           << endl;
             goto scanByLldpDev_errorA;
         }
-        if (!(*pAddrOid < snmp.name())) {
+        if (!(*pAddrOid < snmp.name())) {   // nincs több
             break;  // End
         }
         /* - */
@@ -1637,12 +1632,19 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         if (o.size() < 2) continue;
         index = int(o[1]);
         // IPV4 !!
-        if (o.size() == 9 && o[3] == 1 && o[4] == 4) {   // ?.index.?.1.4.IPV4
-            QHostAddress a = o.toIPV4();
-            if (!a.isNull()) rRows[index].addr = a;
-        }
-        if (o.size() > 12 && o[3] == 1 && o[4] == 4) {   // ?.index.?.1.4.(IPV4:ASCII string)
-            QHostAddress a = o.toIPV4ASCII(5);
+        if (o.size() >= 9 && o[3] == 1) {   // ?.index.?.1.4.IPV4
+            QHostAddress a;
+            if (o[4] == 4 && o.size() == 9) {
+                a = o.toIPV4();
+            }
+            else if (o.size() == (o[4] + 5)) {  //  ??
+                a = o.toIPV4ASCII(5);
+            }
+            else {
+                QString s = o.ascii(5);
+                PDEB(INFO) << quotedString(pDev->getName()) << ":#" << index << " : "
+                           << o.toString() << "s = " << quotedString(s) << endl;
+            }
             if (!a.isNull()) rRows[index].addr = a;
         }
         // IPV6 ????
@@ -2024,7 +2026,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
             return setRPortFromMac(row, em);
         }
         rHost.setName(row.name);
-        HEREINWE(em, lPrefix + QObject::tr("Név ütjözés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::tr("Név ütközés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
         while (rHost.existByNameKey(q)) {   // New name collision?
             HEREINWE(em, QObject::tr("Név ütközés. A '%1', létezik, új elem átnevezve.").arg(rHost.getName()), RS_WARNING);
             rHost.setName(rHost.getName() + "-new");

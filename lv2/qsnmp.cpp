@@ -400,6 +400,21 @@ QHostAddress cOId::toIPV4() const
     return r;
 }
 
+QString cOId::ascii(uint _in) const
+{
+    QString r;
+    if (oidSize >= (_in)) {
+        for (size_t i = _in; i < oidSize; i++) {
+            u_long b = (*this)[i];
+            if (b == 0) {   // END
+                break;
+            }
+            r += QChar((ushort)b);
+        }
+    }
+    return r;
+}
+
 QHostAddress cOId::toIPV4ASCII(uint _in) const
 {
     if (oidSize >= (_in + 7)) {
