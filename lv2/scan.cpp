@@ -1241,7 +1241,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
             nid = nidByIp;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
             if (choice.compare(_s3Com, Qt::CaseInsensitive) != 0        // 3Com-nal egy fiktív MAC-ot ad, amire nem lessz találat.
-             || choice.compare(_sLinux, Qt::CaseInsensitive) != 0) {    // Linux, ha bond port van, akkor nem lesz találat a member portra
+             && choice.compare(_sLinux, Qt::CaseInsensitive) != 0) {    // Linux, ha bond port van, akkor nem lesz találat a member portra
                 HEREINWE(em, lPrefix + QObject::tr("A távoli eszköz %1 IP cím alapján :\n\t%2\n\tA %3/%4 MAC alapján nics találat")
                        .arg(row.addr.toString(), pp->identifying(), row.cmac.toString(), row.pmac.toString()), RS_WARNING);
                 memo(em, q, port_ix, row);
@@ -1631,13 +1631,13 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         o -= *pAddrOid;
         if (o.size() < 2) continue;
         index = int(o[1]);
-        // IPV4 !!
-        if (o.size() >= 9 && o[3] == 1) {   // ?.index.?.1.4.IPV4
+        if (o.size() >= 9 && o[3] == 1) {
+            // IPV4 !!
             QHostAddress a;
-            if (o[4] == 4 && o.size() == 9) {
+            if (o[4] == 4 && o.size() == 9) {   // ?.index.?.1.4.IPV4::bin
                 a = o.toIPV4();
             }
-            else if (o.size() == (o[4] + 5)) {  //  ??
+            else if (o.size() == (o[4] + 5)) {  // ?.index.?.1.size.IPV4::ASCII
                 a = o.toIPV4ASCII(5);
             }
             else {
@@ -1645,9 +1645,9 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 PDEB(INFO) << quotedString(pDev->getName()) << ":#" << index << " : "
                            << o.toString() << "s = " << quotedString(s) << endl;
             }
+            // IPV6 ????
             if (!a.isNull()) rRows[index].addr = a;
         }
-        // IPV6 ????
         continue;
 scanByLldpDev_errorA:
                 {   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2072,54 +2072,81 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 {
     cNPort     *pp;
     (void)snmp;
-    if (!(row.pmac.isValid() && row.cmac.isValid())) {
-        IS_MISSING_MAC(em);
-        return false;
-    }
-    bool exists = !rHost.isEmptyRec();
-    if (exists) {
-        if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
-            pp = rHost.ports.get(_sPortName, row.pdescr, EX_IGNORE);
-            if (pp == nullptr) {
-                HEREINWE(em, lPrefix + QObject::tr("Nincs %1 nevű port a %2 távoli eszközön.").arg(row.pdescr, rHost.getName()), RS_WARNING);
+    bool exists = !rHost.isEmptyRec();  // Bejegyzett eszköz?
+    if (!exists) {
+        QString name = row.name;
+        if (name.isEmpty()) {   // nincs név
+            if      (row.cmac.isValid()) name = "linux-" + row.cmac.toString().remove(QChar(':'));
+            else if (!row.addr.isNull()) name = "linux-" + row.addr.toString().replace(QChar('.'), QChar('-'));
+            else                         name = "linux-" + QString::number(rand());
+        }
+        rHost.clear();
+        rDev.clear();
+        QHostAddress a = row.addr;
+        if (a.isNull() && row.cmac.isValid()) a = cArp::mac2ip(q, row.cmac, EX_IGNORE);
+        if (a.isNull() && row.pmac.isValid()) a = cArp::mac2ip(q, row.pmac, EX_IGNORE);
+        rDev.setName(name);
+        rDev.setName("By LLDP " + QDateTime::currentDateTime().toString());
+        if (rDev.setBySnmp(_sNul, EX_IGNORE, nullptr, &a)) {    // felfedeztünk egy új eszközt
+            cError *pe = rDev.tryInsert(q);
+            if (pe != nullptr) {
+                QString se = lPrefix + QObject::tr("A %1 MAC és %2 IP című felderített SNMP eszköz %3 kiírása sikertelen").arg(row.pmac, row.addr.toString(), rHost.getName());
+                expError(se + pe->shortMsg());
+                HEREINW(em, se + pe->longMsg(), RS_WARNING);
+                pDelete(pe);
                 return false;
             }
-            rPortIx = int(pp->getId(_sPortIndex));
-            // A MAC alapján nem biztos, hogy azonosítható
-            if (pp->chkObjType<cInterface>(EX_IGNORE)) {
-                HEREINWE(em, lPrefix + QObject::tr("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
-                return false;
-            }
-            rPort.clone(*pp->reconvert<cInterface>());
+            setted << rDev; // nem kell frissíteni
+            expInfo(lPrefix + QObject::tr("Inserted Linux SNMP host : %1").arg(rDev.getName()));
             return true;
         }
-        HEREINWE(em, lPrefix + QObject::tr("Név ütközés. Talált '%1', azonos címmel bejegyzett '%2'").arg(row.name, rHost.getName()), RS_WARNING);
-        return false;
+        else {  // Az új eszköz valószínüleg nem SNMP eszköz, (vagy csak nem találtuk el a community-t, vagy nem lekérdezhető ...)
+            QString pname = row.pname;
+            if (pname.isNull()) pname = row.pdescr;
+            rHost.setName(name);
+            rHost.setName(_sNodeNote, row.descr);
+            rHost.addPort(_sEthernet, pname, row.pdescr, 1);
+            cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
+            *pi = row.pmac;
+            rDev.setId(_sNodeType, enum2set(NT_HOST));
+            pi->addIpAddress(row.addr, cDynAddrRange::isDynamic(q, row.addr), "By LLDP");
+            cError *pe = rHost.tryInsert(q);
+            if (pe != nullptr) {
+                QString se = lPrefix + QObject::tr("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen").arg(row.pmac, row.addr.toString(), rHost.getName());
+                expError(se + pe->shortMsg());
+                HEREINW(em, se + pe->longMsg(), RS_WARNING);
+                pDelete(pe);
+                return false;
+            }
+            expInfo(lPrefix + QObject::tr("Inserted Linux host : %1").arg(rHost.getName()));
+            rPort.clone(*pi);
+            return true;
+        }
     }
-
-    QString n = row.name;
-    if (n.isEmpty()) n = "linux-" + row.cmac.toString().remove(char(':'));
-    rHost.clear();
-    rDev.clear();
-
-    rHost.setName(n);
-    rHost.setName(_sNodeNote, row.descr);
-    rHost.addPort(_sEthernet, row.pdescr, row.pname, 1);
-    cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
-    *pi = row.cmac;
-    rDev.setId(_sNodeType, enum2set(NT_HOST));
-    pi->addIpAddress(row.addr, cDynAddrRange::isDynamic(q, row.addr), "By LLDP");
-    cError *pe = rHost.tryInsert(q);
-    if (pe != nullptr) {
-        QString se = lPrefix + QObject::tr("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen").arg(row.pmac, row.addr.toString(), rHost.getName());
-        expError(se + pe->shortMsg());
-        HEREINW(em, se + pe->longMsg(), RS_WARNING);
-        pDelete(pe);
-        return false;
+    // Exists. Check name
+    if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0
+     || rHost.getName().startsWith(row.name + ".")
+     || row.name.startsWith(rHost.getName() + ".") ) {
+        // A port név szerinti azonosítása ifName vagy ifDescr alapján.
+        pp = rHost.ports.get(_sPortName, row.pname, EX_IGNORE);
+        if (pp == nullptr) {
+            pp = rHost.ports.get(_sPortName, row.pdescr, EX_IGNORE);
+        }
+        if (pp == nullptr) {
+            HEREINWE(em, lPrefix + QObject::tr("Nincs %1 nevű port a %2 távoli eszközön.").arg(row.pdescr, rHost.getName()), RS_WARNING);
+            return false;
+        }
+        rPortIx = int(pp->getId(_sPortIndex));
+        // A MAC alapján nem biztos, hogy azonosítható
+        if (pp->chkObjType<cInterface>(EX_IGNORE)) {
+            HEREINWE(em, lPrefix + QObject::tr("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
+            return false;
+        }
+        rPort.clone(*pp->reconvert<cInterface>());
+        return true;
     }
-    expInfo(lPrefix + QObject::tr("Inserted Linux host : %1").arg(rHost.getName()));
-    rPort.clone(*pi);
-    return true;
+    HEREINWE(em, lPrefix + QObject::tr("Név ütközés. Talált '%1', azonos címmel bejegyzett '%2'").arg(row.name, rHost.getName()), RS_WARNING);
+    return false;
 }
 
 /// Csak egy MAC címunk van, se IP, se típus azonosító

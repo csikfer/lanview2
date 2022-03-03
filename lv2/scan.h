@@ -67,7 +67,7 @@ protected:
     const QString& token(QIODevice& __f);
 };
 
-/// Set cSnmpDevoce (snmpdevices) object ports by SNMP query.
+/// Set cSnmpDevice (snmpdevices) object ports by SNMP query.
 EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = nullptr, QHostAddress *ip = nullptr, cTable *_pTable = nullptr);
 /// Set cSnmpDevoce (snmpdevices) object fields by SNMP query.
 EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = nullptr, QHostAddress *ip = nullptr);
