@@ -2997,8 +2997,8 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
                                                 { delNodePortsParam(sp2s($3), slp2sl($5), sp2s($7)); }
         | DELETE_T NODE_T strs PARAM_T str ';'  { delNodesParam(slp2sl($3), sp2s($5)); }
         ;
-scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
-        | LLDP_T snmph ';'                      { lldpInfo(qq(), *$2, true); delete $2; }
+scan    : SCAN_T LLDP_T snmph bool_off ';'      { scanByLldp(qq(), *$3, true, $4); delete $3; }
+        | LLDP_T snmph bool_off  ';'            { lldpInfo(qq(), *$2, true, $3); delete $2; }
         | SCAN_T SNMP_T snmph SET_T ';'         { if ($3->setBySnmp()) $3->rewrite(qq());  delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }

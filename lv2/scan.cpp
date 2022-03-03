@@ -784,8 +784,8 @@ QString lookup(const QHostAddress& ha, eEx __ex)
 /// az LLDP címén a tisztellt gyártók/szabványalkotók kitaláltak.
 /// Vagy jobban meg kéne érteni a szarrá bonyolított rendszert.
 class cLldpScan {
-    friend void ::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
-    friend LV2SHARED_EXPORT void ::lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
+    friend void ::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser, bool _refresh);
+    friend LV2SHARED_EXPORT void ::lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser, bool _refresh);
     friend int  snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix);
     friend void staticAddOid(QString __cs, int i);
 protected:
@@ -800,7 +800,7 @@ protected:
         QString         clocal; ///< ChassisId (local)
         QString         toString();
     };
-    cLldpScan(QSqlQuery& _q, bool _parser);
+    cLldpScan(QSqlQuery& _q, bool _parser, bool _refresh);
     /// LLDP felderítés
     /// @param __dev A kiindulási SNMP eszköz
     void scanByLldp(QSqlQuery &q, const cSnmpDevice& __dev);
@@ -831,6 +831,7 @@ protected:
 
     typedef tRecordList<cSnmpDevice> tDevList;
     bool        parser;         ///< A parser-ből lett hivva?
+    bool        refresh;        ///< Az SNMP eszközök frissítése
     tDevList    setted;         ///< A portjait lekérdeztuk/frissítettük
     tDevList    scanned;        ///< A megtalált eszközök nevei, ill. amit már nem kell lekérdezni
     tDevList    queued;         ///< A megtatlált, de még nem lekérdezett eszközök nevei
@@ -878,10 +879,11 @@ QString cLldpScan::rowData::toString()
     return r;
 }
 
-cLldpScan::cLldpScan(QSqlQuery& _q, bool _parser)
+cLldpScan::cLldpScan(QSqlQuery& _q, bool _parser, bool _refresh)
     : setted(), scanned(), queued(), q(_q), rMac(), rDev(), rHost(), rPort(), lPort(), lnk()
 {
     parser = _parser;
+    refresh = _refresh;
     staticInit();
     pDev = nullptr;
 }
@@ -1219,13 +1221,14 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         goto scanByLldpDevRow_error;
     }
     // Look for the database by address
+    rMacPort.clear();
     f =      (row.cmac.isValid() && 0 < rMacPort.fetchByMac(q, row.cmac));
     f = f || (row.pmac.isValid() && 0 < rMacPort.fetchByMac(q, row.pmac));
     n = rIpPort.fetchByIp(q, row.addr); // The q will still need to call nodeCompare()
     if (n != 0 || f) {  // Exist (mac or/and IP)
-        qlonglong nid;
+        qlonglong nid      = NULL_ID;
         qlonglong nidByMac = rMacPort.getId(_sNodeId);
-        qlonglong nidByIp;
+        qlonglong nidByIp  = NULL_ID;
         if (nodeCompare(q, nidByMac, nidByIp, rIpPort)) {      // Ugyan azt találtuk a címek alapján, öröm boldogság!
             nid = nidByMac;
             pp  = cPatch::getNodeObjById(q, nid, EX_ERROR);
@@ -1233,19 +1236,24 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         else if (nidByIp == NULL_ID) {  // Nem találtuk IP alapján
             nid = nidByMac;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
+#if 0
             HEREINWE(em, lPrefix + QObject::tr("A távoli eszköz %1/%2 MAC alapján :\n\t%3\n\tA %4 IP cím alapján nics találat")
                    .arg(row.cmac.toString(), row.pmac.toString(), pp->identifying(), row.addr.toString()), RS_WARNING);
             memo(em, q, port_ix, row);
+#endif
         }
         else if (nidByMac == NULL_ID) { // Nem találtuk a MAC alapján
             nid = nidByIp;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
-            if (choice.compare(_s3Com, Qt::CaseInsensitive) != 0        // 3Com-nal egy fiktív MAC-ot ad, amire nem lessz találat.
-             && choice.compare(_sLinux, Qt::CaseInsensitive) != 0) {    // Linux, ha bond port van, akkor nem lesz találat a member portra
+#if 0
+            if (choice.compare(_s3Com,  Qt::CaseInsensitive) != 0       // 3Com-nal (HPE) egy fiktív MAC-et ad, amire nem lessz találat.
+             && choice.compare(_sLinux, Qt::CaseInsensitive) != 0)      // Linux, ha bond port van, akkor nem lesz találat a member portra
+             && choice.compare(_sCisco, Qt::CaseInsensitive) != 0) {    // Cisco nal sincs (mindíg) MAC
                 HEREINWE(em, lPrefix + QObject::tr("A távoli eszköz %1 IP cím alapján :\n\t%2\n\tA %3/%4 MAC alapján nics találat")
                        .arg(row.addr.toString(), pp->identifying(), row.cmac.toString(), row.pmac.toString()), RS_WARNING);
                 memo(em, q, port_ix, row);
             }
+#endif
         }
         else {                          // Két különböző eszköz lett azonosítva
             pp  = cPatch::getNodeObjById(q, nidByMac, EX_ERROR);
@@ -1692,7 +1700,9 @@ void cLldpScan::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev)
 
 bool cLldpScan::setRPortFromIx(cAppMemo &em)
 {
-    cNPort *pp = rDev.ports.get(_sPortIndex, rPortIx, EX_IGNORE);
+    cNPort *pp = nullptr;
+    if (rDev.isEmptyRec()) pp = rHost.ports.get(_sPortIndex, rPortIx, EX_IGNORE);
+    else                   pp = rDev. ports.get(_sPortIndex, rPortIx, EX_IGNORE);
     if (pp == nullptr) {
         HEREINWE(em, lPrefix + QObject::tr("Nincs %1 indexű távoli port.").arg(rPortIx), RS_WARNING);
         return false;
@@ -1804,18 +1814,24 @@ bool cLldpScan::rowTail(QSqlQuery &q, const QString& ma, const tStringPair& ip, 
         setted << rDev;
     }
     else {
-        if (!setted.contains(rDev.getId())) {
-            pe = rDev.tryRewrite(q);
-            if (pe != nullptr) {
-                es = lPrefix + QObject::tr("A %1 MAC és %2 IP című %3 SNMP felderített eszköz frissítése sikertelen.").arg(ma, ip.first, rDev.getName());
-                expError(es + pe->shortMsg());
-                HEREINW(em, es + pe->longMsg(), RS_WARNING);
-                pDelete(pe);
+        if (refresh && !setted.contains(rDev.getId())) {
+            if (!rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {
+                HEREINWE(em, lPrefix + QObject::tr("A %1 SNMP eszköz frissítése sikertelen :\n%2\n").arg(rDev.getName(), es), RS_WARNING);
                 return false;
             }
-            es = QObject::tr("A %1 SNMP eszköz sikeres frissítése.").arg(rDev.getName());
-            PDEB(INFO) << es << endl;
-            expInfo(es);
+            else {
+                pe = rDev.tryRewrite(q);
+                if (pe != nullptr) {
+                    es = lPrefix + QObject::tr("A %1 MAC és %2 IP című %3 SNMP felderített eszköz frissítése sikertelen.").arg(ma, ip.first, rDev.getName());
+                    expError(es + pe->shortMsg());
+                    HEREINW(em, es + pe->longMsg(), RS_WARNING);
+                    pDelete(pe);
+                    return false;
+                }
+                es = QObject::tr("A %1 SNMP eszköz sikeres frissítése.").arg(rDev.getName());
+                PDEB(INFO) << es << endl;
+                expInfo(es);
+            }
             setted << rDev;
         }
     }
@@ -1986,20 +2002,25 @@ bool cLldpScan::rowCisco(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     }
     exists = !rHost.isEmptyRec();
     if (exists) {
-        if (rDev.isEmptyRec()) {
-            IS_NO_SNMPDEV(em);
-            return false;
-        }
         pp = rHost.ports.get(_sPortName, row.pname, EX_IGNORE);
         if (pp == nullptr) {
             IS_INVLID_PNAME(em, row.pname);
             return false;
         }
         rPortIx = int(pp->getId(_sPortIndex));
-        // Frissítettük már ?
-        if (queued.contains(rDev.getId()) || scanned.contains(rDev.getId())) return setRPortFromIx(em);
-        // Nincs újra felderítés, mért hiányozni fognak a trunk adatok !!!
-        queued << rDev;
+        if (rDev.isEmptyRec()) {    // Nem SNMP device
+            if (!rHost.isFeature(_sForeign)) {
+                IS_NO_SNMPDEV(em);
+                return false;
+            }
+            // Idegen eszköz, nem lekérdezhető, nem SNMP eszközként van felvéve
+        }
+        else {
+            // Frissítettük már ?
+            if (queued.contains(rDev.getId()) || scanned.contains(rDev.getId())) return setRPortFromIx(em);
+            // Nincs újra felderítés, mert hiányozni fognak a trunk adatok !!!
+            queued << rDev;
+        }
         return setRPortFromIx(em);
     }
     else {
@@ -2218,14 +2239,15 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     return true;
 }
 
-void scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser)
+void scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser, bool _refresh)
 {
-    cLldpScan(q, _parser).scanByLldp(q, __dev);
+    cLldpScan o(q, _parser, _refresh);
+    o.scanByLldp(q, __dev);
 }
 
-void lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser)
+void lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser, bool _refresh)
 {
-    cLldpScan o(q, _parser);
+    cLldpScan o(q, _parser, _refresh);
     cSnmpDevice *pDev = dynamic_cast<cSnmpDevice *>(__dev.dup());
     if (pDev->ports.isEmpty()) pDev->fetchPorts(q, CV_PORTS_ADDRESSES);
     o.pDev = pDev;
