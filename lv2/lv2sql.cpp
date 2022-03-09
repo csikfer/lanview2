@@ -859,7 +859,9 @@ QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1,
     }
     sql += QChar(')');
     while (true) {
-        SQLPREPERR(q, sql)
+        if (!q.prepare(sql)) {
+            SQLPREPERR(q, sql)
+        }
         if (v1.isValid()) {
             q.bindValue(0,v1);
             if (v2.isValid()) {
