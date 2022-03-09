@@ -38,9 +38,9 @@ class LV2SHARED_EXPORT cService : public cRecord {
     CRECORD(cService);
     FEATURES(cService)
 public:
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual void clearToEnd() override;
     RECACHEHED(cService, service)
     static qlonglong name2id(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR) {
         const cService *p = service(__q, __nm, __ex);
@@ -76,10 +76,10 @@ class LV2SHARED_EXPORT cHostService : public cRecord {
 public:
     cHostService(QSqlQuery& q, const QString& __h, const QString& __p, const QString& __s, const QString& __n);
     cHostService& operator=(const cHostService& __o);
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
-    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual void clearToEnd() override;
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// A port_id mező kitöltése a port név alapján. A metódus számít rá, hogy a node_id mező már ki van töltve.
     void setPort(QSqlQuery& q, const QString& __p) { setId(_sPortId, cNPort().getPortIdByName(q, __p, getId(_sNodeId))); }
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
@@ -264,7 +264,7 @@ public:
 class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
-    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR) override;
     bool fetchByMac(QSqlQuery& q, const cMac& __mac);
 };
 
@@ -276,7 +276,7 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_mactab) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A peplace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR) override;
     static int refresStats(QSqlQuery& __q);
     STATICIX(cMacTab, PortId)
     STATICIX(cMacTab, HwAddress)
@@ -307,7 +307,7 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_arp) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A replace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR) override;
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer

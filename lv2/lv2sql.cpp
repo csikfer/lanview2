@@ -837,6 +837,64 @@ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, con
     return execSqlFunction(q, s + fn, v1, v2, v3, v4, v5);
 }
 
+QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+{
+    int cnt = 0;
+    const int max = 5;
+    QString sql = "SELECT " + fn + QChar('(');
+    if (v1.isValid()) {
+        sql += QChar('?');
+        if (v2.isValid()) {
+            sql += _sCommaQ;
+            if (v3.isValid()) {
+                sql += _sCommaQ;
+                if (v4.isValid()) {
+                    sql += _sCommaQ;
+                    if (v5.isValid()) {
+                        sql += _sCommaQ;
+                    }
+                }
+            }
+        }
+    }
+    sql += QChar(')');
+    while (true) {
+        SQLPREPERR(q, sql)
+        if (v1.isValid()) {
+            q.bindValue(0,v1);
+            if (v2.isValid()) {
+                q.bindValue(1,v2);
+                if (v3.isValid()) {
+                    q.bindValue(2,v3);
+                    if (v4.isValid()) {
+                        q.bindValue(3,v4);
+                        if (v5.isValid()) {
+                            q.bindValue(4,v5);
+                        }
+                    }
+                }
+            }
+        }
+        PDEB(SQL) << dQuoted(q.lastQuery()) << _sql_err_bound(q, " Bound : ") << endl; \
+        if (!q.exec()) {
+            QSqlError le = q.lastError();
+            QString ec = le.nativeErrorCode();
+            if (ec.compare("55P03") || ec.compare("40P01")) { // lock_not_available || deadlock_detected
+                if (max > ++cnt) {
+                    DERR() << "Sleep 1s, and reapeat #" << cnt << _sCommaSp << "nativeErrorCode = " << ec << endl;
+                    sleep(1);
+                    continue;
+                }
+            }
+            _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, sql);
+            _sql_err_ex(NEWCERROR(EQUERY, 0, le.text()), le, sql);  // no return
+        }
+        break;
+    }
+    if (q.first()) return q.value(0);
+    return QVariant();
+}
+
 bool sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
 {
     QString sql = "NOTIFY " + channel;

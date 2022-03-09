@@ -2644,11 +2644,11 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
     public: \
         R(); \
         R(const R& __o); \
-        virtual const cRecStaticDescr&  descr() const; \
+        virtual const cRecStaticDescr&  descr() const  override; \
         virtual ~R(); \
-        virtual cRecord *newObj() const; \
-        virtual cRecord *dup()const; \
-        virtual R& clone(const cRecord& __o); \
+        virtual cRecord *newObj() const override; \
+        virtual cRecord *dup()const override; \
+        R& clone(const cRecord& __o); \
         static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == nullptr) R().descr(); return *R::_pRecordDescr; } \
     protected: \
         static const cRecStaticDescr * _pRecordDescr
@@ -3115,7 +3115,7 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
 protected: \
     cFeatures *_pFeatures; \
 public: \
-    virtual void deleteFeaturesContainer() { pDelete(_pFeatures); } \
+    virtual void deleteFeaturesContainer() override { pDelete(_pFeatures); } \
     cFeatures&  splitFeature(eEx __ex = EX_ERROR) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
     const cFeatures&  features(eEx __ex = EX_ERROR) const { if (_pFeatures == nullptr) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
     cFeatures&  features(eEx __ex = EX_ERROR) { if (_pFeatures == nullptr) this->splitFeature(__ex); return *_pFeatures; } \

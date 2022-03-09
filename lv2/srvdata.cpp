@@ -889,26 +889,16 @@ CRECDEFD(cMacTab)
 int cMacTab::replace(QSqlQuery& __q, eEx __ex)
 {
     (void)__ex;
-    QString sql = "SELECT replace_mactab(?,?";
-    if (!isNull(_ixSetType))     sql += _sCommaQ;
-    if (!isNull(_ixMacTabState)) sql += _sCommaQ;
-    sql += QChar(')');
-    if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
-    bind(_ixPortId,    __q, 0);
-    bind(_ixHwAddress, __q, 1);
-    int i = 2;
-    if (!isNull(_ixSetType))     bind(_ixSetType,     __q, i++);
-    if (!isNull(_ixMacTabState)) bind(_ixMacTabState, __q, i);
-    _EXECSQL(__q);
-    __q.first();
-    enum eReasons r = eReasons(reasons(__q.value(0).toString(), EX_IGNORE));
+    enum eReasons r;
+    QString re = execSqlFuncTryLock(__q, "replace_mactab", _ixPortId, _ixHwAddress, get(_ixSetType), get(_ixMacTabState)).toString();
+    r = eReasons(reasons(re, EX_IGNORE));
     return r;
 }
 
 int cMacTab::refresStats(QSqlQuery& __q)
 {
-    bool r = execSqlFunction(__q, QString("refresh_mactab"));
-    int  n = __q.value(0).toInt();
+    bool r;
+    int n = execSqlFuncTryLock(__q, "refresh_mactab").toInt(&r);
     PDEB(VERBOSE) << "cMacTab::refresStats() : " << DBOOL(r) << VDEB(n) << endl;
     return n;
 }

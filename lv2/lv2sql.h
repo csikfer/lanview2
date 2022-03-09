@@ -354,6 +354,10 @@ EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant
 /// @return a lekérdezés után a q.first() metódus visszatérési értéke
 EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
+///
+EXT_ QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
+
+
 EXT_ bool sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload = QString());
 
 EXT_ int getListFromQuery(QSqlQuery q, QStringList& list, int __ix = 0);

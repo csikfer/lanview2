@@ -244,6 +244,7 @@ protected:
     static QMap<int, QString>      mErrorStringMap;///< Hiba string konténer
 public:
     static const QMap<int, QString>& errorMap() { return mErrorStringMap; }
+    bool isSqlLockError();
 };
 
 /*!
@@ -329,6 +330,8 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         _sql_err_ex(NEWCERROR(e, 0, le.text()), le); \
     }
+
+#define ERR_HERE(pe) pe->mFuncName = __PRETTY_FUNCTION__; pe->mSrcName = __FILE__; pe->mSrcLine = __LINE__; pe->exception();
 
 /**
 @def SQLERR(o, e)

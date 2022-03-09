@@ -285,6 +285,16 @@ bool cError::errStat()
     return r;
 }
 
+bool cError::isSqlLockError() {
+    if (mErrorCode == eError::EQUERY) { // SQL :
+        if (mSqlErrCode.compare("55P03") || mSqlErrCode.compare("40P01")) { // lock_not_available || deadlock_detected
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void cErrorException(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode, qlonglong _mErrorSubCode, const QString& _mErrorSubMsg)
 {
     auto *pe = new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg);
