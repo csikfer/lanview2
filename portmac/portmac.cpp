@@ -298,16 +298,17 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     }
     foundMacs.clear();
     QMap<cMac, int>::iterator   i;
-    for (i = macs.begin(); i != macs.end(); ++i) {
-        const int   ix  = i.value();
+    for (i = macs.begin(); i != macs.end(); ++i) {  // Végigvesszük az SNMP query találatait
+        const int   ix  = i.value();                // port index
         QMap<int, cInterface *>::iterator pi = ports.find(ix);
-        if (pi == ports.end()) continue;    // Csak a konténerben lévő portok érdekesek
-        cMacTab mt;
-        cMac mac = i.key();
-        qlonglong pid = pi.value()->getId();
+        if (pi == ports.end()) continue;            // Csak a konténerben lévő portok érdekesek
+        cMacTab mt;                                 // mac_tabs record
+        cMac mac = i.key();                         // MAC a címtáblában
+        qlonglong pid = pi.value()->getId();        // Switch port ID
+        PDEB(VERBOSE) << VDEB(pid) << pi.value()->getName() << " :: " << mac.toString() << endl;
         mt.setMac(_sHwAddress, mac);
         mt.setId(_sPortId, pid);
-        int r = mt.replace(q);
+        int r = mt.replace(q);                      // Replace mac_tabs record
         switch (r) {
         case R_DISCARD:
             runMsg = msgCat(runMsg, tr("Port %1 set suspected uplink.").arg(pi.value()->getName()), "\n");
