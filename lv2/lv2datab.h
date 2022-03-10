@@ -2265,11 +2265,11 @@ public:
     /// A megadott nevű mezőleíró objektum referenciájával tér vissza
     const cColStaticDescr& colDescr(const QString& _fn) const { return colDescr(toIndex(_fn)); }
     /// A megadott indexű mező értékét adja vissza, konvertálva az SQL-nek átadható formára.
-    /// Hibás, vagy NULL adat esetén kizárást dob!
-    QVariant toSql(int __ix) const { return colDescr(__ix).toSql(get(__ix)); }
+    /// Hibás, vagy NULL adat esetén kizárást dob, kivéve, ha megadtuk __ex-et és értéke EX_IGNORE.
+    QVariant toSql(int __ix, eEx __ex = EX_ERROR) const { return (__ex == EX_IGNORE && isNull(__ix)) ? QVariant() : colDescr(__ix).toSql(get(__ix)); }
     /// A megadott nevű mező értékét adja vissza, konvertálva az SQL-nek átadható formára.
-    /// Hibás, vagy NULL adat esetén kizárást dob!
-    QVariant toSql(const QString& __nm) const { return toSql(toIndex(__nm)); }
+    /// Hibás, vagy NULL adat esetén kizárást dob, kivéve, ha megadtuk __ex-et és értéke EX_IGNORE.
+    QVariant toSql(const QString& __nm, eEx __ex = EX_ERROR) const { return toSql(toIndex(__nm), __ex); }
     /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
     /// @param _ix A mező indexe a rekord objektumban
     /// @param __q A lekérdezéshez használt objektum.

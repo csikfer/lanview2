@@ -105,7 +105,6 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     , snmp(), ports()
 {
     _DBGFN() << hostService.fullName(__q, EX_IGNORE) << endl;
-    QString msg;
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lesz
     if (protoServiceId() == NIL_SERVICE_ID && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
@@ -245,8 +244,8 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
                 else {
                     if (linkedNodeId != hid) {
                         msg = tr("A %1:%2 trunk %3 tagja %4 -el, előző tagja %5 -al van linkben.")
-                                .arg(host().getName(), np.getName(), host().ports[ix]->getName())
-                                .arg(cNode().getNameById(q, hid, EX_IGNORE), lp.getFullName(q, EX_IGNORE));
+                                .arg(host().getName(), np.getName(), host().ports[ix]->getName(),
+                                     cNode().getNameById(q, hid, EX_IGNORE), lp.getFullName(q, EX_IGNORE));
                         cAlarm::ticket(q, RS_CRITICAL, msg, hostServiceId());
                     }
                 }
@@ -281,7 +280,7 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
     _DBGFN() << QChar(' ') << name() << endl;
     if (!snmp.isOpened()) {
-        EXCEPTION(ESNMP,-1, tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));
+        EXCEPTION(ESNMP,-1, tr("SNMP open error : %1 in %2").arg(snmp.emsg, name()));
     }
     enum eNotifSwitch r;
     if (ports.isEmpty()) {
@@ -342,8 +341,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         if (r) {
             runMsg = msgCat(runMsg,
                     tr("SNMP error #%1 (%2). OID:%3")
-                    .arg(r).arg(snmp.emsg)
-                    .arg(__o.toString()), "\n");
+                    .arg(r).arg(snmp.emsg, __o.toString()), "\n");
             return RS_CRITICAL;
         }
         o = snmp.name();
@@ -353,8 +351,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         if (!ok) {
             runMsg = msgCat(runMsg,
                     tr("SNMP ansver, invalid index. OID:%1: %2 = %3")
-                    .arg(__o.toString()).arg(o.toString())
-                    .arg(debVariantToString(snmp.value())), "\n");
+                    .arg(__o.toString(), o.toString(), debVariantToString(snmp.value())), "\n");
             return RS_CRITICAL;
         }
         if (!(ports.contains(pix))) continue;
@@ -362,8 +359,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         if (!mac) {
             runMsg =  msgCat(runMsg,
                     tr("Az SNMP ansver, invalid MAC. OID:%1: %2 = %3")
-                    .arg(__o.toString()).arg(o.toString())
-                    .arg(snmp.value().toString()), "\n");
+                    .arg(__o.toString(), o.toString(), snmp.value().toString()), "\n");
             continue;       // előfordul
         }
         macs.insert(mac, pix); // insert or replace

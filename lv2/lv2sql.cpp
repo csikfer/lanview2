@@ -889,7 +889,7 @@ QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1,
                 }
             }
             _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, sql);
-            _sql_err_ex(NEWCERROR(EQUERY, 0, le.text()), le, sql);  // no return
+            _sql_err_ex(NEWCERROR(EQUERY, 0, le.text()), le, sql, _sql_err_bound(q));  // no return
         }
         break;
     }

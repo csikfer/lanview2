@@ -890,7 +890,7 @@ int cMacTab::replace(QSqlQuery& __q, eEx __ex)
 {
     (void)__ex;
     enum eReasons r;
-    QString re = execSqlFuncTryLock(__q, "replace_mactab", _ixPortId, _ixHwAddress, get(_ixSetType), get(_ixMacTabState)).toString();
+    QString re = execSqlFuncTryLock(__q, "replace_mactab", toSql(_ixHwAddress), toSql(_ixSetType), toSql(_ixMacTabState, EX_IGNORE)).toString();
     r = eReasons(reasons(re, EX_IGNORE));
     return r;
 }
