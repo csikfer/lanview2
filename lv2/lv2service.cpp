@@ -2643,7 +2643,8 @@ int cInspectorVar::setValue(QSqlQuery& q, const QVariant& _rawVal, int& state)
 {
     if (skeep()) return ENUM_INVALID;
     // Type of raw data
-    eParamType ptRaw = eParamType(pSrvVar->rawDataType(q).getId(cParamType::ixParamTypeType()));
+    cParamType cptRaw = pSrvVar->rawDataType(q);
+    eParamType ptRaw = eParamType(cptRaw.getId(cParamType::ixParamTypeType()));
     eTristate rawChanged = preSetValue(q, ptRaw, _rawVal, state);
     if (rawChanged == TS_NULL) return RS_UNREACHABLE;
     bool ok = true;

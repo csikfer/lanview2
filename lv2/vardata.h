@@ -70,9 +70,9 @@ class LV2SHARED_EXPORT cServiceVar : public cRecord {
     CRECORD(cServiceVar);
     FEATURES(cServiceVar)
 public:
-    virtual void clearToEnd();
-    virtual void toEnd();
-    virtual bool toEnd(int _ix);
+    virtual void clearToEnd() override;
+    virtual void toEnd() override;
+    virtual bool toEnd(int _ix) override;
     const cServiceVarType &varType(QSqlQuery& q);
     const cParamType& dataType(QSqlQuery& q)    { return cParamType::paramType(varType(q).getId(cServiceVarType::ixParamTypeId())); }
     const cParamType& rawDataType(QSqlQuery& q) { return cParamType::paramType(varType(q).getId(cServiceVarType::ixRawParamTypeId())); }
