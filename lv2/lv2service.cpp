@@ -1029,9 +1029,9 @@ cFeatures& cInspector::splitFeature(eEx __ex)
     if (pMergedFeatures  == nullptr) pMergedFeatures = new cFeatures();
     else                        pMergedFeatures->clear();
 
-    if (pProtoService != nullptr) pMergedFeatures->split(pProtoService->getName(ixFeatures), true, __ex);
-    if (pPrimeService != nullptr) pMergedFeatures->split(pPrimeService->getName(ixFeatures), true, __ex);
     pMergedFeatures->split(service()-> getName(ixFeatures), true, __ex);
+    if (pPrimeService != nullptr) pMergedFeatures->split(pPrimeService->getName(ixFeatures), true, __ex);
+    if (pProtoService != nullptr) pMergedFeatures->split(pProtoService->getName(ixFeatures), true, __ex);
     pMergedFeatures->split(hostService.getName(_sFeatures), true, __ex);
     PDEB(VVERBOSE) << name() << " features : " << pMergedFeatures->join() << endl;
     return *pMergedFeatures;
