@@ -925,8 +925,8 @@ void cInspector::dbNotif(const QString& cmd)
         }
         return;
     }
-    bool reStartFlg = cmd.compare(_sReset, Qt::CaseInsensitive);
-    if (reStartFlg || 0 == cmd.compare(_sExit, Qt::CaseInsensitive)) {
+    bool reStartFlg = 0 == cmd.compare(_sReset, Qt::CaseInsensitive);
+    if (reStartFlg || 0 == cmd.compare(_sExit,  Qt::CaseInsensitive)) {
         if (pParent == nullptr) {
             DERR() << QString("Invalid ReSet notification to %1 main inspector.").arg(name()) << endl;
         }
@@ -2048,11 +2048,6 @@ void cInspector::start()
 void cInspector::stop()
 {
     PDEB(VERBOSE) << name() << endl;
-    if (pSubordinates != nullptr) {
-        foreach (cInspector *pSub, *pSubordinates) {
-            pSub->stop();
-        }
-    }
     if (timerId > 0) {
         stopTimer();
     }
@@ -2061,10 +2056,15 @@ void cInspector::stop()
         pInspectorThread->abortFlag = true;
         pInspectorThread->pThread->wait(stopTimeOut);
     }
-    if (pProcess != nullptr) {
+    else if (pProcess != nullptr) {
         pProcess->terminate();
         if (!pProcess->waitForFinished(stopTimeOut)) {
             pProcess->kill();
+        }
+    }
+    else if (pSubordinates != nullptr) {
+        foreach (cInspector *pSub, *pSubordinates) {
+            if (pSub != nullptr) pSub->stop();
         }
     }
     internalStat = IS_STOPPED;
@@ -2086,6 +2086,7 @@ QObject * cInspector::stopTimer()
     // Ha nem fut a timer, akkor vége, nem kell a szál pointere sem.
     if (timerId <= 0) return nullptr;
     bool ok = false;
+    eTristate invoke = TS_NULL;
     // Nem azonos a szál, az inspector thread-é a timer, nem kéne abban a szálban lenni, mert akkor valami nem stimmel.
     // Ha nem fut a thread, akkor feleslegesen strapáljuk magunkat.
     if (pInspectorThread != nullptr) {
@@ -2095,6 +2096,7 @@ QObject * cInspector::stopTimer()
 #else
             ok = QMetaObject::invokeMethod(pInspectorThread, "on_thread_killTimer", Qt::QueuedConnection);
 #endif
+            invoke = bool2ts(ok);
         }
     }
     // Mélyebben van a thread, már abbol indított inspector, és a gyökérből próbálljuk leállítani.
@@ -2111,14 +2113,16 @@ QObject * cInspector::stopTimer()
 #else
                     ok = QMetaObject::invokeMethod(this, "do_killTimer", Qt::QueuedConnection);
 #endif
+                    invoke = bool2ts(ok);
                 }
                 break;
             }
             pp = pp->pParent;
         }
     }
-    // Ha elküldtük a jelet a thread-nek, és sikerült.
-    if (ok) {
+    switch (invoke) {
+    case TS_TRUE: {
+        // Ha elküldtük a jelet a thread-nek, és sikerült.
         // Várunk max 5 másodpercet, 200msec-enként, a timerId törlésére
         int cnt = 25;
         QEventLoop e;
@@ -2129,10 +2133,13 @@ QObject * cInspector::stopTimer()
         if (timerId > 0) {
             DERR() << "Invoked on_thread_killTimer(), timer is not stopped." << endl;
         }
-        return nullptr;
+      } break;
+    case TS_FALSE:
+        DERR() << "Nothing timer : inspector thread : " << (pInspectorThread == nullptr ? _sNULL : pInspectorThread->objectName())
+               << "; current thread : " << QThread::currentThread()->objectName() << endl;
+    case TS_NULL:
+        break;
     }
-    DERR() << "Nothing likk timer : inspector thread : " << (pInspectorThread == nullptr ? _sNULL : pInspectorThread->objectName())
-           << "; current thread : " << QThread::currentThread()->objectName() << endl;
     return nullptr;
 }
 
