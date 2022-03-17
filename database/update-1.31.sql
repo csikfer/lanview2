@@ -367,3 +367,47 @@ CREATE TRIGGER interfaces_check_interface BEFORE INSERT OR UPDATE
 DROP INDEX IF EXISTS interfaces_port_index_index;
 CREATE UNIQUE INDEX interfaces_port_index_index ON interfaces (port_index, node_id) WHERE port_index IS NOT NULL;
 
+-- Hibajavítás 2022.03.16.
+
+CREATE OR REPLACE FUNCTION public.service_rrd_value_after()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE NOT LEAKPROOF
+AS $BODY$
+DECLARE
+    val text;
+    pt paramtype;
+    payload text;
+BEGIN
+    IF NOT NEW.rrd_disabled AND NEW.raw_value IS NOT NULL AND NEW.last_time IS NOT NULL THEN -- Next value?
+        IF OLD.last_time IS NULL OR (NEW.last_time - OLD.last_time) > '1 second'::interval THEN
+            IF raw_to_rrd FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id THEN
+                SELECT param_type_type INTO pt
+                    FROM param_types       AS pt
+                    JOIN service_var_types AS vt ON vt.raw_param_type_id = pt.param_type_id
+                    WHERE NEW.service_var_type_id = vt.service_var_type_id;
+                val := NEW.raw_value;
+            ELSE
+                SELECT param_type_type INTO pt
+                    FROM param_types       AS pt
+                    JOIN service_var_types AS vt USING(param_type_id)
+                    WHERE NEW.service_var_type_id = vt.service_var_type_id;
+                val := NEW.service_var_value;
+            END IF;
+            IF pt = 'integer' OR pt = 'real' OR pt = 'interval' THEN -- Numeric
+                IF pt = 'interval' THEN
+                    val := extract(EPOCH FROM val::interval)::text;
+                END IF;
+                payload := 'rrd '
+                        || NEW.rrdhelper_id::text || ' '
+                        || extract(EPOCH FROM NEW.last_time)::bigint::text || ' '
+                        || val || ' ' 
+                        || NEW.service_var_id::text;
+                PERFORM pg_notify('rrdhelper', payload);
+            END IF;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$BODY$;

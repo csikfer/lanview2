@@ -155,10 +155,12 @@ int cRrdHelper::run(QSqlQuery& q, QString &runMsg)
             .arg(cntOk)
             .arg(cntFail);
     int r = RS_ON;
+    // Van nem elérhető RRD file?
     if (cRrdFile::cntEna != cRrdFile::cntAll) {
         r = RS_CRITICAL;
     }
-    if (cntFail != 0) {
+    // Sikertelen upgrade
+    else if (cntFail != 0) {
         r = RS_WARNING;
     }
     msgAppend(&runMsg, getErrorMessages());
@@ -354,10 +356,11 @@ bool cRrdHelper::createRrdFile(QSqlQuery& q, QMap<qlonglong, cRrdFile>::iterator
 
 QString cRrdHelper::getErrorMessages()
 {
+    QMutableMapIterator<qlonglong, cRrdFile> i(rrdFileMap);
     QString r;
-    QList<qlonglong> keys = rrdFileMap.keys();
-    foreach (qlonglong key, keys) {
-        msgAppend(&r, rrdFileMap[key].getErrorMsg());
+    while (i.hasNext()) {
+        QString msg = i.next()->getErrorMsg();
+        msgAppend(&r, msg);
     }
     return r;
 }
