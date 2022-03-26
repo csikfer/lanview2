@@ -427,6 +427,8 @@ public:
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)
 
     static bool             setupTransactionFlag;
+    static uint             deadlockMaxTry;
+    static ulong            deadlockDelay;
 
    protected:
     QStringList * getTransactioMapAndCondLock();

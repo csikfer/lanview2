@@ -286,12 +286,7 @@ bool cError::errStat()
 }
 
 bool cError::isSqlLockError() {
-    if (mErrorCode == eError::EQUERY) { // SQL :
-        if (mSqlErrCode.compare("55P03") || mSqlErrCode.compare("40P01")) { // lock_not_available || deadlock_detected
-            return true;
-        }
-    }
-    return false;
+    return (mErrorCode == eError::EQUERY) && ::isSqlLockError(mSqlErrCode);
 }
 
 

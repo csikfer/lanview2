@@ -46,13 +46,23 @@ public:
 // Include error codes
 #include "errcodes.h"
 
+inline bool isSqlLockError(QString& __e)
+{
+    return __e.compare("55P03") || __e.compare("40P01"); // lock_not_available || deadlock_detected
+}
+
+inline bool isSqlLockError(QSqlError& __e)
+{
+    QString ec = __e.nativeErrorCode();
+    return isSqlLockError(ec);
+}
 /*!
 @class cError
 @brief Hiba kezelő objektum
 
 Hiba kezelő objktum.
 Az objektum makróhívásokon keresztül hozható létre, és tárolja a hiba jellemzóit, majd a makró ezzel a hiba objektummal
-dob egy kizárást.
+dobhat egy kizárást.
 A hibakezelő makrók listálya:
   - EXCEPTION(ec...)    Álltalános hiba kezelő makró. cError példányosítása, és a pointerral egy kizárás dobása.
   - NEWCERROR()         Egy hiba objektum példány létrehozása, feltöltése. Nem dob kizárást.
@@ -62,7 +72,7 @@ A hibakezelő makrók listálya:
   - SQLPREPERR(o, t)    SQL prepare hiba
 .
 A cError objektum konstruktora ha érzékeli a töbszörös hibát, akkor kiírja a hiba üzenetet az stderr-re és -1 kóddal kilép,
-mehelőzve ezzel egy töbszörös ciklikus hibakezelésből adódó végtelen ciklust.Ld.: circulation() metódust.
+megelőzve ezzel egy töbszörös ciklikus hibakezelésből adódó végtelen ciklust.Ld.: circulation() metódust.
 A Hiba kódok az eError névtérben vannak definiálva. Ha egy modulnak további hibakódokra van szüksége, akkor azokat is
 ebben a névtérben kell definiálni. Az alap hiba kódokat az LV2_errcodes.h fejállomány tartalmazza:
 @include "LV2_errcodes.h"

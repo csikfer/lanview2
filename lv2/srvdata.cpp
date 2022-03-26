@@ -139,7 +139,6 @@ const QString& noalarmtype(int _e, enum eEx __ex)
 
 static const QString _sHostServiceId2Name = "host_service_id2name";
 
-int cHostService::setStateMaxTry = NULL_IX;
 tIntVector cHostService::readBackFieldIxs;    // Visszaolvasandó (változó) mezők indexei a setState() met.
 QString    cHostService::readBackFields;
 
@@ -189,7 +188,6 @@ const cRecStaticDescr&  cHostService::descr() const
         _ixFeatures = _descr_cHostService().toIndex(_sFeatures);
         // --
         QSqlQuery q = getQuery();
-        setStateMaxTry = int(cSysParam::getIntegerSysParam(q, "set_service_state_max_try", 5));
         // Visszaolvasandó mezők indexek feltöltése:
         readBackFieldIxs
                 << toIndex(_sDisabled)  // Ha esetleg letiltották
@@ -272,7 +270,7 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
     bool tf = trFlag(TS_NULL) == TS_TRUE;
     QString sTrFulName = toSqlName(sFulName);
 #endif
-    int cnt = 0;
+    uint cnt = 0;
     while (true) {
 #if SET_STATE_IS_TRANSACTION
         if (tf) sqlBegin(__q, sTrFulName);
@@ -300,15 +298,15 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
                 return nullptr;
             }
             cnt++;
-            // deadlock ?   ???
-            if (s.contains("deadlock", Qt::CaseInsensitive) && cnt <= setStateMaxTry) {
-                DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.nativeErrorCode()).arg(cnt)
+            // deadlock ?
+            if (isSqlLockError(le) && cnt <= lanView::deadlockMaxTry) {
+                DERR() << tr("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName, le.nativeErrorCode()).arg(cnt)
                     << tr("driverText   : ") << le.driverText() << "\n"
                     << tr("databaseText : ") << le.databaseText() << endl;
-                QThread::msleep(200);
+                QThread::msleep(lanView::deadlockDelay);
                 continue;   // retrying
             }
-            LV2_SQLERR(le, EQUERY);    // no return
+            LV2_SQLERR(le, EQUERY);    // exception, no return
         }
         else if (r == 1) {
             setName(_sSoftState, __st); // Ennyinek kell lennie

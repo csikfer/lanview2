@@ -621,10 +621,21 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             }
         }
         // Write interface states
-        int un = iface.update(q, false, bitsSet);
-        if (un != 1) {
-            QString msg = tr("Az update visszatérési érték %1 hiba, Service : %2, interface : %3").arg(un).arg(iface.identifying(false), hostService.fullName(q, EX_IGNORE));
-            APPMEMO(q, msg, RS_CRITICAL);
+        cError *pe = nullptr;
+        uint cnt = 0;
+        while (nullptr != (pe = iface.tryUpdate(q, false, bitsSet))) {
+            if (pe->isSqlLockError() && ++cnt < lanView::deadlockMaxTry) {
+                pDelete(pe);
+                QThread::msleep(lanView::deadlockDelay);
+                continue;
+            }
+            if (pe->mErrorCode == eError::EFOUND) {
+                QString msg = tr("Az update visszatérési értéke 0, Service : %1, interface : %2").arg(iface.identifying(false), hostService.fullName(q, EX_IGNORE));
+                APPMEMO(q, msg, RS_CRITICAL);
+                pDelete(pe);
+                break;
+            }
+            ERR_HERE(pe);
         }
     }
     foreach (cInspector *ps, *pSubordinates) {

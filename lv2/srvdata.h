@@ -213,7 +213,6 @@ public:
         return NULL_ID;
     }
 protected:
-    static int setStateMaxTry;
     QString sFulName;
 private:
     // setState

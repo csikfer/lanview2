@@ -102,6 +102,8 @@ QString    lanView::sDateTimeForm("yyyy-MM-dd HH:mm:ss");
 eIPV4Pol   lanView::ipv4Pol = IPV4_STRICT;
 eIPV6Pol   lanView::ipv6Pol = IPV6_PERMISSIVE;
 bool       lanView::setupTransactionFlag = false;
+uint       lanView::deadlockMaxTry = 5;
+ulong      lanView::deadlockDelay = 1000;
 
 qlonglong sendError(const cError *pe, lanView *_instance)
 {
@@ -182,7 +184,9 @@ void dbOpenPost(QSqlQuery& q, const QString& _tn)
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn))
     settingIntParameter(q, "lock_timeout");
     settingIntParameter(q, "statement_timeout");
-    lanView::sDateTimeForm = cSysParam::getTextSysParam(q, "date_time_form", lanView::sDateTimeForm);
+    lanView::sDateTimeForm  = cSysParam::getTextSysParam(q, "date_time_form", lanView::sDateTimeForm);
+    lanView::deadlockMaxTry = cSysParam::getIntegerSysParam(q, "set_deadlock_max_try", 5);
+    lanView::deadlockDelay  = cSysParam::getIntegerSysParam(q, "set_deadlock_delay", 1000);
 }
 
 lanView::lanView()

@@ -839,8 +839,7 @@ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, con
 
 QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
-    int cnt = 0;
-    const int max = 5;
+    uint cnt = 0;
     QString sql = "SELECT " + fn + QChar('(');
     if (v1.isValid()) {
         sql += QChar('?');
@@ -881,10 +880,10 @@ QVariant execSqlFuncTryLock(QSqlQuery& q, const QString& fn, const QVariant& v1,
         if (!q.exec()) {
             QSqlError le = q.lastError();
             QString ec = le.nativeErrorCode();
-            if (ec.compare("55P03") || ec.compare("40P01")) { // lock_not_available || deadlock_detected
-                if (max > ++cnt) {
+            if (isSqlLockError(ec)) { // lock_not_available || deadlock_detected
+                if (lanView::deadlockMaxTry > ++cnt) {
                     DERR() << "Sleep 1s, and reapeat #" << cnt << _sCommaSp << "nativeErrorCode = " << ec << endl;
-                    sleep(1);
+                    QThread::msleep(lanView::deadlockDelay);
                     continue;
                 }
             }
