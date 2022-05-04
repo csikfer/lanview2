@@ -38,7 +38,7 @@ SERVICE "arpd" "Arp daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "/usr/local/bin/arpd  -R $host_service_id";
     FEATURES  {
-        "controll" = "tick,reset,exit";
+        "controll" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -185,14 +185,21 @@ SERVICE "check_md_raid" {
     OFF LINE GROUPS "admin_net";
 }
 SERVICE "check_ping" "Ping check" {
-    SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
+    SUPERIOR SERVICE MASK "^(group)|(lv2d)$";
     COMMAND "/usr/lib/nagios/plugins/check_ping -H $address -w $warning -c $critical -p 10";
     FEATURES  {
         "control" = "tick,reset,exit";
-        "critical" = "20,19%";
-        "method" = "nagios,qparse";
+        "critical" = "3,19%";
+        "list";
+        "method" = "nagios,text";
+        "regexp" = "Packet\\s*loss\\s*=\\s*(\\d+\\.?\\d*)%,\\s*RTA\\s*=\\s*(\\d+\\.?\\d*)";
+        "stop_timeout" = "12000";
         "timing" = "timed";
-        "warning" = "10,9%";
+        "variables" =  {
+            "ping_loss" = "1,loss_percent";
+            "ping_time" = "2,ping_time";
+        }
+        "warning" = "1,9%";
     }
     MAX CHECK ATTEMPTS 2;
     NORMAL CHECK INTERVAL 300;
@@ -201,6 +208,8 @@ SERVICE "check_ping" "Ping check" {
     FLAPPING INTERVAL 3600;
     FLAPPING MAX CHANGE 6;
     TYPE "check_service";
+    ON LINE GROUPS "admin", "operator";
+    OFF LINE GROUPS "admin", "operator";
 }
 SERVICE "check_rtsp" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
@@ -306,6 +315,22 @@ SERVICE "dhcp_leases" "DHCP leases fájl, local vagy ssh-n keresztül" {
     FLAPPING MAX CHANGE 15;
     TYPE "mode";
 }
+SERVICE "drop_old_logs" "Csak az adatbázis szerveren működik jelszó nélkül." {
+    SUPERIOR SERVICE MASK "^(lv2d)|(group)|(parser)$";
+    COMMAND "psql -c \"SELECT cut_down_old_logs();\" lanview2";
+    FEATURES  {
+        "control" = "tick,reset,exit";
+        "process" = "timed";
+        "stop_timeout" = "15:00";
+    }
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    HEARTBEAT TIME 172800;
+    RETRY CHECK INTERVAL 60;
+    FLAPPING INTERVAL 7200;
+    FLAPPING MAX CHANGE 3;
+    TIME PERIODS "night";
+}
 SERVICE "group" "Dummy service for grouping services." {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     FEATURES  {
@@ -321,7 +346,7 @@ SERVICE "icontsrv" "icontsrv daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "icontsrv -R $host_service_id";
     FEATURES  {
-        "control" = "tick,reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,4";
         "method" = "inspector";
         "process" = "continue";
@@ -338,7 +363,7 @@ SERVICE "import" "import daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "/usr/local/bin/import -D -R $host_service_id";
     FEATURES  {
-        "control" = "restart";
+        "control" = "restart,reload";
         "method" = "inspector";
         "process" = "respawn";
         "timing" = "timed";
@@ -503,7 +528,7 @@ SERVICE "lv2d" "Lanview2 Main server" {
     SUPERIOR SERVICE MASK "^(lv2d|group)$";
     COMMAND "lv2d -R $host_service_id";
     FEATURES  {
-        "control" = "tick, reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -558,6 +583,13 @@ SERVICE "parser" "Query Parser (pure)" {
     FLAPPING MAX CHANGE 15;
     OFF LINE GROUPS "admin_net";
 }
+SERVICE "ping-slow" {
+    SUPERIOR SERVICE MASK "~.";
+    FEATURES ":critical=10,11%:warning=5,9%:";
+    FLAPPING INTERVAL 1800;
+    FLAPPING MAX CHANGE 15;
+    TYPE "mode";
+}
 SERVICE "pmac" "Query port address table by <protocol>" {
     SUPERIOR SERVICE MASK "^portmac$";
     FEATURES  {
@@ -576,7 +608,7 @@ SERVICE "portmac" "Device port address table query daemon" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portmac -R $host_service_id";
     FEATURES  {
-        "control" = "tick,reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -619,7 +651,7 @@ SERVICE "portvlan" {
     SUPERIOR SERVICE MASK "^(lv2d)|(group)$";
     COMMAND "portvlan -R $host_service_id";
     FEATURES  {
-        "control" = "tick,reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -713,14 +745,15 @@ SERVICE "pstat" "Query port status by <protocol>" {
     SUPERIOR SERVICE MASK "^portstat$";
     COMMAND "pstat  -R $host_service_id";
     FEATURES  {
-        "control" = "tick,reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
         "timing" = "timed";
     }
     MAX CHECK ATTEMPTS 3;
-    NORMAL CHECK INTERVAL 30;
+    NORMAL CHECK INTERVAL 60;
+    RETRY CHECK INTERVAL 30;
     FLAPPING INTERVAL 1800;
     FLAPPING MAX CHANGE 10;
     TYPE "querying";
@@ -765,6 +798,7 @@ SERVICE "rrdhelper" "RRD Helper" {
     SUPERIOR SERVICE MASK "^lv2|group$";
     COMMAND "rrdhelper -R $host_service_id";
     FEATURES  {
+        "control" = "tick,reload";
         "method" = "inspector";
         "process" = "continue";
         "timing" = "timed";
@@ -801,7 +835,7 @@ SERVICE "snmpvars" {
     SUPERIOR SERVICE MASK "^lv2|group$";
     COMMAND "snmpvars -R $host_service_id";
     FEATURES  {
-        "control" = "tick,reset,exit";
+        "control" = "tick,reset,exit,reload";
         "logrot" = "500M,8";
         "method" = "inspector";
         "process" = "continue";
@@ -821,13 +855,14 @@ SERVICE "soniwall_arp" {
     FEATURES  {
         "control" = "tick,reset,exit";
         "method" = "qparse";
+        "stop_timeout" = "45000";
         "timing" = "timed";
     }
     MAX CHECK ATTEMPTS 3;
     NORMAL CHECK INTERVAL 600;
     RETRY CHECK INTERVAL 300;
-    FLAPPING INTERVAL 1800;
-    FLAPPING MAX CHANGE 15;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 5;
     TYPE "querying";
     OFF LINE GROUPS "admin_net";
 }
@@ -842,7 +877,7 @@ SERVICE "syscron" "System cron" {
     SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES  {
         "control" = "tick";
-        "delay" = "600000";
+        "delay" = "720000";
         "timing" = "timed,thread";
     }
     NORMAL CHECK INTERVAL 600;
@@ -1128,6 +1163,13 @@ SERVICE VAR TYPE "load" "CPU Load" {
     WARNING "big" "1";
     NO RAW TO RRD;
     FEATURES ":host.cpu=1:rpn=$host.cpu /:";
+}
+SERVICE VAR TYPE "loss_percent" {
+    TYPE "ipercent", "double precision" "GAUGE";
+    PLAUSIBILITY "interval" "-1", "101";
+    CRITICAL "big" "10";
+    WARNING "big" "0";
+    NO RAW TO RRD;
 }
 SERVICE VAR TYPE "memory" "Memória Byte (raw kB)" {
     TYPE "bigint" "GAUGE";

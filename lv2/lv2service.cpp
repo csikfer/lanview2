@@ -1,4 +1,5 @@
 #include <time.h>
+#include <string.h>
 #include "lanview.h"
 #include "lv2service.h"
 #include "scan.h"
@@ -54,7 +55,6 @@ void cInspectorThread::timerEvent(QTimerEvent * event)
 
 void cInspectorThread::run()
 {
-    printf("<<<<<<<<<<<<<< THREAD %d <<<<<<<<<<<<<<<<<<<<<\n", internalStat);
     pDelete(pLastError);
     try {
         _DBGFN() << objectName() << " " << internalStatName(internalStat) << endl;
@@ -80,7 +80,6 @@ void cInspectorThread::run()
         inspector.internalStat = IS_ERROR;
     }
     DBGFNL();
-    printf(">>>>>>>>>>>>>> THREAD %d >>>>>>>>>>>>>>>>>>>>>\n", inspector.internalStat);
 }
 
 void cInspectorThread::doInit()
@@ -748,7 +747,6 @@ cInspector::~cInspector()
     }
 
     if (pParent == nullptr && lanView::appStat == IS_RUN) {
-        printf(" -- root inspector object called destructor: EXIT 0\n");
         QCoreApplication::exit(0);
     }
 }
@@ -1579,7 +1577,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         int ec = pProcess->startProcess(int(startTimeOut), int(stopTimeOut));
-        if (ec == -1) {
+        if (ec < 0) {   // A parancs futtatása sikertelen
             return RS_STAT_SETTED;    // Already sended: RS_CRITICAL, or is running
         }
 
