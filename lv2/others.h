@@ -222,6 +222,8 @@ public:
     /// a megadott kulcssal, és egy pont karakterrel kezdödnek, ekkor a kulcsból ez az előteag tölődik, és
     /// így kerül az objektumba. Ha a _o -ban egy (modosított)kulcsértékhez a "!" van rendelve,
     /// akkor az ez alatti érték törlődik az objektumban.
+    /// A rész kulcs tartalmazhat joker karaktert '*', hasonlóan a fájl joker karakterhez:
+    /// pl. a "load*" illeszkedik a "load1m" és a "load5m" mintára is.
     cFeatures& merge(const cFeatures &_o, const QString& _cKey = QString());
     cFeatures& selfMerge(const QString& _cKey);
     void modifyField(cRecordFieldRef& _fr);

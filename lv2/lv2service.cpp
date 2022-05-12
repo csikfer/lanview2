@@ -1,5 +1,3 @@
-#include <time.h>
-#include <string.h>
 #include "lanview.h"
 #include "lv2service.h"
 #include "scan.h"
@@ -749,22 +747,6 @@ cInspector::~cInspector()
     if (pParent == nullptr && lanView::appStat == IS_RUN) {
         QCoreApplication::exit(0);
     }
-}
-
-
-
-qlonglong cInspector::rnd(qlonglong i, qlonglong m)
-{
-    static time_t t = 0;
-    if (t == 0) {
-        t = time(nullptr);
-        srand(uint(t));
-    }
-    double r = i;
-    r *= rand();
-    r /= RAND_MAX;
-    if (r < m) return m;
-    return qlonglong(r);
 }
 
 void cInspector::dropSubs()
@@ -2143,7 +2125,7 @@ QObject * cInspector::stopTimer()
 
 int cInspector::firstDelay()
 {
-    qint64 t;
+    int t;
     QDateTime last;
     t = getTimeout(features(), "delay", 0);
     if (t <= 0) {    // Ha nincs magadva késleltetés
@@ -2573,12 +2555,14 @@ cInspectorVar::~cInspectorVar()
     pDelete(pSrvVar);
     pDelete(pEnumVals);
     pDelete(pMergedFeatures);
+    pDelete(pTypeMergedFeatures);
     pDelete(pVarType);
 }
 
 void cInspectorVar::_init()
 {
     pMergedFeatures = nullptr;
+    pTypeMergedFeatures = nullptr;
     pEnumVals = nullptr;
     pVarType = nullptr;
     lastCount = 0;
@@ -2620,10 +2604,26 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
 
     // feature, merge
     pDelete(pMergedFeatures);
-    pMergedFeatures = new cFeatures(pVarType->features());
-    pMergedFeatures->merge(pSrvVar->features());
-    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + "." + pSrvVar->getName());
-    pMergedFeatures->merge(*pInspector->pMergedFeatures, _sServiceVars + ".*");
+    pDelete(pTypeMergedFeatures);
+    pMergedFeatures     = new cFeatures(pSrvVar->features());
+    pTypeMergedFeatures = new cFeatures(pVarType->features());
+    pMergedFeatures    ->merge(*pInspector->pMergedFeatures, "service_var." + pSrvVar->getName());
+    pTypeMergedFeatures->merge(            *pMergedFeatures, "service_var_type");
+    PDEB(VVERBOSE) << "InspectorVar mergedFeatures : "     << pMergedFeatures->join()     << endl;
+    PDEB(VVERBOSE) << "InspectorVar typeMergedFeatures : " << pTypeMergedFeatures->join() << endl;
+    // Modify pVarType by features
+    QList<QString> fns = {  // A modosítható mezők nevei
+        _sPlausibilityType, _sPlausibilityParam1, _sPlausibilityParam2, _sPlausibilityInverse,
+        _sWarningType,      _sWarningParam1,      _sWarningParam2,     _sWarningInverse,
+        _sCriticalType,     _sCriticalParam1,     _sCriticalParam2,    _sCriticalInverse
+    };
+    for (auto key: fns) {
+        QMap<QString, QString>::const_iterator i = pTypeMergedFeatures->constFind(key);
+        if (i != pTypeMergedFeatures->constEnd()) {
+            PDEB(VVERBOSE) << pInspector->name() << '/' << pSrvVar->getName() << '/' << pVarType->getName() << '.' << key <<  " Modify to " << i.value() << endl;
+            pVarType->set(key, i.value());
+        }
+    }
     //
     heartbeat = pInspector->hostService.getId(_sHeartbeatTime);
     if (heartbeat <= 0) heartbeat = pInspector->interval * 2;
@@ -2636,7 +2636,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
         }
     }
     bool ok;
-    rarefaction = (*pMergedFeatures)[_sRarefaction].toInt(&ok);
+    rarefaction = feature(_sRarefaction).toInt(&ok);
     if (!ok || rarefaction <= 0) rarefaction = int(pSrvVar->getId(pSrvVar->ixRarefaction()));
     if (heartbeat > 0 && rarefaction > 1) heartbeat *= rarefaction;
     skeepCnt = rarefaction / 2;
@@ -2740,15 +2740,17 @@ int cInspectorVar::setValue(QSqlQuery& q, double val, int& state, eTristate rawC
             val = - val;
         }
     }
-    QString rpn = features().value(_sRpn);
+    QString rpn = feature(_sRpn);
     if (!rpn.isEmpty()) {
         QString err;
+        PDEB(VVERBOSE) << VDEB(val) << VDEB(rpn) << endl;
         if (!rpn_calc(val, rpn, err)) {
             addMsg(QObject::tr("RPN error : %1").arg(err));
             rs = RS_UNKNOWN;
             postSetValue(q, ENUM_INVALID, QVariant(), rs, state);
             return rs;
         }
+        PDEB(VVERBOSE) << VDEB(val) << endl;
     }
     int vpt = int(pSrvVar->dataType(q).getId(_sParamTypeType));
     switch (svt) {
@@ -2822,7 +2824,7 @@ int cInspectorVar::setValue(QSqlQuery& q, qlonglong val, int &state, eTristate r
             d   = - d;
         }
     }
-    QString rpn = features().value(_sRpn);
+    QString rpn = feature(_sRpn);
     if (!rpn.isEmpty()){
         QString err;
         if (!rpn_calc(d, rpn, err)) {
@@ -2873,7 +2875,7 @@ int cInspectorVar::setUnreachable(QSqlQuery q, const QString& msg)
 const QStringList * cInspectorVar::enumVals()
 {
     if (pEnumVals == nullptr) {
-        pEnumVals = new QStringList(features().slValue(_sEnumeration));
+        pEnumVals = new QStringList(cFeatures::value2list(feature(_sEnumeration)));
     }
     return pEnumVals;
 }
@@ -3402,29 +3404,28 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
             continue;
         }
         int n = stack.size();
-        char c = token[0].toLatin1();
         if (token.size() == 1) {    // Character token
-            static const char * ctokens = "+-*/";   // all
-            static const char * binToks = "+-*/";   // binary
-            if (nullptr == strchr(ctokens, c)) {
+            static QString  ctokens = "+-*/";   // all
+            if (0 > ctokens.indexOf(token)) {
                 st = QObject::tr("One character token %1 unknown.").arg(token);
                 return false;
             }
-            if (n < 2 && nullptr != strchr(binToks, c)) {
+            if (n < 2) {
                 st = QObject::tr("A binary operator %1 expects two parameters.").arg(token);
                 return false;
             }
             // Binary operator:
             _v = stack.pop();
-            switch (c) {
-            case '+':   stack.top() += _v;  break;
-            case '-':   stack.top() -= _v;  break;
-            case '*':   stack.top() *= _v;  break;
-            case '/':   stack.top() /= _v;  break;
+            switch (token.front().toLatin1()) {
+            case '+':   stack.top() += _v;      break;
+            case '-':   stack.top() -= _v;      break;
+            case '*':   stack.top() *= _v;      break;
+            case '/':   stack.top() /= _v;      break;
+            default:    EXCEPTION(EPROGFAIL);   break;
             }
             continue;
         }
-        if (c == '$') {     // parameter
+        if (token.startsWith(QChar('$'))) {     // parameter
             QString key = token.mid(1);
             if (key.isEmpty()) {
                 st = QObject::tr("Empty feature name %1.").arg(key);
@@ -3455,7 +3456,7 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
 #define BINARYTOK(s)    { #s, BT_##s, 2 }
         struct tTokens { QString name; int key; int ops; }
                        tokens[] = {
-            UNARYTOK(NEG), UNARYTOK(DROP), UNARYTOK(DROP), UNARYTOK(DUP), UNARYTOK(NOP),
+            UNARYTOK(NEG), UNARYTOK(DROP), UNARYTOK(DUP), UNARYTOK(NOP),
             BINARYTOK(SWAP),
             { "",  T_NULL, 0 }
         };

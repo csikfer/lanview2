@@ -374,21 +374,27 @@ QString cFeatures::join(const tStringMap &_sm)
 
 cFeatures& cFeatures::merge(const cFeatures& _o, const QString& _cKey)
 {
-    QString cKey = _cKey + QChar('.');
+    QString cKey = _cKey;
     int cKeySize = cKey.size();
-    foreach (QString key, _o.keys()) {
+    for (QString okey : _o.keys()) {
         QString val;
-        if (cKeySize > 1) {
-            if (!key.startsWith(cKey)) continue;
-            val = _o.value(key);
-            key = key.mid(cKeySize);
+        QString key = okey;
+        if (cKeySize > 0) {
+            if (!okey.startsWith(cKey)) {
+                int i = okey.indexOf(QChar('*'));   // joker ?
+                if (i < 0 || (i > 0 && !cKey.startsWith(okey.mid(0, i)))) continue; // pattern matching if there was a joker
+                i = okey.indexOf(QChar('.'), i);
+                key = okey.mid(i + 1);
+            }
+            else {
+                key = okey.mid(cKeySize + 1);
+            }
+            if (key.isEmpty()) continue;
         }
-        else {
-            val = _o.value(key);
-        }
+        val = _o.value(okey);
         if (val == "!") remove(key);
         else {
-            if (val.count() == val.count(QChar('!'))) val.chop(1);
+            if (val.count() == val.count(QChar('!'))) val.chop(1);  // "!!" -> "!"
             insert(key, val);
         }
     }

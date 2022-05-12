@@ -500,7 +500,7 @@ private:
     /// Típus hiba üzenethez azonosító adatok
     QString typeErrMsg(QSqlQuery &q);
 public:
-    static qlonglong rnd(qlonglong i, qlonglong m = 1000);
+    static int rnd(int i, int m = 1000) { return QRandomGenerator::global()->bounded(m, i); }
 // *** Thread ***
 public:
     /// Ha az objektum önálló szálon fut
@@ -598,7 +598,12 @@ public:
     int setUnreachable(QSqlQuery q, const QString &msg = QString());
     cServiceVar * pSrvVar;
     cFeatures   *pMergedFeatures;
-    const cFeatures& features() { if (pMergedFeatures == nullptr) EXCEPTION(EPROGFAIL); return *pMergedFeatures; }
+    cFeatures   *pTypeMergedFeatures;
+    const QString feature(const QString& key) {
+        if (pMergedFeatures == nullptr || pTypeMergedFeatures == nullptr) EXCEPTION(EPROGFAIL);
+        QString r = pMergedFeatures->value(key);
+        return r.isEmpty() ? pTypeMergedFeatures->value(key) : r ;
+    }
     const QStringList * enumVals();
     static int setValue(QSqlQuery& q, cInspector *pInsp, const QString& _name, const QVariant& val, int &state);
     static int setValues(QSqlQuery& q, cInspector *pInsp, const QStringList& _names, const QVariantList& vals, int &state);
