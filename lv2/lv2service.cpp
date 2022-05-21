@@ -3405,23 +3405,21 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
         }
         int n = stack.size();
         if (token.size() == 1) {    // Character token
-            static QString  ctokens = "+-*/";   // all
-            if (0 > ctokens.indexOf(token)) {
-                st = QObject::tr("One character token %1 unknown.").arg(token);
-                return false;
-            }
             if (n < 2) {
                 st = QObject::tr("A binary operator %1 expects two parameters.").arg(token);
                 return false;
             }
             // Binary operator:
             _v = stack.pop();
-            switch (token.front().toLatin1()) {
-            case '+':   stack.top() += _v;      break;
-            case '-':   stack.top() -= _v;      break;
-            case '*':   stack.top() *= _v;      break;
-            case '/':   stack.top() /= _v;      break;
-            default:    EXCEPTION(EPROGFAIL);   break;
+            static QString  ctokens = "+-*/";
+            switch (ctokens.indexOf(token)) {
+            case 0: stack.top() += _v;  break;
+            case 1: stack.top() -= _v;  break;
+            case 2: stack.top() *= _v;  break;
+            case 3: stack.top() /= _v;  break;
+            default:
+                st = QObject::tr("One character token %1 unknown.").arg(token);
+                return false;
             }
             continue;
         }
