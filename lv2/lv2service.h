@@ -3,6 +3,11 @@
 
 #include <QTimer>
 
+#include  <cstdlib>
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+#include <time.h>
+#endif
+
 #include "lanview.h"
 #include "lv2data.h"
 #include "srvdata.h"
@@ -500,7 +505,23 @@ private:
     /// Típus hiba üzenethez azonosító adatok
     QString typeErrMsg(QSqlQuery &q);
 public:
-    static int rnd(int i, int m = 1000) { return QRandomGenerator::global()->bounded(m, i); }
+    static int rnd(int i, int m = 1000)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    { return QRandomGenerator::global()->bounded(m, i); }
+#else
+    {
+        static time_t t = 0;
+         if (t == 0) {
+             t = time(nullptr);
+             srand(uint(t));
+         }
+         double r = i;
+         r *= rand();
+         r /= RAND_MAX;
+         if (r < m) return m;
+         return int(r);
+    }
+#endif
 // *** Thread ***
 public:
     /// Ha az objektum önálló szálon fut
