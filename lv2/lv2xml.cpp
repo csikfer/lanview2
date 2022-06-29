@@ -52,7 +52,9 @@ void processXml::start(QString __cmd)
     connect(proc, SIGNAL(finished(int, QProcess::ExitStatus)),  this, SLOT(procFinished(int, QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)),        this, SLOT(procError(QProcess::ProcessError)));
     connect(proc, SIGNAL(readyReadStandardOutput()),            this, SLOT(procReadyRead()));
-    proc->start(__cmd);
+    QStringList args = QProcess::splitCommand(__cmd);
+    QString cmd = args.takeFirst();
+    proc->start(cmd, args);
 }
 
 void processXml::reStart(QString __cmd)

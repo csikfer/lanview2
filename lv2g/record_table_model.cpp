@@ -170,7 +170,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     if (et == _sEquSp) {    // A mező tartalma a szín
         QString c = pr->getName(fix);
         if (!isTextId && !c.isEmpty()) switch (role) {
-        case Qt::TextColorRole:
+        case Qt::ForegroundRole:
         case Qt::BackgroundRole:
             return QColor(c);
         case Qt::DisplayRole:
@@ -192,7 +192,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     int        id = int(pr->getId(fix));
     int        dd = column.dataCharacter;
     switch (role) {
-    case Qt::TextColorRole: return (ff & ENUM2SET(FF_FG_COLOR)) ? fgColorByEnum(et, id) : dcFgColor(dd);
+    case Qt::ForegroundRole: return (ff & ENUM2SET(FF_FG_COLOR)) ? fgColorByEnum(et, id) : dcFgColor(dd);
     case Qt::BackgroundRole:return (ff & ENUM2SET(FF_BG_COLOR)) ? bgColorByEnum(et, id) : dcBgColor(dd);
     case Qt::DisplayRole:   return cEnumVal::viewShort(et, id, pr->view(*pq, fix));
     case Qt::ToolTipRole:   return (ff & ENUM2SET(FF_TOOL_TIP)) ? cEnumVal::toolTip(et, id) : QVariant();
@@ -482,10 +482,10 @@ static QString htmlImage(const QVariant& vImage, const QString& alt)
     if (vImage.isValid()) {
         QImage image;
         switch (vImage.userType()) {
-        case QVariant::Pixmap:
+        case QMetaType::QPixmap:
             image = vImage.value<QPixmap>().toImage();
             break;
-        case QVariant::Icon:
+        case QMetaType::QIcon:
             image = vImage.value<QIcon>().pixmap(24).toImage();
             break;
         }
@@ -540,7 +540,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(bool raw, const QModelIndex
                     if (!raw) { // STYLE
                         s = ::toHtml(s);
                         s = htmlImage(data(mi, Qt::DecorationRole), s);
-                        QVariant vFgColor = data(mi, Qt::TextColorRole);
+                        QVariant vFgColor = data(mi, Qt::ForegroundRole);
                         QVariant vBgColor = data(mi, Qt::BackgroundRole);
                         if (vFgColor.isValid() || vBgColor.isValid()) {
                             QString style;

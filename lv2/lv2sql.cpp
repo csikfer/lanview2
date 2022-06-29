@@ -12,7 +12,7 @@ QVariantList _sqlToIntegerList(const QString& _s)
 {
     QVariantList vl;
     if (!_s.isEmpty()) {
-        QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+        QStringList sl = _s.split(QChar(','),Qt::KeepEmptyParts);
         foreach (const QString& s, sl) {
             bool ok;
             qlonglong i = s.toLongLong(&ok);
@@ -33,7 +33,7 @@ QVariantList _sqlToDoubleList(const QString& _s)
 {
     QVariantList vl;
     if (!_s.isEmpty()) {
-        QStringList sl = _s.split(QChar(','),QString::KeepEmptyParts);
+        QStringList sl = _s.split(QChar(','),Qt::KeepEmptyParts);
         foreach (const QString& s, sl) {
             bool ok;
             double i = s.toDouble(&ok);
@@ -53,7 +53,7 @@ QStringList _sqlToStringList(const QString& _s)
 {
     QStringList sl;
     if (!_s.isEmpty()) {
-        sl = _s.split(QChar(','), QString::KeepEmptyParts);
+        sl = _s.split(QChar(','), Qt::KeepEmptyParts);
         static const QChar   m('"');
         static const QString nm("\\\"");
 
@@ -147,10 +147,7 @@ netAddress sql2netAddress(QString as)
 {
     netAddress a;
     if (as.count() > 0) {
-        // néha hozzábigyeszt valamit az IPV6 címhez
-        int i = as.indexOf(QRegExp("[^\\d\\.:A-Fa-f/]"));
-        // Ha a végén van szemét, azt levágjuk
-        if (i > 0) as = as.mid(0, i);
+        // néha hozzábigyeszt valamit az IPV6 címhez (Qt5 -nál, tesztelni)
         a.set(as);
     }
     return a;
@@ -258,15 +255,15 @@ qlonglong _parseTimeIntervalISO8601(const QString& _s, bool *pOk)
         }
     }
     if (alternate) {
-        QRegExp pattern("(\\d*)-(\\d*)-(\\d*)T(\\d*):(\\d*):(\\d*)");
-        ok = pattern.exactMatch(s);
+        QRegularExpression re("^(\\d*)-(\\d*)-(\\d*)T(\\d*):(\\d*):(\\d*)$");
+        QRegularExpressionMatch match = re.match(s);
         if (ok) {
-            r  = pattern.cap(1).toInt() * (1000LL * 3600 * 24 * 365);  // ?
-            r += pattern.cap(2).toInt() * (1000LL * 3600 * 24 * 30);
-            r += pattern.cap(3).toInt() * (1000LL * 3600 * 24);
-            r += pattern.cap(4).toInt() * (1000LL * 3600);
-            r += pattern.cap(5).toInt() * (1000LL *   60);
-            r += pattern.cap(6).toInt() *  1000LL;
+            r  = match.captured(1).toInt() * (1000LL * 3600 * 24 * 365);  // ?
+            r += match.captured(2).toInt() * (1000LL * 3600 * 24 * 30);
+            r += match.captured(3).toInt() * (1000LL * 3600 * 24);
+            r += match.captured(4).toInt() * (1000LL * 3600);
+            r += match.captured(5).toInt() * (1000LL *   60);
+            r += match.captured(6).toInt() *  1000LL;
         }
     }
     if (pOk != nullptr) *pOk = ok;
@@ -298,16 +295,15 @@ static qlonglong dim2msec(const QString& dim)
 
 qlonglong parseTime(const QString& _s, bool *pOk)
 {
-    bool ok;
     qlonglong r = NULL_ID;
-    QRegExp pat("(\\d+):(\\d+):(\\d+\\.?\\d*)");    // hh:mm:ss.ss
-    ok = pat.exactMatch(_s);
-    if (ok) {
-        r  = pat.cap(1).toInt() * 1000LL * 3600;                // Hour(s)
-        r += pat.cap(2).toInt() * 1000LL *   60;                // minute(s)
-        r += qlonglong(pat.cap(3).toDouble() * 1000LL + 0.5);   // second(s)
+    QRegularExpression pat("(\\d+):(\\d+):(\\d+\\.?\\d*)");    // hh:mm:ss.ss
+    QRegularExpressionMatch match = pat.match(_s);
+    if (match.hasMatch()) {
+        r  = match.captured(1).toInt() * 1000LL * 3600;                // Hour(s)
+        r += match.captured(2).toInt() * 1000LL *   60;                // minute(s)
+        r += qlonglong(match.captured(3).toDouble() * 1000LL + 0.5);   // second(s)
     }
-    if (pOk != nullptr) *pOk = ok;
+    if (pOk != nullptr) *pOk = match.hasMatch();
     return r;
 }
 
@@ -315,7 +311,7 @@ qlonglong _parseTimeIntervalSQL(const QString& _s, bool& ago, bool *pOk)
 {
     qlonglong r = 0;
     bool ok = true;
-    QStringList sl = _s.split(QRegExp("\\s+"));
+    QStringList sl = _s.split(QRegularExpression("\\s+"));
     if (0 == sl.last().compare("ago", Qt::CaseInsensitive)) {
         sl.pop_back();
         if (ago == true || sl.isEmpty()) {
@@ -606,14 +602,19 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
         if (!file.exists()) EXCEPTION(ENOTFILE,-1,file.fileName());
         if (!file.isOpen() && !file.open(QIODevice::ReadOnly)) EXCEPTION(EFOPEN,-1,file.fileName());
         QTextStream script(&file);
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+        script.setEncoding(QStringConverter::Utf8);
+#else
         script.setCodec("UTF-8");
+#endif
         pq = newQuery(pDb);
         while ((line = script.readLine()).isNull() == false) {
             PDEB(VVERBOSE) << "Line : <<<\n" << line << "\n>>>" << endl;
             const QChar   a('\''), q('"'), e('\\');
             QChar cc;
             const QString c("--");
-            int ia, iq, ic, ii, i;
+            int ia, iq, ii, i;
+            qsizetype ic;
             i = 0;
             // A /* */ komment párt csak külön sorban fogadja el!!
             if (line == "/*") {
@@ -623,7 +624,7 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
                 continue;
             }
             // komment, és string határolók keresése, stringhatároló találat esetén belép a ciklusba
-            while ((bool)(((ic = line.indexOf(c, i)), (ia = line.indexOf(a, i))) >= 0) | (bool)((iq = line.indexOf(q, i)) >= 0)) {
+            while ((bool)(((ic = line.indexOf(c, i)), (ia = line.indexOf(a, i))) >= 0) || (bool)((iq = line.indexOf(q, i)) >= 0)) {
                 PDEB(VVERBOSE) << "MATCH : i = " << i << ", ia = " << ia << ", iq = " << iq << ", ic = " << ic << endl;
                 // Találtunk idézőjelet ill. aposztrófot.
                 if (ia < 0 || (iq >= 0 && iq < ia)) { // Egy idézőjelet találltunk, nincs elötte aposztróf

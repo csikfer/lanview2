@@ -54,7 +54,8 @@ int main(int argc, char * argv[])
     }
     if (0 <= (i = findArg(QChar('o'),QString("auto-open"), arguments))
      && (i + 1) < arguments.count()) {
-        slAutoOpen << arguments[i + 1].split(QRegExp(",\\s*"));
+        static const QRegularExpression re(",\\s*");
+        slAutoOpen << arguments[i + 1].split(re);
     }
     if (0 <= (i = findArg(QChar('f'),QString("fullscreen"), arguments))) {
         lv2Gui::_screen = lv2Gui::FULLSCREEN;
@@ -88,17 +89,18 @@ int main(int argc, char * argv[])
             case lv2Gui::NORMAL:
                 mo.pMainWindow->show();
                 break;
-            case lv2Gui::MAXIMIZE:
-                mo.pMainWindow->showMaximized();
-                mo.pMainWindow->adjustSize();
-                break;
             case lv2Gui::FULLSCREEN:
+                /*
                 mo.pMainWindow->showFullScreen();
                 mo.pMainWindow->adjustSize();
                 QDesktopWidget *pDesktop = QApplication::desktop();
                 QWidget *parent_screen = pDesktop->screen(lv2Gui::_nScreen -1);
                 QRect geom = parent_screen->geometry();
                 mo.pMainWindow->setGeometry(geom);
+                mo.pMainWindow->adjustSize();
+                break;*/
+            case lv2Gui::MAXIMIZE:
+                mo.pMainWindow->showMaximized();
                 mo.pMainWindow->adjustSize();
                 break;
             }
@@ -157,6 +159,9 @@ lv2Gui::~lv2Gui()
 }
 
 #include <QLibraryInfo>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#define path location
+#endif
 
 static void printLocations()
 {
@@ -166,22 +171,28 @@ static void printLocations()
     QPlainTextEdit *t = new QPlainTextEdit();
     l->addWidget(t);
     QString txt;
-    txt +=   "Default prefix                           : " + QLibraryInfo::location(QLibraryInfo::PrefixPath);
-    txt += "\nDocumentation upon install               : " + QLibraryInfo::location(QLibraryInfo::DocumentationPath);
-    txt += "\nAll headers                              : " + QLibraryInfo::location(QLibraryInfo::HeadersPath);
-    txt += "\nInstalled libraries                      : " + QLibraryInfo::location(QLibraryInfo::LibrariesPath);
-    txt += "\nInstalled exec. requ. by lib. at runtime : " + QLibraryInfo::location(QLibraryInfo::LibraryExecutablesPath);
-    txt += "\nInstalled Qt binaries (tools and apps)   : " + QLibraryInfo::location(QLibraryInfo::BinariesPath);
-    txt += "\nInstalled Qt plugins                     : " + QLibraryInfo::location(QLibraryInfo::PluginsPath);
-    txt += "\nInstalled QML ext. to import (QML 1.x)   : " + QLibraryInfo::location(QLibraryInfo::ImportsPath);
-    txt += "\nInstalled QML ext. to import (QML 2.x)   : " + QLibraryInfo::location(QLibraryInfo::Qml2ImportsPath);
-    txt += "\nGeneral architecture-dependent Qt data   : " + QLibraryInfo::location(QLibraryInfo::ArchDataPath);
-    txt += "\nGeneral architecture-independent Qt data : " + QLibraryInfo::location(QLibraryInfo::DataPath);
-    txt += "\nTranslation information for Qt strings   : " + QLibraryInfo::location(QLibraryInfo::TranslationsPath);
-    txt += "\nExamples upon install                    : " + QLibraryInfo::location(QLibraryInfo::ExamplesPath);
-    txt += "\nInstalled Qt testcases                   : " + QLibraryInfo::location(QLibraryInfo::TestsPath);
-    txt += "\nQt settings. Not applicable on Windows   : " + QLibraryInfo::location(QLibraryInfo::SettingsPath);
+    txt +=   "Default prefix                           : " + QLibraryInfo::path(QLibraryInfo::PrefixPath);
+    txt += "\nDocumentation upon install               : " + QLibraryInfo::path(QLibraryInfo::DocumentationPath);
+    txt += "\nAll headers                              : " + QLibraryInfo::path(QLibraryInfo::HeadersPath);
+    txt += "\nInstalled libraries                      : " + QLibraryInfo::path(QLibraryInfo::LibrariesPath);
+    txt += "\nInstalled exec. requ. by lib. at runtime : " + QLibraryInfo::path(QLibraryInfo::LibraryExecutablesPath);
+    txt += "\nInstalled Qt binaries (tools and apps)   : " + QLibraryInfo::path(QLibraryInfo::BinariesPath);
+    txt += "\nInstalled Qt plugins                     : " + QLibraryInfo::path(QLibraryInfo::PluginsPath);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    txt += "\nInstalled QML ext. to import (QML 1.x)   : " + QLibraryInfo::path(QLibraryInfo::ImportsPath);
+#endif
+    txt += "\nInstalled QML ext. to import (QML 2.x)   : " + QLibraryInfo::path(QLibraryInfo::Qml2ImportsPath);
+    txt += "\nGeneral architecture-dependent Qt data   : " + QLibraryInfo::path(QLibraryInfo::ArchDataPath);
+    txt += "\nGeneral architecture-independent Qt data : " + QLibraryInfo::path(QLibraryInfo::DataPath);
+    txt += "\nTranslation information for Qt strings   : " + QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+    txt += "\nExamples upon install                    : " + QLibraryInfo::path(QLibraryInfo::ExamplesPath);
+    txt += "\nInstalled Qt testcases                   : " + QLibraryInfo::path(QLibraryInfo::TestsPath);
+    txt += "\nQt settings. Not applicable on Windows   : " + QLibraryInfo::path(QLibraryInfo::SettingsPath);
     t->setPlainText(txt);
     d->exec();
     delete d;
 }
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#undef location
+#endif

@@ -408,7 +408,8 @@ cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
             foreach (QString sNode, sNodeList) {
                 if (node.fetchByName(q, sNode.simplified())) {
                     node.fetchPorts(q, 0);  // csak a portokat olvassuk be
-                    rightMacs |= node.getMacs().toSet();
+                    QList<cMac> macs = node.getMacs();
+                    rightMacs |= QSet<cMac>(macs.begin(), macs.end());
                 }
                 else {
                     msg += tr("Helytelen eszköz név : %1\n").arg(sNode);

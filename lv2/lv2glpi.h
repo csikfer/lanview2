@@ -4,12 +4,13 @@
 #include "lv2cont.h"
 #include "lv2data.h"
 
+
 /// @class cRegExpConverterItem
 /// Segédosztály a cRegExpConverter -hez.
 class LV2SHARED_EXPORT cRegExpConverterItem : public cSelect {
     friend class cRegExpConverter;
 protected:
-    cRegExpConverterItem(QSqlQuery q);
+    cRegExpConverterItem(QSqlQuery& q);
     /// A megadott szövek összehasonlítása a mintával, és egyezés esetén a konvertált szöveg visszaadása.
     /// @param s A konvertálandó szöveg
     /// @param smap Opcionális behelyettesítendő paraméterek konténere (azonosító, szöveg)
@@ -21,9 +22,9 @@ protected:
     /// Ha nincs behelyettesítés, akkor a keresett mintát írja ide a konstruktor.
     /// Ha van (substituteMap nem üres), akkor a compareAndConvert() metódus minden alkalommal
     /// létrehozza a mintát a behelyettesítések végrehajtása után, a regexp a munka objektum.
-    QRegExp     patternRe;
+    QRegularExpression     patternRe;
     /// A behelyettesítéseknél használlt minta.
-    QRegExp     substRe;
+    QRegularExpression     substRe;
 };
 
 /// @class cRegExpConverter

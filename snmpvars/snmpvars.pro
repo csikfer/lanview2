@@ -1,8 +1,8 @@
-QT       += core sql xml network
-QT       -= gui
 
-TARGET = snmpvars
-CONFIG += c++11 console
+QT       -= gui
+QT       += core network sql xml
+
+CONFIG += console
 CONFIG -= app_bundle
 
 TEMPLATE = app
@@ -20,10 +20,3 @@ TRANSLATIONS    = snmpvars_hu.ts \
 
 CODECFORSRC     = UTF-8
 
-
-
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target

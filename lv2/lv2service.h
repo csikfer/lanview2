@@ -391,10 +391,20 @@ protected:
     int getInspectorMethod(const QString &value);
     enum eNotifSwitch parse_nagios(int _ec, QString &text, QString &runMsg);
     enum eNotifSwitch parse_json(int _ec, const QByteArray &text, QString &runMsg);
+    /// A hívott program kimenetének a mentése a feature "name" változóval megadott nevű paraméter rekordba.
+    /// Ha meg van adva port a szolgáltatás példányban, akkor port paraméterként, ha nem akkor host paraméterként lesz mentve a szöveg.
     enum eNotifSwitch save_text(int _ec, const QString &text);
+    /// Program kimenetének a szöveg feldolgozása a features változók alapján.
     enum eNotifSwitch parse_text(int _ec, QString &text, QString &runMsg);
+    /// A program kimenetéből szöveg lista készítés a features változók alapján.
+    /// A kezelt változó nevek:
+    /// - separator A listaelemeket elválasztó karakterek
+    /// - regexp_separator A lista elemeket elválasztó regexp kifelyezés. Csak akkor van hatása, ha separator nem létezik.
+    /// Ha sem a separator sem a regexp_separátor nincs megadva, akkor a szeparátor a sor emelés.
     QStringList text2list(QString &text);
+    /// Program kimenetének a szöveg feldolgozása a features változók alapján, ha meg van adva a list features változó.
     enum eNotifSwitch parse_list(int r, QString &text, QString &runMsg);
+    /// Program kimenetének a szöveg feldolgozása a features változók alapján, ha meg van adva a tagged features változó.
     enum eNotifSwitch parse_tagged(int r, QString &text, QString &runMsg);
     enum eNotifSwitch parse_qparse(int _ec, const QString &text);
 //  enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);

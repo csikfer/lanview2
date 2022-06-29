@@ -2,7 +2,6 @@
 #include "updt_oui.h"
 #include "srvdata.h"
 #include "lv2daterr.h"
-#include "QRegExp"
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   01
@@ -73,24 +72,25 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
     DBGFN();
     try {
         QTextStream src(&text, QIODevice::ReadOnly);
-        QRegExp pat1("\\s*([\\da-f]{2})-([\\da-f]{2})-([\\da-f]{2})\\s+\\(hex\\)[\\s\\t]+(.+)\\s*", Qt::CaseInsensitive);
+        static const QRegularExpression pat1("^\\s*([\\da-f]{2})-([\\da-f]{2})-([\\da-f]{2})\\s+\\(hex\\)[\\s\\t]+(.+)\\s*$", QRegularExpression::CaseInsensitiveOption);
         if (pat1.isValid() == false) EXCEPTION(EPROGFAIL, -1, "pat1");
-        QRegExp pat2("\\s*[\\-\\da-f]+\\s+\\(base 16\\)[\\s\\t]+(.*)", Qt::CaseInsensitive);
+        static const QRegularExpression pat2("^\\s*[\\-\\da-f]+\\s+\\(base 16\\)[\\s\\t]+(.*)$", QRegularExpression::CaseInsensitiveOption);
         if (pat2.isValid() == false) EXCEPTION(EPROGFAIL, -1, "pat2");
         QString line;
+        QRegularExpressionMatch ma;
         while ((line = src.readLine()).isNull() == false) {
-            if (!pat1.exactMatch(line)) {
+            if (!(ma = pat1.match(line)).hasMatch()) {
                 PDEB(VVERBOSE) << "Dropp line : " << line << endl;
                 continue;
             }
             bool ok;
-            QString cap = pat1.cap(1);
+            QString cap = ma.captured(1);
             qlonglong mac_i = cap.toInt(&ok, 16);
             if (!ok) EXCEPTION(EPROGFAIL, 0, cap);
-            cap = pat1.cap(2);
+            cap = ma.captured(2);
             mac_i = (mac_i << 8) + cap.toInt(&ok, 16);
             if (!ok) EXCEPTION(EPROGFAIL, 1, cap);
-            cap = pat1.cap(3);
+            cap = ma.captured(3);
             mac_i = (mac_i << 8) + cap.toInt(&ok, 16);
             if (!ok) EXCEPTION(EPROGFAIL, 2);
             cOui    oui;
@@ -101,14 +101,14 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
                 // EXCEPTION(EPROGFAIL, mac_i, QString::number(mac_i, 16));
             }
             oui.setMac(_sOui, mac);
-            QString name = pat1.cap(4).simplified();
+            QString name = ma.captured(4).simplified();
             oui.setName(name);
             line = src.readLine();
-            if (!pat2.exactMatch(line)) {
+            if (!(ma = pat2.match(line)).hasMatch()) {
                 DWAR() << "Drop " << QString::number(mac_i, 16) << " / " << oui.getName() << " OUI 2." << endl;
                 continue;
             }
-            QString note = pat2.cap(1).simplified();
+            QString note = ma.captured(1).simplified();
             while ((line = src.readLine()).isEmpty() == false) note += "\n" + line.simplified();
             oui.setName(_sOuiNote, note);
             PDEB(VVERBOSE) << "OUI REPLACE : " << oui.toString() << endl;
@@ -150,7 +150,7 @@ void Downloader::replyFinished (QNetworkReply *reply)
 {
     if(reply->error())
     {
-        QString msg = tr("A '%1' letöltése sikertelen. %2").arg(url.toString()).arg(reply->errorString());
+        QString msg = tr("A '%1' letöltése sikertelen. %2").arg(url.toString(), reply->errorString());
         cDbErr::insertNew(*pq, cDbErrType::_sDataWarn, msg, -1, cOui().descr().tableName(), QString(__PRETTY_FUNCTION__));
         APPMEMO(*pq, msg, RS_WARNING);
         DWAR() << msg << endl;

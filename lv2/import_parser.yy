@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <QStringList>
 #include "lanview.h"
 #include "guidata.h"
 #include "others.h"
@@ -300,8 +299,10 @@ public:
     ///
     bool firstTime;
     cArpServerDef() : server(), file(), community() { type = UNKNOWN; firstTime = true;}
-    cArpServerDef(const cArpServerDef& __o)
+/*  Deprecated
+ *     cArpServerDef(const cArpServerDef& __o)
         : server(__o.server), file(__o.file), community(__o.community) { type = __o.type; firstTime = __o.firstTime; }
+*/
     cArpServerDef(enum eType __t, const QString& __s, const QString& __f = QString(), const QString& __c = QString())
         : server(__s), file(__f), community(__c) { type = __t; firstTime = true; }
     void updateArpTable(QSqlQuery &q);
@@ -325,12 +326,18 @@ typedef QList<qlonglong> intList;
 
 class c_yyFile {
 public:
-    c_yyFile(const c_yyFile& __o) : oldFileName(__o.oldFileName) {
+    c_yyFile() : oldFileName() {
+        oldStream = nullptr;
+        newFile = nullptr;
+        oldPos = -1;
+    }
+/* Deprecated
+ *     c_yyFile(const c_yyFile& __o) : oldFileName(__o.oldFileName) {
         oldStream = __o.oldStream;
         newFile = __o.newFile;
         oldPos = __o.oldPos;
     }
-    c_yyFile() : oldFileName() { oldStream = nullptr; newFile = nullptr; }
+*/
     static void inc(QString *__f);
     static void eoi();
     static int size() { return stack.size(); }
@@ -1206,7 +1213,7 @@ static bool portChkShare(intList&  pl, QStringList *psl)
     switch (siz) {
     case 2:
         if      (sl[0] == _sA && sl[1] == _sB) { pl << -1 << -1;                          return false; }
-        else if (sl[0] == _sB && sl[1] == _sA) { pl.swap(0,1); pl << -1 << -1;            return false; }
+        else if (sl[0] == _sB && sl[1] == _sA) { pl.swapItemsAt(0,1); pl << -1 << -1;     return false; }
         else    yyerror(e + "2");
         break;
     case 3:
@@ -2107,8 +2114,7 @@ bool    : bool_                     { $$ = $1; }
         | iexpr '=' '=' iexpr       { $$ = $1 == $4; }
         | iexpr '!' '=' iexpr       { $$ = $1 != $4; }
         | DEFINED_T ifdef           { $$ = $2; }
-        | sexpr '~' '~' sexpr       { QRegExp r(sp2s($4)); $$ = r.indexIn(sp2s($1)) >= 0; }
-        | sexpr '~' '=' sexpr       { QRegExp r(sp2s($4)); $$ = r.exactMatch(sp2s($1)); }
+        | sexpr '~' sexpr           { QRegularExpression r(sp2s($3)); $$ = r.match(sp2s($1)).hasMatch(); }
         ;
 bool_on :                           { $$ = true; }
         | bool_                     { $$ = $1; }
@@ -2703,7 +2709,7 @@ arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
         | ADD_T ARP_T LOCAL_T BY_T DHCPD_T LEASES_T str_z ';'
                 { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LEASES_LOCAL, QString(), sp2s($7))); }
         | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->updateArpTable(qq()); }
-        | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; }
+        | PING_T ha ';'                         { QProcess::execute(QString("ping"), QStringList() << "-c1" << *$2); delete $2; }
         ;
 ha      : str                                   { $$ = $1; }
         | ip                                    { $$ = new QString($1->toString()); delete $1; }
@@ -3387,7 +3393,7 @@ static int isAddress(const QString& __s)
 {
     //_DBGFN() << " @(" << __s << ") macbuff = " << macbuff << endl;
     if (__s.indexOf("0x", 0, Qt::CaseInsensitive) ==  0) return 0;
-    if (__s.contains(QRegExp("[g-zG-Z_]"))) return 0;
+    if (__s.contains(QRegularExpression("[g-zG-Z_]"))) return 0;
     QChar c;
     QString as = __s;
     while (1) {
@@ -3705,7 +3711,7 @@ static QString * strReplace(QString * s, QString * src, QString *trg)
 {
     QString r = *s;
     delete s;
-    QRegExp re(*src);
+    QRegularExpression re(*src);
     if (!re.isValid()) yyerror(QObject::tr("Invalid regexp : %1").arg(*src));
     delete src;
     r.replace(re, *trg);

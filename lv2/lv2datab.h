@@ -70,19 +70,19 @@ static inline QString langTristate(eTristate t)
 /// Ha nincs ilyen séma, vagy más hiba történt dob egy kizárást
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param __s A séma neve
-EXT_ qlonglong schemaoid(QSqlQuery q, const QString& __s);
+EXT_ qlonglong schemaoid(QSqlQuery &q, const QString& __s);
 /// A tableoid lekérdezése, hiba esetén dob egy kizárást. Ha nincs ilyen tábla akkor is kizárást dob.
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param __t SQL tábla neve
 /// @param __sid SQL tábla séma OID (vagy NULL_ID, ha az alapértelmezett "public" a séma)
 /// @param __ex Ha értéke nem EX_IGNORE, és nem létezik a megadott nevű tábla, akkor a NULL:IS-vel tér vissza, és nem dob kizárást.
 /// @return a tabloid
-EXT_ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_ID, enum eEx __ex = EX_ERROR);
+EXT_ qlonglong tableoid(QSqlQuery &q, const QString& __t, qlonglong __sid = NULL_ID, enum eEx __ex = EX_ERROR);
 /// A tableoid érték alapján visszaadja a tábla és séma nevet, ha nincs ilyen tábla, vagy hiba esetén dob egy kizárást.
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param toid A table OID érték.
 /// @return A first adattag a tábla neve, a second pedig a séma név.
-EXT_ tStringPair tableoid2name(QSqlQuery q, qlonglong toid);
+EXT_ tStringPair tableoid2name(QSqlQuery &q, qlonglong toid);
 
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
@@ -2604,7 +2604,7 @@ public:
 TSTREAMO(cRecord)
 
 /// Hash készítése egy cRecord objektumból, a hash-t az első mező intté konvertált értékéből képzi, mely álltalában az ID.
-inline static uint qHash(const cRecord& key) { return qHash(key.getId(0)); }
+inline static size_t qHash(const cRecord& key) { return qHash(key.getId(0)); }
 
 /// A rekord leíró objektum pointer inicializálása.
 /// Ha a _pRecordDescr adattag NULL, akkor a cRecStaticDescr::get(const QString&, const QString&) hívással

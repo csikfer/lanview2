@@ -2,7 +2,7 @@
 #include "lv2data.h"
 #include "lv2html.h"
 
-cRegExpConverterItem::cRegExpConverterItem(QSqlQuery q)
+cRegExpConverterItem::cRegExpConverterItem(QSqlQuery &q)
     : cSelect(), substRe("\\$([a-zA-Z])")
 {
     if (!substRe.isValid()) {
@@ -10,28 +10,28 @@ cRegExpConverterItem::cRegExpConverterItem(QSqlQuery q)
     }
     set(q);
     const QString patternType = getName(_sPatternType);
-    Qt::CaseSensitivity      caseSensitivity;
-    if      (patternType.compare(_sRegexp,  Qt::CaseInsensitive) == 0) caseSensitivity = Qt::CaseSensitive;
-    else if (patternType.compare(_sRegexpi, Qt::CaseInsensitive) == 0) caseSensitivity = Qt::CaseInsensitive;
+    QRegularExpression::PatternOptions po;
+    if      (patternType.compare(_sRegexp,  Qt::CaseInsensitive) == 0) po = QRegularExpression::CaseInsensitiveOption;
+    else if (patternType.compare(_sRegexpi, Qt::CaseInsensitive) == 0) po = QRegularExpression::NoPatternOption;
     else {
         EXCEPTION(EDATA);
     }
     pattern = getName(_sPattern);
     int i = 0;
-    while ((i = substRe.indexIn(pattern, i)) >= 0) {
+    QRegularExpressionMatch ma;
+    while ((i = pattern.indexOf(substRe, i, &ma)) >= 0) {
         if (i > 0 && pattern[i -1] == QChar('\\')) { // '\\' ?
             ++i;
             continue;
         }
-        substituteMap[i] = substRe.cap(1).at(0);
+        substituteMap[i] = ma.captured(1).at(0);
         reverseIndexList.prepend(i);
         pattern.remove(i, 2);
     }
     if (substituteMap.isEmpty()) {
         patternRe.setPattern(pattern);
     }
-    patternRe.setCaseSensitivity(caseSensitivity);
-
+    patternRe.setPatternOptions(po);
 }
 
 QString cRegExpConverterItem::compareAndConvert(const QString& s, const QMap<QChar, QString>& smap)
@@ -56,15 +56,16 @@ QString cRegExpConverterItem::compareAndConvert(const QString& s, const QMap<QCh
             return r;
         }
     }
-    if (patternRe.exactMatch(s)) {
+    QRegularExpressionMatch ma;
+    if (patternRe.match(s).hasMatch()) {
         QString c = getName(ixChoice());
         r = s;
         // Direct conversion based on regular expression.
         r.replace(patternRe, c);
         // Substitute
         int i = -1;
-        while ((i = r.lastIndexOf(substRe, i)) >= 0) {
-            QChar k = substRe.cap(1).at(0);
+        while ((i = r.lastIndexOf(substRe, i, &ma)) >= 0) {
+            QChar k = ma.captured(1).at(0);
             QString su = smap[k];
             r.replace(i, 2, su);
         }

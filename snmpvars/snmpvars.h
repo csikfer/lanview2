@@ -1,8 +1,6 @@
 #ifndef SNMPVARS_H
 #define SNMPVARS_H
 
-#include "QtCore"
-
 #define SNMP_IS_EXISTS
 
 #include "lanview.h"

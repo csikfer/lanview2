@@ -18,7 +18,6 @@ This file is part of LanView2.
     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <QtCore/qglobal.h>
 #include <QtCore>
 #include <QString>
 #include <QList>

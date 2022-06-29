@@ -7,13 +7,9 @@
 #include "guidata.h"
 #include <QCoreApplication>
 
-#if   (0-REVISION-1)==1
-# define REVISION X
-#endif
-
 #define VERSION_MAJOR   1
-#define VERSION_MINOR   00
-#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
+#define VERSION_MINOR   10
+#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 #define DB_VERSION_MAJOR 1
 #define DB_VERSION_MINOR 31
@@ -568,23 +564,23 @@ void lanView::parseArg(void)
     }
     if (0 < findArg(QChar('h'), _sHelp, args)) {
         QTextStream QStdOut(stdout);
-        if (appHelp.isEmpty() == false) QStdOut << appHelp << endl;
-        QStdOut << tr("-d|--debug-level <level>    Set debug level") << endl;
-        QStdOut << tr("-L|--log-file <file name>   Set log file name") << endl;
-        QStdOut << tr("-V|--lib-version            Print lib version") << endl;
-        QStdOut << tr("-S|--test-self-name         Test option") << endl;
-        QStdOut << tr("-R|--host-service-id        Root host-service id") << endl;
-        QStdOut << tr("-h|--help                   Print help") << endl;
+        if (appHelp.isEmpty() == false) QStdOut << appHelp << Qt::endl;
+        QStdOut << tr("-d|--debug-level <level>    Set debug level") << Qt::endl;
+        QStdOut << tr("-L|--log-file <file name>   Set log file name") << Qt::endl;
+        QStdOut << tr("-V|--lib-version            Print lib version") << Qt::endl;
+        QStdOut << tr("-S|--test-self-name         Test option") << Qt::endl;
+        QStdOut << tr("-R|--host-service-id        Root host-service id") << Qt::endl;
+        QStdOut << tr("-h|--help                   Print help") << Qt::endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('V'), _sLibVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(tr("LanView2 lib version ")).arg(libVersion) << endl;
+        QStdOut << QString(tr("LanView2 lib version ")).arg(libVersion) << Qt::endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('v'), _sVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(tr("%1 version %2")).arg(appName).arg(appVersion) << endl;
+        QStdOut << QString(tr("%1 version %2")).arg(appName).arg(appVersion) << Qt::endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < (i = findArg(QChar('d'), _sDebugLevel, args))
@@ -774,7 +770,7 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
     }
     QString sPayload = payload.toString();
     if (sPayload.isNull()) return;
-    QStringList shsids = sPayload.split(QRegExp("[\\s\\(\\),;/]+"));
+    QStringList shsids = sPayload.split(QRegularExpression("[\\s\\(\\),;/]+"));
     QString     cmd = shsids.takeFirst();
     if (shsids.isEmpty()) return; // No specified any host_service_id
     QList<qlonglong> hsids;
@@ -1037,10 +1033,10 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
 QString scramble(const QString& _s)
 {
     QString r;
-    qsrand(32572345U);
+    srand(32572345U);
     foreach (QChar c, _s) {
         ushort u = c.unicode();
-        u ^= ushort(qrand());
+        u ^= ushort(rand());
         r += QChar(u);
     }
     return r;

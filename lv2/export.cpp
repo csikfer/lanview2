@@ -247,7 +247,6 @@ QString cExport::features(const cRecord& o)
         }
         r = lineBeginBlock(_sFEATURES_);
         QString b;
-        QRegExp isMap("\\[\\w+\\s*=\\s*\\w+");
         QStringList keys = features.keys();
         foreach (QString key, keys) {
             QString v = features[key];

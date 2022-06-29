@@ -269,7 +269,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
                     }
                 }
                 // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
-                if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
+                if (pInterface != nullptr) {  // Interface
                     QString ips, dns;
                     QListIterator<cIpAddress *> ii(pInterface->addresses);
                     while (ii.hasNext()) {

@@ -441,7 +441,7 @@ QVariant enumRole(const cEnumVal& ev, int role, int e)
     QString s;
     QVariant r;
     switch (role) {
-    case Qt::TextColorRole:
+    case Qt::ForegroundRole:
         s = ev.getName(cEnumVal::ixFgColor());
         if (!s.isEmpty()) r = QColor(s);
         break;
@@ -472,7 +472,7 @@ QVariant enumRole(const cEnumVal& ev, int role, int e)
 QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
 {
     switch (role) {
-    case Qt::TextColorRole:     return fgColorByEnum(_t, id);
+    case Qt::ForegroundRole:     return fgColorByEnum(_t, id);
     case Qt::BackgroundRole:    return bgColorByEnum(_t, id);
     case Qt::DisplayRole:       return cEnumVal::viewShort(_t, id, dData);
     case Qt::ToolTipRole:       return cEnumVal::toolTip(_t, id);
@@ -484,7 +484,7 @@ QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
 QVariant dcRole(int id, int role)
 {
     switch (role) {
-    case Qt::TextColorRole:     return dcFgColor(id);
+    case Qt::ForegroundRole:     return dcFgColor(id);
     case Qt::BackgroundRole:    return dcBgColor(id);
     case Qt::DisplayRole:       return dcViewShort(id);
     case Qt::ToolTipRole:       return cEnumVal::toolTip(_sDatacharacter, id);
@@ -496,8 +496,8 @@ QVariant dcRole(int id, int role)
 QString condAddJoker(const QString& pat)
 {
     static const QChar joker('%');
-    static const QString re = "[%\?]";
-    if (!pat.contains(QRegExp(re))) return joker + pat + joker;
+    static const QRegularExpression re("[%\?]");
+    if (!re.match(pat).hasMatch()) return joker + pat + joker;
     return pat;
 }
 

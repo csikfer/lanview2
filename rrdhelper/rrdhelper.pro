@@ -1,8 +1,8 @@
 
 QT -= gui
-QT += sql network xml
+QT += core sql network xml
 
-CONFIG += c++11 console
+CONFIG += console
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use

@@ -210,20 +210,21 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
     else {
         if ((s = inspector.feature(_sLogrot)).isEmpty() == false) {
-            QRegExp m("(\\d+)([kMG]?)[,;]?(\\d*)");
-            if (!m.isValid()) EXCEPTION(EPROGFAIL, 0, m.pattern());
-            if (!m.exactMatch(s)) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot, s));
-            s = m.cap(1);   // $1
+            QRegularExpression re("^(\\d+)([kMG]?)[,;]?(\\d*)$");
+            QRegularExpressionMatch ma;
+            if (!re.isValid()) EXCEPTION(EPROGFAIL, 0, re.pattern());
+            if (!(ma = re.match(s)).hasMatch()) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot, s));
+            s = ma.captured(1);   // $1
             maxLogSize = s.toInt(&ok);
             if (!ok) EXCEPTION(EPROGFAIL, 0, s);
-            s = m.cap(2);   // $2
+            s = ma.captured(2);   // $2
             if (s.size()) switch (s[0].toLatin1()) {
             case 'k':   maxLogSize *= 1024;                 break;
             case 'M':   maxLogSize *= 1024 * 1024;          break;
             case 'G':   maxLogSize *= 1024 * 1024 * 1024;   break;
             default:    EXCEPTION(EPROGFAIL, 0, s);
             }
-            s = m.cap(3);   // $3
+            s = ma.captured(3);   // $3
             if (s.size()) {
                 maxArcLog = s.toInt(&ok);
                 if (!ok) EXCEPTION(EPROGFAIL, 0, s);
@@ -1034,7 +1035,7 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 int cInspector::getInspectorTiming(const QString& value)
 {
     int r = 0; // IT_TIMING_CUSTOM
-    QStringList vl = value.split(QRegExp("\\s*,\\s*"), QString::SkipEmptyParts);
+    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
     if (vl.isEmpty()) return r;
     bool on = false;
     int n;
@@ -1070,7 +1071,7 @@ int cInspector::getInspectorProcess(const QString &value)
     int n;
     bool on = false;
     QStringList vl;
-    vl = value.split(QRegExp("\\s*,\\s*"), QString::SkipEmptyParts);
+    vl = value.split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
     if (!vl.isEmpty()) {
         CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING)
         CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED)
@@ -1108,7 +1109,7 @@ int cInspector::getInspectorMethod(const QString &value)
 {
     int r = 0;  // IT_METHOD_CUSTOM
     if (value.isEmpty()) return r;
-    QStringList vl = value.split(QRegExp("\\s*,\\s*"));
+    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"));
     bool on = false;
     int n;
     if (vl.contains(_sCustom,   Qt::CaseInsensitive)) {
@@ -1347,8 +1348,8 @@ int cInspector::getCheckCmd(QSqlQuery& q)
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
     isFullPath = checkCmd.startsWith(QChar('/'));
 #else
-    QRegExp fpp("[a-z,A-Z]:\\\\");
-    isFullPath = 0 == fpp.indexIn(checkCmd);
+    QRegularExpression fpp("[a-z,A-Z]:\\\\");
+    isFullPath = 0 == checkCmd.indexOf(fpp);
 #endif
     if (isFullPath) {
         QFileInfo   fcmd(checkCmd);
@@ -1704,7 +1705,7 @@ QJsonValue findJsonValue(const QJsonValue& o, const QString& key)
 static QJsonValue searchJsonValue(const QJsonValue& o, const QString& keys)
 {
     QJsonValue r = o;
-    QStringList ksl = keys.split('.', QString::SkipEmptyParts);
+    QStringList ksl = keys.split('.', Qt::SkipEmptyParts);
     foreach (QString key, ksl) {
         key = key.simplified();
         if (key.isEmpty()) continue;
@@ -1831,11 +1832,12 @@ enum eNotifSwitch cInspector::parse_tagged(int r, QString &text, QString &runMsg
         }
     }
     else if ((tagSeparator = feature("tag_regexp")).isEmpty() == false) {
-        QRegExp tagRexp(tagSeparator);
+        QRegularExpression tagRexp(tagSeparator);
+        QRegularExpressionMatch ma;
         foreach (QString s, values) {
-            int ix = tagRexp.indexIn(s);
+            int ix = s.indexOf(tagRexp, 0, &ma);
             if (ix < 0) continue;
-            QStringList sl = tagRexp.capturedTexts();
+            QStringList sl = ma.capturedTexts();
             if (sl.size() != 3) {
                 msgAppend(&runMsg, tr("Invalid regular expression in tag_regexp : %1.").arg(tagSeparator));
                 return RS_UNREACHABLE;
@@ -1865,15 +1867,16 @@ QStringList cInspector::text2list(QString &text)
     QString sRegexp;
     QStringList values;
     if (!sSeparator.isEmpty()) {
-        values = text.split(sSeparator, QString::SkipEmptyParts);
+        values = text.split(sSeparator, Qt::SkipEmptyParts);
     }
     else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
-        values = text.split(QRegExp(sRegexp), QString::SkipEmptyParts);
+        values = text.split(QRegularExpression(sRegexp), Qt::SkipEmptyParts);
     }
     else if (!(sRegexp = feature(_sRegexp)).isEmpty()) {
-        QRegExp regexp(sRegexp);
-        if (regexp.indexIn(text, 0) >= 0) {
-            values = regexp.capturedTexts().mid(1);
+        QRegularExpression re(sRegexp);
+        QRegularExpressionMatch ma;
+        if (text.indexOf(re, 0, &ma) >= 0) {
+            values = ma.capturedTexts().mid(1);
         }
     }
     else {
@@ -1913,7 +1916,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
     pQparser->setInspector(this);   // A kliens beállítása...
     bool ok = false;
     // A text soronkénti feldolgozása
-    QRegExp sep("[\r\n]+");
+    QRegularExpression sep("[\r\n]+");
     QStringList sl = text.split(sep);
     foreach (QString t, sl) {
         t = t.simplified();
@@ -2892,6 +2895,7 @@ int cInspectorVar::setValue(QSqlQuery& q, cInspector *pInsp, const QString& _nam
     return r;
 }
 
+
 int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _names, const QVariantList& vals)
 {
     cInspector insp(q, hsid);
@@ -3393,7 +3397,7 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
     QStack<double>  stack;
     stack << _v;
     _v = 0.0;
-    QRegExp sep(QString("\\s+"));
+    QRegularExpression sep(QString("\\s+"));
     QStringList tokens = _expr.split(sep);
     while (!tokens.isEmpty()) {
         QString token = tokens.takeFirst();

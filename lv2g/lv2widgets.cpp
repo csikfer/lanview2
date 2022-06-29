@@ -108,7 +108,7 @@ cLineWidget::cLineWidget(QWidget *par, bool _ro, bool _horizontal)
     pLineEdit->setReadOnly(_ro);
     pNullButton->setIcon(lv2g::iconNull);
     pNullButton->setCheckable(true);
-    pLayout->setMargin(0);
+    // pLayout->setMargin(0);
     setLayout(pLayout);
     pLayout->addWidget(pLineEdit);
     pLayout->addWidget(pNullButton);
@@ -164,7 +164,7 @@ cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& s
     pModel->joinWith(pComboBox);
     pNullButton->setIcon(lv2g::iconNull);
     pNullButton->setCheckable(true);
-    pLayout->setMargin(0);
+    // pLayout->setMargin(0);
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
     pLayout->addWidget(pNullButton);

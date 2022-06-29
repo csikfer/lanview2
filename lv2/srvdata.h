@@ -406,7 +406,7 @@ protected:
     QString substitutions(const QString& _cmd, const QStringList& args);
     int execute(cError *&pe, const QString& _cmd, const QStringList& args = QStringList());
     QStringList         *pListCmd;          ///< interpreter parancsok listája
-    QList<QRegExp>      *pListRExp;         ///< Reguláris kifelyezések listája (sorrend azonos mint a pListCmd-ben)
+    QList<QRegularExpression> *pListRExp;   ///< Reguláris kifelyezések listája (sorrend azonos mint a pListCmd-ben)
     QList<qlonglong>    *pListReAttr;       ///< Reguláris kifelyezések attributumainak listája (sorrend azonos mint a pListCmd-ben)
     QString             *pPrepCmd;          ///< prepare (indító) parancs, ha van, egyébként NULL
     QString             *pPostCmd;          ///< post (záró) parancs, ha van, egyébként NULL

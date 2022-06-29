@@ -171,7 +171,7 @@ static bool queryTable(tRecordList<cRecordAny>& list, QSqlQuery q, cTableShape &
     return r;
 }
 
-QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, const QString& shrt, const QString& mergeKey)
+QString query2html(QSqlQuery &q, cTableShape &_shape, const QString& _where, const QVariantList& _par, const QString& shrt, const QString& mergeKey)
 {
     tRecordList<cRecordAny> list;
     if (queryTable(list, q, _shape, _where, _par, shrt)) return list2html(q, list, _shape, mergeKey);

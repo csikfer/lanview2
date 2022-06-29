@@ -1,7 +1,6 @@
 #include "gexports.h"
 #include "export.h"
 #include "cerrormessagebox.h"
-#include <QRegExp>
 #include "popupreport.h"
 
 const enum ePrivilegeLevel cExportsWidget::rights = PL_OPERATOR;

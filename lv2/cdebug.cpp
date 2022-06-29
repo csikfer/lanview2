@@ -460,7 +460,7 @@ void debugStream::sRedyLineFromThread()
 {
     if (cDebug::disabled) return;
     if (isMainThread() == false) {
-        QTextStream(stderr) << QObject::tr("ERROR void debugStream::sRedyLineFromThread() : This is not main thread.") << endl;
+        QTextStream(stderr) << QObject::tr("ERROR void debugStream::sRedyLineFromThread() : This is not main thread.") << Qt::endl;
         return;
     }
     QString m;
@@ -492,12 +492,12 @@ QString list2string(const QVariantList& __vl)
     QString r = QChar('{');
     foreach (QVariant v, __vl) {
         if (r.size() > 1) r += _sCommaSp;
-        switch (v.type()) {
-        case QVariant::ByteArray:
-        case QVariant::String:      r += quotedString(v.toString());    break;
-        case QVariant::StringList:  r += list2string(v.toStringList()); break;
-        case QVariant::List:        r += list2string(v.toList());       break;
-        case QVariant::BitArray:    r += list2string(v.toBitArray());   break;
+        switch (v.userType()) {
+        case QMetaType::QByteArray:
+        case QMetaType::QString:      r += quotedString(v.toString());    break;
+        case QMetaType::QStringList:  r += list2string(v.toStringList()); break;
+        case QMetaType::QVariantList: r += list2string(v.toList());       break;
+        case QMetaType::QBitArray:    r += list2string(v.toBitArray());   break;
         default:                    r += v.toString() + QChar('/') + v.typeName(); break;
         }
     }

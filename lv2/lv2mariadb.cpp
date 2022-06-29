@@ -172,8 +172,8 @@ enum cColStaticMyDescr::eValueCheck cColStaticMyDescrBool::check(const QVariant&
     eValueCheck r = VC_INVALID;
     if      (v.isNull() || isNumNull(v))     r = checkIfNull();
     else if (variantIsString(v))             r = strIsBool(v.toString()) ? VC_OK : VC_CONVERT;
-    else if (v.type() == QVariant::Bool)     r = VC_OK;
-    else if (v.canConvert(QVariant::Bool))   r = VC_CONVERT;
+    else if (v.userType() == QMetaType::Bool)r = VC_OK;
+    else if (v.canConvert<bool>())           r = VC_CONVERT;
     return ifExcep(r, acceptable, v);
 }
 
@@ -428,7 +428,7 @@ QVariant  cColStaticMyDescrDateTime::set(const QVariant& _f, qlonglong& str) con
         ok = !dt.isNull();
     }
     if (!ok && variantIsInteger(_f)) {
-        dt = QDateTime::fromTime_t(_f.toUInt(&ok));
+        dt = QDateTime::fromSecsSinceEpoch(_f.toUInt(&ok));
     }
     if (!ok && variantIsString(_f)) {
         QString sDt = _f.toString();
@@ -457,7 +457,7 @@ qlonglong cColStaticMyDescrDateTime::toId(const QVariant& _f) const
 {
 //    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) return NULL_ID;
-    return _f.toDateTime().toTime_t();
+    return _f.toDateTime().toMSecsSinceEpoch();
 }
 
 CDDUPDEF(cColStaticMyDescrDateTime)

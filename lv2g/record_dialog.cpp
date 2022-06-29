@@ -1,6 +1,5 @@
 #include "record_table.h"
 #include "ui_no_rights.h"
-#include "QRegExp"
 #include "lv2validator.h"
 #include "object_dialog.h"
 #include "popupreport.h"

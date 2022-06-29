@@ -447,15 +447,15 @@ void cRecordTableFilter::clearValidator()
 }
 void cRecordTableFilter::setValidatorRegExp(const QString& _re)
 {
-    QRegExp re(_re);
-    QRegExpValidator *prev;
+    QRegularExpression re(_re);
+    QRegularExpressionValidator *prev;
     if (dialog.pLineEdit1 != nullptr) {
-        prev = new QRegExpValidator(re);
+        prev = new QRegularExpressionValidator(re);
         pValidator1 = prev;
         dialog.pLineEdit1->setValidator(pValidator1);
     }
     if (dialog.pLineEdit2 != nullptr) {
-        prev = new QRegExpValidator(re);
+        prev = new QRegularExpressionValidator(re);
         pValidator2 = prev;
         dialog.pLineEdit2->setValidator(pValidator2);
     }
@@ -569,7 +569,7 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     QString s = "no";
     if (field.shapeField.isNull(_sOrdInitType) == false) s = field.shapeField.getName(_sOrdInitType);
     pType->setCurrentText(s);
-    pType->setAutoCompletion(true);
+    // pType->setAutoCompletion(true);
     connect(pUp,   SIGNAL(clicked()), this, SLOT(up()));
     connect(pDown, SIGNAL(clicked()), this, SLOT(down()));
 }
@@ -579,11 +579,11 @@ cRecordTableOrd::~cRecordTableOrd()
 
 }
 
-QString cRecordTableOrd::ord()
+QString cRecordTableOrd::ord() const
 {
     QString r;
     if (field.fieldIndex == NULL_IX) return r;  // !!!
-    act = orderType(pType->currentText(), EX_IGNORE);
+    int act = orderType(pType->currentText(), EX_IGNORE);
     switch (act) {
     case OT_ASC:    r = " ASC ";    break;
     case OT_DESC:   r = " DESC ";   break;
@@ -831,14 +831,16 @@ QStringList cRecordTableFODialog::where(QVariantList& qparams)
     return r;
 }
 
-QString cRecordTableFODialog::ord()
+QString cRecordTableFODialog::ord() const
 {
     QString r;
-    if (!ords.isEmpty()) foreach (cRecordTableOrd *pOrd, ords) {
-        QString ro = pOrd->ord();
-        if (!ro.isEmpty()) {
-            if (r.isEmpty()) r = ro;
-            else r += _sCommaSp + ro;
+    if (!ords.isEmpty()) {
+        foreach (cRecordTableOrd *pOrd, ords) {
+            QString ro = pOrd->ord();
+            if (!ro.isEmpty()) {
+                if (r.isEmpty()) r = ro;
+                else r += _sCommaSp + ro;
+            }
         }
     }
     return r;
@@ -2287,7 +2289,8 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     // Addicionális együtt kezelendő mezők
     QString ff = tsf.feature("batch_edit_fields");
     if (!ff.isEmpty()) {
-        QStringList fl = ff.split(QRegExp("[,;\\s]+"));
+        static const QRegularExpression re("[,;\\s]+");
+        QStringList fl = ff.split(re);
         foreach (QString f, fl) {
             int fix = rec.toIndex(f);
             int mix = pTableShape->shapeFields.indexOf(f);
@@ -3294,7 +3297,7 @@ void cRecordTable::autoRefresh()
 {
     QAbstractButton *pb = pButtons->button(DBT_REFRESH);
     if (pb == nullptr) EXCEPTION(EPROGFAIL);
-    pb->animateClick(500); // 0.5 sec
+    // pb->animateClick(500); // 0.5 sec
     refresh(false);
 }
 

@@ -1032,13 +1032,13 @@ public:
         IA_ERROR            ///< IndAlarm szenzor státusz hiba (down)
     }   eIfStatus;
     //
-    virtual void clearToEnd();
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual QString toString() const;
+    virtual void clearToEnd() override;
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual QString toString() const override;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
     int updateTrunkMembers(QSqlQuery& q, enum eEx __ex = EX_ERROR);
@@ -1777,8 +1777,8 @@ class LV2SHARED_EXPORT cSelect : public cRecord {
 //    FEATURES(cSelect)
 public:
     STATICIX(cSelect, Choice)
-    cSelect& choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex = EX_ERROR);
-    cSelect& choice(QSqlQuery q, const QString& _type, const cMac _val, eEx __ex = EX_ERROR);
+    cSelect& choice(QSqlQuery &q, const QString& _type, const QString& _val, eEx __ex = EX_ERROR);
+    cSelect& choice(QSqlQuery &q, const QString& _type, const cMac _val, eEx __ex = EX_ERROR);
 
 };
 

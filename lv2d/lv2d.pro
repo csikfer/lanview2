@@ -41,13 +41,12 @@ unix {
         LIBS += -lsnmp
         DEFINES += SNMP_IS_EXISTS
     }
-}
-
-exists(../../simple-mail/src) {
-    DEFINES += SYSCRON
-    SOURCES += syscronthread.cpp
-    INCLUDEPATH += ../../simple-mail/src
-    LIBS += -L../../simple-mail/build/src -lSimpleMail2Qt5
+    exists(../../simple-mail/src) {
+        DEFINES += SYSCRON
+        SOURCES += syscronthread.cpp
+        INCLUDEPATH += ../../simple-mail/src
+        LIBS += -L../../simple-mail/build/src -lSimpleMail2Qt5 #!!!!!
+    }
 }
 
 

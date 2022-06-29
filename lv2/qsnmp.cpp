@@ -114,7 +114,7 @@ QString cTable::toString(void) const
             const tVariantVector&  vv = operator[](key);
             if (vv.size() <= i) EXCEPTION(EPROGFAIL);
             QVariant v = vv[i];
-            if (v.type() == QVariant::ByteArray && v.toByteArray().contains((char)0)) {
+            if (v.userType() == QMetaType::QByteArray && v.toByteArray().contains((char)0)) {
                 r += dump(v.toByteArray()) + QChar(',');
             }
             else r += v.toString() + QChar(',');

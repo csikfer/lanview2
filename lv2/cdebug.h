@@ -305,7 +305,7 @@ inline debugStream & flush(debugStream & __ds) { return __ds.flush(); }
 @relates cDebug
 A sorpufferbe kiír egy soremelés karaktert, majd hívja a flush(debugStream & __ds) manipulátort
  */
-static inline debugStream &  endl(debugStream & __ds) { return __ds << QChar('\n') << flush; }
+inline debugStream &  endl(debugStream & __ds) { return __ds << QChar('\n') << flush; }
 
 /*!
 @brief debugStream manipulátor. Azonosító szövek kiírása

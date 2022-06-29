@@ -3,7 +3,7 @@
 cCheckBoxListLayout::cCheckBoxListLayout(QBoxLayout::Direction dir, QWidget *par)
     : QBoxLayout(dir, par)
 {
-    setMargin(0);
+    // setMargin(0);
     setSpacing(0);
     _endStretch = false;
 }

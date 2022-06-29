@@ -100,7 +100,7 @@ class LV2GSHARED_EXPORT cRecordTableOrd : public QObject {
 public:
     cRecordTableOrd(cRecordTableFODialog &par, cRecordTableColumn &_rtc, qlonglong types);
     ~cRecordTableOrd();
-    QString             ord();
+    QString             ord() const;
     bool operator<(const cRecordTableOrd& _o) const { return sequence_number < _o.sequence_number; }
     bool operator>(const cRecordTableOrd& _o) const { return sequence_number > _o.sequence_number; }
     void disableUp(bool f = true)   { pUp->setDisabled(f); pDown->setDisabled(false);}
@@ -108,7 +108,6 @@ public:
 protected:
     cRecordTableColumn& field;
     int                 ordTypes;
-    int                 act;
     int                 sequence_number;
     QLineEdit          *pRowName;
     QComboBox          *pType;
@@ -185,7 +184,7 @@ public:
     /// A szükslges paramétereket (bind) hozzáadja a qparams konténerhez.
     QStringList where(QVariantList &qparams);
     /// A rendezési utasítás az SQL select-ben
-    QString                     ord();
+    QString                     ord() const;
     /// Az aktuálisan kivállasztott filter objektummal tér vissza (?)
     cRecordTableFilter&         filter() { if (pSelFilter == nullptr) EXCEPTION(EPROGFAIL); return *pSelFilter; }
     QList<cRecordTableFilter *> filters;

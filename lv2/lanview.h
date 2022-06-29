@@ -575,4 +575,11 @@ EXT_ const QString& errtype(int e, eEx __ex);
 EXT_ cUser * getOsUser(QString& domain, QString& user);
 EXT_ bool parentIsLv2d();
 
+/// QVariant convet függvény verzió független változat
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+inline bool qvarconv(QVariant& v, QMetaType::Type t) { return v.convert(QMetaType(t)); }
+#else
+inline bool qvarconv(QVariant& v, QMetaType::Type t) { return v.convert(t); }
+#endif
+
 #endif // LANVIEW_H

@@ -1,5 +1,4 @@
 #include "lv2validator.h"
-#include "QRegExp"
 
 
 void cIntValidator::fixup(QString &input) const
@@ -45,13 +44,17 @@ void cMacValidator::fixup(QString &input) const
 QValidator::State cMacValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
-    input.remove(QChar(' '));
     if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
-    cMac    mac(input);
-    if (mac.isValid()) return setState(Acceptable);
-    QRegExp re("^[\\-:\\dABCDEF]+$", Qt::CaseInsensitive);
-    if (!re.exactMatch(input)) return setState(Invalid);
-    return setState(Intermediate);
+    static const QStringList rexps = {
+        cMac::_sMacPattern1, cMac::_sMacPattern2, cMac::_sMacPattern3, cMac::_sMacPattern4, cMac::_sMacPattern5
+    };
+    for (auto sre: rexps) {
+        const QRegularExpression re(sre, QRegularExpression::CaseInsensitiveOption);
+        QRegularExpressionMatch ma = re.match(input);
+        if (ma.hasMatch()) return setState(Acceptable);
+        if (ma.hasPartialMatch()) return setState(Intermediate);
+    }
+    return setState(Invalid);
 }
 
 void cINetValidator::fixup(QString &input) const
@@ -65,11 +68,11 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
     input.remove(QChar(' '));
     if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     QHostAddress    a(input);
-    bool isNull = a.isNull();   // IPV4 esetén hiányos címet is elfogad; IPV6 ?
+    if (!a.isNull()) return setState(Acceptable);   // IPV4 esetén hiányos címet is elfogad; IPV6 ?
     if (input.contains(':')) {  // IPV6
-        QRegExp re("^[:\\dABCDEF]+$", Qt::CaseInsensitive);
-        if (!re.exactMatch(input)) return setState(Invalid);
-        return setState(isNull ? Intermediate : Acceptable);  // ??
+        static const QRegularExpression re("^[:\\dABCDEF]+$", QRegularExpression::CaseInsensitiveOption);
+        if (!re.match(input).hasMatch()) return setState(Invalid);
+        return setState(Intermediate);  // ??
     }
     else {                      // IPV4
         QStringList nl = input.split('.');
@@ -77,13 +80,12 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
         bool ok;
         foreach (QString n, nl) {
             if (n.isEmpty()) {
-                isNull = true;
-                continue;
+                return setState(Invalid);
             }
             int i = n.toInt(&ok);
             if (i < 0 || i > 255 || !ok) return setState(Invalid);
         }
-        return setState(isNull || nl.size() != 4 ? Intermediate : Acceptable);
+        return setState(Intermediate);
     }
 }
 
@@ -99,8 +101,8 @@ QValidator::State cCidrValidator::validate(QString &input, int &pos) const
     if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     netAddress    n(input);
     if (n.isValid()) return setState(Acceptable);
-    QRegExp re("^[\\./:\\dABCDEF]+$", Qt::CaseInsensitive);
-    if (!re.exactMatch(input)) return setState(Invalid);
+    static const QRegularExpression re("^[\\./:\\dABCDEF]+$", QRegularExpression::CaseInsensitiveOption);
+    if (!re.match(input).hasMatch()) return setState(Invalid);
     return setState(Intermediate);
 }
 

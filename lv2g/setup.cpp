@@ -42,8 +42,8 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
     pUi->sqlPassLE->setText(scramble(qset.value(_sSqlPass).toString()));
     pUi->dbNameLE-> setText(qset.value(_sDbName,  _sLanView2) .toString());
 
-    QRegExp regExp("\\d+|0x[\\dA-Za-z]*");
-    pUi->debugLevelLE->setValidator(new QRegExpValidator(regExp, pUi->debugLevelLE));
+    QRegularExpression re("\\d+|0x[\\dA-Za-z]*");
+    pUi->debugLevelLE->setValidator(new QRegularExpressionValidator(re, pUi->debugLevelLE));
     pUi->debugLevelLE->setText(_sHex + QString::number(qset.value(_sDebugLevel, lanView::debugDefault).toLongLong(), 16));
     logFile = qset.value(_sLogFile, _sStdErr).toString();
     if (logFile == "-" || logFile == _sStdOut) {

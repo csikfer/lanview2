@@ -1633,7 +1633,7 @@ void cWorkstation::on_pushButtonAddDispl_clicked()
     cNode sample;
     QStringList w2d = cSysParam::getTextSysParam(*pq, "workstation2display").split(",");
     if (!w2d.isEmpty() && !w2d.first().isEmpty()) {
-        QRegExp pattern(w2d.first());
+        const QRegularExpression pattern(w2d.first());
         if (pattern.isValid()) {
             QString name = pUi->lineEditName->text();
             name.replace(pattern, w2d.size() > 1 ? w2d.at(1) : _sNul);

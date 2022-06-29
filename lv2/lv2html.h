@@ -282,7 +282,7 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
 /// @param shrt A rendezés SQL string, ha üres, akkor a _shape leíró szerinti a endezés, ha '@' akkor a név mezőre vagy ha az nincs az id-re van rendezés, ha értéke '!', akkor nincs rendezés,
 ///     illetve, ha az előzőek közül egyiksem, akkor a rendezés módját tartalmazza az "ORDER BY" szöveg együtt. Opcionális, alapértelmezetten a shape leíró szerinti rendezés.
 /// @param mergeKey Opcionális kulcs, ami alapján kiegészíti a feature változókat a shape laíróban (lásd a cFeatures osztály merge() metódustát). Opcionális, alapértelmezett érték a "report" string.
-EXT_ QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where = QString(), const QVariantList &_par = QVariantList(), const QString& shrt = QString(), const QString& mergeKey = _sReport);
+EXT_ QString query2html(QSqlQuery& q, cTableShape& _shape, const QString& _where = QString(), const QVariantList &_par = QVariantList(), const QString& shrt = QString(), const QString& mergeKey = _sReport);
 /// Rekordok beolvasása és HTML formátumú táblázat késítése.
 /// @param q Query objektum az adatbázis eléréshez
 /// @param _shapeName A megjelenítést leíró objektum (cTableShape / table_shapes) neve
@@ -290,7 +290,7 @@ EXT_ QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where 
 /// @param _par A szűrési feltétel paraméterei
 /// @param shrt A rendezés SQL string, ha üres, akkor a _shape leíró szerinti a endezés, ha '@' akkor a név mezőre vagy ha az nincs az id-re van rendezés, ha értéke '!', akkor nincs rendezés,
 /// illetve, ha az előzőek közül egyiksem, akkor a rendezés módját tartalmazza az "ORDER BY" szöveg együtt.
-inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString& _where = QString(), const QVariantList &_par = QVariantList(), const QString& shrt = QString())
+inline QString query2html(QSqlQuery& q, const QString& _shapeName, const QString& _where = QString(), const QVariantList &_par = QVariantList(), const QString& shrt = QString())
 {
     cTableShape shape;
     shape.setByName(q, _shapeName);

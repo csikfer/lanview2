@@ -347,7 +347,9 @@ bool cToolTable::exec_command(const QString& stmt, cFeatures& __f, QString& msg)
     }
     else {
         PDEB(INFO) << "Start dateched : " << dQuoted(stmt) << endl;
-        bool r = QProcess::startDetached(stmt);
+        QStringList args = QProcess::splitCommand(stmt);
+        QString cmd = args.takeFirst();
+        bool r = QProcess::startDetached(cmd, args);
         return  r;
     }
 }

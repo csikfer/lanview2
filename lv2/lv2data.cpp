@@ -145,7 +145,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex,
     else {
         switch (__t) {
         case PT_TEXT:
-            ok = __v.canConvert(QVariant::String);
+            ok = __v.canConvert<QString>();
             if (ok) r = __v.toString();
             break;
         case PT_BOOLEAN: {
@@ -154,20 +154,20 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex,
             break;
         }
         case PT_INTEGER:
-            ok = __v.canConvert(QVariant::LongLong);
+            ok = __v.canConvert<qlonglong>();
             if (ok) r = QString::number(__v.toLongLong());
             break;
         case PT_REAL:
-            ok = __v.canConvert(QVariant::Double);
+            ok = __v.canConvert<double>();
             if (ok) r = QString::number(__v.toDouble());
             break;
         case PT_INTERVAL: {
             qlonglong i = 0;
-            if (__v.canConvert(QVariant::LongLong)) {
+            if (__v.canConvert<qlonglong>()) {
                 i = __v.toLongLong(&ok);
             }
             else {
-                if (__v.canConvert(QVariant::String)) {
+                if (__v.canConvert<QString>()) {
                     i = parseTimeInterval(__v.toString(), &ok);
                 }
             }
@@ -571,7 +571,7 @@ const QString _sNode2Place = "node2place";
 cPlace& cPlace::nodeName2place(QSqlQuery& q, const QString& _nodeName)
 {
     clear();
-    QStringList exps = cSysParam::getTextSysParam(q, _sNode2Place).split(QRegExp(",\\s?"));
+    QStringList exps = cSysParam::getTextSysParam(q, _sNode2Place).split(QRegularExpression(",\\s?"));
     if (exps.isEmpty() || exps.first().isEmpty()) {
         setNote(tr("Nincs definiálva konverziós kifejezés a hely meghatározásra a név alapján!"));
         return *this;
@@ -588,10 +588,11 @@ cPlace& cPlace::nodeName2place(QSqlQuery& q, const QString& _nodeName)
     }
     exps.pop_front();
     QString emsg;
-    foreach (QString exp, exps) {
-        QRegExp re(exp);
-        if (re.indexIn(_nodeName) >= 0) {
-            QString name = re.cap(1);   // $1
+    for (auto exp: exps) {
+        QRegularExpression re(exp);
+        QRegularExpressionMatch ma;
+        if (_nodeName.indexOf(re, 0, &ma) >= 0) {
+            QString name = ma.captured(1);   // $1
             if (c == C_INSENSITIVE) {
                 const QString sql = "SELECT * FROM places WHERE place_name ILIKE ?";
                 if (execSql(q, sql, name)) set(q);
@@ -3901,7 +3902,7 @@ int cSelect::_ixChoice   = NULL_IX;
 
 CRECDEFD(cSelect)
 
-cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex)
+cSelect& cSelect::choice(QSqlQuery& q, const QString& _type, const QString& _val, eEx __ex)
 {
     static QString sql =
             "SELECT * FROM selects "
@@ -3925,7 +3926,7 @@ cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val,
     return *this;
 }
 
-cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const cMac _val, eEx __ex)
+cSelect& cSelect::choice(QSqlQuery &q, const QString& _type, const cMac _val, eEx __ex)
 {
     static QString sql =
             "SELECT * FROM selects "

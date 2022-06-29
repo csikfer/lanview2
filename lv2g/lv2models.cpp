@@ -359,7 +359,7 @@ QVariant cRecordListModel::data(const QModelIndex &index, int role) const
     }
     if (isContIx(stateList, row)) {
         switch (role) {
-        case Qt::TextColorRole:
+        case Qt::ForegroundRole:
             if (decorateFlags & ENUM2SET(FF_FG_COLOR)) {
                 return fgColorByEnum(decorateByEnum, stateList.at(row));
             }

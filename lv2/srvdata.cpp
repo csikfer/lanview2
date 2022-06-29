@@ -1230,33 +1230,24 @@ int cQueryParser::captureAndParse(QString src,  cError *&pe)
     // Sanity check
     if (pListCmd == nullptr || pListRExp == nullptr || pListReAttr == nullptr
      || pListCmd->size() != pListRExp->size() || pListCmd->size() != pListReAttr->size()) EXCEPTION(EPROGFAIL);
-    int i, n = pListCmd->size();
+    int r, i, n = pListCmd->size();
     // Foreach all regular expressions
     for (i = 0; i < n; i++) {
-        QRegExp   rexp = pListRExp->at(i);      // Regular expr.
+        QRegularExpression   rexp = pListRExp->at(i);      // Regular expr.
+        QRegularExpressionMatch match;
         qlonglong reat = pListReAttr->at(i);    // Atrributum (set)
         // PDEB(VERBOSE) << src << " ~ " << rexp.pattern() << " - " << reat << endl;
         const QString& cmd = pListCmd->at(i);
-        if (ENUM2SET(RA_EXACTMATCH) & reat) {
-            if (rexp.exactMatch(src)) {
-                return execute(pe, cmd, rexp.capturedTexts());
-            }
-        }
-        else {
-            int ix = rexp.indexIn(src);
-            if (ix == -1) continue;
+        QRegularExpressionMatch ma;
+        for (qsizetype ix = 0; ix >= 0 && ix < src.size(); ix = src.indexOf(rexp, ix, &ma)) {
+            r = execute(pe, cmd, ma.capturedTexts());
+            if (R_ERROR == r) return R_ERROR;
             if (ENUM2SET(RA_LOOP) & reat) {
-                int r;
-                do {
-                    r = execute(pe, cmd, rexp.capturedTexts());
-                    if (R_ERROR == r) return R_ERROR;
-                } while ((ix = rexp.indexIn(src, ix)) > -1);
-                return r;
-            }
-            else {
-                return execute(pe, cmd, rexp.capturedTexts());
+                ix = ix + ma.captured(0).size();
+                continue;
             }
         }
+        return r;
     }
     PDEB(VVERBOSE) << "Nincs illeszkedes : " << src << endl;
     return R_NOTFOUND;
@@ -1334,15 +1325,20 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
     clear().setId(ixServiceId, id).setName(_sParseType, _sParse);
     int n = completion(q);
     if (n == 0) return R_NOTFOUND;
-    pListRExp = new QList<QRegExp>;
+    pListRExp = new QList<QRegularExpression>;
     pListReAttr = new QList<qlonglong>;
     pListCmd  = new QStringList;
     do {
         *pListCmd << getName(_sImportExpression);
         qlonglong reat = getId(_sRegexpAttr);
         if (reat == NULL_ID) reat = 0;
-        enum Qt::CaseSensitivity cs = reat & ENUM2SET(RA_CASESENSITIVE) ? Qt::CaseSensitive : Qt::CaseInsensitive;
-        QRegExp rexp(getName(_sRegularExpression),cs);
+        QRegularExpression::PatternOptions mt = reat & ENUM2SET(RA_CASESENSITIVE) ?  QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+        QString sre = getName(_sRegularExpression);
+        if (reat & ENUM2SET(RA_EXACTMATCH)) {
+            if (!sre.startsWith(QChar('^'))) sre.prepend(QChar('^'));
+            if (!sre.endsWith(QChar('$')))   sre.append(QChar('$'));
+        }
+        QRegularExpression rexp(sre, mt);
         if (!rexp.isValid()) EXCEPTION(EDATA, getId(), getName(_sRegularExpression));
         *pListRExp   << rexp;
         *pListReAttr << reat;
@@ -1454,14 +1450,16 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 void cQueryParser::debugLineReady()
 {
     QString s = cDebug::getInstance()->dequeue();
-    QRegExp  re("^([\\da-f]{8})\\s(.+)$");
-    if (re.exactMatch(s)) {
+    QRegularExpression  re("^([\\da-f]{8})\\s(.+)$");
+    QRegularExpressionMatch ma;
+    ma = re.match(s);
+    if (ma.hasMatch()) {
 //      bool ok;
 //      QString sm = re.cap(1);
 //      qulonglong m = sm.toULongLong(&ok, 16);
 //      if (!ok) EXCEPTION(EPROGFAIL);
 //      if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
-            s = re.cap(2).trimmed();
+            s = ma.captured(2).trimmed();
             _debugLines << s;
 //      }
     }

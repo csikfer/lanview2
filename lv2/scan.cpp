@@ -175,7 +175,8 @@ int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
     QString line;
     int r = 0;
     while ((line = str.readLine()).isEmpty() == false) {
-        QStringList fl = line.split(QRegExp("\\s+"));
+        static const QRegularExpression re;
+        QStringList fl = line.split(re);
         QHostAddress addr(fl[0]);
         QString em;
         if (addr.isNull()) {
@@ -298,14 +299,15 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
     while (!__f.atEnd()) {
         QString line = QString(__f.readLine()).trimmed();
         if (line.isEmpty()) continue;
-        QRegExp firstLine("lease\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*\\{");   // Is Begin Block ?
+        static const QRegularExpression firstLine("^lease\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*\\{$");   // Is Begin Block ?
+        QRegularExpressionMatch ma;
         QHostAddress addr;
         cMac         mac;
-        if (!firstLine.exactMatch(line)) {
+        if (!(ma = firstLine.match(line)).hasMatch()) {
             PDEB(WARNING) << "Dropped line : " << quotedString(line) << endl;
             continue;
         }
-        addr.setAddress(firstLine.cap(1));
+        addr.setAddress(ma.captured(1));
         if (addr.isNull()) {
             PDEB(WARNING) << "Invalid IP address, line : "  << quotedString(line) << endl;
             continue;
@@ -317,18 +319,19 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
             if (line == "}") break;                             // Is En Of Block
             if (active == TS_FALSE) continue;                   // Inactive : Scan End Of Block
             if (active == TS_TRUE && mac.isValid()) continue;   // Ready    : Scan End Of Block
-            QRegExp stateLine("binding\\s+state\\s+(\\w+)\\s*;");   // State ?
-            if (stateLine.exactMatch(line)) {
-                if (stateLine.cap(1) == QString("active")) {
+            static const QRegularExpression stateLine("^binding\\s+state\\s+(\\w+)\\s*;$");   // State ?
+            QRegularExpressionMatch ma;
+            if ((ma = stateLine.match(line)).hasMatch()) {
+                if (ma.captured(1) == QString("active")) {
                     active = TS_TRUE;
                 }
                 else {
                     active = TS_FALSE;
                 }
             }
-            QRegExp macLine("hardware\\s+ethernet\\s+([a-fA-F\\d:]+)\\s*;");    // MAC ?
-            if (macLine.exactMatch(line)) {
-                mac.set(macLine.cap(1));
+            static const QRegularExpression macLine("^hardware\\s+ethernet\\s+([a-fA-F\\d:]+)\\s*;$");    // MAC ?
+            if ((ma = macLine.match(line)).hasMatch()) {
+                mac.set(ma.captured(1));
                 if (mac.isEmpty()) {
                     PDEB(INFO) << "Invalid MAC address, line : "  << quotedString(line) << endl;
                     active = TS_FALSE;
@@ -528,8 +531,8 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             if (ifName == ifDescr) ifName = QString::fromLatin1(ban);   // ???
             ifDescr = ban;
             if (ifType == IFTYPE_IANA_ID_ETH) {    // Guess at who the real Ethernet interfaces
-                QRegExp pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
-                if (0 > pat.indexIn(ifName)) {
+                const QRegularExpression pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
+                if (pat.match(ifName).hasMatch()) {
                     pIfType = &cIfType::ifType("veth"); // Is virtual (maybe)
                 }
             }
@@ -753,7 +756,8 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
         if (!sel.isEmptyRec()) {
             QString s = sel.getName(_sChoice);
             if (!s.isEmpty()) {
-                QStringList sl = s.split(QRegExp(",\\s*"));
+                const QRegularExpression re;
+                QStringList sl = s.split(re);
                 type |= pnte->lst2set(sl);
             }
         }
@@ -1325,13 +1329,13 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
                  << "Choice" << sep
                  << "name"  << sep << "address" << sep << "descr" << sep
                  << "pname" << sep << "pdescr" << sep
-                 << "cmac" << sep << "pmac" << endl;
+                 << "cmac" << sep << "pmac" << Qt::endl;
         }
         strm << quotedString(pDev->getName()) << sep << port_ix << sep
              << choice << sep
              << quotedString(row.name)  << sep << row.addr.toString() << sep << quotedString(row.descr) << sep
              << quotedString(row.pname) << sep << quotedString(row.pdescr) << sep
-             << row.cmac.toString() << sep << row.pmac.toString() << endl;
+             << row.cmac.toString() << sep << row.pmac.toString() << Qt::endl;
         f.close();
     }
 #endif
@@ -1498,7 +1502,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
                      << "RemPortId" << sep << "dump" << sep
                      << "RemPortDesc" << sep
                      << "RemSysDesc" << sep
-                     << "RemSysName" << endl;
+                     << "RemSysName" << Qt::endl;
             }
             strm << quotedString(pDev->getName()) << sep << index << sep
                  << sRemChassisIdSubtype << sep
@@ -1507,7 +1511,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
                  << quotedString(RemPortId.toString()) << sep << dump(RemPortId.toByteArray()) << sep
                  << quotedString(RemPortDesc) << sep
                  << quotedString(RemSysDesc) << sep
-                 << quotedString(RemSysName) << endl;
+                 << quotedString(RemSysName) << Qt::endl;
             f.close();
         }
 #endif
@@ -2476,7 +2480,7 @@ cMac ip2macByArpTable(const QHostAddress& a)
 
 #else   // !defined(Q_OS_WINDOWS)
     static const QString arpFileName = "/proc/net/arp";
-    QRegExp sep("\\s+");
+    const QRegularExpression sep("\\s+");
     QFile   fArp(arpFileName);
     if (fArp.open(QIODevice::ReadOnly)) {
         QTextStream str(&fArp);
@@ -2503,7 +2507,7 @@ QHostAddress mac2ipByArpTable(const cMac& a)
 #if defined(Q_OS_WINDOWS)
 #else   // !defined(Q_OS_WINDOWS)
     static const QString arpFileName = "/proc/net/arp";
-    QRegExp sep("\\s+");
+    const QRegularExpression sep("\\s+");
     QFile   fArp(arpFileName);
     if (fArp.open(QIODevice::ReadOnly)) {
         QTextStream str(&fArp);
@@ -2539,21 +2543,25 @@ bool parseProcTable(const QString& _fname, cTable& table, QString *pMsg, const Q
     QTextStream strm(&file);
     QString line;           // Egy beolvasott sor
     QStringList slHead;     // A fejléc
+    QRegularExpression re;
     switch (headSize) {
     case 1:
         line = strm.readLine();
-        slHead = slSimplified(line.split(QRegExp(sFSep)));
+        re.setPattern(sFSep);
+        slHead = slSimplified(line.split(re));
         break;
     case 2: {
         line = strm.readLine();
-        QStringList slSect1 = slSimplified(line.split(QRegExp(sSSep)));
+        re.setPattern(sSSep);
+        QStringList slSect1 = slSimplified(line.split(re));
         line = strm.readLine();
-        QStringList slSect2 = slSimplified(line.split(QRegExp(sSSep)));
+        QStringList slSect2 = slSimplified(line.split(re));
         QString s = slSect1.takeFirst() + slSect2.takeFirst();
         s.remove(QChar('-'));
         slHead << s;
+        re.setPattern(sFSep);
         while (!slSect1.isEmpty()) {
-            QStringList sl = slSimplified(slSect2.takeFirst().split(QRegExp(sFSep)));
+            QStringList sl = slSimplified(slSect2.takeFirst().split(re));
             sl = slPrepend(sl, slSect1.takeFirst().simplified().prepend("-"));
             slHead << sl;
         }
@@ -2564,8 +2572,9 @@ bool parseProcTable(const QString& _fname, cTable& table, QString *pMsg, const Q
     }
     table << slHead;
     int rows = table.rows();
+    re.setPattern(sFSep);
     while (!(line = strm.readLine()).isEmpty()) {
-        QStringList row = slSimplified(line.split(QRegExp(sFSep)));
+        QStringList row = slSimplified(line.split(re));
         int n = row.size();
         for (int i = 0; i < rows; ++i) {
             QString key = slHead[i];

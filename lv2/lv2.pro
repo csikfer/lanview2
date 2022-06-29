@@ -2,19 +2,14 @@ CONFIG -= debug_and_release
 CONFIG += C++14
 
 # A git-nek a path-on kell lennie Windows-nál is!!
-REVISION = $$system(git rev-list --count HEAD)
-DEFINES += REVISION=$$REVISION
+#REVISION = $$system(git rev-list --count HEAD)
+#DEFINES += REVISION=$$REVISION
 
 #bison definition
 bison.name = Bison
 bison.input = BISONSOURCES
 bison.output = ${QMAKE_FILE_BASE}_yy.cpp
-# Ez itt gányolás, bocsi, de nem találtam olyan bisont, ami érti a win. path-nevet, és  a név konvertió sem müködik
-#msvc {
-#    bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ../../lanview2/lv2/import_parser.yy
-#} else {
-    bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
-#}
+bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
 bison.clean = rm ${QMAKE_FILE_OUT}
 bison.CONFIG += target_predeps
 bison.variable_out = SOURCES
@@ -25,12 +20,7 @@ msvc:INCLUDEPATH += "."
 m4h.name = m4h
 m4h.input = M4HEADER
 m4h.output = ${QMAKE_FILE_IN_PATH}/${QMAKE_FILE_BASE}.h
-# És jobb híján újra csak gányolunk
-#msvc {
-#    m4h.commands = m4 -I../../lanview2/lv2 <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
-#} else {
-    m4h.commands = m4 -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
-#}
+m4h.commands = m4 -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4h.clean = rm ${QMAKE_FILE_OUT}
 m4h.CONFIG += target_predeps
 m4h.variable_out = HEADERS
@@ -40,12 +30,7 @@ QMAKE_EXTRA_COMPILERS += m4h
 m4c.name = m4c
 m4c.input = M4SOURCE
 m4c.output =${QMAKE_FILE_BASE}.cpp
-# gányolás !!! ...
-#msvc {
-#    m4c.commands = m4 -I../../lanview2/lv2 <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
-#} else {
-    m4c.commands = m4 -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
-#}
+m4c.commands = m4 -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4c.clean = rm ${QMAKE_FILE_OUT}
 m4c.CONFIG += target_predeps
 m4c.variable_out = SOURCES
@@ -60,10 +45,10 @@ DEPENDPATH   += $$TARGETPATH
 OTHER_FILES += $$BISONSOURCES \
     $$M4HEADER $$M4SOURCE lv2dict.m4
 
-QT += network \
-    sql \
-    xml
+QT += core network sql xml
 QT -= gui
+
+# equals(QT_MAJOR_VERSION, 6):
 
 TARGET = lv2
 TEMPLATE = lib

@@ -7,7 +7,11 @@ cGSetupWidget::cGSetupWidget(QMdiArea *par)
     : cIntSubObj(par)
     , qset(*lanView::getInstance()->pSet)
 {
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    pSoundPlayer = nullptr;
+#else
     pSound = nullptr;
+#endif
     enum Qt::Orientation splOrient = lv2g::getInstance()->defaultSplitOrientation;
     QString sounFileAlarm = lv2g::getInstance()->soundFileAlarm;
     int maxRows = lv2g::getInstance()->maxRows;
@@ -105,9 +109,18 @@ void cGSetupWidget::testAlarmFile()
         cMsgBox::warning(tr("Nincs megadva hang fájl."), this);
         return;
     }
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    pDelete(pSoundPlayer);
+    pSoundPlayer = new QMediaPlayer(this);
+    QUrl url;
+    url.setPath(fn);
+    pSoundPlayer->setLoops(1);
+    pSoundPlayer->play();
+#else
     pDelete(pSound);
     pSound = new QSound(fn, this);
     pSound->setLoops(1);
     pSound->play();
+#endif
 }
 

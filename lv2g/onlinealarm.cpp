@@ -14,8 +14,16 @@ cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
             this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
     pTargetRec = pActRecord = nullptr;
     isTicket  = false;
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    pSoundplayer = new QMediaPlayer(this);
+    QUrl url;
+    url.setPath(lv2g::getInstance()->soundFileAlarm);
+    pSoundplayer->setSource(url);
+    pSoundplayer->setLoops(QMediaPlayer::Infinite);
+#else
     pSound = new QSound(lv2g::getInstance()->soundFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
+#endif
     pq = newQuery();
     isAdmin = lanView::user().privilegeLevel() >= PL_ADMIN;
 
@@ -314,6 +322,15 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
             isAlarm = true;     // Nem nézte még meg, riasztunk
         }
     }
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    if (isAlarm) {                  // Riasztás
+        pSoundplayer->play();             // Sziréna (ha van hangfájl.)
+        if (lv2g::pMainWindow != nullptr) {    // Aktíváljuk az ablakot
+            lv2g::pMainWindow->pMdiArea->setActiveSubWindow(pSubWindow);
+        }
+    }
+    else         pSoundplayer->stop();    // Nincs riasztás, hanjelzés kikapcsol
+#else
     if (isAlarm) {                  // Riasztás
         pSound->play();             // Sziréna (ha van hangfájl.)
         if (lv2g::pMainWindow != nullptr) {    // Aktíváljuk az ablakot
@@ -321,6 +338,7 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
         }
     }
     else         pSound->stop();    // Nincs riasztás, hanjelzés kikapcsol
+#endif
 }
 
 // Változás, frissíteni kell

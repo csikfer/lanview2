@@ -5,7 +5,6 @@
 #include <QObject>
 #include <QHostAddress>
 #include <QTcpSocket>
-#include <QRegExp>
 
 class QTelnet : public QObject
 {
@@ -32,13 +31,13 @@ public slots:
 
 private:
     void init();
-    int         port;       ///< TCP port száma
-    QRegExp     prompt;     ///< Command promt
-    QRegExp     userPrompt; ///< User név elötti prompt
-    QRegExp     pwdPrompt;  ///< Password elötti prompt
-    QRegExp     frstMsg;    ///< Opcionális bevezető üzenet
-    QString     frstAnsver; ///< Az esetleges bevezető üzenetre adott válasz.
-    QTcpSocket *socket;     ///<
+    int                 port;       ///< TCP port száma
+    QRegularExpression  prompt;     ///< Command promt
+    QRegularExpression  userPrompt; ///< User név elötti prompt
+    QRegularExpression  pwdPrompt;  ///< Password elötti prompt
+    QRegularExpression  frstMsg;    ///< Opcionális bevezető üzenet
+    QString             frstAnsver; ///< Az esetleges bevezető üzenetre adott válasz.
+    QTcpSocket *        socket;     ///<
 };
 
 #endif // QTELNET_H

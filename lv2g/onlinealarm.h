@@ -5,7 +5,11 @@
 #include "srvdata.h"
 #include "lv2user.h"
 #include "record_table.h"
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+#include <QMediaPlayer>
+#else
 #include "QSound"
+#endif
 
 class  cAckDialog;
 
@@ -45,7 +49,11 @@ private:
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
     QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    QMediaPlayer *  pSoundplayer;
+#else
     QSound *        pSound;
+#endif
 protected:
     cRecord *       pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
     cRecord *       pTargetRec;     /// Normál esetben azonos a pActRecord -al, ticket esetén az eredeti rekordot tartalmazza

@@ -103,8 +103,8 @@ public:
 };
 
 
-inline void scanByLldp(QSqlQuery&, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
-inline void lldpInfo(QSqlQuery&, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
+inline void scanByLldp(QSqlQuery&, const cSnmpDevice&, bool _parser = false, bool _refresh = false) { (void)_parser; (void)_refresh; EXCEPTION(ENOTSUPP); }
+inline void lldpInfo(QSqlQuery&, const cSnmpDevice&, bool _parser = false, bool _refresh = false) { (void)_parser; (void)_refresh; EXCEPTION(ENOTSUPP); }
 inline void exploreByAddress(cMac, QHostAddress, cSnmpDevice&) { EXCEPTION(ENOTSUPP); }
 
 #endif // SNMP_IS_EXIST

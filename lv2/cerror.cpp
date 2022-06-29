@@ -159,12 +159,13 @@ void cError::circulation()
 
     if (errCount() > mMaxErrCount) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
-        cerr << QObject::tr("*** Error circulation **** Thread object name %1").arg(mThreadName) << endl;
+        cerr << QObject::tr("*** Error circulation **** Thread object name %1").arg(mThreadName) << Qt::endl;
         int n = 1;
         foreach (cError * pe, errorList) {
             qlonglong eid = sendError(pe);
             QString em = eid == NULL_ID ? QObject::tr("\n --- A hiba rekord kiírása sikertelen.") : QObject::tr("\n --- Kiírt hiba rekord id : %1").arg(eid);
-            cerr << "[#" << n++ << QChar(']') << QChar(' ') << pe->msg() << em << endl;
+            cerr << "[#" << n++ << QChar(']') << QChar(' ') << pe->msg() << em
+                 << Qt::endl;
             ++n;
         }
         exit(-1);
@@ -252,7 +253,7 @@ QString cError::msg() const
         r += QString("\n\nDebug lines :\n") +  mDebugLines;
     }
     if (pErrorNested != nullptr) {
-        r += "\n\n" + QString('-', 10) + "\n";
+        r += "\n\n" + QString(10, QChar('-')) + "\n";
         r += pErrorNested->msg();
     }
     return r;
@@ -314,12 +315,20 @@ QString _sql_err_bound(QSqlQuery& q, const QString& pref)
     if (q.boundValues().isEmpty()) {
         return QString();
     }
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    QListIterator<QVariant> i(q.boundValues());
+    QString r;
+    while (i.hasNext()) {
+        r += debVariantToString(i.next()) + "; ";
+    }
+#else
     QMapIterator<QString, QVariant> i(q.boundValues());
     QString r;
     while (i.hasNext()) {
         i.next();
         r += i.key() + " = " + debVariantToString(i.value()) + "; ";
     }
+#endif
     r.chop(2);
     return  pref + r;
 }

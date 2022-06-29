@@ -127,11 +127,11 @@ QString   cMac::toString() const
     return r.right(17);
 }
 
-const QString cMac::_sMacPattern1 = "([A-F\\d]{6,12})";
-const QString cMac::_sMacPattern2 = "([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})";
-const QString cMac::_sMacPattern3 = "([A-F\\d]{1,6})-([A-F\\d]{1,6})";
-const QString cMac::_sMacPattern4 = "(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";
-const QString cMac::_sMacPattern5 = "([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})";
+const QString cMac::_sMacPattern1 = "^([A-F\\d]{6,12})^$";
+const QString cMac::_sMacPattern2 = "^([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})$";
+const QString cMac::_sMacPattern3 = "^([A-F\\d]{1,6})-([A-F\\d]{1,6})$";
+const QString cMac::_sMacPattern4 = "^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$";
+const QString cMac::_sMacPattern5 = "^([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})$";
 cMac& cMac::set(const QString& __mac)
 {
     QString s = __mac.simplified();
@@ -139,34 +139,33 @@ cMac& cMac::set(const QString& __mac)
     val = 0LL;
     if (s.isEmpty()) return *this;
     bool ok = true;
-    Qt::CaseSensitivity cs = Qt::CaseInsensitive;
-    QRegExp pat;
-    if ((pat = QRegExp(_sMacPattern1, cs)).exactMatch(s)) {
-        val = pat.cap(1).toLongLong(&ok, 16);
+    QRegularExpression re;
+    re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatch match;
+    if (re.setPattern(_sMacPattern1), (match = re.match(s)).hasMatch()) {
+        val = match.captured(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if ((pat = QRegExp(_sMacPattern2, cs)).exactMatch(s)
-          || (pat = QRegExp(_sMacPattern5, cs)).exactMatch(s)) {
+    else if ((re.setPattern(_sMacPattern2), (match = re.match(s)).hasMatch())
+          || (re.setPattern(_sMacPattern5), (match = re.match(s)).hasMatch())) {
         for (int i = 1; i <= 6; ++i) {
             val <<= 8;
-            val |= pat.cap(i).toLongLong(&ok, 16);
+            val |= match.captured(i).toInt(&ok, 16);
             if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
-            // PDEB(VVERBOSE) << "#" << i << " : " << pat.cap(i) << " : " << hex << val << dec << endl;
         }
-        // PDEB(VVERBOSE) << "val = " << hex << val << dec << endl;
     }
-    else if ((pat = QRegExp(_sMacPattern3, cs)).exactMatch(s)) {
-        val =  pat.cap(1).toLongLong(&ok, 16);
+    else if (re.setPattern(_sMacPattern3), (match = re.match(s)).hasMatch()) {
+        val |= match.captured(1).toLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
         val <<= 24;
-        val |= pat.cap(2).toLongLong(&ok, 16);
+        val |= match.captured(2).toLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if ((pat = QRegExp(_sMacPattern4, cs)).exactMatch(s)) {
+    else if (re.setPattern(_sMacPattern1), (match = re.match(s)).hasMatch()) {
         QString t(__mac);
         for (int i = 1; i <= 6; ++i) {
-            qlonglong d = pat.cap(i).toLongLong(&ok, 10);
-            if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
+        int d = match.captured(i).toInt(&ok);
+        if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
             if (d > 255) {
                 DERR() << "Invalid MAC decimal value : \"" << __mac << "\"" << endl;
                 val = -1LL; // Invaidbool operator<(const QHostAddress& __a1, const QHostAddress& __a);
@@ -203,41 +202,44 @@ cMac& cMac::set(const QByteArray& __mac)
 cMac& cMac::set(const QVariant& __mac)
 {
     if (__mac.isNull()) val = 0LL;
-    else switch (__mac.type()) {
-        case QVariant::LongLong:
-        case QVariant::ULongLong:   return set(__mac.toLongLong());
-        case QVariant::ByteArray:   return set(__mac.toByteArray());
-        case QVariant::String:      return set(__mac.toString());
-        default:
-            DERR() << "Invalid MAC QVariant type : " << __mac.typeName() << endl;
-            val = -1LL;
-            break;
+    else switch (__mac.userType()) {
+    case QMetaType::LongLong:
+    case QMetaType::ULongLong:  return set(__mac.toLongLong());
+    case QMetaType::QString:    return set(__mac.toString());
+    case QMetaType::QByteArray: return set(__mac.toByteArray());
+    default:
+        DERR() << "Invalid MAC QVariant type : " << __mac.typeName() << endl;
+        val = -1LL;
+        break;
     }
+
     return *this;
 }
 
 bool cMac::isValid(const QString& v)
 {
     if (v.isEmpty()) return false;
-    Qt::CaseSensitivity cs = Qt::CaseInsensitive;
-//    PDEB(VVERBOSE) << "Patterns : " << _sMacPattern1 << _sCommaSp << _sMacPattern2 << _sCommaSp
-//                                    << _sMacPattern3 << _sCommaSp << _sMacPattern4 << _sCommaSp
-//                                    << _sMacPattern5 << endl;
-    if (QRegExp(_sMacPattern1, cs).exactMatch(v)) return true;
-    if (QRegExp(_sMacPattern2, cs).exactMatch(v)) return true;
-    if (QRegExp(_sMacPattern3, cs).exactMatch(v)) return true;
-    QRegExp rxpat;
-    rxpat.setPattern(_sMacPattern4);
-    if (rxpat.exactMatch(v)) {
+    QRegularExpression re;
+    re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+    re.setPattern(_sMacPattern1);
+    if (re.match(v).hasMatch()) return true;
+    re.setPattern(_sMacPattern2);
+    if (re.match(v).hasMatch()) return true;
+    re.setPattern(_sMacPattern3);
+    if (re.match(v).hasMatch()) return true;
+    re.setPattern(_sMacPattern5);
+    if (re.match(v).hasMatch()) return true;
+    re.setPattern(_sMacPattern4);
+    QRegularExpressionMatch match = re.match(v);
+    if (match.hasMatch()) {
         for (int i = 1; i <= 6; ++i) {
             bool ok;
-            int d = rxpat.cap(i).toInt(&ok, 10);
+            int d = match.captured(i).toInt(&ok, 10);
             if (!ok) EXCEPTION(EPROGFAIL, -1, v);
             if (d > 255) return false;
         }
         return true;
     }
-    if (QRegExp(_sMacPattern5).exactMatch(v)) return true;
     return false;
 }
 
@@ -252,7 +254,7 @@ bool cMac::isValid(const QVariant& v)
     case QMetaType::LongLong:
     case QMetaType::ULongLong:   return isValid(v.toLongLong());
     case QMetaType::QByteArray:  return isValid(v.toByteArray());
-    case QVariant::String:       return isValid(v.toString());
+    case QMetaType::QString:     return isValid(v.toString());
     }
     return false;
 }
@@ -556,12 +558,12 @@ netAddress& netAddress::setNetByName(const QString& __nn)
     if (networks.open(QIODevice::ReadOnly)) {
         QTextStream strm(&networks);
         QString     line;
-        QRegExp     sep("\\s+");
+        QRegularExpression     sep("\\s+");
         while (!(line = strm.readLine()).isNull()) {
             int i = line.indexOf(QString('#')); // kommentek
             if (i == 0) continue;
             if (i >  1) line = line.left(i);
-            QStringList fields = line.split(sep,QString::SkipEmptyParts);
+            QStringList fields = line.split(sep, Qt::SkipEmptyParts);
             if (fields.count() < 2) {
                 DWAR() << "Invalid /etc/networks line : " << line;
                 continue;
@@ -874,17 +876,11 @@ void initUserMetaTypes()
 {
     if (_UMTID_cMac == QMetaType::UnknownType) {
 
-        qRegisterMetaType<tPolygonF>     (__sTPolygonF);
-        qRegisterMetaType<QHostAddress> (__sQHostAddress);
-        qRegisterMetaType<cMac>         (__sCMac);
-        qRegisterMetaType<netAddress>   (__sNetAddress);
-        qRegisterMetaType<netAddressList>(__sNetAddressList);
-
-        _UMTID_tPolygonF       =  QMetaType::type(__sTPolygonF);
-        _UMTID_QHostAddress    =  QMetaType::type(__sQHostAddress);
-        _UMTID_cMac            =  QMetaType::type(__sCMac);
-        _UMTID_netAddress      =  QMetaType::type(__sNetAddress);
-        _UMTID_netAddressList  =  QMetaType::type(__sNetAddressList);
+        _UMTID_tPolygonF       =  qRegisterMetaType<tPolygonF>     (__sTPolygonF);
+        _UMTID_QHostAddress    =  qRegisterMetaType<QHostAddress>  (__sQHostAddress);
+        _UMTID_cMac            =  qRegisterMetaType<cMac>          (__sCMac);
+        _UMTID_netAddress      =  qRegisterMetaType<netAddress>    (__sNetAddress);
+        _UMTID_netAddressList  =  qRegisterMetaType<netAddressList>(__sNetAddressList);
 
         if (_UMTID_tPolygonF      == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a tPolygonF típushoz.");
         if (_UMTID_QHostAddress   == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QHostAddress típushoz.");

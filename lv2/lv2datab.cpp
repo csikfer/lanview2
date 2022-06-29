@@ -83,7 +83,7 @@ bool strIsBool(const QString& _b)
     return boolValues.contains(_b, Qt::CaseInsensitive);
 }
 
-static qlonglong __schemaoid(QSqlQuery q, const QString& __s)
+static qlonglong __schemaoid(QSqlQuery& q, const QString& __s)
 {
     // DBGFN();
     QString sql = "SELECT oid FROM pg_namespace WHERE nspname = ?";
@@ -94,7 +94,7 @@ static qlonglong __schemaoid(QSqlQuery q, const QString& __s)
     return q.value(0).toInt();
 }
 
-qlonglong schemaoid(QSqlQuery q, const QString& __s)
+qlonglong schemaoid(QSqlQuery& q, const QString& __s)
 {
     // DBGFN();
     static qlonglong _publicSchemaOId = NULL_ID;
@@ -107,7 +107,7 @@ qlonglong schemaoid(QSqlQuery q, const QString& __s)
     return __schemaoid(q, __s);
 }
 
-qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, eEx __ex)
+qlonglong tableoid(QSqlQuery &q, const QString& __t, qlonglong __sid, eEx __ex)
 {
     // DBGFN();
     if (__sid == NULL_ID) __sid = schemaoid(q, _sPublic);
@@ -123,7 +123,7 @@ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, eEx __ex)
     return q.value(0).toInt();
 }
 
-tStringPair tableoid2name(QSqlQuery q, qlonglong toid)
+tStringPair tableoid2name(QSqlQuery& q, qlonglong toid)
 {
     QString sql =
             " SELECT pg_class.relname, pg_namespace.nspname"
@@ -479,25 +479,26 @@ enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cCol
     }
     else switch (eColType) {
     case FT_INTEGER:
-        if (v.canConvert(QVariant::LongLong)) switch (v.type()) {
-        case QVariant::Int:
-        case QVariant::LongLong:    r = VC_OK;      break;
+        if (v.canConvert<qlonglong>()) switch (v.userType()) {
+        case QMetaType::Int:
+        case QMetaType::LongLong:   r = VC_OK;      break;
         default:                    r = VC_CONVERT; break;
         }
         break;
     case FT_REAL:
-        if (v.canConvert(QVariant::Double)) switch (v.type()) {
-        case QVariant::Double:      r = VC_OK;      break;
+        if (v.canConvert<double>()) switch (v.userType()) {
+        case QMetaType::Double:
+        case QMetaType::Float :     r = VC_OK;      break;
         default:                    r = VC_CONVERT; break;
         }
         break;
     case FT_BINARY:
-        r = v.canConvert(QVariant::ByteArray)? VC_OK : VC_INVALID;
+        r = v.canConvert<QByteArray>()? VC_OK : VC_INVALID;
         break;
     case FT_TEXT:
-        if (v.canConvert(QVariant::String)) {
+        if (v.canConvert<QString>()) {
             if (chrMaxLenghr > 0 && chrMaxLenghr < v.toString().size()) r = VC_TRUNC;
-            else r = v.type() == QVariant::String ? VC_OK : VC_CONVERT;
+            else r = v.userType() == QMetaType::QString ? VC_OK : VC_CONVERT;
         }
         break;
     default:
@@ -724,8 +725,8 @@ enum cColStaticDescr::eValueCheck cColStaticDescrBool::check(const QVariant& v, 
     eValueCheck r = VC_INVALID;
     if      (v.isNull() || isNumNull(v))     r = checkIfNull();
     else if (variantIsString(v))             r = strIsBool(v.toString()) ? VC_OK : VC_CONVERT;
-    else if (v.type() == QVariant::Bool)     r = VC_OK;
-    else if (v.canConvert(QVariant::Bool))   r = VC_CONVERT;
+    else if (v.userType() == QMetaType::Bool)r = VC_OK;
+    else if (v.canConvert<bool>())           r = VC_CONVERT;
     return ifExcep(r, acceptable, v);
 }
 
@@ -820,7 +821,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cCo
             r = VC_OK;
             foreach (QVariant e, v.toList()) {
                 if (variantIsInteger(e)) continue;
-                if (!e.canConvert(QMetaType::LongLong)) {
+                if (!e.canConvert<qlonglong>()) {
                     r = VC_INVALID;
                     break;
                 }
@@ -840,14 +841,14 @@ cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cCo
             }
         }
         // egész skalár, vagy konvertálható skalár, egy elemű tömbként elfogadjuk.
-        else if (metaIsInteger(t) || v.canConvert(QMetaType::LongLong)) r = VC_CONVERT;
+        else if (metaIsInteger(t) || v.canConvert<qlonglong>()) r = VC_CONVERT;
         break;
     case FT_REAL_ARRAY:
         if (t == QMetaType::QVariantList) {
             r = VC_OK;
             foreach (QVariant e, v.toList()) {
                 if (variantIsNum(e)) continue;
-                if (!e.canConvert(QMetaType::Double)) {
+                if (!e.canConvert<double>()) {
                     r = VC_INVALID;
                     break;
                 }
@@ -865,20 +866,20 @@ cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cCo
                 }
             }
         }
-        else if (metaIsFloat(t) || v.canConvert(QMetaType::Double)) r = VC_CONVERT;
+        else if (metaIsFloat(t) || v.canConvert<double>()) r = VC_CONVERT;
         break;
     case FT_TEXT_ARRAY:
         if      (t == QMetaType::QStringList) r = VC_OK;
         else if (t == QMetaType::QVariantList) {
             r = VC_CONVERT;
             foreach (QVariant e, v.toList()) {
-                if (!e.canConvert(QMetaType::QString)) {
+                if (!e.canConvert<QString>()) {
                     r = VC_INVALID;
                     break;
                 }
             }
         }
-        else if (metaIsString(t) || v.canConvert(QMetaType::QString)) r = VC_CONVERT;
+        else if (metaIsString(t) || v.canConvert<QString>()) r = VC_CONVERT;
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -1050,7 +1051,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v, cCol
             if (enumType().checkEnum(v.toInt())) return VC_OK;
             r = VC_INVALID;
         }
-        else if (v.canConvert(QMetaType::QString) && enumType().containsValue(v.toString())) {
+        else if (v.canConvert<QString>() && enumType().containsValue(v.toString())) {
             r = VC_OK;
         }
     }
@@ -1093,7 +1094,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
         r  = enumType().enum2str(i, EX_IGNORE);
         ok = enumType().checkEnum(int(i));
     }
-    else if (!r.convert(QMetaType::QString) || !enumType().containsValue(r.toString())) {
+    else if (!qvarconv(r, QMetaType::QString) || !enumType().containsValue(r.toString())) {
         ok = false;
     }
     if (!ok) {
@@ -1140,7 +1141,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v, cColS
         if (metaIsString(t)) {
             if (enumType().containsValue(v.toString())) r = VC_CONVERT;
         }
-        if (v.canConvert(QMetaType::QStringList)) {
+        if (v.canConvert<QStringList>()) {
             if (enumType().containsAllValues(v.toStringList())) r = VC_OK;
         }
     }
@@ -1161,7 +1162,7 @@ QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
         s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
         if (s.isEmpty()) return QVariant(sl);
         // Az elemek közötti szeparátor a vessző, elvileg nincsenek idézőjelek
-        sl = s.split(QChar(','),QString::KeepEmptyParts);
+        sl = s.split(QChar(','),Qt::KeepEmptyParts);
     }
     else {
         if (s.startsWith("ARRAY[]")) {
@@ -1219,7 +1220,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
         s = _f.toString();
         if (!s.isEmpty()) sl = s.split(QChar(','));
     }
-    else if (_f.canConvert(QMetaType::QStringList)) {
+    else if (_f.canConvert<QStringList>()) {
         sl = _f.toStringList();
     }
     else {
@@ -1257,7 +1258,7 @@ cColStaticDescr::eValueCheck  cColStaticDescrPoint::check(const QVariant& _f, cC
     int t = _f.userType();
     cColStaticDescr::eValueCheck r = VC_INVALID;
     if (_f.isNull() || isNumNull(_f)) r = checkIfNull();
-    else if (t == QVariant::PointF)   r = VC_OK;
+    else if (t == QMetaType::QPointF)   r = VC_OK;
     return ifExcep(r, acceptable, _f);
 }
 
@@ -1284,7 +1285,7 @@ QVariant  cColStaticDescrPoint::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1, QObject::tr("Data is NULL"));
     int t = _f.userType();
-    if (t != QVariant::PointF) {
+    if (t != QMetaType::QPointF) {
         EXCEPTION(EDATA, t, debVariantToString(_f));
     }
     QPointF    pnt = _f.value<QPointF>();
@@ -1345,7 +1346,7 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
     tPolygonF    pol;
     if (s.isEmpty() && isNullable) return QVariant();
     // A pontok, koordináta párok vesszővel vannak elválasztva
-    QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
+    QStringList sl = s.split(QChar(','),Qt::KeepEmptyParts);
     bool ok, x = true;  // elöször x
     QPointF  pt;
     foreach (QString sp, sl) {
@@ -1518,14 +1519,6 @@ QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
         }
         else if (metaIsString(mtid)) {
             a = sql2netAddress(_f.toString());
-            QString as = _f.toString();
-            if (as.count() > 0) {
-                // néha hozzábigyeszt valamit az IPV6 címhez
-                int i = as.indexOf(QRegExp("[^\\d\\.:A-Fa-f/]"));
-                // Ha a végén van szemét, azt levágjuk
-                if (i > 0) as = as.mid(0, i);
-                a.set(as);
-            }
         }
         if (a.isValid()) r = QVariant::fromValue(a);
         else             ok = false;
@@ -1764,7 +1757,7 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
         ok = !dt.isNull();
     }
     if (!ok && variantIsInteger(_f)) {
-        dt = QDateTime::fromTime_t(_f.toUInt(&ok));
+        dt = QDateTime::fromMSecsSinceEpoch(_f.toUInt(&ok));
     }
     if (!ok && variantIsString(_f)) {
         QString sDt = _f.toString();
@@ -1793,7 +1786,7 @@ qlonglong cColStaticDescrDateTime::toId(const QVariant& _f) const
 {
 //    _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) return NULL_ID;
-    return _f.toDateTime().toTime_t();
+    return _f.toDateTime().toMSecsSinceEpoch();
 }
 
 CDDUPDEF(cColStaticDescrDateTime)
@@ -2113,7 +2106,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.colType   = pq->value(IX_DATA_TYPE).toString();
         columnDescr.udtName   = pq->value(IX_UDT_NAME).toString();
         QVariant cml = pq->value(IX_CHARACTER_MAXIMUM_LENGHT);
-        columnDescr.chrMaxLenghr = cml.canConvert(QVariant::Int) ? cml.toInt() : -1;
+        columnDescr.chrMaxLenghr = cml.canConvert<int>() ? cml.toInt() : -1;
         columnDescr.isNullable= str2bool(pq->value(IX_IS_NULLABLE).toString());
         columnDescr.isUpdatable=str2bool(pq->value(IX_IS_UPDATABLE).toString());
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
@@ -3063,7 +3056,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
 bool cRecord::_readBack(const QSqlQuery& __q, const cRecStaticDescr& __d, const QBitArray& _msk)
 {
     if (_msk.count(true) == 0) return false;
-    int cols = std::min(__d.cols(), _msk.size());
+    int cols = std::min(__d.cols(), int(_msk.size()));
     if (_fields.isEmpty()) _set(__d);
     int ix = 0;
     for (int i = 0; i < cols; i++) {
@@ -4536,12 +4529,14 @@ cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l
     : cRecord()
 {
     // Check
-    QRegExp p_lc("^([a-z]{2})_([A-Z]{2})$");
-    QRegExp p_l3("^[a-z]{3}$");
+    QRegularExpression p_lc("^([a-z]{2})_([A-Z]{2})$");
+    QRegularExpression p_l3("^[a-z]{3}$");
+    QRegularExpressionMatch ma;
     bool e = false;
     QLocale::Language lan = QLocale::AnyLanguage;
     QLocale::Country  cou = QLocale::AnyCountry;
-    if (!p_lc.exactMatch(_lc) || !p_l3.exactMatch(_l3)) {
+    ma = p_lc.match(_lc);
+    if (!ma.hasMatch() || !p_l3.match(_l3).hasMatch()) {
         e = true;
     }
     else {
@@ -4561,8 +4556,8 @@ cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l
     _fields[d.toIndex(_sLang3)] = _l3;
     if (_nextId != NULL_ID) _fields[d.toIndex(_sNextId)]    = _nextId;
     if (_flagId != NULL_ID) _fields[d.toIndex(_sFlagImage)] = _flagId;
-    _fields[d.toIndex(_sLang2)]     = p_lc.cap(1);
-    _fields[d.toIndex(_sCountryA2)] = p_lc.cap(2);
+    _fields[d.toIndex(_sLang2)]     = ma.captured(1);
+    _fields[d.toIndex(_sCountryA2)] = ma.captured(2);
     _fields[d.toIndex(_sLangId)]    = qlonglong(lan);
     _fields[d.toIndex(_sCountryId)] = qlonglong(cou);
 }

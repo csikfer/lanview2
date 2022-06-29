@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QWidget>
-#include <QSound>
 #include "lv2g.h"
 #include "ui_hsoperate.h"
 #include "lv2models.h"

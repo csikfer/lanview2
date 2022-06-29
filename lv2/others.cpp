@@ -113,7 +113,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
     QString field;
     if (__ms[0] != sep) {   // The first character must be a separator
         if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
-        DERR() << msg.arg(QObject::tr("Missing first separator character.")).arg(__ms) << endl;
+        DERR() << msg.arg(QObject::tr("Missing first separator character."),__ms) << endl;
         return false;
     }
     QStringList sl;
@@ -131,7 +131,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
             else {  // Real separator
                 if (field.isEmpty()) {
                     if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
-                    DERR() << msg.arg(_sNul).arg(__ms) << endl;
+                    DERR() << msg.arg(_sNul, __ms) << endl;
                     return false;
                 }
                 else {
@@ -146,7 +146,7 @@ bool cFeatures::split(const QString& __ms, bool merge, eEx __ex)
     }
     if (!field.isEmpty()) {
         if (__ex) EXCEPTION(EDATA, -1, msg + __ms);
-        DERR() << msg.arg(QObject::tr("Missing last separator character.")).arg(__ms) << endl;
+        DERR() << msg.arg(QObject::tr("Missing last separator character."), __ms) << endl;
         return false;
     }
     if (sl.isEmpty()) {
@@ -262,12 +262,13 @@ tStringMap cFeatures::value2map(const QString& _s)
     QString key;
     QString val;
     QString s = _s.simplified();
-    QRegExp re("^(\\w+)\\[([^\\]]*)\\](.*)$");
-    while (re.exactMatch(s)) {
-        key = re.cap(1);
-        val = re.cap(2);
+    static const QRegularExpression re("^(\\w+)\\[([^\\]]*)\\](.*)$");
+    QRegularExpressionMatch ma;
+    while ((ma = re.match(s)).hasMatch()) {
+        key = ma.captured(1);
+        val = ma.captured(2);
         r[key] = val;
-        s = re.cap(3);
+        s = ma.captured(3);
         if (!s.startsWith(QChar(','))) break; // Missing ',' or empty
         s = s.mid(1);
     }
@@ -295,7 +296,7 @@ QMap<QString, QStringList> cFeatures::value2listMap(const QString& s)
     QMap<QString, QStringList>  r;
 #if 1
     tStringMap m = value2map(s);
-    QRegExp re("\\s*,\\s*");
+    static const QRegularExpression re("\\s*,\\s*");
     foreach (QString key, m.keys()) {
         QString val = m[key];
         r[key] = val.split(re);
@@ -587,8 +588,7 @@ int startProcessAndWait(QProcess& p, const QString& cmd, const QStringList& args
     if (pMsg != nullptr) pMsg->clear();
     QString msg;
     p.setProcessChannelMode(QProcess::MergedChannels);
-    if (args.isEmpty()) p.start(cmd, QIODevice::ReadOnly);
-    else          p.start(cmd, args, QIODevice::ReadOnly);
+    p.start(cmd, args, QIODevice::ReadOnly);
     int r = -1;
     if (p.waitForStarted(start_to)) {
         if (p.waitForFinished(stop_to)) {
@@ -800,7 +800,7 @@ QVariantList list_longlong2variant(const QList<qlonglong> &v)
 cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv)
 {
     __csv.line.chop(1); // Drop last separator
-    *__csv.pStream << __csv.line << endl;
+    *__csv.pStream << __csv.line << Qt::endl;
     __csv.line.clear();
     return __csv;
 }
@@ -841,7 +841,11 @@ cCommaSeparatedValues::cCommaSeparatedValues(const QString& _csv)
 cCommaSeparatedValues::cCommaSeparatedValues(QIODevice *pIODev)
 {
     pStream = new QTextStream(pIODev);
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    pStream->setEncoding(QStringConverter::Utf8);
+#else
     pStream->setCodec("UTF-8");
+#endif
     pStream->setGenerateByteOrderMark(true);
 }
 
@@ -858,7 +862,7 @@ void cCommaSeparatedValues::clear()
     csv.clear();
     line.clear();
     pStream = new QTextStream(&csv, QIODevice::ReadWrite);
-    (*pStream) << bom;  // BOM / UTF8
+    (*pStream) << Qt::bom;  // BOM / UTF8
 }
 
 const QString& cCommaSeparatedValues::toString() const
@@ -968,20 +972,21 @@ void cCommaSeparatedValues::splitLine()
         return;
     }
     _state = CSVE_OK;
-    values = line.split(sep, QString::KeepEmptyParts);
-    QRegExp p1("^\\s*(\")+");
-    QRegExp p2("(\")+\\s*$");
+    values = line.split(sep, Qt::KeepEmptyParts);
+    static const QRegularExpression p1("^\\s*(\")+");
+    static const QRegularExpression p2("(\")+\\s*$");
+    QRegularExpressionMatch m;
     QString tr = "\"";
     QString q2 = "\"\"";
     for (int i = 0; i < values.size(); ++i) {
         QString& f = values[i];
-        bool quoted = p1.indexIn(f) >= 0;
-        int  spnum  = quoted ? p1.cap(1).size() : 0;
+        bool quoted = f.indexOf(p1, 0, &m) >= 0;
+        int  spnum  = quoted ? m.captured(1).size() : 0;
         quoted = 0 != (spnum % 2);
         if (quoted) {
             if (spnum) f.replace(p1, tr);
-            quoted = p2.indexIn(f) >= 0;
-            spnum  = quoted ? p2.cap(1).size() : 0;
+            quoted = f.indexOf(p2, 0, &m) >= 0;
+            spnum  = quoted ? m.captured(1).size() : 0;
             quoted = 0 != (spnum % 2);
             if (quoted) {
                 f.replace(p2, tr);

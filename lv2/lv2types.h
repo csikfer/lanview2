@@ -194,6 +194,7 @@ class LV2SHARED_EXPORT cMac {
     qlonglong   val;
     /// Maszk a 64biten tárolt mac érték felesleges bitjeinek a törléséhez/maszkolásához
     static const qlonglong    mask;
+public:
     /// Regexp string a mac cím egy megengedett formájához: hexa szám elválasztó karakterek nélkül
     static const QString _sMacPattern1;
     /// Regexp string a mac cím egy megengedett formájához: hexa szám byte-onként kettőspontal elválasztva
@@ -204,7 +205,6 @@ class LV2SHARED_EXPORT cMac {
     static const QString _sMacPattern4;
     /// Regexp string a mac cím egy megengedett formájához: hexa szám byte-onként space karakterrel elválasztva
     static const QString _sMacPattern5;
-   public:
     /// Konstruktor. Null MAC értékkel (-1LL) hozza létre az objektumot.
     /// Ha val értéke negatív, akkor az isValid metódus true értékkel tér vissza.
     cMac();
