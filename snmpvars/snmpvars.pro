@@ -1,9 +1,11 @@
 
 QT       -= gui
-QT       += core network sql xml
+QT       += core network sql
 
 CONFIG += console
 CONFIG -= app_bundle
+CONFIG += c++17
+CONFIG -= debug_and_release
 
 TEMPLATE = app
 

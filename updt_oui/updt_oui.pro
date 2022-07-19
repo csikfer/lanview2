@@ -7,14 +7,16 @@
 # Buils debug:  ../../lanview2.debug/updt_oui
 # Build release:../../lanview2.release/updt_oui
 
-QT       += core sql xml network
+QT       += core sql network
 
 QT       -= gui
 
 TARGET = updt_oui
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG += c++17
 CONFIG -= debug_and_release
+
 
 TEMPLATE = app
 

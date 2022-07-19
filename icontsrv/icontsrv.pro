@@ -4,12 +4,13 @@
 #
 #-------------------------------------------------
 
-QT       += core sql xml network serialport
+QT       += core sql network serialport
 #QT       -= gui
 
 TARGET = icontsrv
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG += c++17
 CONFIG -= debug_and_release
 
 TEMPLATE = app

@@ -1,6 +1,8 @@
 ﻿#ifndef LV2DATAB_H
 #define LV2DATAB_H
+#ifndef LANVIEW_H
 #include "lanview.h"
+#endif
 #include <typeinfo>
 
 /*!

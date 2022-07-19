@@ -4,12 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql network xml widgets
+QT       += core gui sql network widgets
 
 TARGET = lv2gui
 CONFIG -= app_bundle
-#CONFIG += console
-
+CONFIG += c++17
 CONFIG -= debug_and_release
 
 SOURCES += \

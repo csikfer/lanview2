@@ -5,14 +5,14 @@
 #-------------------------------------------------
 
 
-QT       += core sql xml network
+QT       += core sql network
 
 QT       -= gui
 
 TARGET = lv2d
 CONFIG   += console
 CONFIG   -= app_bundle
-#CONFIG   += debug
+CONFIG += c++17
 CONFIG -= debug_and_release
 
 TEMPLATE = app

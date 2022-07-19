@@ -1,9 +1,12 @@
 QT -= gui
-QT += core sql network xml
+QT += core sql network
 
 TARGET = clisetup
 CONFIG += console
 CONFIG -= app_bundle
+CONFIG += c++17
+CONFIG -= debug_and_release
+
 
 TEMPLATE = app
 

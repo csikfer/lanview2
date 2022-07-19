@@ -19,7 +19,7 @@
 #include "usignal.h"
 #include "lv2datab.h"
 #include "qsnmp.h"
-#include "lv2xml.h"
+// #include "lv2xml.h"
 
 
 #define ORGNAME     "LanView"

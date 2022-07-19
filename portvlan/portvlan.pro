@@ -1,11 +1,13 @@
 
-QT       += core sql xml network
+QT       += core sql network
 
 QT       -= gui
 
 TARGET = portvlan
 CONFIG += console
 CONFIG -= app_bundle
+CONFIG += c++17
+CONFIG -= debug_and_release
 
 TEMPLATE = app
 

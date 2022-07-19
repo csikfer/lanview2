@@ -1,5 +1,6 @@
+
+CONFIG += c++17
 CONFIG -= debug_and_release
-CONFIG += C++14
 
 # A git-nek a path-on kell lennie Windows-nál is!!
 #REVISION = $$system(git rev-list --count HEAD)
@@ -45,7 +46,7 @@ DEPENDPATH   += $$TARGETPATH
 OTHER_FILES += $$BISONSOURCES \
     $$M4HEADER $$M4SOURCE lv2dict.m4
 
-QT += core network sql xml
+QT += core network sql
 QT -= gui
 
 # equals(QT_MAJOR_VERSION, 6):
@@ -61,7 +62,6 @@ SOURCES += \
     lv2tooldata.cpp \
     lv2types.cpp \
     others.cpp \
-    lv2xml.cpp \
     lv2sql.cpp \
     lv2datab.cpp \
     lv2data.cpp \
@@ -79,8 +79,10 @@ SOURCES += \
     report.cpp \
     lv2mariadb.cpp \
     lv2glpi.cpp \
-    qtelnet.cpp \
     scan.cpp
+
+#   qtelnet.cpp
+#   lv2xml.cpp
 
 HEADERS += \
     lv2_global.h \
@@ -92,7 +94,6 @@ HEADERS += \
     lv2tooldata.h \
     lv2types.h \
     others.h \
-    lv2xml.h \
     lv2sql.h \
     lv2datab.h \
     lv2cont.h \
@@ -111,8 +112,10 @@ HEADERS += \
     report.h \
     lv2mariadb.h \
     lv2glpi.h \
-    qtelnet.h \
     scan.h
+
+#   qtelnet.h
+#   lv2xml.h
 
 #FORMS +=
 

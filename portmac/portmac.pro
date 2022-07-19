@@ -7,13 +7,15 @@
 # Buils debug:  ../../lanview2.debug/portmac
 # Build release:../../lanview2.release/portmac
 
-QT       += core sql xml network
+QT       += core sql network
 
 QT       -= gui
 
 TARGET = portmac
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG += c++17
+CONFIG -= debug_and_release
 
 TEMPLATE = app
 

@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-CONFIG += c++14
+# CONFIG += c++14
 CONFIG -= debug_and_release
 
 lv2.subdir = lv2
@@ -8,7 +8,7 @@ SUBDIRS += lv2 \
 
 lv2.subdirs = lv2
 
-clisetup.subdirs = clisetuo
+clisetup.subdirs = clisetup
 clisetup.depends = lv2
 
 !exists(lv2g/miss) {

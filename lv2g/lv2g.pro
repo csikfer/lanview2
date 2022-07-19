@@ -10,7 +10,7 @@ QT += webenginewidgets multimedia
 TARGET = lv2g
 TEMPLATE = lib
 CONFIG -= debug_and_release
-CONFIG += C++14
+CONFIG += c++17
 DEFINES += LV2G_LIBRARY
 
 SOURCES += \
