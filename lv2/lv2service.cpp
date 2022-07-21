@@ -230,7 +230,11 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
                 if (!ok) EXCEPTION(EPROGFAIL, 0, s);
             }
         }
-        QString fileName = lanView::getInstance()->homeDir + "/log/";
+        QString fileName = lanView::getInstance()->homeDir + "/log";    // LOG DIR
+        if (!QDir().mkpath(fileName)) { // Check dir, or create
+            EXCEPTION(ENODIR, -1, fileName);
+        }
+        fileName += '/';
         fileName += inspector.node().getName() + '.';
         fileName += inspector.service()->getName();
         if (inspector.pPrimeService != nullptr) fileName += '.' + inspector.pPrimeService->getName();
@@ -238,7 +242,10 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
         fileName += "_" + QString::number(inspector.hostServiceId());
         fileName += ".log";
         actLogFile.setFileName(fileName);
-        if (!actLogFile.open(QIODevice::Append | QIODevice::ReadWrite)) {
+        bool f;
+        if (actLogFile.exists()) f = actLogFile.open(QIODevice::Append | QIODevice::WriteOnly);
+        else                     f = actLogFile.open(QIODevice::WriteOnly);
+        if (!f) {
             EXCEPTION(EFOPEN, -1, actLogFile.fileName());
         }
     }
