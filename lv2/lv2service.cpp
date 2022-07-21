@@ -210,7 +210,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
     else {
         if ((s = inspector.feature(_sLogrot)).isEmpty() == false) {
-            QRegularExpression re("^(\\d+)([kMG]?)[,;]?(\\d*)$");
+            static const QRegularExpression re("^(\\d+)([kMG]?)[,;]?(\\d*)$");
             QRegularExpressionMatch ma;
             if (!re.isValid()) EXCEPTION(EPROGFAIL, 0, re.pattern());
             if (!(ma = re.match(s)).hasMatch()) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot, s));
@@ -238,7 +238,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
         fileName += "_" + QString::number(inspector.hostServiceId());
         fileName += ".log";
         actLogFile.setFileName(fileName);
-        if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
+        if (!actLogFile.open(QIODevice::Append | QIODevice::ReadWrite)) {
             EXCEPTION(EFOPEN, -1, actLogFile.fileName());
         }
     }
@@ -2620,7 +2620,7 @@ bool cInspectorVar::postInit(QSqlQuery& _q)
         _sWarningType,      _sWarningParam1,      _sWarningParam2,     _sWarningInverse,
         _sCriticalType,     _sCriticalParam1,     _sCriticalParam2,    _sCriticalInverse
     };
-    for (auto key: fns) {
+    for (QString& key: fns) {
         QMap<QString, QString>::const_iterator i = pTypeMergedFeatures->constFind(key);
         if (i != pTypeMergedFeatures->constEnd()) {
             PDEB(VVERBOSE) << pInspector->name() << '/' << pSrvVar->getName() << '/' << pVarType->getName() << '.' << key <<  " Modify to " << i.value() << endl;
@@ -3397,7 +3397,7 @@ bool cInspectorVar::rpn_calc(double& _v, const QString &_expr, QString& st)
     QStack<double>  stack;
     stack << _v;
     _v = 0.0;
-    QRegularExpression sep(QString("\\s+"));
+    static const QRegularExpression sep(QString("\\s+"));
     QStringList tokens = _expr.split(sep);
     while (!tokens.isEmpty()) {
         QString token = tokens.takeFirst();

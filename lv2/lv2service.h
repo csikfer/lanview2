@@ -225,7 +225,7 @@ public:
     /// Futás időzítés indítása
     virtual void start();
     /// Futás időzítés leállítása
-    virtual void stop();
+    void stop();
     /// A timer leállítása, ha volt.
     /// @param find Ha igaz, akkor a szülő objektumokban rekorzívan keresi a thread.
     /// @return Ha a megfelelő szálban vagyunk, és közvetlenül tiltható, akkor a tulajdonos QObject pointer, egyébként nullptr.
