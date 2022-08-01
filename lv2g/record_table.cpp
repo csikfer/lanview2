@@ -1145,7 +1145,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
         pTextEnum = recDescr.colDescr(recDescr.textIdIndex()).pEnumType;
         if (pTextEnum == nullptr) EXCEPTION(EDATA);
         textIndex = pTextEnum->str2enum(sf.getName());
-        dataCharacter = DC_TEXT;
+        dataCharacter = DC_LANGUAGE_TEXT;
     }
     else {
         pColDescr = &recDescr.colDescr(fieldIndex);
