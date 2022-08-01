@@ -3381,8 +3381,8 @@ cNode * cNode::getSelfNodeObjByMac(QSqlQuery& q)
             " FROM nodes"
             " JOIN interfaces USING(node_id)"
             " WHERE hwaddress = ?";
-    foreach (QNetworkInterface interface, interfaces) {
-        cMac m = interface.hardwareAddress();
+    foreach (QNetworkInterface interf, interfaces) {
+        cMac m = interf.hardwareAddress();
         if (!m) continue;
         if (execSql(q, sql, m.toString())) {
             qlonglong nid = q.value(0).toLongLong();

@@ -483,7 +483,7 @@ enum eDataCharacter {
     DC_ERROR,           ///< Hiba
     DC_NOT_PERMIT,      ///< nem engedélyezett
     DC_HAVE_NO,         ///< Az adat nem létezik
-    DC_TEXT,            ///< Nyelvi szöveg
+    DC_LANGUAGE_TEXT,   ///< Nyelvi szöveg
     DC_QUESTION         ///< Kérdés
 };
 

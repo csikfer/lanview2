@@ -19,6 +19,10 @@
 #include "usignal.h"
 #include "lv2datab.h"
 #include "qsnmp.h"
+#if  defined (Q_OS_WIN)
+// A combaseapi.h ban definiált makró, értéke __STRUCT__ -> struct
+#undef interface
+#endif
 // #include "lv2xml.h"
 
 
@@ -30,6 +34,10 @@
     lanView::setApp(VERSION_MAJOR, VERSION_MINOR, APPNAME); \
     setAppHelp(); \
 }
+
+// Az std:min()-t kenjék a hajukra, használhatatlan
+inline qlonglong llMin(qlonglong a, qlonglong b) { return a < b ? a : b; }
+inline qlonglong llMax(qlonglong a, qlonglong b) { return a > b ? a : b; }
 
 /// cInspect és leszármazottai objektum belső status
 /// Ugyan ez a appStat is

@@ -2,6 +2,18 @@ TEMPLATE = subdirs
 # CONFIG += c++14
 CONFIG -= debug_and_release
 
+unix:{
+    exists(/usr/include/net-snmp) {
+        SNMP = true
+    }
+}
+# Az SNMP Win alatt nem jöt be
+#else {
+#    exists(c:/usr/include/net-snmp) {
+#        SNMP = true
+#    }
+#}
+
 lv2.subdir = lv2
 SUBDIRS += lv2 \
     clisetup
@@ -33,7 +45,7 @@ clisetup.depends = lv2
     updt_oui.depends = lv2
 }
 
-unix {
+contains(SNMP,true) {
   !exists(portmac/miss) {
     SUBDIRS += portmac
     portmac.subdirs = portmac

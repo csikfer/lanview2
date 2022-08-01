@@ -129,6 +129,12 @@ unix:{
 }
 else {
     LIBS += -lSecur32 -lWtsapi32
+    # Az SNMP Win alatt nem jöt be
+#    exists(c:/usr/include/net-snmp) {
+#        LIBS += C:/usr/lib/netsnmp.lib
+#        INCLUDEPATH += "C:/usr/include"
+#        DEFINES += SNMP_IS_EXISTS
+#    }
 }
 
 TRANSLATIONS    = lv2lib_hu.ts \

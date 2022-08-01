@@ -677,7 +677,7 @@ cInspector::~cInspector()
     if (isThreadType() && pInspectorThread != nullptr) {
         bool notTerm;
         int cnt = 0;
-        ulong to = std::min(10000UL, stopTimeOut);  // minimum 10s
+        ulong to = llMin(10000UL, stopTimeOut);  // minimum 10s
         while ((notTerm = pInspectorThread->pThread->isRunning())) {
             if (++cnt <= 2) {
                 pInspectorThread->abortFlag = true;
@@ -2909,13 +2909,13 @@ int cInspectorVar::setValues(QSqlQuery& q, qlonglong hsid, const QStringList& _n
     insp.pParent = &insp;       // Indicates a temporary object. If pParent is NULL, the destructor calls the exit () method.
     insp.splitFeature();
     int n = _names.size();
-    n = std::min(n, vals.size());
+    n = llMin(n, vals.size());
     int r = RS_ON, st, dummy = RS_UNKNOWN;
     for (int i = 0; i < n; ++i) {
         cInspectorVar var(q, &insp, _names.at(i));
         var.postInit(q);
         st = var.setValue(q, vals.at(i), dummy);
-        r = std::max(r, st);
+        r = llMax(r, st);
     }
     return r;
 }
@@ -2924,7 +2924,7 @@ int cInspectorVar::setValues(QSqlQuery& q, cInspector *pInsp, const QStringList&
 {
     int r = RS_ON;
     int n = _names.size();
-    n = std::min(n, vals.size());
+    n = llMin(n, vals.size());
     for (int i = 0; i < n; ++i) {
         int rr = setValue(q, pInsp, _names.at(i), vals.at(i), state);
         if (r < rr) r = rr;

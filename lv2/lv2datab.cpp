@@ -3056,7 +3056,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
 bool cRecord::_readBack(const QSqlQuery& __q, const cRecStaticDescr& __d, const QBitArray& _msk)
 {
     if (_msk.count(true) == 0) return false;
-    int cols = std::min(__d.cols(), int(_msk.size()));
+    int cols = llMin(__d.cols(), _msk.size());
     if (_fields.isEmpty()) _set(__d);
     int ix = 0;
     for (int i = 0; i < cols; i++) {

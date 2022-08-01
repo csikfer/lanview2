@@ -195,7 +195,7 @@ int dataCharacter(const QString& n, eEx __ex)
     if (0 == n.compare(_sError,     Qt::CaseInsensitive)) return DC_ERROR;
     if (0 == n.compare(_sNotPermit, Qt::CaseInsensitive)) return DC_NOT_PERMIT;
     if (0 == n.compare(_sHaveNo,    Qt::CaseInsensitive)) return DC_HAVE_NO;
-    if (0 == n.compare(_sText,      Qt::CaseInsensitive)) return DC_TEXT;
+    if (0 == n.compare(_sText,      Qt::CaseInsensitive)) return DC_LANGUAGE_TEXT;
     if (0 == n.compare(_sQuestion,  Qt::CaseInsensitive)) return DC_QUESTION;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
     return DC_INVALID;
@@ -222,7 +222,7 @@ const QString& dataCharacter(int e, eEx __ex)
     case DC_ERROR:      return _sError;
     case DC_NOT_PERMIT: return _sNotPermit;
     case DC_HAVE_NO:    return _sHaveNo;
-    case DC_TEXT:       return _sText;
+    case DC_LANGUAGE_TEXT: return _sText;
     case DC_QUESTION:   return _sQuestion;
     default:            break;
     }

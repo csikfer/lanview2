@@ -939,7 +939,7 @@ void cLldpScan::staticInit() {
     }
 }
 
-EXT_ bool isBreakImportParser(bool _except);
+EXT_ bool isBreakImportParser(bool);
 
 bool cLldpScan::updateLink(cAppMemo &em)
 {
