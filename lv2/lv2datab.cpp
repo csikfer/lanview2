@@ -1162,7 +1162,7 @@ QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
         s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
         if (s.isEmpty()) return QVariant(sl);
         // Az elemek közötti szeparátor a vessző, elvileg nincsenek idézőjelek
-        sl = s.split(QChar(','),Qt::KeepEmptyParts);
+        sl = s.split(QChar(','),Q_KEEPEMPTYPARTS);
     }
     else {
         if (s.startsWith("ARRAY[]")) {
@@ -1346,7 +1346,7 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
     tPolygonF    pol;
     if (s.isEmpty() && isNullable) return QVariant();
     // A pontok, koordináta párok vesszővel vannak elválasztva
-    QStringList sl = s.split(QChar(','),Qt::KeepEmptyParts);
+    QStringList sl = s.split(QChar(','),Q_KEEPEMPTYPARTS);
     bool ok, x = true;  // elöször x
     QPointF  pt;
     foreach (QString sp, sl) {

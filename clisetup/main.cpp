@@ -23,7 +23,7 @@ static void settingQSetIValue(const QString& _key, const QString& _text, qlonglo
     qlonglong i;
     do {
         i = lanView::getInstance()->pSet->value(_key, _def).toLongLong();
-        stdo << QObject::tr("%1 (%2) : ").arg(_text).arg(i) <<Qt:: endl;
+        stdo << QObject::tr("%1 (%2) : ").arg(_text).arg(i) << Q_ENDL;
         QString s = stdi.readLine();
         s = s.simplified();
         if (s.isEmpty()) break;
@@ -36,7 +36,7 @@ static void settingQSetIValue(const QString& _key, const QString& _text, qlonglo
 static void settingQSetSValue(const QString& _key, const QString& _text, const QString& _def)
 {
     QString s = lanView::getInstance()->pSet->value(_key, _def).toString();
-    stdo << QObject::tr("%1 (%2) : ").arg(_text, s) << Qt::endl;
+    stdo << QObject::tr("%1 (%2) : ").arg(_text, s) << Q_ENDL;
     s = stdi.readLine();
     s = s.simplified();
     if (s.isEmpty()) s = _def;
@@ -45,7 +45,7 @@ static void settingQSetSValue(const QString& _key, const QString& _text, const Q
 
 static void settingQSetXValue(const QString& _key, const QString& _text)
 {
-    stdo << QObject::tr("%1 : ").arg(_text) << Qt::endl;
+    stdo << QObject::tr("%1 : ").arg(_text) << Q_ENDL;
     QString s = stdi.readLine();
     s = s.simplified();
     if (s.isEmpty()) return;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
         eTristate f = TS_NULL;
         do {
-            stdo << QObject::tr("Kísérlet, az adatbázis megnyitására ? (I/n)") << Qt::endl;
+            stdo << QObject::tr("Kísérlet, az adatbázis megnyitására ? (I/n)") << Q_ENDL;
             QString s = stdi.readLine();
             s = s.simplified();
             if (s.isEmpty() || s.compare("i", Qt::CaseInsensitive)) f = TS_TRUE;
@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
             QSqlDatabase *pDb = new  QSqlDatabase(QSqlDatabase::addDatabase(_sQPSql));
             if (!pDb->isValid()) {
                 QSqlError le = pDb->lastError();
-                stdo << QObject::tr("SQL DB ERROR #") + le.nativeErrorCode() <<  Qt::endl;
-                stdo << "driverText   : " << le.driverText() <<  Qt::endl;
-                stdo << "databaseText : " << le.databaseText() <<  Qt::endl;
+                stdo << QObject::tr("SQL DB ERROR #") + le.nativeErrorCode() <<  Q_ENDL;
+                stdo << "driverText   : " << le.driverText() <<  Q_ENDL;
+                stdo << "databaseText : " << le.databaseText() <<  Q_ENDL;
             }
             else {  // OK
                 pDb->setHostName(   lanView::getInstance()->pSet->value(_sSqlHost).toString());
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
                 pDb->setDatabaseName(lanView::getInstance()->pSet->value(_sDbName).toString());
                 if (!pDb->open()) {
                     QSqlError le = pDb->lastError();
-                    stdo << QObject::tr("SQL open ERROR #") + le.nativeErrorCode() <<  Qt::endl;
-                    stdo << "driverText   : " << le.driverText() <<  Qt::endl;
-                    stdo << "databaseText : " << le.databaseText() <<  Qt::endl;
+                    stdo << QObject::tr("SQL open ERROR #") + le.nativeErrorCode() <<  Q_ENDL;
+                    stdo << "driverText   : " << le.driverText() <<  Q_ENDL;
+                    stdo << "databaseText : " << le.databaseText() <<  Q_ENDL;
                 }
                 else {
                     QSqlQuery q(*pDb);

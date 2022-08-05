@@ -1,3 +1,7 @@
+equals(QT_MAJOR_VERSION, 6): error("Qt 6 not supported")
+lessThan(QT_MINOR_VERSION, 12): error(Not supported Qt varsion < 5.12);
+
+
 TEMPLATE = subdirs
 # CONFIG += c++14
 CONFIG -= debug_and_release
@@ -23,14 +27,16 @@ lv2.subdirs = lv2
 clisetup.subdirs = clisetup
 clisetup.depends = lv2
 
-!exists(lv2g/miss) {
-    SUBDIRS += lv2g lv2gui
+greaterThan(QT_MINOR_VERSION,14) {
+    !exists(lv2g/miss) {
+        SUBDIRS += lv2g lv2gui
 
-    lv2g.subdir = lv2g
-    lv2g.depends = lv2
+        lv2g.subdir = lv2g
+        lv2g.depends = lv2
 
-    lv2gui.subdir = lv2gui
-    lv2gui.depends = lv2 lv2g
+        lv2gui.subdir = lv2gui
+        lv2gui.depends = lv2 lv2g
+    }
 }
 
 !exists(lv2d/miss) {

@@ -12,7 +12,7 @@ QVariantList _sqlToIntegerList(const QString& _s)
 {
     QVariantList vl;
     if (!_s.isEmpty()) {
-        QStringList sl = _s.split(QChar(','),Qt::KeepEmptyParts);
+        QStringList sl = _s.split(QChar(','),Q_KEEPEMPTYPARTS);
         foreach (const QString& s, sl) {
             bool ok;
             qlonglong i = s.toLongLong(&ok);
@@ -33,7 +33,7 @@ QVariantList _sqlToDoubleList(const QString& _s)
 {
     QVariantList vl;
     if (!_s.isEmpty()) {
-        QStringList sl = _s.split(QChar(','),Qt::KeepEmptyParts);
+        QStringList sl = _s.split(QChar(','),Q_KEEPEMPTYPARTS);
         foreach (const QString& s, sl) {
             bool ok;
             double i = s.toDouble(&ok);
@@ -53,7 +53,7 @@ QStringList _sqlToStringList(const QString& _s)
 {
     QStringList sl;
     if (!_s.isEmpty()) {
-        sl = _s.split(QChar(','), Qt::KeepEmptyParts);
+        sl = _s.split(QChar(','), Q_KEEPEMPTYPARTS);
         static const QChar   m('"');
         static const QString nm("\\\"");
 

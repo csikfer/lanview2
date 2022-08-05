@@ -1042,7 +1042,7 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 int cInspector::getInspectorTiming(const QString& value)
 {
     int r = 0; // IT_TIMING_CUSTOM
-    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
+    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"), Q_SKIPEMPTYPARTS);
     if (vl.isEmpty()) return r;
     bool on = false;
     int n;
@@ -1078,7 +1078,7 @@ int cInspector::getInspectorProcess(const QString &value)
     int n;
     bool on = false;
     QStringList vl;
-    vl = value.split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
+    vl = value.split(QRegularExpression("\\s*,\\s*"), Q_SKIPEMPTYPARTS);
     if (!vl.isEmpty()) {
         CONT_ONE_ONE(_sPolling,  IT_PROCESS_POLLING)
         CONT_ONE_ONE(_sTimed,    IT_PROCESS_TIMED)
@@ -1712,7 +1712,7 @@ QJsonValue findJsonValue(const QJsonValue& o, const QString& key)
 static QJsonValue searchJsonValue(const QJsonValue& o, const QString& keys)
 {
     QJsonValue r = o;
-    QStringList ksl = keys.split('.', Qt::SkipEmptyParts);
+    QStringList ksl = keys.split('.', Q_SKIPEMPTYPARTS);
     foreach (QString key, ksl) {
         key = key.simplified();
         if (key.isEmpty()) continue;
@@ -1874,10 +1874,10 @@ QStringList cInspector::text2list(QString &text)
     QString sRegexp;
     QStringList values;
     if (!sSeparator.isEmpty()) {
-        values = text.split(sSeparator, Qt::SkipEmptyParts);
+        values = text.split(sSeparator, Q_SKIPEMPTYPARTS);
     }
     else if (!(sRegexp = feature("regexp_separator")).isEmpty()) {
-        values = text.split(QRegularExpression(sRegexp), Qt::SkipEmptyParts);
+        values = text.split(QRegularExpression(sRegexp), Q_SKIPEMPTYPARTS);
     }
     else if (!(sRegexp = feature(_sRegexp)).isEmpty()) {
         QRegularExpression re(sRegexp);

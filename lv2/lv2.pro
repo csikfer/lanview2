@@ -49,8 +49,6 @@ OTHER_FILES += $$BISONSOURCES \
 QT += core network sql
 QT -= gui
 
-# equals(QT_MAJOR_VERSION, 6):
-
 TARGET = lv2
 TEMPLATE = lib
 

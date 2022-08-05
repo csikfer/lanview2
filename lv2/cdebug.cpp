@@ -460,7 +460,7 @@ void debugStream::sRedyLineFromThread()
 {
     if (cDebug::disabled) return;
     if (isMainThread() == false) {
-        QTextStream(stderr) << QObject::tr("ERROR void debugStream::sRedyLineFromThread() : This is not main thread.") << Qt::endl;
+        QTextStream(stderr) << QObject::tr("ERROR void debugStream::sRedyLineFromThread() : This is not main thread.") << Q_ENDL;
         return;
     }
     QString m;

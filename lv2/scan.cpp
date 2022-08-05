@@ -1329,13 +1329,13 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
                  << "Choice" << sep
                  << "name"  << sep << "address" << sep << "descr" << sep
                  << "pname" << sep << "pdescr" << sep
-                 << "cmac" << sep << "pmac" << Qt::endl;
+                 << "cmac" << sep << "pmac" << Q_ENDL;
         }
         strm << quotedString(pDev->getName()) << sep << port_ix << sep
              << choice << sep
              << quotedString(row.name)  << sep << row.addr.toString() << sep << quotedString(row.descr) << sep
              << quotedString(row.pname) << sep << quotedString(row.pdescr) << sep
-             << row.cmac.toString() << sep << row.pmac.toString() << Qt::endl;
+             << row.cmac.toString() << sep << row.pmac.toString() << Q_ENDL;
         f.close();
     }
 #endif
@@ -1502,7 +1502,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
                      << "RemPortId" << sep << "dump" << sep
                      << "RemPortDesc" << sep
                      << "RemSysDesc" << sep
-                     << "RemSysName" << Qt::endl;
+                     << "RemSysName" << Q_ENDL;
             }
             strm << quotedString(pDev->getName()) << sep << index << sep
                  << sRemChassisIdSubtype << sep
@@ -1511,7 +1511,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
                  << quotedString(RemPortId.toString()) << sep << dump(RemPortId.toByteArray()) << sep
                  << quotedString(RemPortDesc) << sep
                  << quotedString(RemSysDesc) << sep
-                 << quotedString(RemSysName) << Qt::endl;
+                 << quotedString(RemSysName) << Q_ENDL;
             f.close();
         }
 #endif

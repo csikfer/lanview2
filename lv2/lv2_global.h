@@ -39,16 +39,7 @@ This file is part of LanView2.
     // C++17
 #   if __cplusplus >= 201703L
 #       define LV2_FALLTHROUGH [[fallthrough]];
-/*
-    // C++14
-#   elif __cplusplus >= 201402L
-#       define LV2_FALLTHROUGH [[gnu::fallthrough]];
-    // C++11
-#   elif __cplusplus >= 201103L
-#       define LV2_FALLTHROUGH [[gnu::fallthrough]];
-*/
 #   else
-//#     define LV2_FALLTHROUGH [[clang::fallthrough]]
 #      if defined(__GNUC__) && __GNUC__ >= 7
 #          define LV2_FALLTHROUGH __attribute__ ((fallthrough));
 #      else
@@ -71,12 +62,17 @@ This file is part of LanView2.
 #  define swapItemsAt swap
 #endif
 
-
-#if defined(__cplusplus) && __cplusplus < 201703L
-    // ?!
-#  define nullptr NULL
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+#  define Q_ENDL endl
+#  define Q_BOM bom
+#  define Q_SKIPEMPTYPARTS QString::SkipEmptyParts
+#  define Q_KEEPEMPTYPARTS QString::KeepEmptyParts
+#else
+#  define Q_ENDL Qt::endl
+#  define Q_BOM Qt::bom
+#  define Q_SKIPEMPTYPARTS Qt::SkipEmptyParts
+#  define Q_KEEPEMPTYPARTS Qt::KeepEmptyParts
 #endif
-
 
 /// @def NULL_ID
 /// NULL ID-t reprezentáló konstans.

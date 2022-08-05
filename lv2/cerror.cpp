@@ -159,13 +159,13 @@ void cError::circulation()
 
     if (errCount() > mMaxErrCount) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
-        cerr << QObject::tr("*** Error circulation **** Thread object name %1").arg(mThreadName) << Qt::endl;
+        cerr << QObject::tr("*** Error circulation **** Thread object name %1").arg(mThreadName) << Q_ENDL;
         int n = 1;
         foreach (cError * pe, errorList) {
             qlonglong eid = sendError(pe);
             QString em = eid == NULL_ID ? QObject::tr("\n --- A hiba rekord kiírása sikertelen.") : QObject::tr("\n --- Kiírt hiba rekord id : %1").arg(eid);
             cerr << "[#" << n++ << QChar(']') << QChar(' ') << pe->msg() << em
-                 << Qt::endl;
+                 << Q_ENDL;
             ++n;
         }
         exit(-1);

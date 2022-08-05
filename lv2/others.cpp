@@ -800,7 +800,7 @@ QVariantList list_longlong2variant(const QList<qlonglong> &v)
 cCommaSeparatedValues&  endl(cCommaSeparatedValues& __csv)
 {
     __csv.line.chop(1); // Drop last separator
-    *__csv.pStream << __csv.line << Qt::endl;
+    *__csv.pStream << __csv.line << Q_ENDL;
     __csv.line.clear();
     return __csv;
 }
@@ -862,7 +862,7 @@ void cCommaSeparatedValues::clear()
     csv.clear();
     line.clear();
     pStream = new QTextStream(&csv, QIODevice::ReadWrite);
-    (*pStream) << Qt::bom;  // BOM / UTF8
+    (*pStream) << Q_BOM;  // BOM / UTF8
 }
 
 const QString& cCommaSeparatedValues::toString() const
@@ -972,7 +972,7 @@ void cCommaSeparatedValues::splitLine()
         return;
     }
     _state = CSVE_OK;
-    values = line.split(sep, Qt::KeepEmptyParts);
+    values = line.split(sep, Q_KEEPEMPTYPARTS);
     static const QRegularExpression p1("^\\s*(\")+");
     static const QRegularExpression p2("(\")+\\s*$");
     QRegularExpressionMatch m;

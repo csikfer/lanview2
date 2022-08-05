@@ -564,23 +564,23 @@ void lanView::parseArg(void)
     }
     if (0 < findArg(QChar('h'), _sHelp, args)) {
         QTextStream QStdOut(stdout);
-        if (appHelp.isEmpty() == false) QStdOut << appHelp << Qt::endl;
-        QStdOut << tr("-d|--debug-level <level>    Set debug level") << Qt::endl;
-        QStdOut << tr("-L|--log-file <file name>   Set log file name") << Qt::endl;
-        QStdOut << tr("-V|--lib-version            Print lib version") << Qt::endl;
-        QStdOut << tr("-S|--test-self-name         Test option") << Qt::endl;
-        QStdOut << tr("-R|--host-service-id        Root host-service id") << Qt::endl;
-        QStdOut << tr("-h|--help                   Print help") << Qt::endl;
+        if (appHelp.isEmpty() == false) QStdOut << appHelp << Q_ENDL;
+        QStdOut << tr("-d|--debug-level <level>    Set debug level") << Q_ENDL;
+        QStdOut << tr("-L|--log-file <file name>   Set log file name") << Q_ENDL;
+        QStdOut << tr("-V|--lib-version            Print lib version") << Q_ENDL;
+        QStdOut << tr("-S|--test-self-name         Test option") << Q_ENDL;
+        QStdOut << tr("-R|--host-service-id        Root host-service id") << Q_ENDL;
+        QStdOut << tr("-h|--help                   Print help") << Q_ENDL;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('V'), _sLibVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(tr("LanView2 lib version ")).arg(libVersion) << Qt::endl;
+        QStdOut << QString(tr("LanView2 lib version ")).arg(libVersion) << Q_ENDL;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('v'), _sVersion, args)) {
         QTextStream QStdOut(stdout);
-        QStdOut << QString(tr("%1 version %2")).arg(appName).arg(appVersion) << Qt::endl;
+        QStdOut << QString(tr("%1 version %2")).arg(appName).arg(appVersion) << Q_ENDL;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < (i = findArg(QChar('d'), _sDebugLevel, args))

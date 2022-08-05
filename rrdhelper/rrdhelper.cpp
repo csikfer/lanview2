@@ -176,7 +176,7 @@ void cRrdHelper::execRrd(const QString& payload)
     cntFail++;  // it's not good yet
     bool ok1, ok2;
     QSqlQuery q = getQuery();
-    QStringList sl = payload.split(QChar(' '), Qt::SkipEmptyParts);
+    QStringList sl = payload.split(QChar(' '), Q_SKIPEMPTYPARTS);
     if (sl.size() != RP_FIELD_NUM) {
         APPMEMO(q, tr("Invalid RRD notify (invalid field number) : '%1'").arg(payload), RS_CRITICAL);
         return;

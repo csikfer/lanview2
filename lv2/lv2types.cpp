@@ -563,7 +563,7 @@ netAddress& netAddress::setNetByName(const QString& __nn)
             int i = line.indexOf(QString('#')); // kommentek
             if (i == 0) continue;
             if (i >  1) line = line.left(i);
-            QStringList fields = line.split(sep, Qt::SkipEmptyParts);
+            QStringList fields = line.split(sep, Q_SKIPEMPTYPARTS);
             if (fields.count() < 2) {
                 DWAR() << "Invalid /etc/networks line : " << line;
                 continue;
