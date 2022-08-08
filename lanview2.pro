@@ -1,5 +1,5 @@
 equals(QT_MAJOR_VERSION, 6): error("Qt 6 not supported")
-lessThan(QT_MINOR_VERSION, 12): error(Not supported Qt varsion < 5.12);
+lessThan(QT_MINOR_VERSION, 9): error(Not supported Qt varsion < 5.9);
 
 
 TEMPLATE = subdirs

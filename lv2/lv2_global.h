@@ -58,6 +58,12 @@ This file is part of LanView2.
 #   define LV2_FALLTHROUGH
 #endif
 
+// Nem tudom mikor vezették be, de az 5.9-ben nincs
+#if (QT_VERSION < QT_VERSION_CHECK(5, 10, 0))
+#  define qsizetype int
+#endif
+
+
 #if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
 #  define swapItemsAt swap
 #endif
