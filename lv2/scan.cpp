@@ -175,7 +175,7 @@ int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
     QString line;
     int r = 0;
     while ((line = str.readLine()).isEmpty() == false) {
-        static const QRegularExpression re;
+        static const QRegularExpression re("\\s+");
         QStringList fl = line.split(re);
         QHostAddress addr(fl[0]);
         QString em;
@@ -531,7 +531,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             if (ifName == ifDescr) ifName = QString::fromLatin1(ban);   // ???
             ifDescr = ban;
             if (ifType == IFTYPE_IANA_ID_ETH) {    // Guess at who the real Ethernet interfaces
-                const QRegularExpression pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
+                static const QRegularExpression pat("#[0-9]+$");   // A sample that fits the physical interface, for example: ...#34
                 if (pat.match(ifName).hasMatch()) {
                     pIfType = &cIfType::ifType("veth"); // Is virtual (maybe)
                 }
@@ -756,7 +756,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
         if (!sel.isEmptyRec()) {
             QString s = sel.getName(_sChoice);
             if (!s.isEmpty()) {
-                const QRegularExpression re;
+                static const QRegularExpression re(",//s*");
                 QStringList sl = s.split(re);
                 type |= pnte->lst2set(sl);
             }
