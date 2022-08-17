@@ -14,28 +14,16 @@ public:
     /// @param _nullable Ha értéke true, akkor az üres input is megengedett
     cIntValidator(bool _nullable = false, QObject *parent = 0) : QValidator(parent) {
         nullable = _nullable;
-        lastState = Invalid;
         min = std::numeric_limits<qlonglong>::min();
         max = std::numeric_limits<qlonglong>::max();
     }
     void setMin(qlonglong _mi) { min = _mi; }
     void setMax(qlonglong _ma) { max = _ma; }
-    void fixup(QString &input) const;
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
     qlonglong   min;
     qlonglong   max;
-    State       lastState;
-    State setState(State _st) const {
-        if (lastState != _st) {
-            *const_cast<State *>(&lastState) = _st;
-            changedState(lastState);
-        }
-        return lastState;
-    }
-signals:
-    void changedState(State st) const;
 };
 
 /// @class cRealValidator
@@ -47,28 +35,16 @@ public:
     /// @param _nullable Ha értéke true, akkor az üres input is megengedett
     cRealValidator(bool _nullable = false, QObject *parent = 0) : QValidator(parent) {
         nullable = _nullable;
-        lastState = Invalid;
         min = std::numeric_limits<double>::min();
         max = std::numeric_limits<double>::max();
     }
     void setMin(double _mi) { min = _mi; }
     void setMax(double _ma) { max = _ma; }
-    void fixup(QString &input) const;
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
     double min;
     double max;
-    State       lastState;
-    State setState(State _st) const {
-        if (lastState != _st) {
-            *const_cast<State *>(&lastState) = _st;
-            changedState(lastState);
-        }
-        return lastState;
-    }
-signals:
-    void changedState(State st) const;
 };
 
 /// @class cMacValidator
@@ -83,16 +59,6 @@ public:
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
-    State       lastState;
-    State setState(State _st) const {
-        if (lastState != _st) {
-            *const_cast<State *>(&lastState) = _st;
-            changedState(lastState);
-        }
-        return lastState;
-    }
-signals:
-    void changedState(State st) const;
 };
 
 /// @class cINetValidator
@@ -104,20 +70,9 @@ public:
     /// Konstruktor
     /// @param _nullable Ha értéke true, akkor az üres input is megengedett
     cINetValidator(bool _nullable = false, QObject *parent=0) : QValidator(parent) { nullable = _nullable; }
-    void fixup(QString &input) const;
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
-    State       lastState;
-    State setState(State _st) const {
-        if (lastState != _st) {
-            *const_cast<State *>(&lastState) = _st;
-            changedState(lastState);
-        }
-        return lastState;
-    }
-signals:
-    void changedState(State st) const;
 };
 
 /// @class cCidrValidator
@@ -128,20 +83,9 @@ public:
     /// Konstruktor
     /// @param _nullable Ha értéke true, akkor az üres input is megengedett
     cCidrValidator(bool _nullable = false, QObject *parent=0) : QValidator(parent) { nullable = _nullable; }
-    void fixup(QString &input) const;
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
-    State       lastState;
-    State setState(State _st) const {
-        if (lastState != _st) {
-            *const_cast<State *>(&lastState) = _st;
-            changedState(lastState);
-        }
-        return lastState;
-    }
-signals:
-    void changedState(State st) const;
 };
 
 class LV2GSHARED_EXPORT cItemDelegateValidator : public QItemDelegate

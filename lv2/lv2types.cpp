@@ -127,11 +127,11 @@ QString   cMac::toString() const
     return r.right(17);
 }
 
-const QString cMac::_sMacPattern1 = "^([A-F\\d]{6,12})^$";
-const QString cMac::_sMacPattern2 = "^([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})$";
-const QString cMac::_sMacPattern3 = "^([A-F\\d]{1,6})-([A-F\\d]{1,6})$";
-const QString cMac::_sMacPattern4 = "^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$";
-const QString cMac::_sMacPattern5 = "^([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})$";
+const QString cMac::_sMacPattern1 = "([A-F\\d]{6,12})";
+const QString cMac::_sMacPattern2 = "([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})[:-]([A-F\\d]{1,2})";
+const QString cMac::_sMacPattern3 = "([A-F\\d]{1,6})-([A-F\\d]{1,6})";
+const QString cMac::_sMacPattern4 = "(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";
+const QString cMac::_sMacPattern5 = "([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})";
 cMac& cMac::set(const QString& __mac)
 {
     QString s = __mac.simplified();
@@ -142,27 +142,26 @@ cMac& cMac::set(const QString& __mac)
     QRegularExpression re;
     re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
     QRegularExpressionMatch match;
-    if (re.setPattern(_sMacPattern1), (match = re.match(s)).hasMatch()) {
+    if (re.setPattern(QRegularExpression::anchoredPattern(_sMacPattern1)), (match = re.match(s)).hasMatch()) {
         val = match.captured(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if ((re.setPattern(_sMacPattern2), (match = re.match(s)).hasMatch())
-          || (re.setPattern(_sMacPattern5), (match = re.match(s)).hasMatch())) {
+    else if ((re.setPattern(QRegularExpression::anchoredPattern(_sMacPattern2)), (match = re.match(s)).hasMatch())
+          || (re.setPattern(QRegularExpression::anchoredPattern(_sMacPattern5)), (match = re.match(s)).hasMatch())) {
         for (int i = 1; i <= 6; ++i) {
             val <<= 8;
             val |= match.captured(i).toInt(&ok, 16);
             if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
         }
     }
-    else if (re.setPattern(_sMacPattern3), (match = re.match(s)).hasMatch()) {
+    else if (re.setPattern(QRegularExpression::anchoredPattern(_sMacPattern3)), (match = re.match(s)).hasMatch()) {
         val |= match.captured(1).toLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
         val <<= 24;
         val |= match.captured(2).toLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if (re.setPattern(_sMacPattern1), (match = re.match(s)).hasMatch()) {
-        QString t(__mac);
+    else if (re.setPattern(QRegularExpression::anchoredPattern(_sMacPattern4)), (match = re.match(s)).hasMatch()) {
         for (int i = 1; i <= 6; ++i) {
         int d = match.captured(i).toInt(&ok);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
