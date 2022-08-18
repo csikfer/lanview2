@@ -210,7 +210,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
     else {
         if ((s = inspector.feature(_sLogrot)).isEmpty() == false) {
-            static const QRegularExpression re("^(\\d+)([kMG]?)[,;]?(\\d*)$");
+            static const QRegularExpression re(QRegularExpression::anchoredPattern("(\\d+)([kMG]?)[,;]?(\\d*)"));
             QRegularExpressionMatch ma;
             if (!re.isValid()) EXCEPTION(EPROGFAIL, 0, re.pattern());
             if (!(ma = re.match(s)).hasMatch()) EXCEPTION(EDATA, -1, tr("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot, s));

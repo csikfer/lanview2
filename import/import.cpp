@@ -274,14 +274,15 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
 void lv2import::debugLine()
 {
     QString s = cDebug::getInstance()->dequeue();
-    QRegExp  re("^([\\da-f]{8})\\s(.+)$");
-    if (re.exactMatch(s)) {
+    static const QRegularExpression  re(QRegularExpression::anchoredPattern(_sDebugLinePattern));
+    QRegularExpressionMatch ma = re.match(s);
+    if (ma.hasMatch()) {
         bool ok;
-        QString sm = re.cap(1);
+        QString sm = ma.captured(1);
         qulonglong m = sm.toULongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL);
         if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
-            s = re.cap(2).trimmed();
+            s = ma.captured(2).trimmed();
             sDebugLines += s + "\n";
         }
     }

@@ -534,5 +534,6 @@ EXT_ QString list2string(const QStringList& __vl);
 /// Egy QVariant típusú érték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString debVariantToString(const QVariant& v);
 
+EXT_ const QString _sDebugLinePattern;
 
 #endif // CDEBUG_H

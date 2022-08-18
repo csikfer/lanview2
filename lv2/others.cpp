@@ -262,7 +262,7 @@ tStringMap cFeatures::value2map(const QString& _s)
     QString key;
     QString val;
     QString s = _s.simplified();
-    static const QRegularExpression re("^(\\w+)\\[([^\\]]*)\\](.*)$");
+    static const QRegularExpression re(QRegularExpression::anchoredPattern("(\\w+)\\[([^\\]]*)\\](.*)"));
     QRegularExpressionMatch ma;
     while ((ma = re.match(s)).hasMatch()) {
         key = ma.captured(1);

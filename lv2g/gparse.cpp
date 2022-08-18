@@ -256,7 +256,7 @@ void cParseWidget::setParams()
 void cParseWidget::debugLine()
 {
     QString s = cDebug::getInstance()->dequeue();
-    static const QRegularExpression re("^([\\da-f]{8})\\s(.+)$");
+    static const QRegularExpression re(QRegularExpression::anchoredPattern(_sDebugLinePattern));
     QRegularExpressionMatch ma;
     if ((ma = re.match(s)).hasMatch()) {
         bool ok;

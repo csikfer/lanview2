@@ -563,3 +563,4 @@ QString debVariantToString(const QVariant& v)
     return quotedString(s) + "::" + (tn == nullptr ? _sNULL : QString(tn));
 }
 
+const QString _sDebugLinePattern = "([\\da-f]{8})\\s(.+)";

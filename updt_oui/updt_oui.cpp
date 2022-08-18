@@ -72,9 +72,9 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
     DBGFN();
     try {
         QTextStream src(&text, QIODevice::ReadOnly);
-        static const QRegularExpression pat1("^\\s*([\\da-f]{2})-([\\da-f]{2})-([\\da-f]{2})\\s+\\(hex\\)[\\s\\t]+(.+)\\s*$", QRegularExpression::CaseInsensitiveOption);
+        static const QRegularExpression pat1(QRegularExpression::anchoredPattern("\\s*([\\da-f]{2})-([\\da-f]{2})-([\\da-f]{2})\\s+\\(hex\\)[\\s\\t]+(.+)\\s*"), QRegularExpression::CaseInsensitiveOption);
         if (pat1.isValid() == false) EXCEPTION(EPROGFAIL, -1, "pat1");
-        static const QRegularExpression pat2("^\\s*[\\-\\da-f]+\\s+\\(base 16\\)[\\s\\t]+(.*)$", QRegularExpression::CaseInsensitiveOption);
+        static const QRegularExpression pat2(QRegularExpression::anchoredPattern("\\s*[\\-\\da-f]+\\s+\\(base 16\\)[\\s\\t]+(.*)"), QRegularExpression::CaseInsensitiveOption);
         if (pat2.isValid() == false) EXCEPTION(EPROGFAIL, -1, "pat2");
         QString line;
         QRegularExpressionMatch ma;

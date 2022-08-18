@@ -69,7 +69,7 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
     QHostAddress    a(input);
     if (!a.isNull()) return Acceptable;   // IPV4 esetén hiányos címet is elfogad; IPV6 ?
     if (input.contains(':')) {  // IPV6
-        static const QRegularExpression re("^[:\\dABCDEF]+$", QRegularExpression::CaseInsensitiveOption);
+        static const QRegularExpression re(QRegularExpression::anchoredPattern("[:\\dABCDEF]+"), QRegularExpression::CaseInsensitiveOption);
         if (!re.match(input).hasMatch()) return Invalid;
         return Intermediate;  // Nincs benne rossz karakter, de nem IP cím
     }
@@ -93,7 +93,7 @@ QValidator::State cCidrValidator::validate(QString &input, int &pos) const
     if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
     netAddress    n(input);
     if (n.isValid()) return Acceptable;
-    static const QRegularExpression re("^[\\./:\\dABCDEF]+$", QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression re(QRegularExpression::anchoredPattern("[\\./:\\dABCDEF]+"), QRegularExpression::CaseInsensitiveOption);
     if (!re.match(input).hasMatch()) return Invalid;
     return Intermediate;
 }

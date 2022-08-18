@@ -447,7 +447,7 @@ void cRecordTableFilter::clearValidator()
 }
 void cRecordTableFilter::setValidatorRegExp(const QString& _re)
 {
-    QRegularExpression re(_re);
+    const QRegularExpression re(QRegularExpression::anchoredPattern(_re));
     QRegularExpressionValidator *prev;
     if (dialog.pLineEdit1 != nullptr) {
         prev = new QRegularExpressionValidator(re);
@@ -472,16 +472,16 @@ void cRecordTableFilter::setValidator(int i)
         tSetValidator<QDoubleValidator>();
         break;
     case PT_TIME:
-        setValidatorRegExp(QString("^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
+        setValidatorRegExp(QString("([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]"));
         break;
     case PT_DATE:
-        setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])$"));
+        setValidatorRegExp(QString("20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])"));
         break;
     case PT_DATETIME:
-        setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])[ T]([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
+        setValidatorRegExp(QString("20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])[ T]([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]"));
         break;
     case PT_INTERVAL:
-        setValidatorRegExp(QString("^(\\d+[Dd]ays?)?\\s*([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](\\.\\d+)?$"));
+        setValidatorRegExp(QString("(\\d+[Dd]ays?)?\\s*([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](\\.\\d+)?"));
         break;
     case PT_INET:
         tSetValidator<cINetValidator>();
