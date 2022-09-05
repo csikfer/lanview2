@@ -1,4 +1,5 @@
 #include "changeswitch.h"
+#include "popupreport.h"
 
 cCheckBoxListLayout::cCheckBoxListLayout(QBoxLayout::Direction dir, QWidget *par)
     : QBoxLayout(dir, par)
@@ -479,11 +480,16 @@ cChangeSwitch::cChangeSwitch(QMdiArea * par)
                 pUi->lineEditPlacePatternSrc, pUi->lineEditSwitchPatternSrc,
                 _sNul, sqlFilt, this);
     pSelNodeSrc->refresh();
+    pSelNodeSrc->setPlaceInfoButton(pUi->toolButtonPlaceInfoSrc);
+    pSelNodeSrc->setNodeInfoButton(pUi->toolButtonSwitchInfoSrc);
+
     pSelNodeTrg = new cSelectNode(
                 pUi->comboBoxZoneTrg, pUi->comboBoxPlaceTrg, pUi->comboBoxSwitchTrg,
                 pUi->lineEditPlacePatternTrg, pUi->lineEditSwitchPatternTrg,
                 _sNul, sqlFilt, this);
     pSelNodeTrg->refresh();
+    pSelNodeTrg->setPlaceInfoButton(pUi->toolButtonPlaceInfoTrg);
+    pSelNodeTrg->setNodeInfoButton(pUi->toolButtonSwitchInfoTrg);
 
     QList<int> sizes;
     sizes << 600 << 100 << 100;
@@ -990,3 +996,5 @@ void cChangeSwitch::setListCellColor(int lt, int row, int ec)
     }
     enumSetBgColor(p->at(row), sET_, ec);
 }
+
+

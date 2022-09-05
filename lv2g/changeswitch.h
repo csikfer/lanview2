@@ -166,7 +166,6 @@ private slots:
     void on_toolButtonDelSrv_clicked();
     void on_toolButtonCpyPar_clicked();
     void on_toolButtonDelPar_clicked();
-
     void on_saver_finished();
     void setTableCellColor(int row, int col, int ix, int ec);
     void setListCellColor(int lt, int row, int ec);
