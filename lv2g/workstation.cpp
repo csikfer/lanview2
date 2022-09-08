@@ -1,6 +1,5 @@
 #include "lv2widgets.h"
 #include "srvdata.h"
-#include "lv2user.h"
 #include "lv2link.h"
 #include "record_dialog.h"
 #include "object_dialog.h"
@@ -203,7 +202,7 @@ void cSetDialog::clickedCheckBox(int id)
             pp->setChecked(isNull);
         }
     }
-    changedState(on, off);
+    emit changedState(on, off);
 }
 
 bool cSetDialog::autoset()
