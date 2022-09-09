@@ -6,7 +6,6 @@
 #include "popupreport.h"
 #include "workstation.h"
 #include "ui_wstform.h"
-#include "ui_phslinkform.h"
 #include "menu.h"
 #include "mainwindow.h"
 #include "hsoperate.h"
@@ -736,9 +735,9 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
     foreach (sh, endMap.keys()) {
         if (shareConnect(sh, ES_) == ES_NC) continue;
         if (lpid != NULL_ID) {
-            sErrs << htmlError(tr("A láncnak több végpontja is van !? %1 és %2")
-                               .arg(cNPort().getFullNameById(*pq, lpid))
-                               .arg(cNPort().getFullNameById(*pq, endMap.value(sh)))  );
+            sErrs << htmlError(tr("A láncnak több végpontja is van !? %1 és %2").arg(
+                                   cNPort().getFullNameById(*pq, lpid),
+                                   cNPort().getFullNameById(*pq, endMap.value(sh))));
             isOk = false;
             return;
         }
@@ -886,6 +885,10 @@ bool cWorkstation::checkSelectedNode(cNode& n, const QString &_t)
     cNPort *p = n.ports.first();
     cInterface *pi = p->reconvert<cInterface>();
     if (pi->addresses.size() > 1) {                 // Max egy cím
+        /**/
+
+
+
         pUi->textEditMsg->append(htmlError(tr("A %1 alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
                                            .arg(_t, n.getName())));
         return false;
@@ -911,9 +914,40 @@ void cWorkstation::selectedNode(qlonglong id)
     node.set(*pSample);
     node.fetchPorts(*pq, CV_PORTS_ADDRESSES);
     if (node.ports.size() != 1) EXCEPTION(EPROGFAIL);   // Elvileg az egy portosokat olvastuk be.
+    bool ok = node.ports.first()->reconvert<cInterface>()->addresses.size() <= 1;
+    if (!ok) {    // Lehetnek fals címek
+        tOwnRecords<cIpAddress, cInterface>&  addresses = node.ports.first()->reconvert<cInterface>()->addresses;
+        QStringList saddrs;
+        for (const cIpAddress* pa: addresses) {
+            cSubNet subnet;
+            QString sSubNet;
+            if (subnet.fetchById(pa->getId(_sSubNetId))) sSubNet = subnet.getName();
+            saddrs << pa->address().toString() + "/" + pa->getName(_sIpAddressType) + _sCommaSp + sSubNet;
+        }
+        int ix = cSelectDialog::radioButtons(
+                    tr("Válassza ki a megfelelő címet"),
+                    saddrs,
+                    tr("Ezen a formon csak egy IP címmel rendelkező eszközök kezelhetőek, ha csak egy valós cím van, jelölje ki azt!"),
+                    this);
+        PDEB(VVERBOSE) << tr("Selected address index = %1").arg(ix);
+        if (ix >= 0) {
+            cIpAddress * pa = addresses.takeAt(ix);
+            addresses.clear();
+            addresses << pa;
+            ok = true;
+        }
+        else {
+            pDelete(pSample);
+            node.clear();
+            pnp = nullptr;
+            pif = nullptr;
+            pip = nullptr;
+            pUi->comboBoxNode->setCurrentIndex(0);
+        }
+    }
     bbNode.end(false);  // set state by node2gui()
     // Display fields
-    node2gui(true);
+    if (ok) node2gui(true);
 }
 
 void cWorkstation::linkChanged(qlonglong _pid, int _lt, int _sh)
@@ -1294,7 +1328,7 @@ void cWorkstation::on_pushButtonGoServices_clicked()
         const QString sMenuItemName = "hsop";
         QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(sMenuItemName);
         if (i != cMenuAction::actionsMap.end()) {
-            (*i)->triggered();
+            emit (*i)->triggered();
         }
         else {
             QString msg = tr("Nincs szervízpéldányt manipuláló adatlap a menüben.");
@@ -1347,13 +1381,13 @@ void cWorkstation::on_pushButtonSave_clicked()
             switch (n) {
             case 0:     EXCEPTION(EFOUND, 0, tr("Nincs meg a modosítandó eszköz."));
             case 1:     break;
-            default:    EXCEPTION(ESTAT, n, tr("Több eszköz modosítása ID alapján nem lehetséges."));
+            default:    EXCEPTION(ESTAT, n, tr("Több eszköz modosítása ID alapján, nem lehetséges."));
             }
             n = pnp->update(*pq, false, QBitArray(), QBitArray(), EX_ERROR);    // Update port
             switch (n) {
             case 0:     EXCEPTION(EFOUND, 0, tr("Nincs meg a modosítandó port."));
             case 1:     break;
-            default:    EXCEPTION(ESTAT, n, tr("Több port modosítása ID alapján nem lehetséges."));
+            default:    EXCEPTION(ESTAT, n, tr("Több port modosítása ID alapján, nem lehetséges."));
             }
             pip->setId(_sPortId, pnp->getId());
             pip->remove(*pq, false, pip->mask(_sPortId), EX_ERROR); // Delete all port IP
@@ -1449,7 +1483,7 @@ void cWorkstation::on_pushButtonFindMac_clicked()
         const QString sMenuItemName = "findmac";
         QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(sMenuItemName);
         if (i != cMenuAction::actionsMap.end()) {
-            (*i)->triggered();
+            emit (*i)->triggered();
         }
         else {
             QString msg = tr("Nincs cím szerinti keresés adatlap a menüben.");
@@ -1474,7 +1508,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         QList<QNetworkInterface>    interfaces = QNetworkInterface::allInterfaces();
         QMutableListIterator<QNetworkInterface>    i(interfaces);
         QStringList sifaces;        // Interface name list
-        QList<QHostAddress> ifaddrs;
+        QList<QList<QHostAddress> > ifsaddrs;
         QHostAddress a;
         QList<QNetworkAddressEntry> ael;
         while (i.hasNext()) {
@@ -1496,8 +1530,9 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             case QNetworkInterface::Phonet:
             case QNetworkInterface::Ieee802154:
             case QNetworkInterface::SixLoWPAN:
-            case QNetworkInterface::Ieee80216:
-                sifaces << iface.name();
+            case QNetworkInterface::Ieee80216: {
+                sifaces << iface.name() + " ";
+                QList<QHostAddress> addrs;
                 QMutableListIterator<QNetworkAddressEntry> ii(ael);  // All IP by interface
                 while (ii.hasNext()) {
                     a = ii.next().ip();
@@ -1507,21 +1542,25 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
                 switch (ael.size()) {
                 case 0:
                     a.clear();
+                    addrs << a;
                     break;
                 case 1:
                     a = ael.first().ip();
-                    sifaces.last().prepend(tr("[%1] ").arg(a.toString()));
+                    sifaces.last().append(a.toString());
+                    addrs << a;
                     break;
                 default:    // > 1
                     QString aa;
-                    foreach (QNetworkAddressEntry ae, ael) aa += ae.ip().toString() + ", ";
+                    foreach (QNetworkAddressEntry ae, ael) {
+                        aa += ae.ip().toString() + ", ";
+                        addrs << ae.ip();
+                    }
                     aa.chop(2);
-                    QString msg = tr("Nem bejegyzett eszköz. A %1 nevű portnak több címe van : [%2]. Igy itt nem kezelhető.").arg(iface.name(), aa);
-                    pUi->textEditMsg->append(htmlError(msg));
-                    return;
+                    sifaces.last().append(aa);
+                    break;
                 }
-                ifaddrs << a;
-                break;
+                ifsaddrs << addrs;
+              } break;
             }
         }
         if (interfaces.isEmpty()) {
@@ -1531,6 +1570,7 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         }
         QNetworkInterface iface;
         QHostAddress      addr;
+        QList<QHostAddress> addrs;
         if (interfaces.size() > 1) {
             int ix = cSelectDialog::radioButtons(
                         tr("Válassza ki a megfelelő interfészt"),
@@ -1540,12 +1580,34 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
             PDEB(VVERBOSE) << tr("Selected interface index = %1").arg(ix);
             if (ix < 0) return;
             iface = interfaces.at(ix);
-            addr  = ifaddrs.at(ix);
+            addrs  = ifsaddrs.at(ix);
         }
         else {
             iface = interfaces.first();
-            addr  = ifaddrs.first();
+            addrs  = ifsaddrs.first();
         }
+        switch (addrs.size()) {
+        case 0:
+            break;
+        case 1:
+            addr = addrs.first();
+            break;
+        default: {    // >1
+            QStringList saddrs;
+            foreach (QHostAddress ae, addrs) {
+                saddrs << ae.toString();
+            }
+            int ix = cSelectDialog::radioButtons(
+                        tr("Válassza ki a megfelelő címet"),
+                        saddrs,
+                        tr("Ezen a formon csak egy IP címmel rendelkező eszközök kezelhetőek, ha csak egy valós cím van, jelölje ki azt!"),
+                        this);
+            PDEB(VVERBOSE) << tr("Selected address index = %1").arg(ix);
+            if (ix < 0) return;
+            addr  = addrs.at(ix);
+          } break;
+        }
+
         QString name = QSysInfo::machineHostName();
         pSelNode->reset();
         pUi->lineEditName->setText(name);
@@ -1559,10 +1621,13 @@ void cWorkstation::on_pushButtonLocalhost_clicked()
         QString msg;
         switch (pSelNode->setCurrentNode(pSelf->getId())) {
         case TS_FALSE:
-            msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy nem egy IP címe, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
+            msg = tr("A %1 nevű eszköz regisztrált, de nem egy portja van, vagy egy SNMP eszköz. Igy itt nem kezelhető.").arg(pSelf->getName());
             break;
         case TS_TRUE:
-            msg = checkNodeByArp(pif->mac(), pip->address());
+            if (!node.isNull()) {   // Több IP volt, és nem választott
+                msg = checkNodeByArp(pif->mac(), pip->address());
+            }
+            break;
         case TS_NULL:
             break;
         }

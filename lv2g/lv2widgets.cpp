@@ -108,7 +108,7 @@ cLineWidget::cLineWidget(QWidget *par, bool _ro, bool _horizontal)
     pLineEdit->setReadOnly(_ro);
     pNullButton->setIcon(lv2g::iconNull);
     pNullButton->setCheckable(true);
-    // pLayout->setMargin(0);
+    pLayout->setMargin(0);
     setLayout(pLayout);
     pLayout->addWidget(pLineEdit);
     pLayout->addWidget(pNullButton);
@@ -139,7 +139,7 @@ void cLineWidget::on_NullButton_togled(bool f)
     QVariant newVal = get();
     if (val == newVal) return;
     val = newVal;
-    changed(val);
+    emit changed(val);
 }
 
 void cLineWidget::on_LineEdit_textChanged(const QString& s)
@@ -148,7 +148,7 @@ void cLineWidget::on_LineEdit_textChanged(const QString& s)
     QVariant newVal = get();
     if (val == newVal) return;
     val = newVal;
-    changed(val);
+    emit changed(val);
 }
 
 /* **************************************** cComboLineWidget **************************************** */
@@ -164,7 +164,7 @@ cComboLineWidget::cComboLineWidget(const cRecordFieldRef& _cfr, const QString& s
     pModel->joinWith(pComboBox);
     pNullButton->setIcon(lv2g::iconNull);
     pNullButton->setCheckable(true);
-    // pLayout->setMargin(0);
+    pLayout->setMargin(0);
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
     pLayout->addWidget(pNullButton);
@@ -4744,8 +4744,8 @@ void cSelectNode::refresh(bool f)
 bool cSelectNode::emitChangeNode(bool f)
 {
     if (f && bbNode.test()) {
-        nodeIdChanged(currentNodeId());
-        nodeNameChanged(currentNodeName());
+        emit nodeIdChanged(currentNodeId());
+        emit nodeNameChanged(currentNodeName());
         if (pButtonNodeInfo != nullptr) pButtonNodeInfo->setDisabled(currentNodeId() == NULL_ID);
         return true;
     }
