@@ -117,7 +117,7 @@ QWidget * cHSORow::getWidgetSub()
     if (nsub == 0) return nullptr;
     QWidget *pWidget = new QWidget;
     QHBoxLayout *pLayout = new QHBoxLayout;
-    // pLayout->setMargin(0);
+    pLayout->setMargin(0);
     pWidget->setLayout(pLayout);
     pCheckBoxSub = new QCheckBox;
     pCheckBoxSub->setChecked(sub);
@@ -138,12 +138,13 @@ QWidget* cHSORow::getButtonCmd()
     if (cmds.isEmpty()) return nullptr;
     QWidget *pWidget = new QWidget;
     QHBoxLayout *pLayout = new QHBoxLayout;
+    pLayout->setMargin(0);
     pComboBoxCmd = new QComboBox;
     pToolButtonCmd = new QToolButton();
     pComboBoxCmd->addItems(cmds);
     pComboBoxCmd->setCurrentIndex(0);
     pToolButtonCmd->setIcon(QIcon("://icons/control.png"));
-    // pLayout->setMargin(0);
+    pLayout->setMargin(0);
     pLayout->addWidget(pComboBoxCmd);
     pLayout->addWidget(pToolButtonCmd);
     pWidget->setLayout(pLayout);
