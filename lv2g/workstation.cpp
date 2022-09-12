@@ -882,17 +882,17 @@ bool cWorkstation::checkSelectedNode(cNode& n, const QString &_t)
                                            .arg(_t, n.getName())));
         return false;
     }
-    cNPort *p = n.ports.first();
+/*    cNPort *p = n.ports.first();
     cInterface *pi = p->reconvert<cInterface>();
     if (pi->addresses.size() > 1) {                 // Max egy cím
-        /**/
+
 
 
 
         pUi->textEditMsg->append(htmlError(tr("A %1 alapján kiválasztott %2 eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető.")
                                            .arg(_t, n.getName())));
         return false;
-    }
+    }*/
     return true;
 }
 
@@ -1000,47 +1000,45 @@ QString cWorkstation::checkNodeByArp(const cMac& nodeMac, const QHostAddress& no
 
 void cWorkstation::ip_go()
 {
-    if (pip != nullptr) {
-        bool set = false;
-        QString msg;
-        QHostAddress ip = pip->address();
-        int cnt = -1;
-        cNode n;
-        if (!ip.isNull()) {
-            cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
-            if (1 == cnt) {
-                QString t = QString("%1 IP").arg(ip.toString());
-                if (!checkSelectedNode(n, t)) return;
-                pSelNode->setCurrentNode(n.getId());
-                set = n.getId() == pSelNode->currentNodeId();
-            }
+    QHostAddress ip(pIpEditWidget->getAddress());
+    bool set = false;
+    QString msg;
+    int cnt = -1;
+    cNode n;
+    if (!ip.isNull()) {
+        cnt = n.fetchByIp(*pq, ip, EX_IGNORE);
+        if (1 == cnt) {
+            QString t = QString("%1 IP").arg(ip.toString());
+            if (!checkSelectedNode(n, t)) return;
+            pSelNode->setCurrentNode(n.getId());
+            set = n.getId() == pSelNode->currentNodeId();
         }
-        if (set) {
-            pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
-            if (pif == nullptr) EXCEPTION(EDATA); // ?
-            msg = checkNodeByArp(pif->mac(), pip->address());
+    }
+    if (set) {
+        pUi->textEditMsg->append(htmlInfo(tr("A %1 IP alapján beolvasott az eszköz : ").arg(ip.toString(), n.getName())));
+        if (pif == nullptr) EXCEPTION(EDATA); // ?
+        msg = checkNodeByArp(pif->mac(), pip->address());
+    }
+    else {
+        switch (cnt) {
+        case -1:
+            msg = tr("Az IP nem valós cím.");
+            break;
+        case 1:
+            msg = tr("A %1 IP alapján nem sikerült beolvasni az eszköz adatokat.").arg(ip.toString());
+            on_toolButtonIP2MAC_clicked();
+            break;
+        case 0:
+            msg = tr("A %1 IP címmel nincs bejegyzett eszköz.").arg(ip.toString());
+            on_toolButtonIP2MAC_clicked();
+            break;
+        default:
+            msg = tr("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());
+            break;
         }
-        else {
-            switch (cnt) {
-            case -1:
-                msg = tr("A IP nem valós cím.");
-                break;
-            case 1:
-                msg = tr("A %1 IP alapján nem sikerült beolvasni az eszköz adatokat.").arg(ip.toString());
-                on_toolButtonIP2MAC_clicked();
-                break;
-            case 0:
-                msg = tr("A %1 IP címmel nincs bejegyzett eszköz.").arg(ip.toString());
-                on_toolButtonIP2MAC_clicked();
-                break;
-            default:
-                msg = tr("A %1 IP címmel több bejegyzett eszköz is van.").arg(ip.toString());
-                break;
-            }
-        }
-        if (!msg.isEmpty()) {
-            pUi->textEditMsg->append(htmlError(msg, true));
-        }
+    }
+    if (!msg.isEmpty()) {
+        pUi->textEditMsg->append(htmlError(msg, true));
     }
 }
 
@@ -1240,44 +1238,42 @@ void cWorkstation::on_toolButtonAddPlace_clicked()
 
 void cWorkstation::on_toolButtonSelectByMAC_clicked()
 {
-    if (pif != nullptr) {
-        bool set = false;
-        cMac mac = pif->mac();
-        int cnt = -1;
-        cNode n;
-        if (mac.isValid()) {
-            cnt = n.fetchByMac(*pq, mac, EX_ERROR);
-            if (1 == cnt) {
-                QString t = QString("%1 MAC").arg(mac.toString());
-                if (!checkSelectedNode(n, t)) return;
-                pSelNode->setCurrentNode(n.getId());
-                set = n.getId() == pSelNode->currentNodeId();
-            }
+    cMac mac(pUi->lineEditPMAC->text());
+    bool set = false;
+    int cnt = -1;
+    cNode n;
+    if (mac.isValid()) {
+        cnt = n.fetchByMac(*pq, mac, EX_ERROR);
+        if (1 == cnt) {
+            QString t = QString("%1 MAC").arg(mac.toString());
+            if (!checkSelectedNode(n, t)) return;
+            pSelNode->setCurrentNode(n.getId());
+            set = n.getId() == pSelNode->currentNodeId();
         }
-        QString msg;
-        if (set) {
-            pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
-            msg = checkNodeByArp(mac, pip->address());
+    }
+    QString msg;
+    if (set) {
+        pUi->textEditMsg->append(htmlInfo(tr("A %1 MAC alapján beolvasott az eszköz : ").arg(mac.toString(), n.getName())));
+        msg = checkNodeByArp(mac, pip->address());
+    }
+    else {
+        switch (cnt) {
+        case -1:
+            msg = tr("A MAC nem valós cím.");
+            break;
+        case 1:
+            msg = tr("A %1 MAC alapján nem sikerült beolvasni az eszköz adatokat.").arg(mac.toString());
+            break;
+        case 0:
+            msg = tr("A %1 MAC címmel nincs bejegyzett eszköz.").arg(mac.toString());
+            break;
+        default:
+            msg = tr("A %1 MAC címmel több bejegyzett eszköz is van.").arg(mac.toString());
+            break;
         }
-        else {
-            switch (cnt) {
-            case -1:
-                msg = tr("A MAC nem valós cím.");
-                break;
-            case 1:
-                msg = tr("A %1 MAC alapján nem sikerült beolvasni az eszköz adatokat.").arg(mac.toString());
-                break;
-            case 0:
-                msg = tr("A %1 MAC címmel nincs bejegyzett eszköz.").arg(mac.toString());
-                break;
-            default:
-                msg = tr("A %1 MAC címmel több bejegyzett eszköz is van.").arg(mac.toString());
-                break;
-            }
-        }
-        if (!msg.isEmpty()) {
-            pUi->textEditMsg->append(htmlError(msg, true));
-        }
+    }
+    if (!msg.isEmpty()) {
+        pUi->textEditMsg->append(htmlError(msg, true));
     }
 }
 

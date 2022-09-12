@@ -167,9 +167,9 @@ private slots:
     void selectedNode(qlonglong id);
     void linkChanged(qlonglong _pid, int _lt, int _sh);
     void addressChanged(const QHostAddress& _a, int _st);
-    void ip_info();
-    void ip_go();
-    void ip_query();
+    void ip_info(); ///< Riport az IP cím alapján
+    void ip_go();   ///< Munkaállomás kiválasztása az IP cím mezőbe beírt cím alapján
+    void ip_query();///< A MAC-hez több ip tartozik, egy valós érták kiválasztása
     void on_radioButtonMod_toggled(bool checked);
     void on_lineEditPName_textChanged(const QString &arg1);
     void on_comboBoxPType_currentIndexChanged(const QString &arg1);
