@@ -301,8 +301,8 @@ QString cDebug::dequeue()
     if (instance->mMsgQueue == nullptr)        EXCEPTION(EPROGFAIL, -1, QObject::tr("cDebug::instance->mMsgQueue is NULL pointer"));
     if (instance->mMsgQueueMutex == nullptr)   EXCEPTION(EPROGFAIL, -1, QObject::tr("cDebug::instance->mMsgQueueMutex is NULL pointer"));
     QMutexLocker locker(instance->mMsgQueueMutex);
-    if (instance->mMsgQueue->isEmpty())     return QObject::tr("***** *cDebug::instance->mMsgQueue is empty *****");
-    QString r = instance->mMsgQueue->dequeue();
+    QString r;
+    if (!instance->mMsgQueue->isEmpty()) r = instance->mMsgQueue->dequeue();
     return r;
 }
 
@@ -334,9 +334,10 @@ void cDebug::flushAll()
         return;
     *instance->mCout << QObject::tr("Flush thread messages :") << endl;
     instance->mThreadMsgQueueMutex->lock();
-    while (!instance->mThreadMsgQueue->isEmpty()) {
-        *instance->mCout << instance->mThreadMsgQueue->dequeue();
+    foreach (QString msg, *instance->mThreadMsgQueue) {
+        *instance->mCout << msg;
     }
+    instance->mThreadMsgQueue->clear();
     instance->mThreadMsgQueueMutex->unlock();
     *instance->mCout << QObject::tr("Flush thread messages end.") << endl;
 }
@@ -466,9 +467,9 @@ void debugStream::sRedyLineFromThread()
     QString m;
     cDebug *pD = cDebug::instance;
     pD->mThreadMsgQueueMutex->lock();
-    m = pD->mThreadMsgQueue->dequeue();
+    if (!pD->mThreadMsgQueue->isEmpty()) m = pD->mThreadMsgQueue->dequeue();
     pD->mThreadMsgQueueMutex->unlock();
-    (*this) << m;
+    if (!m.isEmpty()) (*this) << m;
     flush();
 }
 
