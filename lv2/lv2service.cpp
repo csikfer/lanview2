@@ -57,7 +57,6 @@ void cInspectorThread::timerEvent(QTimerEvent * event)
 
 void cInspectorThread::run()
 {
-    _DBGFN() << inspector.name() << endl;
     pDelete(pLastError);
     try {
         _DBGFN() << objectName() << " " << internalStatName(internalStat) << endl;

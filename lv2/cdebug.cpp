@@ -334,8 +334,8 @@ void cDebug::flushAll()
         return;
     *instance->mCout << QObject::tr("Flush thread messages :") << endl;
     instance->mThreadMsgQueueMutex->lock();
-    foreach (QString msg, *instance->mThreadMsgQueue) {
-        *instance->mCout << msg;
+    while (!instance->mThreadMsgQueue->isEmpty()) {
+        *instance->mCout << instance->mThreadMsgQueue->dequeue();
     }
     instance->mThreadMsgQueueMutex->unlock();
     *instance->mCout << QObject::tr("Flush thread messages end.") << endl;
