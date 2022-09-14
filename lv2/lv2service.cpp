@@ -1,20 +1,22 @@
 #include "lanview.h"
 #include "lv2service.h"
-#include "scan.h"
 
 class cInspectorThreadThread : public QThread {
     friend class cInspectorThread;
 protected:
     cInspectorThreadThread(cInspectorThread *p)
         : QThread(&p->inspector)
-        , pInspectorThread(p)
-    { setObjectName(p->inspector.name()); }
+        , pInspectorThread(p) {
+        setObjectName(p->inspector.name());
+        _DBGOBJ() << objectName() << endl;
+    }
     cInspectorThread * pInspectorThread;
     virtual void run();
 };
 
 void cInspectorThreadThread::run()
 {
+    _DBGFN() << pInspectorThread->inspector.name() << endl;
     pInspectorThread->run();
     if (pInspectorThread->internalStat == IS_RUN) {
         PDEB(INFO) << QObject::tr("Start %1 event loop ...").arg(objectName()) << endl;
@@ -31,12 +33,14 @@ cInspectorThread::cInspectorThread(cInspector *pp)
     , inspector(*pp)
     , pThread(new cInspectorThreadThread(this))
 {
-    setObjectName(inspector.name() + "::cInspectorThread");
+    const QString name = inspector.name();
+    _DBGFN() << name << endl;
+    setObjectName(name + "::cInspectorThread");
     _DBGFN() << objectName() << endl;
-    pThread->setObjectName(inspector.name());
+    pThread->setObjectName(name);
     abortFlag = false;
     pLastError = nullptr;
-    DBGFNL();
+    _DBGFNL() << name << endl;
 }
 
 cInspectorThread::~cInspectorThread()
@@ -46,13 +50,14 @@ cInspectorThread::~cInspectorThread()
 
 void cInspectorThread::timerEvent(QTimerEvent * event)
 {
-    _DBGFNL() << objectName() << endl;
+    _DBGFN() << objectName() << endl;
     inspector.timerEvent(event);
 }
 
 
 void cInspectorThread::run()
 {
+    _DBGFN() << inspector.name() << endl;
     pDelete(pLastError);
     try {
         _DBGFN() << objectName() << " " << internalStatName(internalStat) << endl;
