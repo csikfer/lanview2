@@ -1234,20 +1234,20 @@ int cQueryParser::captureAndParse(QString src,  cError *&pe)
     // Foreach all regular expressions
     for (i = 0; i < n; i++) {
         QRegularExpression   rexp = pListRExp->at(i);      // Regular expr.
-        QRegularExpressionMatch match;
         qlonglong reat = pListReAttr->at(i);    // Atrributum (set)
         // PDEB(VERBOSE) << src << " ~ " << rexp.pattern() << " - " << reat << endl;
         const QString& cmd = pListCmd->at(i);
         QRegularExpressionMatch ma;
-        for (qsizetype ix = 0; ix >= 0 && ix < src.size(); ix = src.indexOf(rexp, ix, &ma)) {
+        qsizetype ix = 0;
+        while (0 <= (ix = src.indexOf(rexp, ix, &ma))) {
             r = execute(pe, cmd, ma.capturedTexts());
             if (R_ERROR == r) return R_ERROR;
             if (ENUM2SET(RA_LOOP) & reat) {
                 ix = ix + ma.captured(0).size();
                 continue;
             }
+            return r;
         }
-        return r;
     }
     PDEB(VVERBOSE) << "Nincs illeszkedes : " << src << endl;
     return R_NOTFOUND;
