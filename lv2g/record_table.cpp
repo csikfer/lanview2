@@ -2952,11 +2952,11 @@ void cRecordTable::groupDialog(bool __add)
 
 void cRecordTable::copy()
 {
-    cTableExportDialog  dialog(pWidget(), pTableShape->getName(_sTableName));
-    if (QDialog::Accepted != dialog.exec()) return;
-    enum eTableExportWhat   w = dialog.what();
-    enum eTableExportTarget t = dialog.target();
-    enum eTableExportForm   f = dialog.form();
+    cTableExportDialog  exportDialog(pWidget(), pTableShape->getName(_sTableName));
+    if (QDialog::Accepted != exportDialog.exec()) return;
+    enum eTableExportWhat   w = exportDialog.what();
+    enum eTableExportTarget t = exportDialog.target();
+    enum eTableExportForm   f = exportDialog.form();
     QString r;
     switch (w) {
     case TEW_NAME:
@@ -3015,17 +3015,17 @@ void cRecordTable::copy()
         QApplication::clipboard()->setMimeData(pMime);
       } break;
     case TET_FILE: {
-        QString path = dialog.path();
+        QString path = exportDialog.path();
         while (!path.isEmpty()) {
             QFile f(path);
-            if (f.open(QIODevice::WriteOnly)) {
-                if (0 < f.write(r.toUtf8())) {
+            if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                if (UTF_BOOM_SIZE == f.write(QByteArray(UTF8_BOM)) && 0 < f.write(r.toUtf8())) {
                     f.close();
                     return;
                 }
             }
             cMsgBox::warning(tr("Hiba a fájl kiírásánál."), pWidget());
-            path = dialog.getOtherPath();
+            path = exportDialog.getOtherPath();
         }
     }
         break;

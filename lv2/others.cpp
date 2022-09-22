@@ -854,17 +854,6 @@ cCommaSeparatedValues::~cCommaSeparatedValues()
     delete pStream;
 }
 
-void cCommaSeparatedValues::clear()
-{
-    QIODevice *pIODev = pStream->device();
-    if (pIODev != nullptr) pIODev->close();
-    delete pStream;
-    csv.clear();
-    line.clear();
-    pStream = new QTextStream(&csv, QIODevice::ReadWrite);
-    (*pStream) << Q_BOM;  // BOM / UTF8
-}
-
 const QString& cCommaSeparatedValues::toString() const
 {
     return csv;

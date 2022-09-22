@@ -401,7 +401,6 @@ public:
     cCommaSeparatedValues(const QString& _csv = QString());
     cCommaSeparatedValues(QIODevice *pIODev);
     ~cCommaSeparatedValues();
-    void clear();
     const QString& toString() const;
     int lineNo() { return _lineNo; }
     int state(QString &msg);

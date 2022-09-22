@@ -70,12 +70,10 @@ This file is part of LanView2.
 
 #if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
 #  define Q_ENDL endl
-#  define Q_BOM bom
 #  define Q_SKIPEMPTYPARTS QString::SkipEmptyParts
 #  define Q_KEEPEMPTYPARTS QString::KeepEmptyParts
 #else
 #  define Q_ENDL Qt::endl
-#  define Q_BOM Qt::bom
 #  define Q_SKIPEMPTYPARTS Qt::SkipEmptyParts
 #  define Q_KEEPEMPTYPARTS Qt::KeepEmptyParts
 #endif
@@ -127,5 +125,7 @@ typedef QVector<qlonglong>  tLongLongVector;
 
 typedef QMap<QString, QString>  tStringMap;
 
+#define UTF8_BOM "\xef\xbb\xbf"
+#define UTF_BOOM_SIZE 3
 
 #endif // LV2_GLOBAL_H
