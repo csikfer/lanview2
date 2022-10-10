@@ -436,8 +436,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->radioButtonSupPattern->setChecked(true);
 
     pButtonGroupAlarm   = new QButtonGroup(this);
-    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOn,     NAT_ON);
-    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOff,    NAT_OFF);
+    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOn,     NAT_OFF);
+    pButtonGroupAlarm->addButton(pUi->checkBoxAlarmOff,    NAT_ON);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetTo,       NAT_TO);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetFrom,     NAT_FROM);
     pButtonGroupAlarm->addButton(pUi->checkBoxSetInterval, NAT_FROM_TO);
@@ -673,11 +673,11 @@ void cHSOperate::on_pushButtonFetch_clicked()
     eTristate isSDis  = checkBoxState2tristate(pUi->checkBoxFiltSDisa->checkState());
     eTristate isDeleg = checkBoxState2tristate(pUi->checkBoxFiltDelegate->checkState());
 
-    bool isOff    = pUi->checkBoxFiltAlarmOff->isChecked();
-    bool isOn     = pUi->checkBoxFiltAlarmOn->isChecked();
-    bool isTo     = pUi->checkBoxFiltAlarmTo->isChecked();
-    bool isFrom   = pUi->checkBoxFiltAlarmFrom->isChecked();
-    bool isFromTo = pUi->checkBoxFiltAlarmFromTo->isChecked();
+    bool isAOff    = pUi->checkBoxFiltAlarmOff->isChecked();
+    bool isAOn     = pUi->checkBoxFiltAlarmOn->isChecked();
+    bool isATo     = pUi->checkBoxFiltAlarmTo->isChecked();
+    bool isAFrom   = pUi->checkBoxFiltAlarmFrom->isChecked();
+    bool isAFromTo = pUi->checkBoxFiltAlarmFromTo->isChecked();
 
     bool isStateOn     = pUi->checkBoxFiltStateOn->isChecked();
     bool isRecovered   = pUi->checkBoxFiltStatRecovered->isChecked();
@@ -712,13 +712,13 @@ void cHSOperate::on_pushButtonFetch_clicked()
     case TS_FALSE:  where << " NOT hs.delegate_host_state ";    break;
     }
 
-    if ((isOff || isOn || isTo || isFrom || isFromTo) && !(isOff && isOn && isTo && isFrom && isFromTo)) {
+    if ((isAOff || isAOn || isATo || isAFrom || isAFromTo) && !(isAOff && isAOn && isATo && isAFrom && isAFromTo)) {
         wOr.clear();
-        if (isOff)  wOr << " hs.noalarm_flag = 'off' ";
-        if (isOn)   wOr << " hs.noalarm_flag = 'on' ";
-        if (isTo)   wOr << " hs.noalarm_flag = 'to' ";
-        if (isFrom) wOr << " hs.noalarm_flag = 'from' ";
-        if (isFrom) wOr << " hs.noalarm_flag = 'from_to' ";
+        if (isAOff)  wOr << " hs.noalarm_flag = 'on' ";     // NINCS tiltva
+        if (isAOn)   wOr << " hs.noalarm_flag = 'off' ";    // VAN tiltva
+        if (isATo)   wOr << " hs.noalarm_flag = 'to' ";
+        if (isAFrom) wOr << " hs.noalarm_flag = 'from' ";
+        if (isAFrom) wOr << " hs.noalarm_flag = 'from_to' ";
         if (!wOr.isEmpty()) {
             if (wOr.size() > 1) {
                 where << "(" + wOr.join("OR") + ")";
