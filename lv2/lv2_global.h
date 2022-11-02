@@ -81,7 +81,7 @@ This file is part of LanView2.
 #if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
 #define ANCHORED(s) QRegularExpression::anchoredPattern(s)
 #else
-#define ANCHORED(s) s.prepend("\\A").append("\\z")
+#define ANCHORED(s) QString(s).prepend("\\A").append("\\z")
 #endif
 
 /// @def NULL_ID
