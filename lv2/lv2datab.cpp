@@ -4529,8 +4529,8 @@ cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l
     : cRecord()
 {
     // Check
-    QRegularExpression p_lc(QRegularExpression::anchoredPattern("([a-z]{2})_([A-Z]{2})"));
-    QRegularExpression p_l3(QRegularExpression::anchoredPattern("[a-z]{3}"));
+    QRegularExpression p_lc(ANCHORED("([a-z]{2})_([A-Z]{2})"));
+    QRegularExpression p_l3(ANCHORED("[a-z]{3}"));
     QRegularExpressionMatch ma;
     bool e = false;
     QLocale::Language lan = QLocale::AnyLanguage;

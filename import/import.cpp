@@ -274,7 +274,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
 void lv2import::debugLine()
 {
     QString s = cDebug::getInstance()->dequeue();
-    static const QRegularExpression  re(QRegularExpression::anchoredPattern(_sDebugLinePattern));
+    static const QRegularExpression  re(ANCHORED(_sDebugLinePattern));
     QRegularExpressionMatch ma = re.match(s);
     if (ma.hasMatch()) {
         bool ok;

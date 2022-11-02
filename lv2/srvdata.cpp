@@ -1450,7 +1450,7 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 void cQueryParser::debugLineReady()
 {
     QString s = cDebug::getInstance()->dequeue();
-    static const QRegularExpression  re(QRegularExpression::anchoredPattern(_sDebugLinePattern));
+    static const QRegularExpression  re(ANCHORED(_sDebugLinePattern));
     QRegularExpressionMatch ma;
     ma = re.match(s);
     if (ma.hasMatch()) {

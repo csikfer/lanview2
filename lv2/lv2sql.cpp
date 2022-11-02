@@ -255,7 +255,7 @@ qlonglong _parseTimeIntervalISO8601(const QString& _s, bool *pOk)
         }
     }
     if (alternate) {
-        QRegularExpression re(QRegularExpression::anchoredPattern("(\\d*)-(\\d*)-(\\d*)T(\\d*):(\\d*):(\\d*)"));
+        QRegularExpression re(ANCHORED("(\\d*)-(\\d*)-(\\d*)T(\\d*):(\\d*):(\\d*)"));
         QRegularExpressionMatch match = re.match(s);
         if (ok) {
             r  = match.captured(1).toInt() * (1000LL * 3600 * 24 * 365);  // ?

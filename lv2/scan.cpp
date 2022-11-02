@@ -299,7 +299,7 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
     while (!__f.atEnd()) {
         QString line = QString(__f.readLine()).trimmed();
         if (line.isEmpty()) continue;
-        static const QRegularExpression firstLine(QRegularExpression::anchoredPattern("lease\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*\\{"));   // Is Begin Block ?
+        static const QRegularExpression firstLine(ANCHORED("lease\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*\\{"));   // Is Begin Block ?
         QRegularExpressionMatch ma;
         QHostAddress addr;
         cMac         mac;
@@ -319,7 +319,7 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
             if (line == "}") break;                             // Is En Of Block
             if (active == TS_FALSE) continue;                   // Inactive : Scan End Of Block
             if (active == TS_TRUE && mac.isValid()) continue;   // Ready    : Scan End Of Block
-            static const QRegularExpression stateLine(QRegularExpression::anchoredPattern("binding\\s+state\\s+(\\w+)\\s*;"));   // State ?
+            static const QRegularExpression stateLine(ANCHORED("binding\\s+state\\s+(\\w+)\\s*;"));   // State ?
             QRegularExpressionMatch ma;
             if ((ma = stateLine.match(line)).hasMatch()) {
                 if (ma.captured(1) == QString("active")) {
@@ -329,7 +329,7 @@ int cArpTable::getByDhcpdLease(QIODevice& __f)
                     active = TS_FALSE;
                 }
             }
-            static const QRegularExpression macLine(QRegularExpression::anchoredPattern("hardware\\s+ethernet\\s+([a-fA-F\\d:]+)\\s*;"));    // MAC ?
+            static const QRegularExpression macLine(ANCHORED("hardware\\s+ethernet\\s+([a-fA-F\\d:]+)\\s*;"));    // MAC ?
             if ((ma = macLine.match(line)).hasMatch()) {
                 mac.set(ma.captured(1));
                 if (mac.isEmpty()) {

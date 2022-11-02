@@ -78,6 +78,12 @@ This file is part of LanView2.
 #  define Q_KEEPEMPTYPARTS Qt::KeepEmptyParts
 #endif
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+#define ANCHORED(s) QRegularExpression::anchoredPattern(s)
+#else
+#define ANCHORED(s) s.prepend("\\A").append("\\z")
+#endif
+
 /// @def NULL_ID
 /// NULL ID-t reprezentáló konstans.
 #define NULL_ID     LLONG_MIN
