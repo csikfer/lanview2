@@ -1,5 +1,4 @@
 #include "portstat.h"
-#include "lv2daterr.h"
 
 
 #define VERSION_MAJOR   2
@@ -44,7 +43,7 @@ lv2portStat::lv2portStat() : lanView()
             pSelfNode->fetchSelf(*pQuery);  // questioner
             // insertStart(*pQuery);
             subsDbNotif();
-            setup();
+            lv2portStat::setup();
         } CATCHS(lastError)
     }
 }
@@ -134,8 +133,7 @@ void cDevPortStat::postInit(QSqlQuery &_q)
     if (pSubordinates != nullptr) {
         EXCEPTION(EDATA, -1,
                   tr("Not set the 'superior=custom' (This is also the default one)? (feature = %1) :\n%2")
-                  .arg(dQuoted(hostService.getName(_sFeatures)))
-                  .arg(hostService.identifying())   );
+                  .arg(dQuoted(hostService.getName(_sFeatures)), hostService.identifying())   );
     }
     pSubordinates = new QList<cInspector *>;
     ifMap.clear();
@@ -304,7 +302,6 @@ bool cPortStat::postInit(QSqlQuery& q)
             pVar->pSrvVar->setFlag(false);   // unmarked
             pVar->initSkeepCnt(parent->delayCounter);
         }
-        n = pPortVars->pVars->size();
         foreach (cInspectorVar *pVar, *pPortVars->pVars) {
             if (pVar->pSrvVar->getBool(_sFlag)) {
                 pVar->pSrvVar->remove(q);           // delete from database
@@ -368,8 +365,7 @@ bool cPortStat::postInit(QSqlQuery& q)
             }
             else {
                 wMsg += QObject::tr("Change superior service : %1 -> %2")
-                        .arg(cHostService::fullName(q, shsid, EX_IGNORE))
-                        .arg(parent->name());
+                        .arg(cHostService::fullName(q, shsid, EX_IGNORE), parent->name());
                 msg = wMsg + QObject::tr("\nLast service (%1) state : ").arg(lhs.fullName(q, EX_IGNORE))
                     + lhs.getName(_sHostServiceState) + " ("
                     + lhs.getName(_sHardState) + ", "
@@ -495,10 +491,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     pSnmpElapsed->setValue(q, QVariant(timer.elapsed()), state);
     if (r) {
         runMsg += tr("SNMP get table error : %1 in %2; host : %3, from %4 parent service.\n")
-                .arg(snmp.emsg)
-                .arg(name())
-                .arg(lanView::getInstance()->selfNode().getName())
-                .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
+                .arg(snmp.emsg, name(), lanView::getInstance()->selfNode().getName(),
+                     parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
         return RS_UNREACHABLE;
     }
     int n = tab.rows();
@@ -514,11 +508,8 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             rs = RS_CRITICAL;
             QVariant v = tab[_sIfIndex][i];
             runMsg += tr("ifIndex (%1) is not numeric : %2, in %3; host : %4, from %5 parent service.\n")
-                    .arg(ifDescr)
-                    .arg(debVariantToString(v))
-                    .arg(name())
-                    .arg(lanView::getInstance()->selfNode().getName())
-                    .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
+                    .arg(ifDescr, debVariantToString(v), name(), lanView::getInstance()->selfNode().getName(),
+                         parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
             continue;
         }
 
@@ -551,10 +542,9 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             eMsg = msgCat(eMsg, msg, "\n");
             adstat = _sUnknown;
         }
-        bool change;
-        change = changeStringField(ifDescr, ixIfdescr,   iface, bitsSet);
-        change = changeStringField(opstat,  ixPortOStat, iface, bitsSet) || change;
-        change = changeStringField(adstat,  ixPortAStat, iface, bitsSet) || change;
+        changeStringField(ifDescr, ixIfdescr,   iface, bitsSet);
+        changeStringField(opstat,  ixPortOStat, iface, bitsSet);
+        changeStringField(adstat,  ixPortAStat, iface, bitsSet);
 
         // rlinkstat if exists
         if (portstat.pRlinkStat != nullptr) {
@@ -564,7 +554,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             else if (_adstat == IF_UP)   state = _sDown;      // Off
             else if (_adstat == IF_DOWN) state = _sWarning;   // Disabled
             QString msg = tr("interface %1:%2 state : op:%3/adm:%4").
-                    arg(node().getName(),iface.getName()).arg(opstat, adstat);
+                    arg(node().getName(),iface.getName(), opstat, adstat);
             eMsg = msgCat(eMsg, msg, "\n");
             if (nullptr == insp.hostService.setState(q, state, eMsg, parid)) { // törölték!
                 if (1 != pSubordinates->removeAll(portstat.pRlinkStat)) {
