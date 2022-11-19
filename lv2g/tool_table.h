@@ -56,9 +56,9 @@ public:
     QString sKern;
 private:
     QString getParValue(QSqlQuery& q, const QString& key);
-    cRecord * pToolObj;
-    cRecordAny tool;
-    cRecordAny object;
+    cRecord * pToolObj;     // Object -> tool kapcsoló rekord
+    cRecordAny  tool;       // Tool rekoed
+    cRecordAny  object;     // Objektum
     cFeatures   features;
     QString     eMsg;
 };

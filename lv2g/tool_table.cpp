@@ -289,8 +289,10 @@ bool cToolTable::execute(QString& msg)
 QString cToolTable::getParValue(QSqlQuery& q, const QString& key)
 {
     if (object.isIndex(key))    return object.getName(key);
-    if (pToolObj->isIndex(key)) return pToolObj->getName(key);
     if (tool.isIndex(key))      return tool.getName(key);
+    if (pToolObj->isIndex(key)) return pToolObj->getName(key);
+    if (features.contains(key)) return features[key];
+    if (0 == key.compare(_sUser)) return lanView::getInstance()->user().getName();
     QString val = features.value(key);
     if (val.isEmpty()) val = cSysParam::getTextSysParam(q, key);
     if (!val.isEmpty()) {
@@ -349,7 +351,19 @@ bool cToolTable::exec_command(const QString& stmt, cFeatures& __f, QString& msg)
         PDEB(INFO) << "Start dateched : " << dQuoted(stmt) << endl;
         QStringList args = QProcess::splitCommand(stmt);
         QString cmd = args.takeFirst();
-        bool r = QProcess::startDetached(cmd, args);
+        QProcess process;
+#if defined(Q_OS_WIN)
+        process.setCreateProcessArgumentsModifier([] (QProcess::CreateProcessArguments *args)
+        {
+            args->flags |= CREATE_NEW_CONSOLE;
+            args->startupInfo->dwFlags &= ~STARTF_USESTDHANDLES;
+            args->startupInfo->dwFlags |= STARTF_USEFILLATTRIBUTE;
+            args->startupInfo->dwFillAttribute = FOREGROUND_GREEN  | FOREGROUND_INTENSITY;
+        });
+#endif
+        process.setProgram(cmd);
+        process.setArguments(args);
+        bool r = process.startDetached();
         return  r;
     }
 }
