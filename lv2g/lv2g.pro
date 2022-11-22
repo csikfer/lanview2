@@ -14,6 +14,8 @@ CONFIG += c++17
 DEFINES += LV2G_LIBRARY
 
 SOURCES += \
+    basefind.cpp \
+    findbyname.cpp \
     glpisync.cpp \
     input_dialog.cpp \
     lv2g.cpp \
@@ -54,6 +56,8 @@ SOURCES += \
     changeswitch.cpp
 
 HEADERS +=\
+    basefind.h \
+    findbyname.h \
     glpisync.h \
     input_dialog.h \
     lv2g_global.h \
@@ -96,7 +100,9 @@ HEADERS +=\
     changeswitch.h
 
 FORMS += \
+    basefind.ui \
     column_filter.ui \
+    findbyname.ui \
     glpisync.ui \
     reportwidget.ui \
     setup_logl.ui \

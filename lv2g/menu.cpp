@@ -8,6 +8,7 @@
 #include "gexports.h"
 #include "hsoperate.h"
 #include "findbymac.h"
+#include "findbyname.h"
 #include "apierrcodes.h"
 #include "workstation.h"
 #include "deducepatch.h"
@@ -70,6 +71,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         SETINTWIN("errcodes",   INT_ERRCODES,   cErrcodesWidget)
         SETINTWIN("hsop",       INT_HSOP,       cHSOperate)
         SETINTWIN("findmac",    INT_FINDMAC,    cFindByMac)
+        SETINTWIN("findname",   INT_FINDNAME,   cFindByName)
         SETINTWIN(_sWorkstation,INT_WORKSTATION,cWorkstation)
         SETINTWIN("enumedit",   INT_ENUMEDIT,   cEnumValsEdit)
         SETINTWIN("deducepatch",INT_DEDUCEPATCH,cDeducePatch)
@@ -169,6 +171,7 @@ A jelenleg implementállt lehetőségek:
 | errcodes    | INT_ERRCODES    | cErrcodesWidget | API hibakódok listája        |
 | hsop        | INT_HSOP        | cHSOperate      | host-services állapot man.   |
 | findmac     | INT_FINDMAC     | cFindByMac      | MAC keresés                  |
+| findname    | INT_FINDNAME    | cFindByName     | Név keresés                  |
 | workstation | INT_WORKSTATION | cWorkstation    | Munkaállomás új/modosít      |
 | deducepatch | INT_DEDUCEPATCH | cDeducePatch    | Fali kábel fefedező          |
 | snmpdquery  | INT_SNMPDQUERY  | cSnmpDevQuery   | SNMP insert/refresh          |
@@ -189,6 +192,7 @@ void cMenuAction::initInt()
     CREATEINTWIN(INT_ERRCODES,   cErrcodesWidget);
     CREATEINTWIN(INT_HSOP,       cHSOperate);
     CREATEINTWIN(INT_FINDMAC,    cFindByMac);
+    CREATEINTWIN(INT_FINDNAME,   cFindByName);
     CREATEINTWIN(INT_WORKSTATION,cWorkstation);
     CREATEINTWIN(INT_DEDUCEPATCH,cDeducePatch);
     CREATEINTWIN(INT_SNMPDQUERY, cSnmpDevQuery);

@@ -24,6 +24,7 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_ERRCODES,       /// Program hiba kód táblázat
     INT_HSOP,           /// a szervíz példányok (host_services) állpot manipuláció, riasztás tiltások
     INT_FINDMAC,        /// Keresés egy MAC-re
+    INT_FINDNAME,       /// Keresés egy eszköz névre
     INT_WORKSTATION,    /// Új munkaállomás, vagy modosítás űrlap
     INT_DEDUCEPATCH,    /// Falikábel felfedezés
     INT_SNMPDQUERY,     /// SNMP device query; insert/refresh

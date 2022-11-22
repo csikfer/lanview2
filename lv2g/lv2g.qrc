@@ -117,5 +117,7 @@
         <file>icons/zoom-in-3.ico</file>
         <file>icons/zoom-out-3.ico</file>
         <file>icons/edit-clear-3.ico</file>
+        <file>icons/internet-web-browser-3.ico</file>
+        <file>icons/openterm.ico</file>
     </qresource>
 </RCC>

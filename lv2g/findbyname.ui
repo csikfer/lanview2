@@ -1,112 +1,95 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FindByMac</class>
- <widget class="QWidget" name="FindByMac">
+ <class>FindByName</class>
+ <widget class="QWidget" name="FindByName">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1016</width>
+    <width>1063</width>
     <height>109</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_2">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
     <layout class="QFormLayout" name="formLayout">
      <item row="0" column="0">
-      <widget class="QLabel" name="labelMAC">
+      <widget class="QLabel" name="labelZone">
        <property name="text">
-        <string>Keresett MAC : </string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QToolButton" name="toolButtonIP2MAC">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A MAC keresése a megadott IP alapján.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/up.ico</normaloff>:/icons/up.ico</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="toolButtonMAC2IP">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Az IP keresése a megadott MAC alapján.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="labelIP">
-       <property name="text">
-        <string>Keresett IP :</string>
+        <string>Zóna :</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="comboBoxMAC">
+      <widget class="QComboBox" name="comboBoxZone">
        <property name="editable">
-        <bool>true</bool>
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelPlacPattern">
+       <property name="text">
+        <string>Hely minta :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditPlacePattern"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="labelPlace">
+       <property name="text">
+        <string>Hely :</string>
        </property>
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QComboBox" name="comboBoxIP">
-       <property name="editable">
-        <bool>true</bool>
+      <widget class="QComboBox" name="comboBoxPlace"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formLayout_2">
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelNodePattern">
+       <property name="text">
+        <string>Név minta :</string>
        </property>
       </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditNodePattern"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="labelNode">
+       <property name="text">
+        <string>Eszköz :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="comboBoxNode">
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>25</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>
@@ -117,7 +100,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>40</width>
+       <width>14</width>
        <height>20</height>
       </size>
      </property>
@@ -132,12 +115,12 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QPushButton" name="pushButtonFindMac">
+      <widget class="QPushButton" name="pushButtonReport">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Keres a MAC alapján az adatbázisban</string>
+        <string>Riport</string>
        </property>
        <property name="icon">
         <iconset resource="lv2g.qrc">
@@ -146,7 +129,7 @@
       </widget>
      </item>
      <item>
-      <spacer name="spacer">
+      <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
@@ -155,27 +138,20 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>10</width>
-         <height>25</height>
+         <width>20</width>
+         <height>40</height>
         </size>
        </property>
       </spacer>
      </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonFindIp">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Keresés az IP alapján az adatbázisban</string>
-       </property>
-       <property name="icon">
-        <iconset resource="lv2g.qrc">
-         <normaloff>:/icons/db_update.ico</normaloff>:/icons/db_update.ico</iconset>
-       </property>
-      </widget>
-     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -186,42 +162,47 @@
       <number>0</number>
      </property>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QPushButton" name="pushButtonLocalhost">
-         <property name="text">
-          <string>Localhost</string>
-         </property>
-         <property name="icon">
-          <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/hwinfo.ico</normaloff>:/icons/hwinfo.ico</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButtonRDP">
-         <property name="text">
-          <string>RDP terminál</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxLoMac">
-       <property name="enabled">
-        <bool>false</bool>
+      <widget class="QPushButton" name="pushButtonRDP">
+       <property name="text">
+        <string>RDP terminál</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboBoxLoIp">
-       <property name="enabled">
-        <bool>false</bool>
+      <widget class="QPushButton" name="pushButtonLocalhost">
+       <property name="text">
+        <string>Localhost</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/hwinfo.ico</normaloff>:/icons/hwinfo.ico</iconset>
        </property>
       </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Expanding</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>25</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -243,16 +224,37 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="labelSw">
-       <property name="text">
-        <string>Kiindulási pont (switch) :</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxSw"/>
+      <layout class="QFormLayout" name="formLayout_3">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelSw">
+         <property name="text">
+          <string>Kiindulási pont (switch) :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="comboBoxSw"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelIP">
+         <property name="text">
+          <string>Cél IP cím :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="comboBoxIP"/>
+       </item>
+      </layout>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_4">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QVBoxLayout" name="verticalLayoutNMap">
@@ -280,9 +282,12 @@
       </widget>
      </item>
      <item>
-      <spacer name="verticalSpacer">
+      <spacer name="verticalSpacer_4">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Expanding</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
