@@ -213,7 +213,7 @@ void cFindByMac::pushButtonRDP_clicked()
 {
 #if defined(Q_OS_WINDOWS)
     rdpClientAddr = rdpClientAddress();
-    pUi->comboBoxIP->setCurrentText(rdpClientAddr.toString());
-    on_toolButtonIP2MAC_clicked();
+    pUiHead->comboBoxIP->setCurrentText(rdpClientAddr.toString());
+    toolButtonIP2MAC_clicked();
 #endif  // defined(Q_OS_WINDOWS)
 }

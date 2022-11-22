@@ -34,7 +34,6 @@ cFindByName::cFindByName(QMdiArea *parent) :
     pSelectNode = new cSelectNode(pUiHead->comboBoxZone, pUiHead->comboBoxPlace, pUiHead->comboBoxNode, pUiHead->lineEditPlacePattern, pUiHead->lineEditNodePattern);
     connect(pSelectNode,                 SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(selectedNodeChanged(qlonglong)));
     connect(pUiHead->pushButtonExplore,  SIGNAL(clicked()),                this, SLOT(pushButtonExplore_clicked()));
-    connect(pUiHead->pushButtonRDP,      SIGNAL(clicked()),                this, SLOT(pushButtonRDP_clicked()));
     connect(pUiHead->pushButtonNMap,     SIGNAL(clicked()),                this, SLOT(pushButtonNMap_clicked()));
     connect(pUiHead->pushButtonLocalhost,SIGNAL(clicked()),                this, SLOT(pushButtonLocalhost_clicked()));
     connect(pUiHead->pushButtonReport,   SIGNAL(clicked()),                this, SLOT(pushButtonReport_clicked()));
@@ -123,3 +122,15 @@ void cFindByName::pushButtonReport_clicked()
         delete pNode;
     }
 }
+
+void cFindByName::pushButtonRDP_clicked()
+{
+    if (!rdpClientAddr.isNull()) {
+        cNode node;
+        node.fetchByIp(*pq, rdpClientAddr, EX_IGNORE);
+        pSelectNode->setCurrentNode(node.getId());
+    }
+
+}
+
+
