@@ -101,9 +101,9 @@ EXT_ const QString&  orderType(int e, eEx __ex = EX_ERROR);
 enum eFieldFlag {
     FF_UNKNOWN = -1,    ///< ismeretlen, csak hibajelzésre
     FF_TABLE_HIDE=  0,  ///< A táblázatos megjelenítésnél a mező rejtett
-    FF_DIALOG_HIDE,     ///< A dialógusban (insert, modosít) a mező rejtett
-    FF_READ_ONLY,       ///< Csak olvasható, nem modosítható mező
-    FF_PASSWD,          ///< A mező egy jelszó (tartlma rejtett)
+    FF_DIALOG_HIDE,     ///< A dialógusban (insert, módosít) a mező rejtett
+    FF_READ_ONLY,       ///< Csak olvasható, nem módosítható mező
+    FF_PASSWD,          ///< A mező egy jelszó (tartalma rejtett)
     FF_HUGE,            ///< A TEXT típusú mező több soros, vagy enum-nal a hosszú név megjelenítése
     FF_HTML_TEXT,       ///< HTML TEXT típusú mező, több soros
     FF_BATCH_EDIT,      ///< A mező értéke csoportosan is beállítható

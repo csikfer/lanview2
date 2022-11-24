@@ -70,6 +70,8 @@ private slots:
     void finished();
     void save_clicked();
     void clear_clicked();
+    void print_clicked();
+
 };
 
 

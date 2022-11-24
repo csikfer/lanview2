@@ -1,3 +1,5 @@
+#include <QPrinter>
+#include <QPrintDialog>
 #include "basefind.h"
 #include "scan.h"
 
@@ -132,8 +134,11 @@ cBaseFind::cBaseFind(QMdiArea *parent) :
         if (!nmapTest.waitForFinished(5000)) nmapTest.kill();
         nmapExists = nmapTest.exitCode() == 0 ? TS_TRUE : TS_FALSE;
     }
-    connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(save_clicked()));
-    connect(pUi->pushButtonClear, SIGNAL(clicked()), this, SLOT(clear_clicked()));
+    if (!connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(save_clicked()))
+     || !connect(pUi->pushButtonClear, SIGNAL(clicked()), this, SLOT(clear_clicked()))
+     || !connect(pUi->pushButtonPrint, SIGNAL(clicked()), this, SLOT(print_clicked()))) {
+        EXCEPTION(EPROGFAIL, 0, tr("Connect error."));
+    }
 }
 
 cBaseFind::~cBaseFind()
@@ -209,4 +214,12 @@ void cBaseFind::clear_clicked()
     pUi->textEdit->clear();
     sReport.clear();
     clearPostWork();
+}
+
+void cBaseFind::print_clicked()
+{
+    QPrinter prn;
+    QPrintDialog dialog(&prn, this);
+    if (QDialog::Accepted != dialog.exec()) return;
+    pUi->textEdit->print(&prn);
 }

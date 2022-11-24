@@ -607,7 +607,7 @@
            <item>
             <widget class="QToolButton" name="toolButtonUnknown">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, ismeretlen (unknown) állapotú szolgáltatás példányok lekérdezése.&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közúl a hely szeriti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadodnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, ismeretlen (unknown) állapotú szolgáltatás példányok lekérdezése.&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közül a név szerinti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadódnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
@@ -621,7 +621,7 @@
            <item>
             <widget class="QToolButton" name="toolButtonCritical">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, kritikus (critical) vagy annál sújosabb állapotú szolgáltatás példányok lekérdezése&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közúl a hely szeriti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadodnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, kritikus (critical) vagy annál súlyosabb állapotú szolgáltatás példányok lekérdezése&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közül a név szerinti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadódnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
@@ -635,7 +635,7 @@
            <item>
             <widget class="QToolButton" name="toolButtonWarning">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, figyelmeztető (warning) vagy annál sújosabb állapotú szolgáltatás példányok lekérdezése&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közúl a hely szeriti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadodnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Engedélyezett, figyelmeztető (warning) vagy annál súlyosabb állapotú szolgáltatás példányok lekérdezése&lt;/p&gt;&lt;p&gt;Beállítja az állapot szerinti szűrést, és indítja a lekérdezést.&lt;/p&gt;&lt;p&gt;A többi szűrési feltétel közül a név szerinti szűrések, és a riasztás szerinti szűrési feltételek nem változnak, ill. hozzáadódnak az állapot szerintiekhez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>

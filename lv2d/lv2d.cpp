@@ -1,5 +1,4 @@
 #include "lv2d.h"
-#include "time.h"
 #include <stdio.h>
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   99
@@ -39,14 +38,14 @@ int main(int argc, char *argv[])
     exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
-lv2d::lv2d()
+lv2d::lv2d() : lanView()
 {
     pSelfInspector = nullptr;
     if (lastError == nullptr) {
         try {
             insertStart(*pQuery);
             subsDbNotif();
-            setup(TS_FALSE);
+            lv2d::setup(TS_FALSE);
         } CATCHS(lastError)
     }
 }

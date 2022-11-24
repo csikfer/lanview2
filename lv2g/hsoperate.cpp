@@ -1207,15 +1207,6 @@ void cHSOperate::on_tableWidget_doubleClicked(const QModelIndex& mi)
         recordDialog(*pq2, _sServices, this, pSrv, permit != PERMIT_ALL, true);
         break;
       }
-    case TC_PORT: {
-        QVariant vpid = actState()->rows.at(row)->rec.value(RX_PORT_ID);
-        if (vpid.isValid()) {
-            cNPort *pPort = cNPort::getPortObjById(*pq2, vpid.toLongLong());
-            recordDialog(*pq2, pPort->tableName(), this, pPort, permit != PERMIT_ALL, true);
-            pDelete(pPort);
-        }
-        break;
-      }
     case TC_STATE: {
         const QString sql = "SELECT host_service_id2name(host_service_id), state_msg FROM host_services WHERE host_service_id = ?";
         QVariant hsid = actState()->rows.at(row)->rec.value(RX_ID);
@@ -1237,7 +1228,8 @@ void cHSOperate::on_tableWidget_doubleClicked(const QModelIndex& mi)
     case TC_NSUB: {
         if (s == "0") break;
         cTableShape *pTs = new cTableShape();
-        pTs->setByName(*pq2, "host_services_tree");
+        pTs->setByName(*pq2, "host_services");
+        pTs->enum2setOn(_sTableShapeType, TS_TREE);
         pTs->enum2setOn(_sTableShapeType, TS_READ_ONLY);
         cRecordTree rt(pTs, true, nullptr, this);
         rt.init();

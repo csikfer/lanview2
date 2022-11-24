@@ -27,7 +27,7 @@
    <item>
     <widget class="QLabel" name="labelReport">
      <property name="text">
-      <string>Találat(ok)  :</string>
+      <string>Riport :</string>
      </property>
     </widget>
    </item>
@@ -48,14 +48,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonClear">
+      <widget class="QPushButton" name="pushButtonPrint">
        <property name="text">
-        <string>Töröl</string>
+        <string>Nyomtat</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacerButtons">
+      <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -66,6 +66,13 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonClear">
+       <property name="text">
+        <string>Töröl</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
