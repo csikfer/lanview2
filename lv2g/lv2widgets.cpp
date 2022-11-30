@@ -3399,6 +3399,7 @@ void cFKeyArrayWidget::on_pushButtonUp_pressed()
     pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Deselect);
     mi = pArrayModel->index(actRow -1, 0);
     pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Select);
+    _setFromEdit();
 }
 
 void cFKeyArrayWidget::on_pushButtonDown_pressed()
@@ -3413,6 +3414,7 @@ void cFKeyArrayWidget::on_pushButtonDown_pressed()
     pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Deselect);
     mi = pArrayModel->index(actRow +1, 0);
     pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Select);
+    _setFromEdit();
 }
 
 void cFKeyArrayWidget::on_pushButtonDel_pressed()

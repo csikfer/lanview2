@@ -39,7 +39,7 @@ SERVICE "arpd" "Arp daemon" {
     COMMAND "/usr/local/bin/arpd  -R $host_service_id";
     FEATURES  {
         "controll" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";
@@ -347,7 +347,7 @@ SERVICE "icontsrv" "icontsrv daemon" {
     COMMAND "icontsrv -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,4";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";
@@ -529,7 +529,7 @@ SERVICE "lv2d" "Lanview2 Main server" {
     COMMAND "lv2d -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";
@@ -542,19 +542,16 @@ SERVICE "lv2d" "Lanview2 Main server" {
 }
 SERVICE "nil-1" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     SUPERIOR SERVICE MASK "~.";
-    FLAPPING INTERVAL 0;
     FLAPPING MAX CHANGE 15;
     DISABLE;
 }
 SERVICE "nil-2" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     SUPERIOR SERVICE MASK "~.";
-    FLAPPING INTERVAL 0;
     FLAPPING MAX CHANGE 15;
     DISABLE;
 }
 SERVICE "nil-3" "Csak az azonos funkciójú példányok megkülöngöztetésére szolgál" {
     SUPERIOR SERVICE MASK "~.";
-    FLAPPING INTERVAL 0;
     FLAPPING MAX CHANGE 15;
     DISABLE;
 }
@@ -609,7 +606,7 @@ SERVICE "portmac" "Device port address table query daemon" {
     COMMAND "portmac -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";
@@ -652,7 +649,7 @@ SERVICE "portvlan" {
     COMMAND "portvlan -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";
@@ -746,7 +743,7 @@ SERVICE "pstat" "Query port status by <protocol>" {
     COMMAND "pstat  -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "timing" = "timed";
@@ -836,7 +833,7 @@ SERVICE "snmpvars" {
     COMMAND "snmpvars -R $host_service_id";
     FEATURES  {
         "control" = "tick,reset,exit,reload";
-        "logrot" = "500M,8";
+        "logrot" = "100M,3";
         "method" = "inspector";
         "process" = "continue";
         "superior";

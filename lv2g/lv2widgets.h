@@ -987,7 +987,7 @@ private slots:
 };
 
 /// @class cLTextWidget
-/// Egy text megjelenítése és módosítása
+/// Egy text_id-vel azonosított szöveg megjelenítése és/vagy módosítása
 /// Megjelenítés egy QLineEdit -el
 class LV2GSHARED_EXPORT cLTextWidget : public cFieldEditBase {
     Q_OBJECT
