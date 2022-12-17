@@ -2377,6 +2377,7 @@ bool cFKeyWidget::setWidget()
         }
         else if (pSelectPlace != nullptr) {
             pSelectPlace->setCurrentPlace(actId);
+            pSelectPlace->setDisableWidgets(false);
         }
         else {
             EXCEPTION(EPROGFAIL);

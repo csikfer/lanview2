@@ -1424,7 +1424,7 @@ void cInspector::timerEvent(QTimerEvent *)
             PDEB(VERBOSE) << objectName() << " set ommited. " << VDEB(t) << endl;
             QObject *po = stopTimer();
             if (po != nullptr) timerId = po->startTimer(t);
-            if (0 == timerId) EXCEPTION(EPROGFAIL, retryInt, tr("Timer %1 not restarted.").arg(po->objectName()));
+            if (0 == timerId) EXCEPTION(EPROGFAIL, retryInt, tr("Timer %1 not restarted.").arg(po == nullptr ? _sNULL : po->objectName()));
             _DBGFNL() << QString("Set omitted, wait %1 mSec").arg(t) << endl;
             return;
         }
@@ -1975,7 +1975,7 @@ void cInspector::start()
         PDEB(VVERBOSE) << tr("%1: Alloc QParser : %2").arg(name()).arg(qlonglong(pQparser),0,16) << endl;
         int r = pQparser->load(*pQuery(), serviceId(), true);
         if (R_NOTFOUND == r && nullptr != pPrimeService) r = pQparser->load(*pQuery(), primeServiceId(), true);
-        if (R_NOTFOUND == r && nullptr != pProtoService) r = pQparser->load(*pQuery(), protoServiceId(), true);
+        if (R_NOTFOUND == r && nullptr != pProtoService)     pQparser->load(*pQuery(), protoServiceId(), true);
         cError *pe = nullptr;
         pQparser->setInspector(this);
         pQparser->prep(pe);
@@ -2008,11 +2008,11 @@ void cInspector::start()
             vars() << pRunTimeVar;
         }
         internalStat = IS_SUSPENDED;
+        startSubs();
         qlonglong t = firstDelay();
         PDEB(VERBOSE) << QString("Start timer %1 ").arg(t) << name() << " / " << po->objectName() << endl;
         timerId = po->startTimer(int(t));
         if (0 == timerId) EXCEPTION(EPROGFAIL, interval, tr("Timer not started."));
-        startSubs();
         _DBGFNL() << " (timed) " << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
