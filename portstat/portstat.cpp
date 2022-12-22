@@ -557,6 +557,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                     arg(node().getName(),iface.getName(), opstat, adstat);
             eMsg = msgCat(eMsg, msg, "\n");
             if (nullptr == insp.hostService.setState(q, state, eMsg, parid)) { // törölték!
+                DWAR() << tr("Remove %1 host-service").arg(portstat.pRlinkStat->name()) << endl;
                 if (1 != pSubordinates->removeAll(portstat.pRlinkStat)) {
                     EXCEPTION(EPROGFAIL);
                 }

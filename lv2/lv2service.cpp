@@ -415,9 +415,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     else if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         QString msg = "?";
         while (true) {
-            if (lastElapsed > errCntClearTime) {
+            if (lastElapsed > errCntClearTime) {    // Ha már régen idítottuk, akkor töröljük a restart számlálót
                 lastElapsed = reStartCnt = 0;
-                if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL);
+                if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL); // Nem lehet negatív, vagy nulla.
             }
             if (exitStatus != RESTART_FAILURE) {
                 processReadyRead();
@@ -430,8 +430,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     break;
                 }
             }
-            if (!inspector.hostService.fetchById(*inspector.pQuery()) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
-                if (!inspector.hostService.isNull()) {
+            eTristate live = inspector.hostService.isLive(*inspector.pQuery()); // reread, enabled or deleted?
+            if (TS_TRUE != live) {
+                if (TS_FALSE == live) { // Disabled only
                     inspector.setState(*inspector.pQuery(), _sDown, msg + tr(" Nincs újraindítás. Letíltva."));
                 }
                 inspector.internalStat = IS_STOPPED;
@@ -451,7 +452,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     PDEB(INFO) << QString("ReStart %1 (< %2) : ").arg(reStartCnt).arg(reStartMax) << inspector.checkCmd << endl;
                     inspector.internalStat = IS_RUN;
                     int r = startProcess(int(inspector.startTimeOut), 0);
-                    if (r == 0) break;
+                    if (r < 0) break;
                     msg = tr("A %1 program újraindítása sikertelen : #%2").arg(inspector.checkCmd).arg(r);
                     exitStatus = RESTART_FAILURE;
                 }
