@@ -1026,7 +1026,8 @@ void cHSOperate::setButtonsFromTo()
     if (permit == PERMIT_ALL) {
         f = pUi->checkBoxDisable ->checkState() != Qt::PartiallyChecked
          || pUi->checkBoxDelegate->checkState() != Qt::PartiallyChecked
-         || pUi->checkBoxClrStat->isChecked();
+         || pUi->checkBoxClrStat->isChecked()
+         || pUi->checkBoxRemove->isChecked();
     }
     else {
         QString sJustify = pUi->textEditJustify->toPlainText();

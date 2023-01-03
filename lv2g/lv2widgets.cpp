@@ -1153,12 +1153,14 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     bool isText = _colDescr.eColType == cColStaticDescr::FT_TEXT;
+    // Hosszabb, több soros HTML text: QTextEdit
     if (isText && _fieldShape.getBool(_sFieldFlags, FF_HTML_TEXT)) {
         _wType = FEW_HTML_LINES;  // Widget type
         pEditWidget = pTextEdit = new QTextEdit;
         pLayout->addWidget(pTextEdit);
         _height = 4;
     }
+    // Hoszabb, több soros szöveg: QPlainTextEdit
     else if (isText && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget type
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
@@ -1168,6 +1170,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pLayout->addWidget(pPlainTextEdit);
         _height = 4;
     }
+    // Választható szöveg, eddig bevitt adatok alapján, vagy szabadon megadva : QComboBox
     else if (!_readOnly && isText && _fieldShape.isFeature(sSetOfValue)) {
         _wType = FEW_COMBO_BOX;  // Widget type
         pEditWidget = pComboBox = new QComboBox;
@@ -1178,6 +1181,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pm->joinWith(pComboBox);
         modeltype = SETOF_MODEL;
     }
+    // Választható szöveg (ivon neve) : QComboBox
     else if (!_readOnly && isText && _fieldShape.getBool(_sFieldFlags, FF_IMAGE)) {   // Icon name from resource
         _wType = FEW_COMBO_BOX;  // Widget type
         pEditWidget = pComboBox = new QComboBox;
@@ -1189,19 +1193,18 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         modeltype = ICON_MODEL;
         _nullable = false;
     }
+    // Egy soros szöveg, vagy jelszó : QLineEdit
     else {
         _wType = FEW_LINE;  // Widget type
         pEditWidget = pLineEdit = new QLineEdit;
         pLayout->addWidget(pLineEdit);
         isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);   // Password?
     }
-//    if (_colDescr.eColType == cColStaticDescr::FT_TEXT) {
-        if (_nullable || _hasDefault) {
-            bool isNull = _fr.isNull();
-            setupNullButton(isNull);
-            cFieldEditBase::disableEditWidget(isNull);
-        }
-//    }
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
 
     QString tx;
     if (_readOnly == false) {
@@ -1222,11 +1225,11 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 pLineEdit->setEchoMode(QLineEdit::Password);
                 pLineEdit->setText("");
                 _value.clear();
-                connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
-                break;
             }
-            pLineEdit->setText(_fr);
-            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(_setFromEdit()));
+            else {
+                pLineEdit->setText(_fr);
+            }
+            connect(pLineEdit, SIGNAL(textChanged), this, SLOT(_setFromEdit()));
             break;
         case FEW_LINES:
             pPlainTextEdit->setPlainText(_fr);
@@ -1248,7 +1251,8 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 EXCEPTION(EPROGFAIL, 0);
 
             }
-            connect(pComboBox, SIGNAL(currentTextChanged(QString)),  this, SLOT(_setFromEdit()));
+            connect(pComboBox, SIGNAL(currentTextChanged(QString)), this, SLOT(_setFromEdit()));
+            connect(pComboBox, SIGNAL(editTextChanged(QString)),    this, SLOT(_setFromEdit()));
             break;
         default:
             EXCEPTION(EPROGFAIL);
@@ -2377,6 +2381,7 @@ bool cFKeyWidget::setWidget()
         }
         else if (pSelectPlace != nullptr) {
             pSelectPlace->setCurrentPlace(actId);
+            pSelectPlace->setDisableWidgets(false);
         }
         else {
             EXCEPTION(EPROGFAIL);

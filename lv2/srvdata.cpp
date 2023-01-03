@@ -276,7 +276,7 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
         if (tf) sqlBegin(__q, sTrFulName);
 #endif
         int r = _execSql(__q, sql, vl);
-        if (r == 0) {   // Nincs adat ?!
+        if (r == 0) {   // Nincs adat ?! Elvileg lehetetlen.
 #if SET_STATE_IS_TRANSACTION
             if (tf) sqlRollback(__q, sTrFulName, EX_IGNORE);
 #endif
@@ -290,7 +290,7 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
             if (tf) sqlRollback(__q, sTrFulName);
 #endif
             QString s = le.databaseText().split('\n').first();  // első sor
-            // deleted ?
+            // record is deleted ?
             if (s.contains("IdNotFound", Qt::CaseInsensitive)) {
                 APPMEMO(__q, tr("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
                 setBool(_sDeleted, true);
@@ -306,6 +306,7 @@ cHostService * cHostService::setState(QSqlQuery& __q, const QString& __st, const
                 QThread::msleep(lanView::deadlockDelay);
                 continue;   // retrying
             }
+            // Other unexpected error
             LV2_SQLERR(le, EQUERY);    // exception, no return
         }
         else if (r == 1) {
@@ -379,9 +380,15 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     if (r < 0) {
         QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn, __sn);
         switch (n) {
+<<<<<<< HEAD
         case -1:    SQLQUERYERR(q);             break;
         case  0:    EXCEPTION(EFOUND, 0, e);    break;
         default:    EXCEPTION(AMBIGUOUS, n, e); break;
+=======
+        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH;
+        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH;
+        default:    EXCEPTION(AMBIGUOUS, n, e);
+>>>>>>> 5a8ff4abbee3b2a3f913238010072a293fa510b9
         }
     }
     return n;
@@ -612,6 +619,21 @@ QString cHostService::fullName(QSqlQuery& q, qlonglong __id, eEx __ex)
         }
     }
     return r;
+}
+
+eTristate cHostService::isLive(QSqlQuery& q)
+{
+    static const QString sql = "SELECT hs.disabled, hs.deleted, s.disabled, s.deleted"
+                               " FROM host_services AS hs JOIN services AS s USING(service_id)"
+                               " WHERE host_service_id = ?";
+    bool deleted, disabled;
+    deleted  = !execSql(q, sql, get(descr().idIndex()));
+    deleted |= q.value(1).toBool();     // host_services.deleted
+    deleted |= q.value(3).toBool();     // services.deleted
+    if (deleted) return TS_NULL;
+    disabled  = q.value(0).toBool();    // host_services.disabled
+    disabled |= q.value(2).toBool();    // services.disabled
+    return bool2ts(!disabled);
 }
 
 /* ----------------------------------------------------------------- */

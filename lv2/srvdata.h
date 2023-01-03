@@ -212,6 +212,9 @@ public:
         if (o.fetchByNames(q, _sNil, _sTicket, __ex) == 1) return o.getId();
         return NULL_ID;
     }
+    /// Megvizsgálja, hogy törölték, vagy letiltották-e
+    /// @return TS_NULL: törölve; TS_FALSE: letiltva; TS_TRUE: nincs letiltva, vagy törölve
+    eTristate isLive(QSqlQuery &q);
 protected:
     QString sFulName;
 private:

@@ -415,9 +415,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     else if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         QString msg = "?";
         while (true) {
-            if (lastElapsed > errCntClearTime) {
+            if (lastElapsed > errCntClearTime) {    // Ha már régen idítottuk, akkor töröljük a restart számlálót
                 lastElapsed = reStartCnt = 0;
-                if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL);
+                if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL); // Nem lehet negatív, vagy nulla.
             }
             if (exitStatus != RESTART_FAILURE) {
                 processReadyRead();
@@ -430,8 +430,9 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     break;
                 }
             }
-            if (!inspector.hostService.fetchById(*inspector.pQuery()) || inspector.hostService.getBool(_sDisabled)) {     // reread, enabled?
-                if (!inspector.hostService.isNull()) {
+            eTristate live = inspector.hostService.isLive(*inspector.pQuery()); // reread, enabled or deleted?
+            if (TS_TRUE != live) {
+                if (TS_FALSE == live) { // Disabled only
                     inspector.setState(*inspector.pQuery(), _sDown, msg + tr(" Nincs újraindítás. Letíltva."));
                 }
                 inspector.internalStat = IS_STOPPED;
@@ -451,7 +452,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     PDEB(INFO) << QString("ReStart %1 (< %2) : ").arg(reStartCnt).arg(reStartMax) << inspector.checkCmd << endl;
                     inspector.internalStat = IS_RUN;
                     int r = startProcess(int(inspector.startTimeOut), 0);
-                    if (r == 0) break;
+                    if (r < 0) break;
                     msg = tr("A %1 program újraindítása sikertelen : #%2").arg(inspector.checkCmd).arg(r);
                     exitStatus = RESTART_FAILURE;
                 }
@@ -1424,7 +1425,7 @@ void cInspector::timerEvent(QTimerEvent *)
             PDEB(VERBOSE) << objectName() << " set ommited. " << VDEB(t) << endl;
             QObject *po = stopTimer();
             if (po != nullptr) timerId = po->startTimer(t);
-            if (0 == timerId) EXCEPTION(EPROGFAIL, retryInt, tr("Timer %1 not restarted.").arg(po->objectName()));
+            if (0 == timerId) EXCEPTION(EPROGFAIL, retryInt, tr("Timer %1 not restarted.").arg(po == nullptr ? _sNULL : po->objectName()));
             _DBGFNL() << QString("Set omitted, wait %1 mSec").arg(t) << endl;
             return;
         }
@@ -1975,7 +1976,7 @@ void cInspector::start()
         PDEB(VVERBOSE) << tr("%1: Alloc QParser : %2").arg(name()).arg(qlonglong(pQparser),0,16) << endl;
         int r = pQparser->load(*pQuery(), serviceId(), true);
         if (R_NOTFOUND == r && nullptr != pPrimeService) r = pQparser->load(*pQuery(), primeServiceId(), true);
-        if (R_NOTFOUND == r && nullptr != pProtoService) r = pQparser->load(*pQuery(), protoServiceId(), true);
+        if (R_NOTFOUND == r && nullptr != pProtoService)     pQparser->load(*pQuery(), protoServiceId(), true);
         cError *pe = nullptr;
         pQparser->setInspector(this);
         pQparser->prep(pe);
@@ -2008,11 +2009,11 @@ void cInspector::start()
             vars() << pRunTimeVar;
         }
         internalStat = IS_SUSPENDED;
+        startSubs();
         qlonglong t = firstDelay();
         PDEB(VERBOSE) << QString("Start timer %1 ").arg(t) << name() << " / " << po->objectName() << endl;
         timerId = po->startTimer(int(t));
         if (0 == timerId) EXCEPTION(EPROGFAIL, interval, tr("Timer not started."));
-        startSubs();
         _DBGFNL() << " (timed) " << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
