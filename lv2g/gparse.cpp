@@ -176,15 +176,8 @@ void cParseWidget::remoteParse(const QString &src)
     int lastStat = ES_WAIT;
     QBitArray mapStat  = imp.mask(_sExecState);
     QBitArray mapOther = imp.mask(_sStarted, _sEnded, _sResultMsg, _sAppLogId) | imp.mask(_sOutMsg, _sExpMsg);
-<<<<<<< HEAD
     pLoop = new QEventLoop;
-    connect(pUi->pushButtonBreak, &QPushButton::click, this, &cParseWidget::exitLoop);
-=======
-    QEventLoop  *pLoop = new QEventLoop;
-    connect(pUi->pushButtonBreak, &QPushButton::clicked, [=] () {
-        pLoop->exit(1);
-    } );
->>>>>>> 5a8ff4abbee3b2a3f913238010072a293fa510b9
+    connect(pUi->pushButtonBreak, &QPushButton::clicked, this, &cParseWidget::exitLoop);
     while (true) {
         if (msg.isEmpty() == false) {
             pUi->textEditLog->clear();

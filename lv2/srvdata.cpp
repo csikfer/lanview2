@@ -380,15 +380,9 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     if (r < 0) {
         QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn, __sn);
         switch (n) {
-<<<<<<< HEAD
         case -1:    SQLQUERYERR(q);             break;
         case  0:    EXCEPTION(EFOUND, 0, e);    break;
         default:    EXCEPTION(AMBIGUOUS, n, e); break;
-=======
-        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH;
-        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH;
-        default:    EXCEPTION(AMBIGUOUS, n, e);
->>>>>>> 5a8ff4abbee3b2a3f913238010072a293fa510b9
         }
     }
     return n;
