@@ -26,6 +26,7 @@ public:
     static const enum ePrivilegeLevel rights;
 private:
     Ui::GParseWidget *pUi;
+    QEventLoop  *pLoop;
 private slots:
     void loadClicked();
     void saveClicked();
@@ -39,6 +40,7 @@ private slots:
     void saveQPClicked();
     void parseQPClicked();
     void paramClicked();
+    void exitLoop();
     void on_checkBoxQP_toggled(bool checked);
 
     void on_pushButtonRepSave_clicked();

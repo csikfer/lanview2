@@ -16,6 +16,7 @@ cParseWidget::cParseWidget(QMdiArea *par)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     pExportQueue = nullptr;
+    pLoop = nullptr;
     pq  = newQuery();
     isRuning = false;
     pLocalParser = nullptr;
@@ -152,6 +153,11 @@ void cParseWidget::localParseBreak()
     pUi->pushButtonBreak->setDisabled(true);
 }
 
+void cParseWidget::exitLoop()
+{
+    pLoop->exit(1);
+}
+
 void cParseWidget::remoteParse(const QString &src)
 {
     cImport imp;
@@ -170,10 +176,8 @@ void cParseWidget::remoteParse(const QString &src)
     int lastStat = ES_WAIT;
     QBitArray mapStat  = imp.mask(_sExecState);
     QBitArray mapOther = imp.mask(_sStarted, _sEnded, _sResultMsg, _sAppLogId) | imp.mask(_sOutMsg, _sExpMsg);
-    QEventLoop  *pLoop = new QEventLoop;
-    connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
-        pLoop->exit(1);
-    } );
+    pLoop = new QEventLoop;
+    connect(pUi->pushButtonBreak, &QPushButton::click, this, &cParseWidget::exitLoop);
     while (true) {
         if (msg.isEmpty() == false) {
             pUi->textEditLog->clear();

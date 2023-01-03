@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,1,0,0">
      <item>
       <layout class="QFormLayout" name="formLayout">
        <item row="1" column="0">
@@ -339,6 +339,63 @@
        </item>
       </layout>
      </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QFormLayout" name="formLayout_5">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelSerialNum">
+         <property name="text">
+          <string>Széria szám</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="lineEditSerialNum"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labellabelInventoryNum">
+         <property name="text">
+          <string>Leltári szám</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelModelName">
+         <property name="text">
+          <string>Model Név</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="ModelNum">
+         <property name="text">
+          <string>Model szám</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEditInventoryNum"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="lineEditModelNum"/>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lineEditModelName"/>
+       </item>
+      </layout>
+     </item>
     </layout>
    </item>
    <item>
@@ -487,7 +544,7 @@
       <bool>true</bool>
      </property>
      <property name="locale">
-      <locale language="C" country="AnyCountry"/>
+      <locale language="Hungarian" country="Hungary"/>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

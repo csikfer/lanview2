@@ -146,6 +146,10 @@ cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
         pUi->spinBoxTagOffs->setDisabled(true);
         pUi->spinBoxNameOffs->setDisabled(true);
         pUi->tableWidgetPorts->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        pUi->lineEditSerialNum->setReadOnly(true);
+        pUi->lineEditInventoryNum->setReadOnly(true);
+        pUi->lineEditModelNum->setReadOnly(true);
+        pUi->lineEditModelName->setReadOnly(true);
     }
     else {
         pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
@@ -168,6 +172,13 @@ cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
 cPatchDialog::~cPatchDialog()
 {
     delete pq;
+}
+
+inline void setFromLineEdit(cRecord *r, const QString& fn, QLineEdit *ple)
+{
+    QString v = ple->text();
+    if (v.isEmpty()) r->clear(fn);
+    else             r->setName(fn, v);
 }
 
 cPatch * cPatchDialog::getPatch()
@@ -237,6 +248,10 @@ cPatch * cPatchDialog::getPatch()
             break;
         }
     }
+    setFromLineEdit(p, _sInventoryNumber, pUi->lineEditInventoryNum);
+    setFromLineEdit(p, _sSerialNumber, pUi->lineEditSerialNum);
+    setFromLineEdit(p, _sModelNumber, pUi->lineEditModelNum);
+    setFromLineEdit(p, _sModelName, pUi->lineEditModelName);
     return p;
 }
 
@@ -316,6 +331,10 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             rowsData[i]->comboBoxPortIx->setCurrentIndex(ix +1);
         }
     }
+    pUi->lineEditSerialNum->setText(pSample->getName(_sSerialNumber));
+    pUi->lineEditInventoryNum->setText(pSample->getName(_sInventoryNumber));
+    pUi->lineEditModelNum->setText(pSample->getName(_sModelNumber));
+    pUi->lineEditModelName->setText(pSample->getName(_sModelName));
 }
 
 

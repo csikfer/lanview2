@@ -377,11 +377,11 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
+        QString e = tr("HostService pattern: \"%1\".\"%2\"").arg(__hn, __sn);
         switch (n) {
-        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH;
-        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH;
-        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH;
+        case -1:    SQLQUERYERR(q);             break;
+        case  0:    EXCEPTION(EFOUND, 0, e);    break;
+        default:    EXCEPTION(AMBIGUOUS, n, e); break;
         }
     }
     return n;
@@ -423,11 +423,11 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = tr("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
+        QString e = tr("HostService : %1:%2.%3").arg(__hn).arg(__pn, __sn);
         switch (n) {
-        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH
-        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH
-        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH
+        case -1:    SQLQUERYERR(q);             break;
+        case  0:    EXCEPTION(EFOUND, 0, e);    break;
+        default:    EXCEPTION(AMBIGUOUS, n, e); break;
         }
     }
     return n;
@@ -485,11 +485,11 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         if (__ex == EX_IGNORE) r = 0;
     }
     if (r < 0) {
-        QString e = tr("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
+        QString e = tr("HostService : %1:%2.%3(%4:%5)").arg(__hn, __pn, __sn, __pron, __prin);
         switch (n) {
-        case -1:    SQLQUERYERR(q);             LV2_FALLTHROUGH
-        case  0:    EXCEPTION(EFOUND, 0, e);    LV2_FALLTHROUGH
-        default:    EXCEPTION(AMBIGUOUS, n, e); LV2_FALLTHROUGH
+        case -1:    SQLQUERYERR(q);             break;
+        case  0:    EXCEPTION(EFOUND, 0, e);    break;
+        default:    EXCEPTION(AMBIGUOUS, n, e); break;
         }
     }
     return n;

@@ -184,6 +184,10 @@ void cBaseFind::discover(const QHostAddress& ip, const cMac& mac, const QString&
     pUi->pushButtonClear->setDisabled(true);
     pUi->pushButtonSave->setDisabled(true);
     pThread->start();
+#else
+    (void)ip;
+    (void)mac;
+    (void)swName;
 #endif
 }
 
