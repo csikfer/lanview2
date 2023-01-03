@@ -171,7 +171,7 @@ void cParseWidget::remoteParse(const QString &src)
     QBitArray mapStat  = imp.mask(_sExecState);
     QBitArray mapOther = imp.mask(_sStarted, _sEnded, _sResultMsg, _sAppLogId) | imp.mask(_sOutMsg, _sExpMsg);
     QEventLoop  *pLoop = new QEventLoop;
-    connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
+    connect(pUi->pushButtonBreak, &QPushButton::clicked, [=] () {
         pLoop->exit(1);
     } );
     while (true) {
