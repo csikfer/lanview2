@@ -1219,6 +1219,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         case cColStaticDescr::FT_CIDR:      pLineEdit->setValidator(new cCidrValidator(_nullable, pLineEdit));   break;
         default:    EXCEPTION(ENOTSUPP);
         }
+        bool cf = false;
         switch(_wType) {
         case FEW_LINE:
             if (isPwd) {
@@ -1229,15 +1230,15 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             else {
                 pLineEdit->setText(_fr);
             }
-            connect(pLineEdit, SIGNAL(textChanged), this, SLOT(_setFromEdit()));
+            cf = connect(pLineEdit, SIGNAL(textChanged(QString)), this, SLOT(_setFromEdit()));
             break;
         case FEW_LINES:
             pPlainTextEdit->setPlainText(_fr);
-            connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
+            cf = connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
             break;
         case FEW_HTML_LINES:
             pTextEdit->setHtml(_fr);
-            connect(pTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
+            cf = connect(pTextEdit, SIGNAL(textChanged()),  this, SLOT(_setFromEdit()));
             break;
         case FEW_COMBO_BOX:
             switch (modeltype) {
@@ -1251,11 +1252,14 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
                 EXCEPTION(EPROGFAIL, 0);
 
             }
-            connect(pComboBox, SIGNAL(currentTextChanged(QString)), this, SLOT(_setFromEdit()));
-            connect(pComboBox, SIGNAL(editTextChanged(QString)),    this, SLOT(_setFromEdit()));
+            cf = connect(pComboBox, SIGNAL(currentTextChanged(QString)), this, SLOT(_setFromEdit()));
+            cf = connect(pComboBox, SIGNAL(editTextChanged(QString)),    this, SLOT(_setFromEdit())) && cf;
             break;
         default:
             EXCEPTION(EPROGFAIL);
+        }
+        if (!cf) {
+            EXCEPTION(EPROGFAIL, 0, tr("Connect error..."));
         }
     }
     else {
