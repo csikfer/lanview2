@@ -136,9 +136,15 @@ public:
     /// A inspector objektumban meghatározott checkCmd paramcsot elindítja,
     /// megvárja, míg elindul. Ezután, ha a stopTo nem nulla, akkor megvárja míg kilép.
     /// Ha viszont stopTo nulla, akkor csatlakoztatja a processFinished(), és processReadyRead() slot-okat.
-    /// Hiba esetén dob egy kizárást.
+    /// Fatális hiba esetén dob egy kizárást.
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
     /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, vagy nulla, ha nem vár.
+    /// @return Az elindított program kilépési kódja
+    ///         SPR_SKIP_START A program már fut, nincs idítás;
+    ///         SPR_ERROR_START Az idítás sikertelen;
+    ///         SPR_NO_WAIT A program elindult, nincs várakozás a befejezésre;
+    ///         SPR_ERROR_STOP A befejezésre várakozás sikertelen
+    ///         SPR_CRASH Az indított program összeomlott.
     virtual int startProcess(int startTo, int stopTo = 0);
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
