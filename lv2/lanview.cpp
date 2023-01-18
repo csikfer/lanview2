@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 31
+#define DB_VERSION_MINOR 32
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])

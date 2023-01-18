@@ -4914,10 +4914,11 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
     setCurrentPlace(pn->getId(_sPlaceId));
 
     int ix = pModelNode->indexOf(pn->getId());
-    // EZ ITT NEM jÓ!
-    // Ha lépkedünk a linkeken, akkor ez előfordulhat ! Pl. ha meg van adva szűrés.
-    // JAVÍTANDÓ!!!
-    if (ix <= 0) EXCEPTION(EPROGFAIL);
+    if (ix <= 0) {
+        cMsgBox::error(tr("A művelet nem hajtható végre."));    // Nem fatális hiba
+        pComboBoxNode->setCurrentIndex(0);
+        return;
+    }
     pComboBoxNode->setCurrentIndex(ix);
     _isPatch = pn->tableoid() == cPatch::_descr_cPatch().tableoid();
     ix = pModelPort->indexOf(pid);
