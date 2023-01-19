@@ -1047,3 +1047,11 @@ QStringList slPrepend(const QStringList& sl, QString s)
     return r;
 }
 
+QString strMult(const QString& s, int n)
+{
+    QString r;
+    for (int i = 0; i < n; ++i) {
+        r += s;
+    }
+    return r;
+}

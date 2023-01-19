@@ -97,7 +97,7 @@ cRecordViewModelBase::~cRecordViewModelBase()
 /// @param column   Oszlop megjelenítését vezérlő objektum
 /// @param pr       Az aktuális rekordra mutató pointer
 /// @param role     A hívó eredeti QTableModel::data() role paraméter
-/// @”aram isTextId Igaz, ha az aktuális rekordban az aktuális mező egy text_id mező
+/// @param isTextId Igaz, ha az aktuális rekordban az aktuális mező egy text_id mező
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool isTextId) const
 {
     qlonglong& ff = column.fieldFlags;
@@ -163,7 +163,9 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         return dcRole(DC_HAVE_NO, role);
     }
     if (!isTextId && pr->isNull(fix)) {  // A mező értéke NULL
-        return dcRole(DC_NULL,    role);
+        if (!(column.shapeField.isFeature("look_up") && role == Qt::DisplayRole)) {
+            return dcRole(DC_NULL,    role);
+        }
     }
     // Az opcionális mező dekorációs típus neve (vagy egy " = " string)
     et = column.enumTypeName;

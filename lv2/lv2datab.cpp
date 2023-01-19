@@ -515,7 +515,7 @@ QVariant cColStaticDescr::fromSql(const QVariant& _f) const
 
 QVariant cColStaticDescr::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    // if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     return _f; // Tfh. ez igy jó
 }
 /**
@@ -3210,12 +3210,14 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
     static const QString  rHaveNo = QObject::tr("[HAVE NO]");
     bool raw = pFeatures != nullptr && pFeatures->contains(_sRaw);
     if (isIndex(__i) == false) return raw ? _sNul :  rHaveNo;
-    if (!isNull(__i) && pFeatures != nullptr) {
-        if (pFeatures->keys().contains(_sViewFunc)) {
-            return execSqlTextFunction(q, pFeatures->value(_sViewFunc), descr()[__i].toSql(get(__i)));
+    if (pFeatures != nullptr && !pFeatures->isEmpty()) {
+        QStringList vfn = pFeatures->slValue(_sViewFunc);
+        if (vfn.size() == 1) {
+            return execSqlTextFunction(q, vfn.first(), descr()[__i].toSql(get(__i)));
         }
-        else if (pFeatures->keys().contains(_sViewExpr)) {
-            QStringList args = pFeatures->slValue(_sViewExpr);
+        QStringList vex;
+        if (!vfn.isEmpty() || !(vex = pFeatures->slValue(_sViewExpr)).isEmpty()) {
+            QStringList args = vfn.isEmpty() ? vex : vfn;
             QString expr = args.takeFirst();
             static const QString m = "$";
             if (args.isEmpty()) args << m;
@@ -3235,7 +3237,15 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
                 }
             }
             QString r = "?!";
-            if (ok && execSql(q, "SELECT " + expr, binds)) {
+            if (ok) {
+                if (vfn.isEmpty()) {
+                    ok = execSql(q, "SELECT " + expr, binds);
+                }
+                else {
+                    ok = execSqlFunction(q, expr, binds);
+                }
+            }
+            if (ok) {
                 r = q.value(0).toString();
             }
             return r;

@@ -310,6 +310,8 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl);
 /// @return a lekérdezés után a q.first() metódus visszatérési értéke
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
+EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariantList& vl);
+
 /// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, egész szám visszatérési értékkel.
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param pOk Egy pointer, ha nem NULL, akkor a lekérdezés eredményességét tartalmazza, true értéket kap, ha a lekérdezés eredménye egy egész szám.

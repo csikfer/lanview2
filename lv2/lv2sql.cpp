@@ -803,6 +803,26 @@ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const 
     return execSql(q, sql,v1, v2, v3, v4, v5);
 }
 
+bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariantList& vl)
+{
+    QString sql = "SELECT " + fn + "(";
+    if (vl.isEmpty()) {
+        EXECSQL(q, sql + ")")
+    }
+    else {
+        sql += strMult(_sCommaQ, vl.size()).mid(1) + ")";
+        if (!q.prepare(sql)) {
+            SQLPREPERR(q, sql)
+        }
+        foreach (QVariant v, vl) {
+            q.addBindValue(v);
+        }
+        _EXECSQL(q)
+    }
+    return q.first();
+}
+
+
 qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     bool ok = execSqlFunction(q, fn, v1, v2, v3, v4, v5);

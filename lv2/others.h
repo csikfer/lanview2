@@ -431,6 +431,7 @@ EXT_ QHostAddress rdpClientAddress();
 
 EXT_ QStringList slSimplified(const QStringList& sl);
 EXT_ QStringList slPrepend(const QStringList& sl, QString s);
+EXT_ QString strMult(const QString& s, int n);
 
 
 #endif // OTHERS_H
