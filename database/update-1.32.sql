@@ -162,3 +162,26 @@ ALTER FUNCTION public.replace_arp(inet, macaddr, settype, bigint)
 DELETE FROM ip_addresses WHERE address IS NULL;
 	
 SELECT set_db_version(1, 32);
+
+-- 2023.01.19.
+
+CREATE OR REPLACE FUNCTION get_inventory_location(il text, ppid bigint) RETURNS text LANGUAGE 'plpgsql'
+    STABLE LEAKPROOF PARALLEL SAFE
+AS $$
+DECLARE
+	rec	record;
+	r 	text   := il;
+	pid bigint := ppid;
+BEGIN
+	LOOP
+		EXIT WHEN r IS NOT NULL OR pid IS NULL;
+		SELECT inventory_location, parent_id INTO rec FROM places WHERE place_id = pid;
+		r   := rec.inventory_location;
+		pid := rec.parent_id;
+	END LOOP;
+	RETURN r;
+END;
+$$;
+
+ALTER FUNCTION get_inventory_location(text, bigint)
+    OWNER TO lanview2;
