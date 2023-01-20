@@ -921,6 +921,7 @@ void cLldpScan::staticInit() {
     }
     // One might ask directly to the table, but the exact rows identifiers are also needed.
     if (sOids.isEmpty()) {
+        cLldpScan::oids.clear();
         static const QString m = "LLDP-MIB::";
         staticAddOid(m + "lldpRemChassisIdSubtype", LLDP_REM_CID_TYPE);
         staticAddOid(m + "lldpRemChassisId",        LLDP_REM_CID);

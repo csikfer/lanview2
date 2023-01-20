@@ -3212,9 +3212,6 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
     if (isIndex(__i) == false) return raw ? _sNul :  rHaveNo;
     if (pFeatures != nullptr && !pFeatures->isEmpty()) {
         QStringList vfn = pFeatures->slValue(_sViewFunc);
-        if (vfn.size() == 1) {
-            return execSqlTextFunction(q, vfn.first(), descr()[__i].toSql(get(__i)));
-        }
         QStringList vex;
         if (!vfn.isEmpty() || !(vex = pFeatures->slValue(_sViewExpr)).isEmpty()) {
             QStringList args = vfn.isEmpty() ? vex : vfn;
