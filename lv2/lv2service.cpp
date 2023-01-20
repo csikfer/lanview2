@@ -260,12 +260,13 @@ enum eStartProcessResult {
     SPR_ERROR_STOP  = -2,
     SPR_SKIP_START  = -3,
     SPR_CRASH       = -4,
+    SPR_EXIT        = 0x90000,
     SPR_NO_WAIT     = 0x80000,
 };
 
 int cInspectorProcess::startProcess(int startTo, int stopTo)
 {
-    _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
+    _DBGFN() << inspector.name() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     bool isRuning = state() == QProcess::Running;
@@ -330,6 +331,10 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
         internalStat = IS_SUSPENDED;
         break;              // EXITED
     case QProcess::NotRunning:
+        if (isAsync || stopTo == 0) {
+            PDEB(VERBOSE) << "Exit restarted or async started program ..." << endl;
+            return SPR_EXIT;
+        }
         internalStat = IS_SUSPENDED;
         break;              // EXITED
     default:
@@ -417,7 +422,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
     }
     else if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         QString msg = "?";
-        while (true) {
+//        while (true) {
             if (lastElapsed > errCntClearTime) {    // Ha már régen idítottuk, akkor töröljük a restart számlálót
                 lastElapsed = reStartCnt = 0;
                 if (errCntClearTime <= 0) EXCEPTION(EPROGFAIL); // Nem lehet negatív, vagy nulla.
@@ -439,7 +444,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     inspector.setState(*inspector.pQuery(), _sDown, msg + tr(" Nincs újraindítás. Letíltva."));
                 }
                 inspector.internalStat = IS_STOPPED;
-                break;
+                return; // break;
             }
             if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
                 ++reStartCnt;
@@ -448,28 +453,38 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus _exi
                     inspector.setState(*inspector.pQuery(), _sDown, msg);
                     inspector.internalStat = IS_STOPPED;
                     PDEB(INFO) << msg << endl;
-                    break;
+                    return; // break;
                 }
                 else {
                     inspector.setState(*inspector.pQuery(), _sWarning, msg + tr("Újraindítási kíérlet (#%1).").arg(reStartCnt));
-                    PDEB(INFO) << QString("ReStart %1 (< %2) : ").arg(reStartCnt).arg(reStartMax) << inspector.checkCmd << endl;
+                    PDEB(INFO) << tr("ReStart %1 (< %2) : ").arg(reStartCnt).arg(reStartMax) << inspector.checkCmd << endl;
                     inspector.internalStat = IS_RUN;
                     int r = startProcess(int(inspector.startTimeOut), 0);
-                    if (r < 0) {
+                    PDEB(INFO) << tr("startProcess()return = %1 (hexa)").arg(r, 0, 16) << endl;
+                    switch (r) {
+                    case SPR_NO_WAIT:
+                        PDEB(INFO) << tr("ReStart ok...") << endl;
+                        break;
+                    case SPR_EXIT:
+                        msg = tr("A %1 program egyből kilépett : #%2").arg(inspector.checkCmd).arg(r);
+                        DERR() << msg << endl;
+                        exitStatus = RESTART_FAILURE;
+                        break;
+                    default:
                         msg = tr("A %1 program újraindítása sikertelen : #%2").arg(inspector.checkCmd).arg(r);
                         DERR() << msg << endl;
                         exitStatus = RESTART_FAILURE;
-                        continue;
+                        break;
                     }
-                    break;
-                }
+//                    break;
+//                }
             }
         }
     }
     else {  // ?! Nem szabadna itt lennünk.
         EXCEPTION(EPROGFAIL, inspector.inspectorType, inspector.name());
     }
-    close();
+    // close();
 }
 
 void cInspectorProcess::processReadyRead()
@@ -1054,7 +1069,8 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 int cInspector::getInspectorTiming(const QString& value)
 {
     int r = 0; // IT_TIMING_CUSTOM
-    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"), Q_SKIPEMPTYPARTS);
+    static const QRegularExpression re("\\s*,\\s*");
+    QStringList vl = value.split(re, Q_SKIPEMPTYPARTS);
     if (vl.isEmpty()) return r;
     bool on = false;
     int n;
@@ -1128,7 +1144,8 @@ int cInspector::getInspectorMethod(const QString &value)
 {
     int r = 0;  // IT_METHOD_CUSTOM
     if (value.isEmpty()) return r;
-    QStringList vl = value.split(QRegularExpression("\\s*,\\s*"));
+    static const QRegularExpression re("\\s*,\\s*");
+    QStringList vl = value.split(re);
     bool on = false;
     int n;
     if (vl.contains(_sCustom,   Qt::CaseInsensitive)) {
@@ -1935,7 +1952,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, const QString &text)
     pQparser->setInspector(this);   // A kliens beállítása...
     bool ok = false;
     // A text soronkénti feldolgozása
-    QRegularExpression sep("[\r\n]+");
+    static const QRegularExpression sep("[\r\n]+");
     QStringList sl = text.split(sep);
     foreach (QString t, sl) {
         t = t.simplified();
@@ -2234,16 +2251,17 @@ void cInspector::toNormalInterval(int offset)
 
 QString cInspector::name() const
 {
-    QString r = "(";
-    r += typeid(*this).name();
-    r += "):";
+    DBGFN();
+    QString r; /* = "(";
+    r += typeid(*this).name();  // Gyanuba keveredet (Signal 11) ?!
+    r += "):"; */
     static const QString    qq("??");
-    if (pNode != nullptr && !node().isNull(node().nameIndex())) r += node().getName();
-    else                                                     r += qq;
+    if (pNode == nullptr || node().isNullName()) r += qq;
+    else                                         r += node().getName();
     r +=  QChar(':');
-    if (pPort != nullptr) r += nPort().getName() + QChar(':');
+    if (pPort != nullptr)    r += nPort().getName() + QChar(':');
     if (pService != nullptr) r += service()->getName();
-    else                  r += qq;
+    else                     r += qq;
     if (pPrimeService != nullptr || pProtoService != nullptr) {
         r += "(";
         if (pPrimeService != nullptr) r += pPrimeService->getName();
