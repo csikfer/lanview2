@@ -11,9 +11,6 @@ A rendszer dokumentációja a projekt fájlok között: LanView2.odt
 Egy rövid leírás, és egy prezentáció: lv2pre.odt lanview.pptx
 
 Az interpreter dokumentációja : import/import_man.odt 
-Az API dokumentáció pedig : http://svn.kkfk.bgf.hu/lanview2.doc/LanView2_API/ címen.
-Az adatbázis dokumentáció : http://svn.kkfk.bgf.hu/lanview2.doc/database/ címen.
-(Sajnos az postgresql_autodoc csak egy bekezdést kezel egy megjegyzésnél, nálam meg több bekezdés is van, ezért ezek összefolynak.) (Úgy látom, hogy az autodoc mára már teljesen használhatatlan, hiányos állományt generál.)
 
 A rendszer elemei:
 
@@ -25,7 +22,7 @@ lv2gui	A lanview2 alapértelmezett GUI-ja.
 
 lv2d	A lanview2 rendszer szerver keret programja.
 
-import	A rendszer interpretere, ill. interpreter távoli végrehajtás szerver program
+import	Az interpreter távoli végrehajtás szerver program
 
 portstat (pstat) Switch portok állapot lekérdező program
 
