@@ -6,6 +6,8 @@
 #if defined(Q_OS_WINDOWS)
 #  include <Windows.h>
 #  include <wtsapi32.h>
+#else
+#include <unistd.h>
 #endif  // defined(Q_OS_WINDOWS)
 #include <QTextStream>
 
