@@ -1673,7 +1673,7 @@ scanByLldpDev_errorA:
                         }
                         sa.chop(2);
                     }
-                    QString ln = QObject::tr("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
+                    QString ln = QObject::tr("\nLocal node %1 (%2)").arg(pDev->getName(), sa);
                     em += ln;
                     APPMEMO(q, em, RS_CRITICAL);
                     DERR() << em << endl;
@@ -1749,6 +1749,14 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
     (void)q;
     if (pdescr.isEmpty()) {
         HEREINWE(em, lPrefix + QObject::tr("Hiányzik a port azonosító név."), RS_CRITICAL)
+        return -1;
+    }
+    cIpAddress ipa;
+    static const int ixAddress = ipa.toIndex(_sAddress);
+    static const int ixIpAddressType = ipa.toIndex(_sIpAddressType);
+    ipa.setIp(ixAddress, ha);
+    if (ipa.completion(q) && AT_EXTERNAL == ipa.getId(ixIpAddressType)) {
+        // Külső cím, nem kérdezzük le, nincs hibaüzenet.
         return -1;
     }
     int r = snmp.open(ha.toString());
