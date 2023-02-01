@@ -52,7 +52,7 @@ public:
     int     lineBgColorEnum2Ix;
     int     lineBgColorEnum2Val;
     bool rowNumbers() const                     { return _viewRowNumbers; }
-    void setRowNumers(bool b)                   { _viewRowNumbers = b; }
+    void setRowNumbers(bool b)                  { _viewRowNumbers = b; }
     bool viewHeader() const                     { return _viewHeader; }
     void setViewHeader(bool b)                  { _viewHeader = b;  }
     int  maxRows() const                        { return _maxRows; }

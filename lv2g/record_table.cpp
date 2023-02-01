@@ -1210,21 +1210,41 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     if (headerText.isNull() && headerIcon.isNull()) headerText = shapeField.getName();
 }
 
+// Ez nem jó!!!!
 bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
 {
-    QString fn   = shapeField.feature(_sViewFunc); // Konverziós függvény a megjelenítésnél
-    QString expr = shapeField.feature(_sViewExpr); // Konverziós SQL kifelyezés a megjelenítésnél
-    if (fn.isEmpty() == false) {
-        expr = fn + "(?)";
+    QStringList vfn = shapeField.features().slValue(_sViewFunc);
+    QStringList vex;
+    if (!vfn.isEmpty() || !(vex = shapeField.features().slValue(_sViewExpr)).isEmpty()) {
+        QStringList args = vfn.isEmpty() ? vex : vfn;
+        QString expr = args.takeFirst();
+        static const QString m = "$";
+        if (args.isEmpty()) args << m;
+        if (vfn.isEmpty()) {    // view_expr
+            QString table = parent->viewName;
+            if (table.isEmpty()) table = parent->pTableShape->getName(_sTableName);
+            QString name = dQuotedCat(table, pColDescr->colName());
+            int index;
+            while (0 <= (index = expr.indexOf('?'))) {
+                if (args.isEmpty()) EXCEPTION(EDATA, 0, vex.join(", "));
+                QString a = args.takeFirst();
+                if (a == m) a = name;
+                expr = expr.mid(0, index) + name + expr.mid(index + 1);
+            }
+        }
+        else {                  // view_func
+            expr += "(";
+            for (QString a : args) {
+                if (a == m) expr += pColDescr->colNameQ();
+                else        expr += a;
+                expr += ", ";
+            }
+            expr.chop(2);
+            expr += ")";
+        }
+        _name = expr;
+        if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;
     }
-    else if (expr.isEmpty()) {
-        return false;
-    }
-    if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // new type
-    QString table = parent->viewName;
-    if (table.isEmpty()) table = parent->pTableShape->getName(_sTableName);
-    QString name = dQuotedCat(table, pColDescr->colName());
-    _name = expr.replace("?", name);
     return true;
 }
 
