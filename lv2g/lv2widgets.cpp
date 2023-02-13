@@ -4843,10 +4843,6 @@ void cSelectNode::on_lineEditNodeFilt_textChanged(const QString& s)
     else {
         pModelNode->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
     }
-    int nix = pModelNode->indexOf(nid);
-    if (nix < 0) {
-        nix = 0;
-    }
     pComboBoxNode->setCurrentIndex(0);
     bbNode.end(nid != currentNodeId());
 }
