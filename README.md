@@ -61,3 +61,5 @@ Mivel javarészt HP switch-ekkel van lehetőségem tesztelni a rendszert, így m
 problémák. Sajnos az SNMP ajánlásokat elég lazán kezelik a gyártók, így lehetnek olyan kivételek, sajátosságok,
 amiket nem kezelek.
 
+Megjegyzés: Jelenlegi állás szerint ennek a projeknek vége. Nem tudok róla, hogy rajtam kívül bárki használná,
+és én ugyan használnám, de ezt is leállítatják velem. Én szívesen folytatnám, de így ennek semmi éertelme.
