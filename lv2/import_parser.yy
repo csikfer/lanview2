@@ -1786,7 +1786,7 @@ inline QString tStringPair2String(const tStringPair& ss) { return QString("(%1, 
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T AS_T
 %token      END_T ELSE_T TOKEN_T COLOR_T BACKGROUND_T FOREGROUND_T FONT_T ATTR_T FAMILY_T
 %token      OS_T VERSION_T INDEX_T GET_T WALK_T OID_T GLPI_T SYNC_T LIKE_T
-%token      OBJECTS_T PLATFORMS_T WAIT_T
+%token      OBJECTS_T PLATFORMS_T WAIT_T LOWER_T UPPER_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1951,6 +1951,8 @@ str_    : STRING_V                              {
         | STRING_T MACRO_T '(' sexpr ')'        { $$ = new QString(templates._get(_sMacros, sp2s($4))); }
         | PATCH_T TEMPLATE_T '(' sexpr ')'      { $$ = new QString(templates._get(_sPatchs, sp2s($4))); }
         | NODE_T  TEMPLATE_T '(' sexpr ')'      { $$ = new QString(templates._get(_sNodes,  sp2s($4))); }
+        | LOWER_T '(' sexpr ')'                 { $$ = $3; *$$ = $$->toLower(); }
+        | UPPER_T '(' sexpr ')'                 { $$ = $3; *$$ = $$->toUpper(); }
         ;
 str     : str_                      { $$ = $1; }
         | '&' '[' sexpr ']'         { $$ = $3; }
@@ -3472,7 +3474,7 @@ static const struct token {
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS) TOK(AS)
     TOK(TOKEN) TOK(COLOR) TOK(BACKGROUND) TOK(FOREGROUND) TOK(FONT) TOK(ATTR) TOK(FAMILY)
     TOK(OS) TOK(VERSION) TOK(INDEX) TOK(GET) TOK(WALK) TOK(OID) TOK(GLPI) TOK(SYNC) TOK(LIKE)
-    TOK(OBJECTS) TOK(PLATFORMS) TOK(WAIT)
+    TOK(OBJECTS) TOK(PLATFORMS) TOK(WAIT) TOK(LOWER) TOK(UPPER)
     { "WST",    WORKSTATION_T }, // rövidítések
     { "ATC",    ATTACHED_T },
     { "INT",    INTEGER_T },
