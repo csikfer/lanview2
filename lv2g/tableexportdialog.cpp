@@ -10,6 +10,9 @@ cTableExportDialog::cTableExportDialog(QWidget *parent, const QString& _objName)
     ui(new Ui::cTableExportDialog)
 {
     ui->setupUi(this);
+    if (cExport::isShape(objectName)) {
+        const_cast<QString&>(objectName) = cExport::chopedShape(objectName);
+    }
     isExportableObject = cExport::isExportable(objectName) & ~EXPORT_INH;
 }
 
@@ -76,8 +79,12 @@ void cTableExportDialog::on_radioButtonName_toggled(bool checked)
 {
     bool f = false;
     if (!checked || EXPORT_NOT != isExportableObject) {
-        if (EXPORT_ANY == isExportableObject)           f = true;
-        else if (EXPORT_TABLE == isExportableObject)    f = what() == TEW_ALL;
+        if (what() == TEW_ALL) {
+            f = isExportableObject & EXPORT_TABLE;
+        }
+        else {
+            f = isExportableObject & EXPORT_OBJECT;
+        }
     }
     ui->radioButtonINT->setEnabled(f);
 }

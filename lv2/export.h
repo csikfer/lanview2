@@ -5,6 +5,7 @@
 #include "guidata.h"
 #include "vardata.h"
 #include "lv2tooldata.h"
+#include "lv2link.h"
 
 
 template <typename IX> qlonglong getColDefaultInterval(const QString& tableName, IX ix)
@@ -54,7 +55,8 @@ enum eExportPotential {
     X(Patch,        EXPORT_ANY) \
     X(Node,         EXPORT_ANY_INH) \
     X(SnmpDevice,   EXPORT_ANY_INH) \
-    X(Tool,         EXPORT_ANY)
+    X(Tool,         EXPORT_ANY) \
+    X(PhsLink,      EXPORT_OBJECT)
 
 enum eExportableObjects {
 #define X(e, f)       EO_##e,
@@ -67,11 +69,15 @@ public:
     cExport(QObject *par = nullptr);
     static QString escaped(const QString& s);
     static QString escaped(const QStringList& sl);
+    static bool isShape(const QString& _name) { return _name.endsWith("_shape"); }
+    static QString chopedShape(const QString& _name) { return _name.chopped(6); }
+    bool setShape(const QString& _name) { return shape = isShape(_name); }
 protected:
     QString sNoAnyObj;
     int     actIndent;
     QString divert;
     QStringList exportedNames;
+    bool    shape;
     static QStringList _exportableObjects;
     static QList<int>  _exportPotentials;
 
@@ -159,7 +165,7 @@ public:
     static int isExportable(const cRecord& o)    { return isExportable(o.tableName()); }
     QString exportTable(const QString& name, eEx __ex = EX_NOOP);
     QString exportTable(int ix, eEx __ex = EX_NOOP);
-    QString exportObject(QSqlQuery &q, cRecord& o, eEx __ex = EX_ERROR);
+    static QString exportObject(QSqlQuery &q, cRecord& o, eEx __ex = EX_ERROR);
     QString ParamTypes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cParamType& o);
     QString SysParams(eEx __ex = EX_NOOP);
@@ -192,7 +198,8 @@ public:
     QString _export(QSqlQuery& q, cSnmpDevice& o);
     QString Tools(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery& q, cTool& o);
-
+    QString PhsLinks(eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery& q, cPhsLink& o);
 private:
     template <class O, class P> QString oParam(tOwnRecords<P, O>& list);
     QString oAddress(tOwnRecords<cIpAddress, cInterface>& as, int first = 0);

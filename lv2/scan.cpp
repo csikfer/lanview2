@@ -824,6 +824,7 @@ protected:
     bool row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em);
     bool rowCisco(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em);
     bool rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em);
+    bool rowAruba(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em);
     bool rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em);
     bool rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em);
 
@@ -1355,6 +1356,10 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         r = rowHPAPC(q, snmp, row, em);
     else if (0 == choice.compare(_sLinux,        Qt::CaseInsensitive))
         r = rowLinux(q, snmp, row, em);
+    else if (0 == choice.compare("Aruba",        Qt::CaseInsensitive))
+        // r = rowAruba(q, snmp, row, em);
+        r = row3COM(q, snmp, row, em);
+
     else {
         HEREINWE(em, lPrefix + QObject::tr("Az eszköz '%1' descriptora alapján az adatfeldogozás módja ismeretlen.").arg(row.descr), RS_WARNING);
         r = false;
@@ -2099,6 +2104,12 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     }
     expInfo(lPrefix + QObject::tr("Inserted AP (HP) : %1").arg(rHost.getName()));
     rPort.clone(*pi);
+    return true;
+}
+
+bool cLldpScan::rowAruba(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
+{
+    PDEB(WARNING) << "** ARUBA: **\n" << row.toString();
     return true;
 }
 

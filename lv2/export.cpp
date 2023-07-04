@@ -4,6 +4,7 @@ static const QString _sDq = "\"";
 static const QString _sSp = " ";
 static const QString _sCo = ",";
 static const QString _sEB = "}";
+// Keywords
 static const QString _sDELETE_      = "DELETE ";
 static const QString _sTITLE        = "TITLE";
 static const QString _sWHATS_THIS   = "WHATS THIS";
@@ -28,6 +29,7 @@ cExport::cExport(QObject *par) : QObject(par)
 {
     sNoAnyObj = QObject::tr("No any object");
     actIndent = 0;
+    shape = false;
 }
 
 QString cExport::escaped(const QString& s)
@@ -377,13 +379,25 @@ QString cExport::exportObject(QSqlQuery& q, cRecord &o, eEx __ex)
 {
     QString r;
     QString tableName = o.tableName();
+    cExport x;
     int ix = exportableObjects().indexOf(tableName);
+    if (ix < 0 && x.setShape(tableName)) {
+        ix = exportableObjects().indexOf(chopedShape(tableName));
+    }
     if (ix < 0) {
         if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, 0, tr("Invalid or unsupported object index %1").arg(ix));
         return r;
     }
-    cExport x;
-    if (typeid (o) == typeid (cRecordAny)) {
+    if (x.shape) {
+        switch (ix) {
+    #define X(e, f)    case EO_##e: { c##e oo; oo.set(o); r = x._export(q, oo); } break;
+        X_EXPORTABLE_OBJECTS
+    #undef X
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+    }
+    else if (typeid (o) == typeid (cRecordAny)) {
         switch (ix) {
     #define X(e, f)    case EO_##e: { c##e oo; oo.copy(o); r = x._export(q, oo); } break;
         X_EXPORTABLE_OBJECTS
@@ -1409,3 +1423,33 @@ QString cExport::_export(QSqlQuery& q, cTool& o)
     r  = lineEndBlock(r, b);
     return r;
 }
+
+QString cExport::PhsLinks(eEx)
+{
+    EXCEPTION(ENOTSUPP);
+}
+
+static QString linkType(cPhsLink& o, const QString& fn)
+{
+    qlonglong e = o.getId(fn);
+    switch (e) {
+    case LT_FRONT:  return "FRONT";
+    case LT_BACK:   return "BACK";
+    case LT_TERM:   return "TERM";
+    default:        EXCEPTION(EDATA, e);
+    }
+}
+
+QString cExport::_export(QSqlQuery& q, cPhsLink& o)
+{
+    QString r = "LINKS " + linkType(o, _sPhsLinkType1) + " TO " + linkType(o, _sPhsLinkType2) + " { ";
+    cNPort p;
+    p.setById(q, o.getId(_sPortId1));
+    r += value(q, p[_sNodeId]) + " : " + value(q, p[_sPortName]);
+    r += " & ";
+    p.setById(q, o.getId(_sPortId2));
+    r += value(q, p[_sNodeId]) + " : " + value(q, p[_sPortName]);
+    r += "}\n";
+    return r;
+}
+

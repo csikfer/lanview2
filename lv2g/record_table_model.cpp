@@ -614,7 +614,7 @@ int cRecordTableModel::setRecords(QSqlQuery& _q, bool _first)
     q = _q;
     int r = _first ? qFirst() : qView();
     _DBGFNL() << " = " << r << endl;
-    dataReloded(_records);
+    emit dataReloded(_records);
     return r;
 }
 
