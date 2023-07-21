@@ -490,7 +490,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
     PDEB(VVERBOSE) << "SNMP TABLE+ : " << endl << ptab->toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
     // Ha nincs IP címünk, az gáz
-    if (!found) EX(EDATA, 0, QString("IP not found"));
+    // if (!found) EX(EDATA, 0, QString("IP not found"));
     found = false;  // A tábla feldolgozása után is kell lennie! Az sem jó, ha eldobtuk
     QSqlQuery q = getQuery();
     int n = ptab->rows();

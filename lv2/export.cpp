@@ -1449,7 +1449,7 @@ QString cExport::_export(QSqlQuery& q, cPhsLink& o)
     r += " & ";
     p.setById(q, o.getId(_sPortId2));
     r += value(q, p[_sNodeId]) + " : " + value(q, p[_sPortName]);
-    r += "}\n";
+    r += "; }\n";
     return r;
 }
 

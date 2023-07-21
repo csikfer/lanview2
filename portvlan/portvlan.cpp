@@ -261,7 +261,6 @@ void cDevicePV::postInit(QSqlQuery& q)
     key = "no_pvid";
     /* ******************************************* */
     mNoPVID = features().contains(key);
-    QBitArray clrMask = ~ pp.mask(pp.ixPortId(), pp.ixParamTypeId());
     if (!mNoPVID) {
         foreach (cNPort *p, node().ports.list()) {
             pp.clear();
@@ -424,7 +423,7 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     trunkMembersVlanTypes.clear();
     mNoVlanPorts = mNoVlanPortsByPar;
     if (!snmp.isOpened()) {
-        EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
+        EXCEPTION(ESNMP,-1, QString(QObject::tr("SNMP open error : %1 in %2").arg(snmp.emsg, name())));
     }
     // Az eszköz portjaihoz tartozó vlan kapcsoló rekordok: mind jelöletlen
     static const QString sql = "UPDATE port_vlans SET flag = false WHERE port_id IN (SELECT port_id FROM nports WHERE node_id = ?)";
@@ -509,10 +508,11 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         bool ok;
         ctRm = execSqlIntFunction(q, &ok, "rm_unmarked_port_vlan", node().getId());
         msgAppend(&runMsg,
-                  tr("%1 VLAN (dynamic), %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölva, %7 ismeretlen; %8 hiba.")
+                  tr("%1 VLAN, %2 változatlan, %3 új (%4 új VLAN), %5 változás, %6 törölve, %7 ismeretlen; %8 hiba. Query %9")
                     .arg(ctVlan).arg(ctUnchg).arg(ctIns + ctNew).arg(ctNew).arg(ctMod)
                     .arg(ok ? QString::number(ctRm) : "?")
-                    .arg(ctUnkn).arg(ctErr));
+                    .arg(ctUnkn).arg(ctErr)
+                    .arg(toBool(staticOnly) ? "static only" : "dinamic"));
     }
     DBGFNL();
     return rs;
