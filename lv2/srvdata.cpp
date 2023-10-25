@@ -954,7 +954,6 @@ cArp::operator cMac() const
 
 int cArp::replace(QSqlQuery& __q, eEx __ex)
 {
-    (void)__ex;
     QString sql = "SELECT replace_arp(?,?";
     if (!isNull(_ixSetType))       sql += _sCommaQ;
     if (!isNull(_ixHostServiceId)) sql += _sCommaQ;
@@ -965,7 +964,11 @@ int cArp::replace(QSqlQuery& __q, eEx __ex)
     int i = 2;
     if (!isNull(_ixSetType))       bind(_ixSetType,       __q, i++);
     if (!isNull(_ixHostServiceId)) bind(_ixHostServiceId, __q, i);
-    _EXECSQL(__q);
+    if (!__q.exec()) {
+        if (__ex != EX_IGNORE) SQLQUERYERR(__q);
+        SQLQUERYERRDEB(__q);
+        return R_ERROR;
+    }
     __q.first();
     eReasons r = eReasons(reasons(__q.value(0).toString(), EX_IGNORE));
     return r;
@@ -982,7 +985,7 @@ int cArp::replaces(QSqlQuery& __q, const cArpTable& __t, int setType, qlonglong 
         arp = i.value();
         arp.setId(_ixSetType, setType);
         arp.setId(_ixHostServiceId, hsid);
-        if (R_INSERT == arp.replace(__q)) ++r;
+        if (R_INSERT == arp.replace(__q, EX_IGNORE)) ++r;
     }
     return r;
 }

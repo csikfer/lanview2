@@ -53,6 +53,17 @@ static void settingQSetXValue(const QString& _key, const QString& _text)
     lanView::getInstance()->pSet->setValue(_key, s);
 }
 
+#if   defined(Q_CC_MSVC) || defined(Q_OS_WIN)
+# include <Windows.h>
+# define SECURITY_WIN32
+# include <security.h>
+# include <secext.h>
+#else
+# include <unistd.h>
+# include <sys/types.h>
+# include <pwd.h>
+#endif
+
 int main(int argc, char *argv[])
 {
     cLv2QApp app(argc, argv);
@@ -66,6 +77,22 @@ int main(int argc, char *argv[])
     if (mo.lastError) {  // Ha hiba volt, vagy vége
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
+
+    QString domain, user;
+#if   defined(Q_CC_MSVC) || defined(Q_OS_WIN)
+#define USER_NAME_MAXSIZE   64
+    char charUserName[USER_NAME_MAXSIZE];
+    ULONG userNameSize = USER_NAME_MAXSIZE;
+    if (GetUserNameExA(NameDnsDomain, (LPSTR)charUserName, &userNameSize)) {
+        QString du = QString(charUserName);
+        QStringList sdu = du.split('\\');
+        if (sdu.size() == 2) {
+            domain = sdu.at(0);
+            user   = sdu.at(1);
+        }
+    }
+    stdo << "Logged user : " << user << "@" << domain << endl;
+#endif
 
     cError *pe = nullptr;
 
