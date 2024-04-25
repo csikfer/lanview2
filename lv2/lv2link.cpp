@@ -184,7 +184,7 @@ int cPhsLink::isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShar
                   " WHERE port_id1 = ? AND phs_link_type1 = ?";
     QVariant s;
     if (__s != ES_NC) {
-        sql += "AND port_shared = ?";
+        sql += " AND port_shared = ?";
         s = portShare(__s);
     }
     if (!execSql(q, sql, __pid, phsLinkType(__t), s)) {

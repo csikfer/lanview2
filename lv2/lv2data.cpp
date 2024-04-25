@@ -3930,7 +3930,7 @@ cSelect& cSelect::choice(QSqlQuery &q, const QString& _type, const cMac _val, eE
 {
     static QString sql =
             "SELECT * FROM selects "
-                "WHERE :styp = select_type AND pattern_type = 'oui'"
+                "WHERE :styp = select_type AND pattern_type = 'oui' "
                   "AND pattern::macaddr = trunc(:mac::macaddr) "
                 "ORDER BY precedence "
                 "LIMIT 1;";
