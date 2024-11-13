@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "lanview.h"
-
+#include "lv2data.h"
 const QString&  snmpIfStatus(int __i, eEx __ex)
 {
     switch(__i) {
@@ -177,6 +177,12 @@ void    netSnmp::implicitInit(void)
         add_mibdir(dir.toStdString().c_str());
         PDEB(SNMP) << "add_mib_dir(" << dir << ") ..." << endl;
     }
+    QSqlQuery q = getQuery();
+    QString s = cSysParam::getTextSysParam(q, "DefaultCommunity", _sNul);
+    if (!s.isEmpty()) {
+        cSnmp::defComunity = s.toStdString().c_str();
+    }
+
     inited = true;
 }
 

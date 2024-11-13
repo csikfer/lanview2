@@ -2270,9 +2270,12 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     wl << filterWhere(qParams);
     wl << refineWhere(qParams);
     qlonglong zoneId = lv2g::getInstance()->zoneId;
-    if (zoneId != ALL_PLACE_GROUP_ID && !zoneFieldName.isEmpty()) { // Zone filter
-        wl << zoneFunctionName + "(" + zoneFieldName + ", ?)";
-        qParams << lv2g::getInstance()->zoneId;
+    // Zone filter
+    if (zoneId != ALL_PLACE_GROUP_ID    // Nem az 'All' zóna van megadva?
+     && zoneId != NULL_ID               // Meg van adva zóna ?
+     && !zoneFieldName.isEmpty()) {     // Van a helyre utaló mezőnk?
+        wl << zoneFunctionName + "(" + zoneFieldName + ", ?)";  // A feltétel
+        qParams << zoneId;                                      // és a paramétere.
     }
     DBGFNL();
     return wl;
