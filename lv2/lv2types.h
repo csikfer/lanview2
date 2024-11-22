@@ -254,7 +254,20 @@ public:
     /// Ha nem értelmezhető, ill. nem támogatott az adat típus, akkor az objektum értéke invalid lessz (val = -1,
     /// és ekkor az isValid() metódus false-val tér vissza)
     cMac& set(const QVariant& __mac);
+    /// Törli a val értékét, vagyi -1 -re, invalidra állítja
     void clear()                            { val = -1LL; }
+    /// Az OUI értékkel tér vissza
+    /// @return Vissaadott MAC első 3 byte-ja azonos a többi pedig 00 lesz.
+    cMac oui() const {
+        cMac r;
+        r.val = val & 0xFFFFFF000000LL;
+        return r;
+    }
+    /// Csak az OUI részt hasonlítja össze
+    /// @return true, ha egyezik
+    bool compareOUI(const cMac& _o) const {
+        return (val & 0xFFFFFF000000) == (_o.val & 0xFFFFFF000000);
+    }
     /// Az objektum értékét, a MAC címet stringgé konverálja. Hexa szám byte-onként kettősponttal tagolva.
     /// Nincs ellenörzés, invalid érték esetén a felesleges biteket figyelmen kívül hagyja.
     /// Az alapértelmezett inicializálatlan, vagy invalid érték esetén az "FF:FF:FF:FF:FF:FF" értéket adja vissza.
@@ -299,6 +312,9 @@ public:
     /// Ha a két MAC azonos (val adattag) true-val tér vissza. A teljes 64 bites értéket hasonlítja össza.
     /// Az értékek helyességét nem ellenörzi.
     bool  operator==(const cMac& __mac) const { return val == __mac.val; }
+    /// Ha a két MAC nem azonos (val adattag) true-val tér vissza. A teljes 64 bites értéket hasonlítja össza.
+    /// Az értékek helyességét nem ellenörzi.
+    bool  operator!=(const cMac& __mac) const { return val != __mac.val; }
     /// A teljes 64 bites értéket hasonlítja össza. ( Ha a QMap-ban kulcsként akarjuk használni, ez elég )
     /// Az értékek helyességét nem ellenörzi.
     bool  operator<(const cMac& __mac) const  { return val < __mac.val; }

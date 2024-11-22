@@ -479,10 +479,19 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip,
             QHostAddress addr(sAddr);               // check
             if (addr.isNull()) EX(EDATA, -1, QString("%1/%2").arg(sAddr, oidAddr.toNumString()));
             if (addr != QHostAddress(QHostAddress::Any)) {  // If address is 0.0.0.0, then dropp
-                QVariant *p = ptab->getCellPtr(_sIfIndex, i, _sIpAdEntAddr);
-                if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
-                p->setValue(sAddr);
-                found = true;   // Van IP címünk (a táblázatban)
+                if (addr.isLoopback()) {
+                    if (!sysdescr.contains("EdgeSwitch", Qt::CaseInsensitive)) { // Az EdgeSwitch-nél csak el kell dobni a címet, mert hölyeség.
+                        QVariant *p = ptab->getCellPtr(_sIfIndex, i, _sIfType);
+                        if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
+                        p->setValue(24);    // Ez egy "softwareloopback", bárki bármit állít
+                    }
+                }
+                else {
+                    QVariant *p = ptab->getCellPtr(_sIfIndex, i, _sIpAdEntAddr);
+                    if (!p) EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIpAdEntAddr));
+                    p->setValue(sAddr);
+                    found = true;   // Van IP címünk (a táblázatban)
+                }
             }
         } while (0 == snmp.getNext());
     }
@@ -1216,9 +1225,9 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
 
     // Do you have the remote device address?
     if (row.addr.isNull()) {
-        if (0 == choice.compare(_sEmpty, Qt::CaseInsensitive)) {
-            r = rowEmpty(q, snmp, row, em);
-            r = r && updateLink(em);
+        if (0 == choice.compare(_sEmpty, Qt::CaseInsensitive)) {    // Nincs cím, és nem tudjuk milyen típusú eszköz
+            r = rowEmpty(q, snmp, row, em);                         // Megpróbálunk kitalálni róla többet
+            r = r && updateLink(em);                                // Ha sikerült, akkor update
             if (r) return;
         }
         else {
@@ -1615,7 +1624,8 @@ scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 }
                 return;     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     }
-    /* IP */
+    /* IP cím kiderítése*/
+    // Az LLDP alapján? LLDP-MIB::lldpRemManAddrIfId, ez vagy van, vagy nincs.
     static cOIdVector aoi;
     cOId o;
     if (aoi.isEmpty()) aoi << *pAddrOid;
@@ -2107,7 +2117,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     return true;
 }
 
-bool cLldpScan::rowAruba(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
+bool cLldpScan::rowAruba(QSqlQuery &, cSnmp &, rowData &row, cAppMemo &)
 {
     PDEB(WARNING) << "** ARUBA: **\n" << row.toString();
     return true;
@@ -2195,60 +2205,219 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 }
 
 /// Csak egy MAC címunk van, se IP, se típus azonosító
-/// Windows??
-bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
+/// Windows vagy EdgeSwitch
+bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &, rowData &row, cAppMemo &em)
 {
-    (void)snmp;
+    int r;
     cMac mac = row.pmac;
     if (!mac) mac = row.cmac;
     if (!mac)  {
         IS_MISSING_MAC(em);
         return false;
     }
-    // Keresünk egy portot az egy szem MAC alapján
-    int r = rPort.fetchByMac(q, mac);
-    if (r == 1) {   // eggyetlen találat a jó válasz
-        rHost.fetchById(rPort.getId(_sNodeId));
-        rDev.clear();
-        return setRPortFromMac(row, em);
-    }
-    if (r > 1)  {
-        HEREINWE(em, lPrefix + QObject::tr("A %1 MAC nem azonosít egyértelmüen egy portot.").arg(mac.toString()), RS_WARNING);
-        return false;
-    }
-    // Nincs ilyen node, keresünk egy IP címet az ARP lekérdezésekben
     cArp arp;
-    QList<QHostAddress> al = arp.mac2ips(q, mac);
-    r = al.size();
-    if (r != 1) {   // Itt is csak egy találat a jó
-        if (r) {    // egynél több
-            QString s;
-            foreach (QHostAddress a, al) {
-                s += a.toString() + ", ";
-            }
-            s.chop(2);
-            HEREINWE(em, lPrefix + QObject::tr("A %1 MAC címhez nem azonosítható egyértelmüen IP cím (%2).").arg(mac.toString(),s), RS_WARNING);
+    QList<QHostAddress> al;
+    // Keresünk egy portot az egy szem (vagy kettő?) MAC alapján
+    rHost.clear();
+    rDev.clear();
+    rPort.clear();
+    r = rPort.fetchByMac(q, mac);
+    if (r == 0 && row.cmac.isValid() && row.cmac != mac) r = rPort.fetchByMac(q, row.cmac);
+    if (r >= 1) {
+        rHost.fetchById(rPort.getId(_sNodeId)); // Az eszköz megvan
+        if (r > 1 || !rPort.ifType().isLinkage()) {
+            rPort.clear();   // Ez nem biztos, hogy a linkelt port
         }
-        else {  // nincs találat
-            HEREINWE(em, lPrefix + QObject::tr("A %1 MAC címhez nem azonosítható IP cím.").arg(mac.toString()), RS_WARNING);
-        }
-        return false;
     }
-    // Van egy MAC, egy IP. Keresünk hozzá egy nevet.
-    QHostAddress a = al.first();
-    QHostInfo hi = QHostInfo::fromName(a.toString());
-    QString name = hi.hostName();
-    if (name == a.toString()) name = "host-" + mac.toString();
+    else {   // MAC alapján nincs eszköz, keressunk IP-t az ARP-ban
+        al = arp.mac2ips(q, mac);
+        if (row.cmac.isValid() && row.cmac != mac) al += al = arp.mac2ips(q, row.cmac);
+        for (auto a : al) {
+            cIpAddress aa;
+            aa.setIp(_sAddress, a);
+            if (1 ==  aa.completion(q)) {
+                r = rPort.fetchById(q, aa.getId(_sPortId));
+                if (r >= 1) {
+                    rHost.fetchById(rPort.getId(_sNodeId)); // Az eszköz megvan
+                    rPort.clear();  // A linkelt portot meg kell keresni
+                    break;
+                }
+            }
+        }
+        if (rHost.isEmptyRec_()) { // Cím alapján nem találtuk az adatbázisban
+            // Ha SNMP eszköz be is lehetne jegyezni
+            for (auto a : al) { // Végigpróbáljuk a talált címeket
+                cSnmp snmp;
+                if (0 == snmp.open(a.toString(), cSnmp::defComunity, SNMP_VERSION_2c)
+                 && 0 == snmp.get(QString("SNMPv2-MIB::sysDescr.0"))) {
+                    QString name = "Dev-" + mac.toString();
+                    rDev.setName(name);
+                    QString note = QObject::tr("LLDP auto %1").arg(QDateTime::currentDateTime().toString());
+                    rDev.setNote(note);
+                    rDev.setId(_sNodeType, enum2set(NT_HOST, NT_SNMP));
+                    rDev.addPort(_sEthernet, _sEthernet, _sEthernet, 1);
+                    cInterface *pi = rDev.ports.first()->reconvert<cInterface>();
+                    pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
+                    if (rDev.setBySnmp(cSnmp::defComunity, EX_IGNORE)) {    // Felszedtunk egy SNMP eszközt
+                        cError *pe = rDev.tryInsert(q);
+                        if (pe == nullptr) {
+                            rHost._copy(rDev, rHost.descr());   // Mező adatok másolása.
+                            rHost.__cp(rDev);                   // Az állapot adatok is kelleni fognak.
+                            rPort.clear();                      // Hogy melyik a talát port, azt nem tudjuk.
+                        }
+                        else {
+                            QString e = QString("Új SNMP eszköz mentése sikertelen : %1; dev:%2").arg(pe->shortMsg(), rDev.identifying(false));
+                            HEREINWE(em, lPrefix + e, RS_WARNING);
+                            delete pe;
+                            rDev.clear();
+                            return false;
+                        }
+                    }
+                    else {
+                        rDev.clear();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    if (!rHost.isEmptyRec_()) {
+        bool isSNMP = rHost.getBool(_sNodeType, NT_SNMP);
+        if (rDev.isNull()) {
+            if (isSNMP) { // Ha esetleg SNMP eszköz
+                rDev.fetchById(rHost.getId());
+            }
+        }
+        if (rPort.isEmptyRec_()) {
+            // Nem tudjuk melyik portot találtuk
+            cNPort * pn = nullptr;
+            tRecordList<cNPort> *pports;
+            if (isSNMP) {
+                if (rDev.ports.isEmpty()) rDev.fetchPorts(q);
+                pports = &rDev.ports;
+            }
+            else {
+                if (rHost.ports.isEmpty()) rHost.fetchPorts(q);
+                pports = &rHost.ports;
+            }
+            int _ixHwAddress = cInterface().toIndex(_sHwAddress);
+            QString _sIfdescr = _sIfDescr.toLower();
+            int _ixPortName = cInterface().toIndex(_sPortName);
+            int _ixIfdescr  = cInterface().toIndex(_sIfdescr);
+            QList<cNPort *> pl;
+            cInterface *pi;
+            int i;
+            for (i = 0; i < 6; ++i) { //  db keresést végzünk
+                if (pn != nullptr) break;   // Ha megtaláltuk
+                switch (i) {
+                case 0: // Hátha van MAC egyezés (Nem mindig vizsgáltuk.)
+                    pl = pports->gets(_ixHwAddress, QVariant::fromValue(mac));
+                    if (pl.isEmpty() && row.cmac.isValid() && row.cmac != mac) {
+                        pl = pports->gets(_ixHwAddress, QVariant::fromValue(row.cmac));
+                    }
+                    break;
+                // Talán a port név/d mscr [1,2,3,4]
+                case 1:
+                    pn = pports->get(_ixPortName, row.pname,  EX_IGNORE);
+                    break;
+                case 2:
+                    pl = pports->gets(_ixIfdescr, row.pname);
+                    break;
+                case 3:
+                    pn = pports->get(_ixPortName, row.pdescr, EX_IGNORE);
+                    break;
+                case 4:
+                    pl = pports->gets(_ixIfdescr, row.pdescr);
+                    break;
+                case 5: // Még van egy esély, ha EdgeSwitch
+                    if (!rDev.isNull() && rDev.getName(_sSysDescr).contains("EdgeSwitch", Qt::CaseInsensitive)) {
+                        // A port névből kitalálható egy sorszám.
+                        QRegularExpression re("(\\d+)$");
+                        QRegularExpressionMatch ma = re.match(row.pname);
+                        if (ma.hasMatch()) {
+                            int n1 = ma.captured(1).toInt();
+                            for (auto pp : pports->list()) {
+                                QString name = pp->getName();
+                                ma = re.match(name);
+                                if (ma.hasMatch()) {
+                                    int n2 = ma.captured(1).toInt();
+                                    if (n1 == n2) {
+                                        bool f = false;
+                                        if (pp->chkObjType<cInterface>() >= 0) {        // Interfész típusú?
+                                            pi = pp->reconvert<cInterface>();
+                                            f = pi->ifType().isLinkage();               // Linkelhető?
+                                            cMac m = pi->getMac(_sHwAddress);
+                                            f = f && (m.compareOUI(row.pmac) || m.compareOUI(row.cmac));  // Egyezik valamelyik MAC, legalább az OUI?
+                                            if (f) {
+                                                pn = pp;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                if (pn == nullptr && pl.size() == 1) pn = pl.first();
+                if (pn != nullptr) {    // Biztos ez lehet az?
+                    bool f = false;
+                    if (pn->chkObjType<cInterface>() >= 0) {        // Interfész típusú?
+                        pi = pn->reconvert<cInterface>();
+                        f = pi->ifType().isLinkage();               // Linkelhető?
+                        cMac m = pi->getMac(_sHwAddress);
+                        f = f && (m.compareOUI(row.pmac) || m.compareOUI(row.cmac));  // Egyezik valamelyik MAC legalább az OUI
+                    }
+                    if (!f) pn = nullptr;   // Ez nem jó találat
+                }
+            }
+            if (pn == nullptr) {
+                QString se = lPrefix + QObject::tr("A %1 című %2 nevű beolvasott eszközön, nincs meg a linkelt port.")
+                                           .arg(mac.toString(), rHost.getName());
+                expError(se);
+                HEREINW(em, se, RS_WARNING);
+                return false;
+            }
+            expInfo(lPrefix + QObject::tr("Link any SNMP dev. : %1 (MAC)").arg(rDev.getName()));
+            rPort.clone(*pn);
+            return true;
+        }
+        return true;
+    }
 
+    // Van egy MAC, egy IP. Keresünk hozzá egy nevet.
+    mac = row.pmac;
+    al = arp.mac2ips(q, mac);
+    if (al.isEmpty()) {
+        mac = row.pmac;
+        al = arp.mac2ips(q, row.cmac);
+    }
+    QHostAddress a;
+    QString name;
+    if (!al.isEmpty()) {
+        a = al.first();
+        QHostInfo hi = QHostInfo::fromName(a.toString());
+        name = hi.hostName();
+        if (name == a.toString()) name.clear(); // Nincs DNS név
+    }
+    else {
+        mac = row.pmac;
+        if (!mac) mac = row.cmac;
+    }
+    if (name.isEmpty()) name = "host-" + mac.toString();  // Ha nincs név, csinálunk
+    rDev.clear();   // Már próbáltuk, nem SMP eszköz.
     rHost.setName(name);
     QString note = QObject::tr("LLDP auto %1").arg(QDateTime::currentDateTime().toString());
     rHost.setNote(note);
     rHost.setId(_sNodeType, enum2set(NT_HOST, NT_WORKSTATION));
     rHost.addPort(_sEthernet, _sEthernet, _sEthernet, 1);
-    cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
-    *pi = row.cmac;
-    rDev.setId(_sNodeType, enum2set(NT_HOST));
-    pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
+    cInterface *pi;
+    pi = rHost.ports.first()->reconvert<cInterface>();
+    *pi = mac;
+    if (!a.isNull()) {
+        pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
+    }
     cError *pe = rHost.tryInsert(q);
     if (pe != nullptr) {
         QString se = lPrefix + QObject::tr("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.")

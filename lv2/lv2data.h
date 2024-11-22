@@ -922,7 +922,6 @@ public:
     const cIfType& ifType(enum eEx __ex = EX_ERROR) const { return cIfType::ifType(getId(_sIfTypeId), __ex); }
     /// Az iftype hívással lekéri az iftypes rekordot, és összehasonlítja a megadott névvel, a rekord név mezőjét,
     /// Ha azonos true-val tér vissza.
-    /// @param q Az adatbázis lekérdezéshez használt query objektum.
     /// @param __iftypename A keresett név.
     /// @param __ex Hiba esetén dob egy kizárást, ha igaz (ez az alapértelmezés). Ha false, akkor hiba esetén false-vel tér vissza,
     ///           hacsak az __iftypename nem null.
@@ -1625,12 +1624,6 @@ public:
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    /// Lista bővítése egy elemmel.
-    /// @param __t A port típusát definiáló objektum referenciája
-    /// @param __name port_name
-    /// @param __note port_
-    /// @param __ix Port_index, A NULL_IX érték nem megengedett (kötelező az egyedi index)
-    virtual cNPort * addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot

@@ -499,6 +499,21 @@ public:
         }
         return QList<T *>::at(i);
     }
+    /// A konténer elemének a leválogatása amegadott sorszámú mező értéke alapján
+    /// @return A listát létrehozza, és a pointerrel tér vissza. Az elemeket nem allokálja újra!
+    /// @param __ix A mező sorszáma, ami alapján keresünk
+    /// @param __v A keresett érték
+    QList<T *> gets(int __ix, const QVariant& __v) const {
+        QList<T *> r;
+        int i = 0;
+        while (true) {
+            i = indexOf(__ix, __v, i);
+            if (i < 0) break;
+            r << QList<T *>::at(i);
+            i++;
+        }
+        return r;
+    }
     /// A konténer utolsó pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_back(eEx __ex = EX_ERROR)  {

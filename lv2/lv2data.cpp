@@ -2707,6 +2707,9 @@ QString cNode::toString() const
 
 cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
 {
+    bool isSnmpDev = chkObjType<cSnmpDevice>(EX_IGNORE) >= 0;
+    if (isSnmpDev && __ix == NULL_ID) EXCEPTION(EDATA, __ix, tr("A port index kötelező"));
+    if (__ix != NULL_ID && __ix <= 0) EXCEPTION(EDATA, __ix, tr("Az index nem lehet negatív, vagy nulla"));
     if (ports.count()) {
         if (nullptr != getPort(__name, EX_IGNORE)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
         if (__ix != NULL_IX && nullptr != getPort(__ix, EX_IGNORE)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
@@ -3468,12 +3471,6 @@ bool cSnmpDevice::rewrite(QSqlQuery &__q, eEx __ex)
     return cNode::rewrite(__q, __ex);
 }
 
-cNPort *cSnmpDevice::addPort(const cIfType& __t, const QString& __name, const QString& __descr, int __ix)
-{
-    if (__ix < 0) EXCEPTION(EDATA, __ix);
-    return cNode::addPort(__t, __name, __descr, __ix);
-}
-
 int cSnmpDevice::snmpVersion() const
 {
     QString v = getName(_sSnmpVer);
@@ -3494,7 +3491,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
         community = getName(_sCommunityRd);
         if (community.isEmpty()) {
             community = getName(_sCommunityWr);
-            if (community.isEmpty()) community = _sPublic;
+            if (community.isEmpty()) community = cSnmp::defComunity;
         }
     }
     setName(_sCommunityRd, community);

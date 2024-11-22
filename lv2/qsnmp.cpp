@@ -178,11 +178,12 @@ void    netSnmp::implicitInit(void)
         PDEB(SNMP) << "add_mib_dir(" << dir << ") ..." << endl;
     }
     QSqlQuery q = getQuery();
-    QString s = cSysParam::getTextSysParam(q, "DefaultCommunity", _sNul);
+    const QString s = cSysParam::getTextSysParam(q, "DefaultCommunity", _sNul);
     if (!s.isEmpty()) {
-        cSnmp::defComunity = s.toStdString().c_str();
+        const std::string ss = s.toStdString();
+        cSnmp::defComunity = strdup(ss.c_str());
     }
-
+    PDEB(SNMP) << "Default community " << QString(cSnmp::defComunity) << endl;
     inited = true;
 }
 
