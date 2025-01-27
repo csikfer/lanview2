@@ -909,7 +909,7 @@ int cSnmp::getTableAlt(const cOIdVector& Ids, const QStringList& columns, cTable
     _DBGFN() << "@([" << Ids.toString() << ", " << columns.join(",") << ", [[" << result.toString() << "]], " << _maxRowIndex << ")" << endl;
     int ncol = columns.size();                      // Table column number
     if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);   // Oszlop OId-k
-    tVariantVector& ix  = result[sSnmpTableIndex];
+    tVariantVector& ix  = result[columns.first()];
     for (int colIx = 0; colIx < ncol; ++colIx) {
         const cOId& oib = Ids[colIx];   // column base  OId
         if (getNext(oib)) return status;
