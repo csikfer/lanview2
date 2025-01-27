@@ -1009,7 +1009,7 @@ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape)
         if (pf->getBool(ixFieldFlag, FF_HTML)) {
             bool huge = pf->getBool(ixFieldFlag, FF_HUGE);
             QString t = pf->getText(cTableShapeField::LTX_DIALOG_TITLE) + s;
-            QString v = pf->view(q, o);
+            QString v = pf->display(q, o);
             if (huge) {
                 html += htmlWarning(t);   // bold
                 html += htmlInfo(v, true);

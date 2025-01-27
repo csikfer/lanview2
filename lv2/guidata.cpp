@@ -889,7 +889,7 @@ qlonglong cTableShapeField::getIdByNames(QSqlQuery& q, const QString& tsn, const
     return o.getId();
 }
 
-QString cTableShapeField::view(QSqlQuery &q, const cRecord& o, qlonglong fix) const
+QString cTableShapeField::display(QSqlQuery &q, const cRecord& o, qlonglong fix) const
 {
     static const cTableShapeField *lastThis = nullptr;
     static QString      lastMsg;

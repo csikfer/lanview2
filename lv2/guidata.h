@@ -177,14 +177,14 @@ public:
         LTX_TOOL_TIP            ///< Unused (Maybe later)
     };
 
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual void clearToEnd() override;
 
     /// Egy table_shapes rekord beszúrása.
-    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR) override;
     /// Egy table_shapes rekord beszúrása, vagy fellülírása név szerint, ha már létezik
-    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR) override;
     /// Beállítja a típus mező értékét.
     /// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek, viszont a megjelenítésnél van szerepük.
     /// Az alapértelmezett metódus ezeket az értékeket eldobná, természetesen ezek az extra értékek elvesznek,
@@ -284,16 +284,16 @@ public:
     };
 
     cTableShapeField(QSqlQuery& q);
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
-    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual void clearToEnd() override;
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR) override;
+    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR) override;
     void setTitle(const QStringList& _tt);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     /// Display string referenced from the field.
-    QString view(QSqlQuery &q, const cRecord& o, qlonglong fix = -1) const;
+    QString display(QSqlQuery &q, const cRecord& o, qlonglong fix = -1) const;
     ///
     QString colName(bool icon = false);
 protected:
@@ -360,7 +360,7 @@ public:
     cEnumVal(const QString _tn);
     /// Konstruktor, az alapértelmezett értékek beállításával (value)
     cEnumVal(const QString _tn, const QString _en);
-    virtual int replace(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery &__q, eEx __ex = EX_ERROR) override;
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
     /// @param __n Az enum_type_name mező értéke, vagy minta a mezőre

@@ -301,8 +301,6 @@ public:
     operator QHostAddress() const;
     /// Az objektum (a beolvasott rekord) MAC mezőjének az értékével tér vissza
     operator cMac()         const;
-    /// Az objektum (a beolvasott rekord) MAC mezőjének az értékével tér vissza
-    cMac getMac() const { return (cMac)*this; }
     /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
     QHostAddress getIpAddress() const { return (QHostAddress)*this; }
     /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.

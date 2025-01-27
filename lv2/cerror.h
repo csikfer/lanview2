@@ -38,7 +38,7 @@ class cDebug;
 
 class LV2SHARED_EXPORT cBackTrace : public QStringList {
 public:
-    cBackTrace(size_t _size = DEFAULT_BACKTRACE_SIZE);
+    cBackTrace();
 };
 
 #define NEWCERROR(ec, ...) new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__)

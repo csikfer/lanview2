@@ -20,7 +20,6 @@
 #include <QtCore>
 #include "cdebug.h"
 #include "cerror.h"
-#include <iostream>
 #if defined(Q_CC_GNU)
 # if !defined(Q_OS_WIN)
 #  include <execinfo.h>
@@ -31,7 +30,7 @@
 # include <DbgHelp.h>
 #endif
 
-cBackTrace::cBackTrace(size_t _size)
+cBackTrace::cBackTrace()
 {
 #if defined(Q_CC_GNU)
 # if defined(Q_OS_WIN)
@@ -39,8 +38,8 @@ cBackTrace::cBackTrace(size_t _size)
 # else
     int     size;
     char ** symbols;
-    void * buffer[_size];
-    size   = backtrace(buffer, int(_size));
+    void * buffer[DEFAULT_BACKTRACE_SIZE];
+    size   = backtrace(buffer, DEFAULT_BACKTRACE_SIZE);
     symbols= backtrace_symbols(buffer, size);
     if (symbols == nullptr) {
         *this << QObject::tr("backtrace_symbols(...) failed.");

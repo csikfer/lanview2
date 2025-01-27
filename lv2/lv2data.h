@@ -288,12 +288,12 @@ class LV2SHARED_EXPORT cSysParam  : public cRecord {
     CRECORD(cSysParam);
 public:
     /// Törli a paramType adattagot.
-    virtual void    clearToEnd();
+    virtual void    clearToEnd() override;
     /// A toEnd(int i) metódust hívja a port paraméter (típus) rekord id mező indexével.
-    virtual void 	toEnd ();
+    virtual void 	toEnd () override;
     /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
     /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
-    virtual bool 	toEnd (int i);
+    virtual bool 	toEnd (int i) override;
     /// A paraméter adat típus enumerációs értékkel tér vissza
     qlonglong valueType()   const { return paramType.getId(_sParamTypeType); }
     /// A paraméter adat típus névvel tér vissza
@@ -446,7 +446,7 @@ public:
     /// Ha az image_data mező feltöltésekor törli a image_hash mezőt.
     /// Az image_hash mező, csak akkor törlődik, ha az image_data mezőt egyedileg modosítjuk,
     /// vagyis az objektum toEnd() (paraméter nélküli) metódusa az alapértelmezett metódus, ami nem cdinál semmit.
-    bool toEnd(int _i);
+    bool toEnd(int _i) override;
     /// Betölt az objektumba egy képet
     /// @param __fn A kép fájl neve
     bool load(const QString& __fn, enum eEx __ex = EX_ERROR);
@@ -561,11 +561,11 @@ class LV2SHARED_EXPORT cSubNet : public cRecord {
 public:
     /// További műveletek az objektum rekord kitöltése után:
     /// A toEnd(int _i) metódust hívja a "vlan_id" idexével.
-    virtual void toEnd();
+    virtual void toEnd() override;
     /// További műveletek az egy mező kitöltése után:
     /// Ha a "vlan_id" idexével hívják, akkor ellenörzi a VLAN ID-t
     /// A negatív vagy 0 értékett NULL-ra állírja.
-    virtual bool toEnd(int _i);
+    virtual bool toEnd(int _i) override;
     /// A "netaddr" mezőt állítja a megadott címbe.
     cSubNet& operator=(const netAddress& __a) { set(_ixNetAddr, QVariant::fromValue(__a)); return *this; }
     /// Az addr adattag aktuális értékével tér vissza (a NULL ??)
@@ -630,9 +630,9 @@ public:
     /// Érték adás a cím mezőnek, és a típus mezőnek.
     cIpAddress& setAddress(const QHostAddress& __a, const QString& __t = _sNul);
     /// Ez a hívás nem támogatott, kizárást dob
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Ez a hívás nem támogatott, kizárást dob
-    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// A cím mező értékének a lekérése.
     QHostAddress address() const;
     /// Ha nincs subnet a megadott címhez, akkor a típust 'external'-ra állítja
@@ -674,12 +674,12 @@ class LV2SHARED_EXPORT cPortParam : public cRecord {
     CRECORD(cPortParam);
 public:
     /// Törli a paramType adattagot.
-    virtual void    clearToEnd();
+    virtual void    clearToEnd() override;
     /// A toEnd(int i) metódust hívja a port paraméter (típus) rekord id mező indexével.
-    virtual void 	toEnd ();
+    virtual void 	toEnd () override;
     /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
     /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
-    virtual bool 	toEnd (int i);
+    virtual bool 	toEnd (int i) override;
     /// A port paraméter nevével tér vissza
     QString typeName()   const { return paramType.getName(); }
     /// A port paraméter típus enumerációs értékkel tér vissza
@@ -736,10 +736,10 @@ class LV2SHARED_EXPORT cIfType : public cRecord {
 public:
     /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén törli a iftypes konténert,
     /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén modosítja a beolvasott
     /// rekordot is, ha volt.
-    virtual int update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), enum eEx __ex = EX_ERROR);
+    virtual int update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), enum eEx __ex = EX_ERROR) override;
     ///
     static qlonglong insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, int __lid);
     static qlonglong insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, const QString& __ot, const QString& __lt, bool _pr);
@@ -823,17 +823,17 @@ protected:
     }
 public:
     /// Törli a params konténert.
-    virtual void clearToEnd();
+    virtual void clearToEnd() override;
     /// A port id indexével hívja a toEnd(int i) metódust
-    virtual void toEnd();
+    virtual void toEnd() override;
     /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
-    virtual bool toEnd(int i);
+    virtual bool toEnd(int i) override;
     /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool isContainerValid(qlonglong __mask) const;
-    virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool isContainerValid(qlonglong __mask) const override;
+    virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0) override;
 
     /// Egy port rekord beolvasása a port név és a node id alapján.
     /// @param __q Az adatbázis műveletjez haszbált objektum.
@@ -1103,12 +1103,12 @@ class LV2SHARED_EXPORT cNodeParam : public cRecord {
     CRECORD(cNodeParam);
 public:
     /// Törli a paramType adattagot.
-    virtual void    clearToEnd();
+    virtual void    clearToEnd() override;
     /// A toEnd(int i) metódust hívja a Node paraméter (típus) rekord id mező indexével.
-    virtual void 	toEnd ();
+    virtual void 	toEnd () override;
     /// Ha megváltozik a Node param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
     /// Nincs ilyen id-vel Node_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
-    virtual bool 	toEnd (int i);
+    virtual bool 	toEnd (int i) override;
     /// A Node paraméter nevével tér vissza
     QString typeName()   const { return paramType.getName(); }
     /// A Node paraméter típus enumerációs értékkel tér vissza
@@ -1188,19 +1188,19 @@ protected:
     }
     cNPort *portSetParam(cNPort * __port, const QString& __name, const QVariant &__val, const QString& __type);
 public:
-    virtual void clearToEnd();
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual void clearToEnd() override;
+    virtual void toEnd() override;
+    virtual bool toEnd(int i) override;
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Egy létező az ID-vel azonosított patch objektum újra írása.
     /// A portok újra írása (ha isContainerValid(CV_PORTS) hívás értéke true) szintén az ID szerint történik.
     /// A metódus bármilyen módosítást nem tud kiírni az adatbázisba, az egymást követő írási műveletekben
     /// nem lehet név ütközés, pl. ez fog történni port nevek felcserélése esetén.
     /// @note A portok kiírásának a módja különbözik a cNode típusú objektumokhoz képest!
-    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool isContainerValid(qlonglong __mask) const;
-    virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool isContainerValid(qlonglong __mask) const override;
+    virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0) override;
     virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
     virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
     /// Törli az ID mezöket, de az objektum egyébb adattartalma nem változik.
@@ -1397,50 +1397,50 @@ public:
     cNode(const QString& __name, const QString& __note);
 //  cNode& operator=(const cNode& __o);
     /// Törli a child objektumokat tartalmazó konténereket, és a containerValid értékét nullára állítja.
-    virtual void clearToEnd();
-    virtual void toEnd();
+    virtual void clearToEnd() override;
+    virtual void toEnd() override;
     /// Ha i az ID indexe, akkor megvizsgálja a child objektumok konténerét (csak az első elemet!)
     /// és, ha chiuld objektumban a port_id értéke nem azonos a node objektum aktuális ID-jével,
     /// akkor törli a konténert, és a megfelelő containerValid bit(ek)et.
-    virtual bool toEnd(int i);
+    virtual bool toEnd(int i) override;
     /// A cPatch::insert(QSqlQuery &__q, eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Az objektum frissítése után hívja a rewrite() metódust a
     /// paraméter ás port konténerre is.
     /// Az újra írandó objektum azonosítása név szerint történik, az objektum ID mezője figyelmenkívül lasz hagyva.
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Az objektum frissítése után hívja a rewrite() metódust a
     /// paraméter ás port konténerre is.
     /// Az újra írandó objektum azonosítása ID szerint történik.
-    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Alapértelmezetten ha a port típusa cInterface, akkor az IP címeket és vlan-okat is, de a port paramétereket nem tölti be!
     /// Ha megadjuk a flags paramétert, akkor a eContainerValid típusú konstans(ok)al adható meg, mely konténer adattagokat kell feltölteni.
     /// A CV_PORTS -ot nem kell megadni.
     /// @return A betöltött portok száma
-    virtual int  fetchPorts(QSqlQuery& __q, int flags = 0);
+    virtual int  fetchPorts(QSqlQuery& __q, int flags = 0) override;
     int fetchAllChilds(QSqlQuery& __q) { return fetchParams(__q) + fetchPorts(__q, -1); }
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
     /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor
     /// a keresett nevet kiegészíti a kereső domain nevekkel, és az így kapott nevekkel végrehajt mégegy keresést.
     /// A kereső domain nevek a sys_param táblában azok a rekordok, melyek típusának a neve "search domain".
     /// Ez utobbi esetben ha több találat van, akkor a sys_param.sys_param_name alapján rendezett első találattal tér vissza.
-    virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, enum eEx __ex = EX_ERROR) const;
+    virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, enum eEx __ex = EX_ERROR) const override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual void clearShares();
+    virtual void clearShares() override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false);
+    virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false) override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, enum eEx __ex = EX_ERROR);
+    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, enum eEx __ex = EX_ERROR) override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
+    virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix) override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
+    virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off) override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
+    virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString()) override;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
+    virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd) override;
     /// A megadott eszköz szériaszámának a megadása.
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param name Az eszköz neve
@@ -1461,7 +1461,7 @@ public:
     }
 
     /// Kiírja a ports konténer tartalmát is
-    virtual QString toString() const;
+    virtual QString toString() const override;
 
     /// A portok lista kontáner bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
@@ -1622,8 +1622,8 @@ public:
     cSnmpDevice(const QString& __n, const QString& __d);
     /// A cPatch::insert(QSqlQuery &__q, enum eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
-    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot

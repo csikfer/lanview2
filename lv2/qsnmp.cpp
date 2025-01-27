@@ -17,7 +17,6 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include "lanview.h"
 #include "lv2data.h"
 const QString&  snmpIfStatus(int __i, eEx __ex)
 {
@@ -904,6 +903,60 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
         if (getNext()) return 1;
     }
 }
+
+int cSnmp::getTableAlt(const cOIdVector& Ids, const QStringList& columns, cTable& result, oid _maxRowIndex)
+{
+    _DBGFN() << "@([" << Ids.toString() << ", " << columns.join(",") << ", [[" << result.toString() << "]], " << _maxRowIndex << ")" << endl;
+    int ncol = columns.size();                      // Table column number
+    if (Ids.size() != ncol) EXCEPTION(EPROGFAIL);   // Oszlop OId-k
+    tVariantVector& ix  = result[sSnmpTableIndex];
+    for (int colIx = 0; colIx < ncol; ++colIx) {
+        const cOId& oib = Ids[colIx];   // column base  OId
+        if (getNext(oib)) return status;
+        while (true) {                          // ROWS
+            if (actVar == nullptr) EXCEPTION(EPROGFAIL);
+            const QString&  col = columns[colIx];// column name
+            const cOId      oia = name();       // Cell OID
+            tVariantVector& vv  = result[col];  // Result table column reference
+            PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
+            if (oib < oia) {                    // Overrun? (if no)
+                unsigned long row = oia.last();           // Row SNMP index
+                if (row > _maxRowIndex) break;
+                if (colIx == 0) {       // Idex oszlop
+                    ix << QVariant((int)row);
+                }
+                else {
+                    unsigned long tix = vv.size();     // Tábla sor index
+                    unsigned long six = ix[tix].toULongLong();
+                    if (six == row) {
+                        vv << value();
+                    }
+                    else if (six < row) {
+                        while (six < row) {
+                            vv << QVariant();   // A hiányzó cella
+                            tix++;
+                            if (ix.size() <= (int)tix) break;
+                            six = ix[tix].toULongLong();
+                        }
+                        if (six == row) vv << value();
+                        else {
+                            emsg = "Confused indexes : " + oia.toNumString() + " / " + QString::number(row);
+                            return 1;
+                        }
+                    }
+                }
+            }
+            else {                              // Overrun, end of column
+                if (colIx != 0) while (vv.size() < ix.size()) vv << QVariant();
+                break;
+            }
+            int e = getNext();
+            if (e) return e;
+        }
+    }
+    return 0;
+}
+
 
 int cSnmp::getXIndex(const cOId& xoid, QMap<int, int>& xix, bool reverse)
 {

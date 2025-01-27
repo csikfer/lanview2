@@ -486,7 +486,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     cTable      tab;    // Interface table container
     QElapsedTimer timer;
     timer.start();
-    int r = snmp.getTable(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
+    int r = snmp.getTableAlt(snmpTabOIds, snmpTabColumns, tab, oid(maxPortIndex));
     int state;
     pSnmpElapsed->setValue(q, QVariant(timer.elapsed()), state);
     if (r) {

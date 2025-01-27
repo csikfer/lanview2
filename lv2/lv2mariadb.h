@@ -244,42 +244,33 @@ public:
     /// @param q Ha adatbázisműveletre van szükség, akkor az ezen keresztül.
     /// @param __i A mező indexe
     /// @param pFeatures Egy opcionális features érték.
-    virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = nullptr) const;
+    virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = nullptr) const override;
     /// Feltételezve, hogy a megadott indexű mező egy MAC, annak értékével tér vissza.
     /// \param __i  A mező indexe
     /// \param __ex Nem használt
-    cMac    getMac(int __i, enum eEx = EX_ERROR) const;
+    cMac    getMac(int __i, enum eEx = EX_ERROR) const override;
     /// \brief Egy MAC cím típusú mező értékének a beállítása
     /// \param __i A mező indexe
     /// \param __a A MAC cím, a mező új értéke.
     /// \param __ex Nem használt
-    cRecord& setMac(int __i, const cMac& __a, enum eEx = EX_ERROR);
+    cRecord& setMac(int __i, const cMac& __a, enum eEx = EX_ERROR) override;
     /// \brief Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
     /// \param __i  A mező indexe
     /// \param __a  A neállítandó IP cím
     /// \param __ex Nem használt
     /// \return Az objektum referenciával tér vissza
-    cRecord &setIp(int __i, const QHostAddress& __a, enum eEx = EX_ERROR);
+    cRecord &setIp(int __i, const QHostAddress& __a, enum eEx = EX_ERROR) override;
     ///
-    QStringList getStringList(int __i, enum eEx = EX_ERROR) const;
-    cRecord& setStringList(int __i, const QStringList& __v, enum eEx = EX_ERROR);
+    QStringList getStringList(int __i, enum eEx = EX_ERROR) const override;
+    cRecord& setStringList(int __i, const QStringList& __v, enum eEx = EX_ERROR) override;
 
     /// Nemtámogatott.
     /// Ha __ex értéke nem EX_IGNORE, akkor kizárást dob, vagy NULL_ID-vel tér vissza.
-    qlonglong fetchTableOId(QSqlQuery&, enum eEx __ex = EX_ERROR) const;
+    qlonglong fetchTableOId(QSqlQuery&, enum eEx __ex = EX_ERROR) const override;
     /// Kezeli az INSERT parancsban a RETURNING hiányát
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Ellenörzi, hogy a konverzió elvégezhető-e. Csak az eredeti típusra konvertálás lehetséges, mivel nincs öröklés.
-    template <class T> int chkMyObjType(enum eEx __ex = EX_ERROR) const {
-        T o;
-        if (typeid(T) == typeid(cMyRecAny) || typeid(*this) == typeid(cMyRecAny)) {
-            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 -> %2, but only one type is cMyRecAny").arg(descr().tableName()).arg(o.descr().tableName())));
-            return -1;
-        }
-        if (descr().tableName() == o.descr().tableName()) return 0;  // Azonos
-        if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableName()).arg(o.descr().tableName())));
-        return -1;
-    }
+    template <class T> int chkMyObjType(enum eEx __ex = EX_ERROR) const;
     /// Az objektum pointert visszaalakítja az eredeti ill. megadott típusba. Lást még a chkMyObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem őse a megadott típus, akkor dob egy kizárást
     template <class T> T * reconvertMy() { chkMyObjType<T>(); return dynamic_cast<T *>(this); }
@@ -433,5 +424,17 @@ protected:
     /// Az objektum viselkedését meghatározó leíró objektum pointere.
     const cMyRecStaticDescr *pStaticDescr;
 };
+
+template <class T> int cMyRec::chkMyObjType(enum eEx __ex) const {
+    T o;
+    if (typeid(T) == typeid(cMyRecAny) || typeid(*this) == typeid(cMyRecAny)) {
+        if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 -> %2, but only one type is cMyRecAny").arg(descr().tableName()).arg(o.descr().tableName())));
+        return -1;
+    }
+    if (descr().tableName() == o.descr().tableName()) return 0;  // Azonos
+    if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::tr("The object type can not be converted, %1 ~ %2").arg(descr().tableName()).arg(o.descr().tableName())));
+    return -1;
+}
+
 
 #endif // LV2MARIADB_H

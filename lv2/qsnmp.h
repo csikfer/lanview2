@@ -349,7 +349,8 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
     ///         Hiba esetén az első hibás lejérdezés státusa.
     int getTable(const QString& baseId, const QStringList& columns, cTable& result);
-    /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról.
+    /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról. Egszerre kérdez le egy sort.
+    /// Feltételezi, hogy minden oszlop az összes sorhoz tartozó értéket tartalmazza. Nincs üres/nem lekérdezhető cella
     /// @param ids Az oszlopokat azonosító OId-k
     /// @param columns Az oszlopok nevei.
     /// @param result Cél objektum.
@@ -357,6 +358,15 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
     ///         Hiba esetén az első hibás lekérdezés státusa.
     int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result, oid _maxRowIndex = INT_MAX);
+    /// Táblázat lekérdezése, a legutóbbi open-el megnyitoot host-ról. Oszloponként indít egy lekérdezés sorozatot.
+    /// Az első lekérdezett oszop mindíg az index kell legyen. Lehetnek üres cellák a táblában.
+    /// @param ids Az oszlopokat azonosító OId-k
+    /// @param columns Az oszlopok nevei.
+    /// @param result Cél objektum.
+    /// @param _maxRowIndex Ha megadjuk, akkor csak addig kérdezi le a sorokat, amig el nem érjük a meximális megadott indexet
+    /// @return A lekérdezés státusa. Ha minden lekérdezés sikeres, akkor 0.
+    ///         Hiba esetén az első hibás lekérdezés státusa.
+    int getTableAlt(const cOIdVector& ids, const QStringList& columns, cTable& result, oid _maxRowIndex = INT_MAX);
     /// Egy kereszt index tábla lekérdezése
     /// A visszaadott táblázatban lessz egy plussz oszlop, ami az indexeket tartalmazza, neve az sSnmpTableIndex adattagban.
     /// @param xoid Az OID, ami a keresztindexet tartalmazza: <xoid>.<új index>: <eredeti index>

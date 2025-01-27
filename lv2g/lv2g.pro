@@ -4,8 +4,8 @@
 #
 #-------------------------------------------------
 
-QT += network sql gui xml widgets printsupport
-QT += webenginewidgets multimedia
+QT += network sql gui xml widgets printsupport multimedia
+QT += webenginewidgets
 
 TARGET = lv2g
 TEMPLATE = lib

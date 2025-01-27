@@ -186,7 +186,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
                 return pr->getText(fix);
             }
             else {
-                return column.shapeField.view(*pq, *pr, fix);
+                return column.shapeField.display(*pq, *pr, fix);
             }
         }
         return dcRole(column.dataCharacter, role);

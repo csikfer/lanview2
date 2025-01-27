@@ -183,7 +183,7 @@ QString rec2html(QSqlQuery& q, const R& o, cTableShape& shape, bool shrt = true)
         QString fn = fs.getName(_sTableShapeFieldName);
         QStringList row;
         row << fs.getText(cTableShapeField::LTX_DIALOG_TITLE, fs.getName());
-        row << fs.view(q, o);
+        row << fs.display(q, o);
         data << row;
     }
     return htmlTable(QStringList(), data);
@@ -239,7 +239,7 @@ void list2texts(QList<QStringList>& data, QSqlQuery& q, const tRecordList<R>& li
         }
         for (row = 0; row < rows; ++row) {   // ROWS
             R *p = list.at(row);
-            data[row] << fs.view(q, *p, fix);
+            data[row] << fs.display(q, *p, fix);
         }
     }
 }

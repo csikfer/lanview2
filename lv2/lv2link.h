@@ -22,15 +22,15 @@ class LV2SHARED_EXPORT cPhsLink : public cRecord {
     CRECORD(cPhsLink);
 public:
     /// Nem támogatott, kizárást dob, ha __ex értéke nem EX_IGNORE, egyébként nem csinál semmit és false-val tér vissza.
-    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR)  override;
     /// @return Vigyázat a visszaadott érték értelmezése más, mint a többi replace metódusnál:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor R_INSERT, ha törölni kellett rekordokat, akkor
     /// R_UPDATE, ha viszont nem sikerült felvenni ez új rekordot, akkor R_ERROR.
     /// A műveleteket tranzakcióba zárja, és hiba esetén R_ERROR visszagörgeti.
     /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob.
-    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Nem támogatott, kizárást dob, ha __ex értéke nem EX_IGNORE, egyébként nem csinál semmit és false-val tér vissza.
-    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR) override;
     /// Törli a megadott fizikai linket
     /// @param q Az SQL lekérdezéshez használt objektum.
     /// @param __nn A host neve, amihez a link tartozik
@@ -73,7 +73,7 @@ public:
     cPhsLink& swap();
     /// Az objektumot stringgé konvertálja, ami pl. egy riportban szerepelhet.
     /// Ha t igaz (alapértelmezetten hamis), akkor kiír egy objetum megnevezést is.
-    virtual QString show(bool t = false) const;
+    virtual QString show(bool t = false) const override;
     /// Next patch port link. The result is in the object.
     /// In the result record, the shared_port and the 'phs_link_note' fields have been modified.
     /// shared_port is the resulting share.
@@ -132,11 +132,11 @@ class LV2SHARED_EXPORT cLogLink : public cRecord {
     CRECORD(cLogLink);
 public:
     /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
-    virtual bool insert(QSqlQuery &, eEx __ex = EX_ERROR);
+    virtual bool insert(QSqlQuery &, eEx __ex = EX_ERROR) override;
     /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
-    virtual int replace(QSqlQuery &, eEx __ex = EX_ERROR);
+    virtual int replace(QSqlQuery &, eEx __ex = EX_ERROR) override;
     /// A tábla írása automatikus, az update metódus tiltott, kizárást dob.
-    virtual int update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, enum eEx);
+    virtual int update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, enum eEx) override;
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
     /// @param A port id, melyel linkelt portot keressük.
@@ -150,7 +150,7 @@ public:
     /// @return ha a két port linkelve van, akkor true, egyébként false
     /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
-    virtual QString show(bool t = false) const;
+    virtual QString show(bool t = false) const override;
     QStringList showChain() const;
 };
 
@@ -177,7 +177,7 @@ public:
     /// @return ha a két port linkelve van, akkor true, egyébként false
     /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
-    virtual QString show(bool t = false) const;
+    virtual QString show(bool t = false) const override;
 };
 
 enum eLinkResult {
