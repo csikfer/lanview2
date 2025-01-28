@@ -146,7 +146,7 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
     // Csinálunk a releváns portokhoz egy index táblát
     QMap<int,int>   rxix;   // Kereszt index tábla, a lekérdezésnél használlt indexekre konvertáláshoz
     int r = snmp.getXIndex(*pOIdx, rxix, true);
-    if (r) {
+    if (r || rxix.isEmpty()) {
         msgAppend(&runMsg, tr("%1 : A kereszt index tábla lekérdezése sikertelen : %2").arg(name(), snmp.emsg));
         return RS_UNREACHABLE;
     }
@@ -156,7 +156,7 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         np.fetchParams(q);
         // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
-        eTristate queryFlag = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
+        eTristate queryFlag = np.getBoolParam(_sQueryMacTab, EX_IGNORE);
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
         eTristate suspFlag  = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
         if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
@@ -263,6 +263,10 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
             PDEB(VERBOSE) << tr("Set query %1 port, inex %2 (%3).").arg(np.getName()).arg(ix).arg(np.getId(_sPortIndex)) << endl;
             ports.insert(ix, np.reconvert<cInterface>());
         }
+ /*       else if (rxix.isEmpty()) {
+            PDEB(VERBOSE) << tr("Set query %1 port, inex %2.").arg(np.getName()).arg(ix) << endl;
+            ports.insert(ix, np.reconvert<cInterface>());
+        } */
         else {
             PDEB(VERBOSE) << tr("No set query %1 port, inex %2 not found.").arg(np.getName()).arg(ix) << endl;
         }
