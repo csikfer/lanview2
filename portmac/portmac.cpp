@@ -160,7 +160,7 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
         eTristate suspFlag  = np.getBoolParam(_sSuspectedUplink, EX_IGNORE);
         if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
-            PDEB(INFO) << tr("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName(), tristate2string(suspFlag), tristate2string(queryFlag)) << endl;
+            PDEB(INFO) << tr("Disable %1:%2 port query, suspFlag = %3, queryFlag = %4").arg(host().getName(), np.getName(), tristate2string(suspFlag), tristate2string(queryFlag)) << endl;
             continue;
         }
         QString ifTypeName = np.ifType().getName();
@@ -260,7 +260,7 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
         ix = int(np.getId(_sPortIndex));    // Eredeti port index
         if (rxix.contains(ix)) {            // Van ilyen a kereszt index-ben?
             ix = rxix[ix];                  // a lekérdezésben ezt az indexet fogja megkapni
-            PDEB(VERBOSE) << tr("Set query %1 port, inex %2 (%3).").arg(np.getName()).arg(ix).arg(np.getId(_sPortIndex)) << endl;
+            PDEB(VERBOSE) << tr("Set query %1:%2 port, inex %3 (%4).").arg(host().getName(), np.getName()).arg(ix).arg(np.getId(_sPortIndex)) << endl;
             ports.insert(ix, np.reconvert<cInterface>());
         }
  /*       else if (rxix.isEmpty()) {
@@ -268,7 +268,7 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
             ports.insert(ix, np.reconvert<cInterface>());
         } */
         else {
-            PDEB(VERBOSE) << tr("No set query %1 port, inex %2 not found.").arg(np.getName()).arg(ix) << endl;
+            PDEB(VERBOSE) << tr("No set query %1:%2 port, inex %3 not found.").arg(host().getName(), np.getName()).arg(ix) << endl;
         }
     }
     if (ports.isEmpty()) {
@@ -309,7 +309,7 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
         cMacTab mt;                                 // mac_tabs record
         cMac mac = i.key();                         // MAC a címtáblában
         qlonglong pid = pi.value()->getId();        // Switch port ID
-        PDEB(VERBOSE) << VDEB(pid) << pi.value()->getName() << " :: " << mac.toString() << endl;
+        PDEB(VERBOSE) << VDEB(pid) << _sSpace << pi.value()->getFullName(q) << " :: " << mac.toString() << endl;
         mt.setMac(_sHwAddress, mac);
         mt.setId(_sPortId, pid);
         int r = mt.replace(q);                      // Replace mac_tabs record
