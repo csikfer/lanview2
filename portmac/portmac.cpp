@@ -102,7 +102,7 @@ cOId    *cDevicePMac::pOIdx = nullptr;
 
 cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
-    , snmp(), ports()
+    , ports(), rightMap(), foundMacs(), communityList(), hostAddress()
 {
     _DBGFN() << hostService.fullName(__q, EX_IGNORE) << endl;
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lesz
@@ -117,7 +117,23 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         EXCEPTION(EDATA, protoServiceId(), tr("Nem megfelelő proto_service_id!"));
     }
     // Beolvassuk a portokat is
-    host().fetchPorts(__q, 0);  // IP cím VLAN nem kell
+    host().fetchPorts(__q, CV_PORTS_ADDRESSES);  // VLAN nem kell
+    QHostAddress a = host().getIpAddress();
+    if (a.isNull()) {
+        EXCEPTION(EDATA, protoServiceId(), tr("Nincs IP cím!"));
+    }
+    hostAddress = a.toString();
+    snmpVersion = cSnmpDevice().snmpVersion();
+    QStringList vlans = features().slValue(_sVLans);
+    QString sCommunity = host().getName(_sCommunityRd);
+    if (vlans.isEmpty()) {
+        communityList << sCommunity;
+    }
+    else {
+        for (auto s: vlans) {
+            communityList << (sCommunity + "@" + s);
+        }
+    }
 }
 
 cDevicePMac::~cDevicePMac()
@@ -129,7 +145,6 @@ void cDevicePMac::postInit(QSqlQuery &q)
 {
     DBGFN();
     cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)
-    snmpDev().open(q, snmp);
 }
 
 cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par)
@@ -142,13 +157,22 @@ cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglon
 
 int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
 {
+    int r;
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
     QMap<int,int>   rxix;   // Kereszt index tábla, a lekérdezésnél használlt indexekre konvertáláshoz
-    int r = snmp.getXIndex(*pOIdx, rxix, true);
-    if (r || rxix.isEmpty()) {
-        msgAppend(&runMsg, tr("%1 : A kereszt index tábla lekérdezése sikertelen : %2").arg(name(), snmp.emsg));
-        return RS_UNREACHABLE;
+    for (auto sCommunity: communityList) {
+        cSnmp   snmp;
+        r = snmp.open(hostAddress, sCommunity, snmpVersion);
+        if (r) {
+            msgAppend(&runMsg, tr("%1 : SNMP open error : %2").arg(name(), snmp.emsg));
+            return RS_UNREACHABLE;
+        }
+        int r = snmp.getXIndex(*pOIdx, rxix, true);
+        if (r || rxix.isEmpty()) {
+            msgAppend(&runMsg, tr("%1 : A kereszt index tábla lekérdezése sikertelen : %2").arg(name(), snmp.emsg));
+            return RS_UNREACHABLE;
+        }
     }
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
@@ -283,9 +307,6 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
     _DBGFN() << QChar(' ') << name() << endl;
-    if (!snmp.isOpened()) {
-        EXCEPTION(ESNMP,-1, tr("SNMP open error : %1 in %2").arg(snmp.emsg, name()));
-    }
     enum eNotifSwitch r;
     if (ports.isEmpty()) {
         r = eNotifSwitch(initQuery(q, runMsg));
@@ -294,11 +315,19 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 
     QMap<cMac, int> macs;
 
-    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) {
-        return r;   // Az index nem feltétlenül az eredeti port index!
-    }
-    if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) {
-        return r;
+    for (auto sCommunity: communityList) {
+        cSnmp   snmp;
+        int ir = snmp.open(hostAddress, sCommunity, snmpVersion);
+        if (ir) {
+            msgAppend(&runMsg, tr("%1 : SNMP open error : %2").arg(name(), snmp.emsg));
+            return RS_UNREACHABLE;
+        }
+        if (RS_ON != (r = snmpQuery(snmp, *pOId1, macs, runMsg))) {
+            return r;   // Az index nem feltétlenül az eredeti port index!
+        }
+        if (RS_ON != (r = snmpQuery(snmp, *pOId2, macs, runMsg))) {
+            return r;
+        }
     }
     foundMacs.clear();
     QMap<cMac, int>::iterator   i;
@@ -337,7 +366,7 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     return RS_ON;
 }
 
-enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString& runMsg)
+enum eNotifSwitch cDevicePMac::snmpQuery(cSnmp& snmp, const cOId& __o, QMap<cMac, int>& macs, QString& runMsg)
 {
     _DBGFN() << QChar(' ') << __o.toString() << endl;
     cOId    o = __o;

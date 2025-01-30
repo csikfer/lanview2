@@ -52,15 +52,13 @@ public:
     /// Destruktor
     ~cDevicePMac();
     ///
-    virtual void postInit(QSqlQuery &q);
-    virtual cInspector *newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par);
+    virtual void postInit(QSqlQuery &q) override;
+    virtual cInspector *newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par) override;
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
-    virtual int run(QSqlQuery& q, QString &runMsg);
+    virtual int run(QSqlQuery& q, QString &runMsg) override;
     ///
     int initQuery(QSqlQuery& q, QString &runMsg);
-    /// SNMP objektum a lekérdezéshez
-    cSnmp           snmp;
     /// Az "snmp" szolgáltatás protokol típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     static const cService *pSrvPMac;
@@ -74,8 +72,12 @@ public:
     static cOId    *pOId1;
     static cOId    *pOId2;
     static cOId    *pOIdx;
+    /// A community string, vagy ha VLAN-onkénti lekérdezés (cisco), akkor a community stringek VLAN-onként
+    QStringList     communityList;
+    QString         hostAddress;
+    int             snmpVersion;
 private:
-    enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString &runMsg);
+    enum eNotifSwitch snmpQuery(cSnmp& snmp, const cOId& __o, QMap<cMac, int>& macs, QString &runMsg);
 };
 
 class cRightMac : public cInspector {
