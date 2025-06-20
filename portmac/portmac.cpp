@@ -169,10 +169,14 @@ int cDevicePMac::initQuery(QSqlQuery& q, QString &runMsg)
             return RS_UNREACHABLE;
         }
         int r = snmp.getXIndex(*pOIdx, rxix, true);
-        if (r || rxix.isEmpty()) {
+        if (r || (rxix.isEmpty() && communityList.size() == 1)) {
             msgAppend(&runMsg, tr("%1 : A kereszt index tábla lekérdezése sikertelen : %2").arg(name(), snmp.emsg));
             return RS_UNREACHABLE;
         }
+    }
+    if (rxix.isEmpty()) {
+        msgAppend(&runMsg, tr("%1 : A kereszt index tábla üres.").arg(name()));
+        return RS_UNREACHABLE;
     }
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
